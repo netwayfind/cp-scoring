@@ -2,6 +2,6 @@
 
 PKG_BASE="github.com/sumwonyuno/cp-scoring"
 
-go build -o cp-scoring-agent $PKG_BASE/agent
+GOOS=linux GOARCH=amd64 go build -o cp-scoring-agent-linux $PKG_BASE/agent
 
 echo "Done"
