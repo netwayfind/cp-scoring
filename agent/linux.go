@@ -3,10 +3,11 @@ package main
 import (
 	"os/exec"
 	"strings"
+	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func GetLinuxState() State {
-	var state State
+func GetLinuxState() model.State {
+	var state model.State
 	state.Users = getUsersLinux()
 	state.Groups = getGroupsLinux()
 	return state

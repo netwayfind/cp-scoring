@@ -3,12 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sumwonyuno/cp-scoring/model"
 )
-
-type State struct {
-	Users []string
-	Groups map[string][]string
-}
 
 func main() {
 	state := GetLinuxState()
@@ -20,7 +16,7 @@ func main() {
 	}
 
 	// check can unmarshal
-	var s State
+	var s model.State
 	err = json.Unmarshal(b, &s)
 	if err != nil {
 		panic(err)
