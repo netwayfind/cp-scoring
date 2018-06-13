@@ -20,10 +20,18 @@ func DBInit() {
 	if err != nil {
 		log.Fatal("ERROR: cannot create table states;", err)
 	}
-
 	_, err = stmt.Exec()
 	if err != nil {
 		log.Fatal("ERROR: cannot create table states;", err)
+	}
+
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template VARCHAR NOT NULL)")
+	if err != nil {
+		log.Fatal("ERROR: cannot create table templates;", err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Fatal("ERROR: cannot create table templates;", err)
 	}
 
 	log.Println("Finished setting up database")
@@ -60,10 +68,46 @@ func DBInsertState(state string) {
 		log.Println("ERROR: cannot insert into table states;", err)
 		return
 	}
-
 	_, err = stmt.Exec(state)
 	if err != nil {
 		log.Println("ERROR: cannot insert into table states;", err)
 		return
 	}
-} 
+}
+
+func DBSelectTemplates() map[int64]string {
+	rows, err := db.Query("SELECT id, template FROM templates")
+	if err != nil {
+		log.Println("ERROR: cannot select from templates;", err)
+		return nil
+	}
+	defer rows.Close()
+	
+	var id int64
+	var template string
+	templates := make(map[int64]string)
+
+	for rows.Next() {
+		err = rows.Scan(&id, &template)
+		if err != nil {
+			log.Println("ERROR: fetching row;", err)
+			break
+		}
+		templates[id] = template
+	}
+
+	return templates
+}
+
+func DBInsertTemplate(template string) {
+	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
+	if err != nil {
+		log.Println("ERROR: cannot insert into table templates;", err)
+		return
+	}
+	_, err = stmt.Exec(template)
+	if err != nil {
+		log.Println("ERROR: cannot insert into table templates;", err)
+		return
+	}
+}
