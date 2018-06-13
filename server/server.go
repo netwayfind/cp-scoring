@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
@@ -68,11 +69,25 @@ func templates(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func template(w http.ResponseWriter, r *http.Request) {
+	// parse out int64 id
+	// remove /templates/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		log.Println("ERROR: cannot parse template id;", err)
+		return
+	}
+
+	template := DBSelectTemplate(id)
+	w.Write([]byte(template))
+}
+
 func main() {
 	DBInit()
 
 	http.HandleFunc("/submit", submit)
 	http.HandleFunc("/templates", templates)
+	http.HandleFunc("/templates/", template)
 
 	http.ListenAndServe(":8080", nil)
 }

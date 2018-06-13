@@ -99,6 +99,33 @@ func DBSelectTemplates() map[int64]string {
 	return templates
 }
 
+func DBSelectTemplate(id int64) string {
+	template := "{}"
+
+	stmt, err := db.Prepare("SELECT template FROM templates where id=(?)")
+	if err != nil {
+		log.Println("ERROR: cannot select from templates;", err)
+		return template
+	}
+	rows, err := stmt.Query(id)
+	if err != nil {
+		log.Println("ERROR: cannot select from templates;", err)
+		return template
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&template)
+		if err != nil {
+			log.Println("ERROR: fetching row;", err)
+			return template
+		}
+		// only get first result
+		break
+	}
+
+	return template
+}
+
 func DBInsertTemplate(template string) {
 	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
 	if err != nil {
