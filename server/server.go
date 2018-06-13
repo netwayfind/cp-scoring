@@ -25,12 +25,16 @@ func submit(w http.ResponseWriter, r *http.Request) {
 		log.Println("ERROR: unmarshalling state;", err)
 	}
 
-	response := "Received"
+	DBInsertState(string(body))
+
+	response := "Received and saved"
 	log.Println(response)
 	w.Write([]byte(response))
 }
 
 func main() {
+	DBInit()
+
 	http.HandleFunc("/submit", submit)
 
 	http.ListenAndServe(":8080", nil)
