@@ -7,7 +7,7 @@ import (
 )
 
 func GetLinuxState() model.State {
-	var state model.State
+	state := model.GetNewStateTemplate()
 	state.Users = getUsersLinux()
 	state.Groups = getGroupsLinux()
 	return state
