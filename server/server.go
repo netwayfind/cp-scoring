@@ -9,7 +9,7 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func submit(w http.ResponseWriter, r *http.Request) {
+func audit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.Write([]byte("HTTP 405\n"))
 		return
@@ -85,7 +85,7 @@ func template(w http.ResponseWriter, r *http.Request) {
 func main() {
 	DBInit()
 
-	http.HandleFunc("/submit", submit)
+	http.HandleFunc("/audit", audit)
 	http.HandleFunc("/templates", templates)
 	http.HandleFunc("/templates/", template)
 

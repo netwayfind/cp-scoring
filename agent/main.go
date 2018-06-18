@@ -41,7 +41,7 @@ func sendState(server string) {
 		return
 	}
 
-	url := server + "/submit"
+	url := server + "/audit"
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		log.Println("ERROR:", err)
