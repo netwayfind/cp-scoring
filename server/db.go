@@ -126,6 +126,10 @@ func DBSelectTemplate(id int64) string {
 	return template
 }
 
+func DBSelectTemplatesForHostname(hostname string) []string {
+	return nil
+}
+
 func DBInsertTemplate(template string) {
 	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
 	if err != nil {

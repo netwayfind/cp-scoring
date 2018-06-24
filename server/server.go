@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
@@ -26,11 +27,31 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		log.Println("ERROR: unmarshalling state;", err)
 	}
 
+	log.Println("Saving state")
 	DBInsertState(string(body))
+
+	log.Println("Auditing state")
+	templates := getTemplates(state.Hostname)
+	auditor.Audit(state, templates)
 
 	response := "Received and saved"
 	log.Println(response)
 	w.Write([]byte(response))
+}
+
+func getTemplates(hostname string) []model.Template {
+	templates := DBSelectTemplatesForHostname(hostname)
+	templateObjs := make([]model.Template, len(templates))
+	for i := 0; i < len(templates); i++ {
+		var template model.Template
+		err := json.Unmarshal([]byte(templates[i]), &template)
+		if err != nil {
+			log.Println("ERROR: unmarshalling template;", err)
+			continue
+		}
+		templateObjs[i] = template
+	}
+	return templateObjs
 }
 
 func templates(w http.ResponseWriter, r *http.Request) {
