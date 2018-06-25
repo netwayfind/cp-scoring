@@ -60,45 +60,23 @@ func DBClose() {
 	db.Close()
 }
 
-func DBSelectStates() {
-	rows, err := db.Query("SELECT * FROM states")
-	if err != nil {
-		log.Println("ERROR: cannot select from table states;", err)
-		return
-	}
-	defer rows.Close()
-
-	var name string
-
-	for rows.Next() {
-		err = rows.Scan(&name)
-		if err != nil {
-			log.Println("ERROR: fetching row;", err)
-			break
-		}
-
-		log.Print(name)
-	}
-}
-
-func DBInsertState(state string) {
+func DBInsertState(state string) error {
 	stmt, err := db.Prepare("INSERT INTO states(state) VALUES(?)")
 	if err != nil {
-		log.Println("ERROR: cannot insert into table states;", err)
-		return
+		return err
 	}
 	_, err = stmt.Exec(state)
 	if err != nil {
-		log.Println("ERROR: cannot insert into table states;", err)
-		return
+		return err
 	}
+
+	return nil
 }
 
-func DBSelectTemplates() map[int64]string {
+func DBSelectTemplates() (map[int64]string, error) {
 	rows, err := db.Query("SELECT id, template FROM templates")
 	if err != nil {
-		log.Println("ERROR: cannot select from templates;", err)
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 	
@@ -109,64 +87,59 @@ func DBSelectTemplates() map[int64]string {
 	for rows.Next() {
 		err = rows.Scan(&id, &template)
 		if err != nil {
-			log.Println("ERROR: fetching row;", err)
-			break
+			return nil, err
 		}
 		templates[id] = template
 	}
 
-	return templates
+	return templates, nil
 }
 
-func DBSelectTemplate(id int64) string {
-	template := "{}"
+func DBSelectTemplate(id int64) (string, error) {
+	var template string
 
 	stmt, err := db.Prepare("SELECT template FROM templates where id=(?)")
 	if err != nil {
-		log.Println("ERROR: cannot select from templates;", err)
-		return template
+		return template, err
 	}
 	rows, err := stmt.Query(id)
 	if err != nil {
-		log.Println("ERROR: cannot select from templates;", err)
-		return template
+		return template, err
 	}
 
 	for rows.Next() {
 		err := rows.Scan(&template)
 		if err != nil {
-			log.Println("ERROR: fetching row;", err)
-			return template
+			return template, err
 		}
 		// only get first result
 		break
 	}
 
-	return template
+	return template, nil
 }
 
 func DBSelectTemplatesForHostname(hostname string) []string {
 	return nil
 }
 
-func DBInsertTemplate(template string) {
+func DBInsertTemplate(template string) error {
 	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
 	if err != nil {
-		log.Println("ERROR: cannot insert into table templates;", err)
-		return
+		return err
 	}
 	_, err = stmt.Exec(template)
 	if err != nil {
-		log.Println("ERROR: cannot insert into table templates;", err)
-		return
+		return err
 	}
+
+	return nil
 }
 
-func DBSelectHosts() map[int64]model.Host {
+func DBSelectHosts() (map[int64]model.Host, error) {
 	rows, err := db.Query("SELECT id, hostname, os FROM hosts")
 	if err != nil {
-		log.Println("ERROR: cannot select from hosts;", err)
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 	
@@ -178,8 +151,7 @@ func DBSelectHosts() map[int64]model.Host {
 	for rows.Next() {
 		err = rows.Scan(&id, &hostname, &os)
 		if err != nil {
-			log.Println("ERROR: fetching row;", err)
-			break
+			return nil, err
 		}
 		var host model.Host
 		host.Hostname = hostname
@@ -187,7 +159,7 @@ func DBSelectHosts() map[int64]model.Host {
 		hosts[id] = host
 	}
 
-	return hosts
+	return hosts, nil
 }
 
 func DBSelectHost(id int64) (model.Host, error) {
@@ -204,6 +176,7 @@ func DBSelectHost(id int64) (model.Host, error) {
 
 	var hostname string
 	var os string
+	count := 0
 	for rows.Next() {
 		err := rows.Scan(&hostname, &os)
 		if err != nil {
@@ -212,21 +185,22 @@ func DBSelectHost(id int64) (model.Host, error) {
 		// only get first result
 		host.Hostname = hostname
 		host.OS = os
+		count++
 		break
 	}
 
 	return host, nil
 }
 
-func DBInsertHost(host model.Host) {
+func DBInsertHost(host model.Host) error {
 	stmt, err := db.Prepare("INSERT INTO hosts(hostname, os) VALUES(?, ?)")
 	if err != nil {
-		log.Println("ERROR: cannot insert into table hosts;", err)
-		return
+		return err
 	}
 	_, err = stmt.Exec(host.Hostname, host.OS)
 	if err != nil {
-		log.Println("ERROR: cannot insert into table hosts;", err)
-		return
+		return err
 	}
+
+	return nil
 }
