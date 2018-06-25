@@ -103,12 +103,71 @@ func template(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(template))
 }
 
+func hosts(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		// get all hosts
+		hosts := DBSelectHosts()
+		b, err := json.Marshal(hosts)
+		if err != nil {
+			msg := "ERROR: returning hosts"
+			log.Println(msg)
+			w.Write([]byte(msg))
+			return
+		}
+		w.Write(b)
+	} else if r.Method == "POST" {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Println("ERROR: retrieving body;", err)
+		}
+	
+		var host model.Host
+		err = json.Unmarshal(body, &host)
+		if err != nil {
+			log.Println("ERROR: unmarshalling template;", err)
+		}
+
+		DBInsertHost(host)
+
+		// new host
+		msg := "Saved host"
+		log.Println(msg)
+		w.Write([]byte(msg))
+	} else {
+		w.Write([]byte("HTTP 405\n"))
+		return
+	}
+}
+
+func host(w http.ResponseWriter, r *http.Request) {
+	// parse out int64 id
+	// remove /hosts/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		log.Println("ERROR: cannot parse host id;", err)
+		return
+	}
+
+	host, err := DBSelectHost(id)
+	if err == nil {
+		log.Println(err)
+	}
+	out, err := json.Marshal(host)
+	if err != nil {
+		log.Println("ERROR: cannot marshal host;", err)
+		return
+	}
+	w.Write([]byte(out))
+}
+
 func main() {
 	DBInit()
 
 	http.HandleFunc("/audit", audit)
 	http.HandleFunc("/templates", templates)
 	http.HandleFunc("/templates/", template)
+	http.HandleFunc("/hosts", hosts)
+	http.HandleFunc("/hosts/", host)
 
 	http.ListenAndServe(":8080", nil)
 }

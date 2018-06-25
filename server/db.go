@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"github.com/sumwonyuno/cp-scoring/model"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -161,8 +162,8 @@ func DBInsertTemplate(template string) {
 	}
 }
 
-func DBSelectHosts() map[int64]string {
-	rows, err := db.Query("SELECT id, hostname FROM hosts")
+func DBSelectHosts() map[int64]model.Host {
+	rows, err := db.Query("SELECT id, hostname, os FROM hosts")
 	if err != nil {
 		log.Println("ERROR: cannot select from hosts;", err)
 		return nil
@@ -171,27 +172,59 @@ func DBSelectHosts() map[int64]string {
 	
 	var id int64
 	var hostname string
-	hosts := make(map[int64]string)
+	var os string
+	hosts := make(map[int64]model.Host)
 
 	for rows.Next() {
-		err = rows.Scan(&id, &hostname)
+		err = rows.Scan(&id, &hostname, &os)
 		if err != nil {
 			log.Println("ERROR: fetching row;", err)
 			break
 		}
-		hosts[id] = hostname
+		var host model.Host
+		host.Hostname = hostname
+		host.OS = os
+		hosts[id] = host
 	}
 
 	return hosts
 }
 
-func DBInsertHost(hostname string, os string) {
+func DBSelectHost(id int64) (model.Host, error) {
+	var host model.Host
+
+	stmt, err := db.Prepare("SELECT hostname, os FROM hosts where id=(?)")
+	if err != nil {
+		return host, err
+	}
+	rows, err := stmt.Query(id)
+	if err != nil {
+		return host, err
+	}
+
+	var hostname string
+	var os string
+	for rows.Next() {
+		err := rows.Scan(&hostname, &os)
+		if err != nil {
+			return host, err
+		}
+		// only get first result
+		host.Hostname = hostname
+		host.OS = os
+		break
+	}
+
+	return host, nil
+}
+
+func DBInsertHost(host model.Host) {
 	stmt, err := db.Prepare("INSERT INTO hosts(hostname, os) VALUES(?, ?)")
 	if err != nil {
 		log.Println("ERROR: cannot insert into table hosts;", err)
 		return
 	}
-	_, err = stmt.Exec(hostname, os)
+	_, err = stmt.Exec(host.Hostname, host.OS)
 	if err != nil {
 		log.Println("ERROR: cannot insert into table hosts;", err)
 		return

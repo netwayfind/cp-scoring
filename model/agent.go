@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+type Host struct {
+	Hostname string
+	OS string
+}
+
 type State struct {
 	Timestamp int64
 	OS string
