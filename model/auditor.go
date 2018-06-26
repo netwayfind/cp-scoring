@@ -10,6 +10,11 @@ type Template struct {
 	GroupMembersRemove map[string]string
 }
 
+type HostsTemplates struct {
+	HostId int64
+	TemplateId int64
+}
+
 type Report struct {
 
 }

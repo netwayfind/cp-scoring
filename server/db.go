@@ -44,13 +44,13 @@ func DBInit() {
 		log.Fatal("ERROR: cannot create table hosts;", err)
 	}
 
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS template_assignment(template_id INTEGER NOT NULL, host_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS hosts_templates(host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	if err != nil {
-		log.Fatal("ERROR: cannot create table template_assignment;", err)
+		log.Fatal("ERROR: cannot create table hosts_templates;", err)
 	}
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatal("ERROR: cannot create table template_assignment;", err)
+		log.Fatal("ERROR: cannot create table hosts_templates;", err)
 	}
 
 	log.Println("Finished setting up database")
@@ -119,8 +119,25 @@ func DBSelectTemplate(id int64) (string, error) {
 	return template, nil
 }
 
-func DBSelectTemplatesForHostname(hostname string) []string {
-	return nil
+func DBSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
+	stmt, err := db.Prepare("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.Query(hostname)
+	if err != nil {
+		return nil, err
+	}
+
+	var template model.Template
+	for rows.Next() {
+		err := rows.Scan(&template)
+		if err != nil {
+			return nil, err
+		}
+		log.Println(template)
+	}
+	return nil, nil
 }
 
 func DBInsertTemplate(template string) error {
@@ -198,6 +215,44 @@ func DBInsertHost(host model.Host) error {
 		return err
 	}
 	_, err = stmt.Exec(host.Hostname, host.OS)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DBSelectHostsTemplates() ([]model.HostsTemplates, error) {
+	rows, err := db.Query("SELECT host_id, template_id FROM hosts_templates")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var template_id int64
+	var host_id int64
+	hostsTemplates := make([]model.HostsTemplates, 0)
+
+	for rows.Next() {
+		err = rows.Scan(&host_id, &template_id)
+		if err != nil {
+			return nil, err
+		}
+		var entry model.HostsTemplates
+		entry.HostId = host_id
+		entry.TemplateId = template_id
+		hostsTemplates = append(hostsTemplates, entry)
+	}
+
+	return hostsTemplates, nil
+}
+
+func DBInsertHostsTemplates(host_id int64, template_id int64) error {
+	stmt, err := db.Prepare("INSERT INTO hosts_templates(host_id, template_id) VALUES(?, ?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(host_id, template_id)
 	if err != nil {
 		return err
 	}
