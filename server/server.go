@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
 	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -36,7 +37,7 @@ func audit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Saving state")
-	err = DBInsertState(string(body))
+	err = dbInsertState(string(body))
 	if err != nil {
 		msg := "ERROR: cannot insert state;"
 		log.Println(msg, err)
@@ -45,7 +46,7 @@ func audit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Auditing state")
-	templates, err := DBSelectTemplatesForHostname(state.Hostname)
+	templates, err := dbSelectTemplatesForHostname(state.Hostname)
 	if err != nil {
 		msg := "ERROR: cannot get templates;"
 		log.Println(msg, err)
@@ -62,7 +63,7 @@ func audit(w http.ResponseWriter, r *http.Request) {
 func templates(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// get all templates
-		templates, err := DBSelectTemplates()
+		templates, err := dbSelectTemplates()
 		if err != nil {
 			msg := "ERROR: cannot retrieve templates;"
 			log.Println(msg)
@@ -85,7 +86,7 @@ func templates(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(msg))
 			return
 		}
-	
+
 		var template model.Template
 		err = json.Unmarshal(body, &template)
 		if err != nil {
@@ -95,7 +96,7 @@ func templates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = DBInsertTemplate(string(body))
+		err = dbInsertTemplate(string(body))
 		if err != nil {
 			msg := "ERROR: cannot insert template;"
 			log.Println(msg, err)
@@ -126,7 +127,7 @@ func template(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	template, err := DBSelectTemplate(id)
+	template, err := dbSelectTemplate(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve template;"
 		log.Println(msg)
@@ -139,7 +140,7 @@ func template(w http.ResponseWriter, r *http.Request) {
 func hosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// get all hosts
-		hosts, err := DBSelectHosts()
+		hosts, err := dbSelectHosts()
 		if err != nil {
 			msg := "ERROR: cannot retrieve hosts;"
 			log.Println(msg)
@@ -162,7 +163,7 @@ func hosts(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(msg))
 			return
 		}
-	
+
 		var host model.Host
 		err = json.Unmarshal(body, &host)
 		if err != nil {
@@ -172,7 +173,7 @@ func hosts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = DBInsertHost(host)
+		err = dbInsertHost(host)
 		if err != nil {
 			msg := "ERROR: cannot insert host;"
 			log.Println(msg, err)
@@ -203,7 +204,7 @@ func host(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	host, err := DBSelectHost(id)
+	host, err := dbSelectHost(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve host;"
 		log.Println(msg, err)
@@ -224,17 +225,17 @@ func host(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func hosts_templates(w http.ResponseWriter, r *http.Request) {
+func hostsTemplates(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// get all hosts templates
-		hosts_templates, err := DBSelectHostsTemplates()
+		hts, err := dbSelectHostsTemplates()
 		if err != nil {
 			msg := "ERROR: cannot retrieve hosts templates;"
 			log.Println(msg)
 			w.Write([]byte(msg))
 			return
 		}
-		b, err := json.Marshal(hosts_templates)
+		b, err := json.Marshal(hts)
 		if err != nil {
 			msg := "ERROR: cannot marshal hosts templates;"
 			log.Println(msg)
@@ -250,7 +251,7 @@ func hosts_templates(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(msg))
 			return
 		}
-	
+
 		var hostsTemplates model.HostsTemplates
 		err = json.Unmarshal(body, &hostsTemplates)
 		if err != nil {
@@ -260,7 +261,7 @@ func hosts_templates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = DBInsertHostsTemplates(hostsTemplates.HostId, hostsTemplates.TemplateId)
+		err = dbInsertHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
 		if err != nil {
 			msg := "ERROR: cannot insert hosts templates;"
 			log.Println(msg, err)
@@ -281,14 +282,14 @@ func hosts_templates(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	DBInit()
+	dbInit()
 
 	http.HandleFunc("/audit", audit)
 	http.HandleFunc("/templates", templates)
 	http.HandleFunc("/templates/", template)
 	http.HandleFunc("/hosts", hosts)
 	http.HandleFunc("/hosts/", host)
-	http.HandleFunc("/hosts_templates", hosts_templates)
+	http.HandleFunc("/hosts_templates", hostsTemplates)
 
 	http.ListenAndServe(":8080", nil)
 }

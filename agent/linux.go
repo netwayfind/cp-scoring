@@ -3,10 +3,11 @@ package main
 import (
 	"os/exec"
 	"strings"
+
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func GetLinuxState() model.State {
+func getLinuxState() model.State {
 	state := model.GetNewStateTemplate()
 	state.Users = getUsersLinux()
 	state.Groups = getGroupsLinux()
@@ -21,10 +22,10 @@ func getUsersLinux() []string {
 	}
 	lines := strings.Split(string(out), "\n")
 	// remove last line if empty
-	if lines[len(lines) - 1] == "" {
-		lines = lines[:len(lines) - 1]
+	if lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
 	}
-	
+
 	return lines
 }
 
@@ -46,7 +47,7 @@ func getGroupsLinux() map[string][]string {
 		if len(entry) > 1 {
 			members = strings.Split(entry[1], ",")
 		}
-		
+
 		results[group] = members
 	}
 

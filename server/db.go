@@ -3,14 +3,15 @@ package main
 import (
 	"database/sql"
 	"log"
-	"github.com/sumwonyuno/cp-scoring/model"
+
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sumwonyuno/cp-scoring/model"
 )
 
 var db *sql.DB
 var err error
 
-func DBInit() {
+func dbInit() {
 	db, err = sql.Open("sqlite3", "cp-scoring.db")
 	if err != nil {
 		log.Fatal("ERROR: cannot open db file;", err)
@@ -56,11 +57,11 @@ func DBInit() {
 	log.Println("Finished setting up database")
 }
 
-func DBClose() {
+func dbClose() {
 	db.Close()
 }
 
-func DBInsertState(state string) error {
+func dbInsertState(state string) error {
 	stmt, err := db.Prepare("INSERT INTO states(state) VALUES(?)")
 	if err != nil {
 		return err
@@ -73,13 +74,13 @@ func DBInsertState(state string) error {
 	return nil
 }
 
-func DBSelectTemplates() (map[int64]string, error) {
+func dbSelectTemplates() (map[int64]string, error) {
 	rows, err := db.Query("SELECT id, template FROM templates")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var id int64
 	var template string
 	templates := make(map[int64]string)
@@ -95,7 +96,7 @@ func DBSelectTemplates() (map[int64]string, error) {
 	return templates, nil
 }
 
-func DBSelectTemplate(id int64) (string, error) {
+func dbSelectTemplate(id int64) (string, error) {
 	var template string
 
 	stmt, err := db.Prepare("SELECT template FROM templates where id=(?)")
@@ -119,7 +120,7 @@ func DBSelectTemplate(id int64) (string, error) {
 	return template, nil
 }
 
-func DBSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
+func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
 	stmt, err := db.Prepare("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id")
 	if err != nil {
 		return nil, err
@@ -140,7 +141,7 @@ func DBSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
 	return nil, nil
 }
 
-func DBInsertTemplate(template string) error {
+func dbInsertTemplate(template string) error {
 	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
 	if err != nil {
 		return err
@@ -153,13 +154,13 @@ func DBInsertTemplate(template string) error {
 	return nil
 }
 
-func DBSelectHosts() (map[int64]model.Host, error) {
+func dbSelectHosts() (map[int64]model.Host, error) {
 	rows, err := db.Query("SELECT id, hostname, os FROM hosts")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var id int64
 	var hostname string
 	var os string
@@ -179,7 +180,7 @@ func DBSelectHosts() (map[int64]model.Host, error) {
 	return hosts, nil
 }
 
-func DBSelectHost(id int64) (model.Host, error) {
+func dbSelectHost(id int64) (model.Host, error) {
 	var host model.Host
 
 	stmt, err := db.Prepare("SELECT hostname, os FROM hosts where id=(?)")
@@ -209,7 +210,7 @@ func DBSelectHost(id int64) (model.Host, error) {
 	return host, nil
 }
 
-func DBInsertHost(host model.Host) error {
+func dbInsertHost(host model.Host) error {
 	stmt, err := db.Prepare("INSERT INTO hosts(hostname, os) VALUES(?, ?)")
 	if err != nil {
 		return err
@@ -222,37 +223,37 @@ func DBInsertHost(host model.Host) error {
 	return nil
 }
 
-func DBSelectHostsTemplates() ([]model.HostsTemplates, error) {
+func dbSelectHostsTemplates() ([]model.HostsTemplates, error) {
 	rows, err := db.Query("SELECT host_id, template_id FROM hosts_templates")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
-	var template_id int64
-	var host_id int64
+
+	var templateID int64
+	var hostID int64
 	hostsTemplates := make([]model.HostsTemplates, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&host_id, &template_id)
+		err = rows.Scan(&hostID, &templateID)
 		if err != nil {
 			return nil, err
 		}
 		var entry model.HostsTemplates
-		entry.HostId = host_id
-		entry.TemplateId = template_id
+		entry.HostID = hostID
+		entry.TemplateID = templateID
 		hostsTemplates = append(hostsTemplates, entry)
 	}
 
 	return hostsTemplates, nil
 }
 
-func DBInsertHostsTemplates(host_id int64, template_id int64) error {
+func dbInsertHostsTemplates(hostID int64, templateID int64) error {
 	stmt, err := db.Prepare("INSERT INTO hosts_templates(host_id, template_id) VALUES(?, ?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(host_id, template_id)
+	_, err = stmt.Exec(hostID, templateID)
 	if err != nil {
 		return err
 	}

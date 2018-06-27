@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"time"
+
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
@@ -32,7 +33,7 @@ func sendState(server string) {
 	var state model.State
 
 	// TODO: choose correct function based on OS
-	state = GetLinuxState()
+	state = getLinuxState()
 
 	// convert to json bytes
 	b, err := json.Marshal(state)

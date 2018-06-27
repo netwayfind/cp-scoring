@@ -9,15 +9,15 @@ import (
 
 type Host struct {
 	Hostname string
-	OS string
+	OS       string
 }
 
 type State struct {
 	Timestamp int64
-	OS string
-	Hostname string
-	Users []string
-	Groups map[string][]string
+	OS        string
+	Hostname  string
+	Users     []string
+	Groups    map[string][]string
 }
 
 func GetNewStateTemplate() State {
