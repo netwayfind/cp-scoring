@@ -288,12 +288,12 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("./ui/"))))
 
-	http.HandleFunc("/audit", audit)
-	http.HandleFunc("/templates", templates)
-	http.HandleFunc("/templates/", template)
-	http.HandleFunc("/hosts", hosts)
-	http.HandleFunc("/hosts/", host)
-	http.HandleFunc("/hosts_templates", hostsTemplates)
+	r.HandleFunc("/audit", audit)
+	r.HandleFunc("/templates", templates)
+	r.HandleFunc("/templates/", template)
+	r.HandleFunc("/hosts", hosts)
+	r.HandleFunc("/hosts/", host)
+	r.HandleFunc("/hosts_templates", hostsTemplates)
 
 	http.ListenAndServe(":8080", r)
 }

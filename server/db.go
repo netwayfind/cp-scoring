@@ -154,7 +154,7 @@ func dbInsertTemplate(template string) error {
 	return nil
 }
 
-func dbSelectHosts() (map[int64]model.Host, error) {
+func dbSelectHosts() ([]model.Host, error) {
 	rows, err := db.Query("SELECT id, hostname, os FROM hosts")
 	if err != nil {
 		return nil, err
@@ -164,7 +164,7 @@ func dbSelectHosts() (map[int64]model.Host, error) {
 	var id int64
 	var hostname string
 	var os string
-	hosts := make(map[int64]model.Host)
+	hosts := make([]model.Host, 0)
 
 	for rows.Next() {
 		err = rows.Scan(&id, &hostname, &os)
@@ -172,9 +172,10 @@ func dbSelectHosts() (map[int64]model.Host, error) {
 			return nil, err
 		}
 		var host model.Host
+		host.ID = id
 		host.Hostname = hostname
 		host.OS = os
-		hosts[id] = host
+		hosts = append(hosts, host)
 	}
 
 	return hosts, nil

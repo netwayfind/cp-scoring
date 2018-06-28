@@ -8,6 +8,7 @@ import (
 )
 
 type Host struct {
+	ID       int64
 	Hostname string
 	OS       string
 }
