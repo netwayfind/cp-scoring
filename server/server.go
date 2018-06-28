@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
 	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -284,6 +285,9 @@ func hostsTemplates(w http.ResponseWriter, r *http.Request) {
 func main() {
 	dbInit()
 
+	r := mux.NewRouter()
+	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("./ui/"))))
+
 	http.HandleFunc("/audit", audit)
 	http.HandleFunc("/templates", templates)
 	http.HandleFunc("/templates/", template)
@@ -291,5 +295,5 @@ func main() {
 	http.HandleFunc("/hosts/", host)
 	http.HandleFunc("/hosts_templates", hostsTemplates)
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", r)
 }
