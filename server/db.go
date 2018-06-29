@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -74,7 +75,7 @@ func dbInsertState(state string) error {
 	return nil
 }
 
-func dbSelectTemplates() (map[int64]string, error) {
+func dbSelectTemplates() ([]model.Template, error) {
 	rows, err := db.Query("SELECT id, template FROM templates")
 	if err != nil {
 		return nil, err
@@ -82,22 +83,28 @@ func dbSelectTemplates() (map[int64]string, error) {
 	defer rows.Close()
 
 	var id int64
-	var template string
-	templates := make(map[int64]string)
+	var templateStr string
+	templates := make([]model.Template, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&id, &template)
+		err = rows.Scan(&id, &templateStr)
 		if err != nil {
 			return nil, err
 		}
-		templates[id] = template
+		log.Println(templateStr)
+		var template model.Template
+		err = json.Unmarshal([]byte(templateStr), &template)
+		if err != nil {
+			continue
+		}
+		templates = append(templates, template)
 	}
 
 	return templates, nil
 }
 
-func dbSelectTemplate(id int64) (string, error) {
-	var template string
+func dbSelectTemplate(id int64) (model.Template, error) {
+	var template model.Template
 
 	stmt, err := db.Prepare("SELECT template FROM templates where id=(?)")
 	if err != nil {

@@ -67,14 +67,14 @@ func templates(w http.ResponseWriter, r *http.Request) {
 		templates, err := dbSelectTemplates()
 		if err != nil {
 			msg := "ERROR: cannot retrieve templates;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
 		b, err := json.Marshal(templates)
 		if err != nil {
 			msg := "ERROR: cannot marshal templates;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
@@ -135,7 +135,14 @@ func template(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-	w.Write([]byte(template))
+	out, err := json.Marshal(template)
+	if err != nil {
+		msg := "ERROR: cannot marshal template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
 }
 
 func hosts(w http.ResponseWriter, r *http.Request) {
