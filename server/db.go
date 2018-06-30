@@ -28,7 +28,7 @@ func dbInit() {
 		log.Fatal("ERROR: cannot create table states;", err)
 	}
 
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template VARCHAR NOT NULL)")
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
 	if err != nil {
 		log.Fatal("ERROR: cannot create table templates;", err)
 	}
@@ -83,17 +83,16 @@ func dbSelectTemplates() ([]model.Template, error) {
 	defer rows.Close()
 
 	var id int64
-	var templateStr string
+	var templateBytes []byte
 	templates := make([]model.Template, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&id, &templateStr)
+		err = rows.Scan(&id, &templateBytes)
 		if err != nil {
 			return nil, err
 		}
-		log.Println(templateStr)
 		var template model.Template
-		err = json.Unmarshal([]byte(templateStr), &template)
+		err = json.Unmarshal(templateBytes, &template)
 		if err != nil {
 			continue
 		}
@@ -148,12 +147,16 @@ func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
 	return nil, nil
 }
 
-func dbInsertTemplate(template string) error {
+func dbInsertTemplate(template model.Template) error {
 	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(template)
+	b, err := json.Marshal(templates)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(b)
 	if err != nil {
 		return err
 	}

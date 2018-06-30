@@ -97,7 +97,7 @@ func templates(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = dbInsertTemplate(string(body))
+		err = dbInsertTemplate(template)
 		if err != nil {
 			msg := "ERROR: cannot insert template;"
 			log.Println(msg, err)
