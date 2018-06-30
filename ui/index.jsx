@@ -7,6 +7,8 @@ class App extends React.Component {
         <Hosts />
 
         <Templates />
+
+        <CreateTemplate />
       </div>
     );
   }
@@ -30,7 +32,6 @@ class Hosts extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      console.log(data);
       t.setState({hosts: data})
     });
   }
@@ -67,7 +68,6 @@ class Templates extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      console.log(data);
       t.setState({templates: data})
     });
   }
@@ -81,6 +81,59 @@ class Templates extends React.Component {
             return <li>{template.Name}</li>
           })}
         </ul>
+      </div>
+    );
+  }
+}
+
+class CreateTemplate extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {};
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({
+      [event.target.name]: event.target.value
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state) == 0) {
+      return;
+    }
+
+    var url = "/templates";
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      window.location.reload();
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <strong>Create Template</strong>
+        <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+          <label for="Name">Name</label>
+          <input name="Name" />
+          <button type="submit">Submit</button>
+        </form>
       </div>
     );
   }

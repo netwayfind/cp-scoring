@@ -152,7 +152,7 @@ func dbInsertTemplate(template model.Template) error {
 	if err != nil {
 		return err
 	}
-	b, err := json.Marshal(templates)
+	b, err := json.Marshal(template)
 	if err != nil {
 		return err
 	}
