@@ -3,7 +3,7 @@
 class App extends React.Component {
   render() {
     return (
-      <div>
+      <div className="App">
         <Hosts />
 
         <Templates />
@@ -38,7 +38,7 @@ class Hosts extends React.Component {
 
   render() {
     return (
-      <div>
+      <div className="Hosts">
         <strong>Hosts</strong>
         <ul>
           {this.state.hosts.map(host => {
@@ -95,7 +95,7 @@ class Templates extends React.Component {
       });
     }
     return (
-      <div>
+      <div className="Templates">
         <strong>Templates</strong>
         <ul>{rows}</ul>
       </div>
@@ -106,22 +106,23 @@ class Templates extends React.Component {
 class CreateTemplate extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      showModal: false,
+      templates: {}
+    };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   handleChange(event) {
-    this.setState({
-      [event.target.name]: event.target.value
-    });
+    this.state.templates[event.target.name] = event.target.value;
   }
 
   handleSubmit(event) {
     event.preventDefault();
 
-    if (Object.keys(this.state) == 0) {
+    if (Object.keys(this.state.templates) == 0) {
       return;
     }
 
@@ -132,7 +133,7 @@ class CreateTemplate extends React.Component {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(this.state)
+      body: JSON.stringify(this.state.templates)
     })
     .then(function(response) {
       if (response.status >= 400) {
@@ -142,15 +143,55 @@ class CreateTemplate extends React.Component {
     });
   }
 
+  toggleModal = () => {
+    this.setState({
+      showModal: !this.state.showModal
+    })
+  }
+
   render() {
     return (
-      <div>
-        <strong>Create Template</strong>
-        <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-          <label for="Name">Name</label>
-          <input name="Name" />
-          <button type="submit">Submit</button>
-        </form>
+      <div className="CreateTemplate">
+        <button onClick={this.toggleModal}>Create Template</button>
+        
+        <TemplateModal show={this.state.showModal} onClose={this.toggleModal} change={this.handleChange} submit={this.handleSubmit}/>
+      </div>
+    );
+  }
+}
+
+class TemplateModal extends React.Component {
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    const backgroundStyle = {
+      position: 'fixed',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 50
+    }
+
+    const modalStyle = {
+      backgroundColor: 'white',
+      padding: 30
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <form onChange={this.props.change} onSubmit={this.props.submit}>
+            <label htmlFor="Name">Name</label>
+            <input name="Name" />
+            <br />
+            <button type="submit">Submit</button>
+            <button onClick={this.props.onClose}>Cancel</button>
+          </form>
+        </div>
       </div>
     );
   }
