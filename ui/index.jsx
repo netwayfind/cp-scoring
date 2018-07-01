@@ -57,7 +57,7 @@ class Templates extends React.Component {
   }
 
   componentDidMount() {
-    var url = '/templates';
+    var url = "/templates";
     var t = this;
   
     fetch(url)
@@ -72,15 +72,32 @@ class Templates extends React.Component {
     });
   }
 
+  deleteTemplate(id) {
+    var url = "/templates/" + id;
+
+    fetch(url, {
+      method: 'DELETE'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      window.location.reload();
+    });
+  }
+
   render() {
+    let rows = [];
+    for (let i = 0; i < this.state.templates.length; i++) {
+      let entry = this.state.templates[i];
+      Object.keys(entry).map(id => {
+        rows.push(<li key={id}>{id} - {entry[id].Name}<button onClick={this.deleteTemplate.bind(this, id)}>-</button></li>);
+      });
+    }
     return (
       <div>
         <strong>Templates</strong>
-        <ul>
-          {this.state.templates.map(template => {
-            return <li>{template.Name}</li>
-          })}
-        </ul>
+        <ul>{rows}</ul>
       </div>
     );
   }

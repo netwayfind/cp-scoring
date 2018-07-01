@@ -15,7 +15,7 @@ import (
 func audit(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		msg := "HTTP 405"
-		log.Println(msg)
+		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
@@ -61,104 +61,20 @@ func audit(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(response))
 }
 
-func templates(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// get all templates
-		templates, err := dbSelectTemplates()
-		if err != nil {
-			msg := "ERROR: cannot retrieve templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		b, err := json.Marshal(templates)
-		if err != nil {
-			msg := "ERROR: cannot marshal templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		w.Write(b)
-	} else if r.Method == "POST" {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			msg := "ERROR: cannot retrieve body;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		var template model.Template
-		err = json.Unmarshal(body, &template)
-		if err != nil {
-			msg := "ERROR: cannot unmarshal template;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		err = dbInsertTemplate(template)
-		if err != nil {
-			msg := "ERROR: cannot insert template;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		// new template
-		msg := "Saved template"
-		log.Println(msg)
-		w.Write([]byte(msg))
-	} else {
-		msg := "HTTP 405"
-		log.Println(msg)
-		w.Write([]byte(msg))
-		return
-	}
-}
-
-func template(w http.ResponseWriter, r *http.Request) {
-	// parse out int64 id
-	// remove /templates/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
-	if err != nil {
-		msg := "ERROR: cannot parse template id;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-
-	template, err := dbSelectTemplate(id)
-	if err != nil {
-		msg := "ERROR: cannot retrieve template;"
-		log.Println(msg)
-		w.Write([]byte(msg))
-		return
-	}
-	out, err := json.Marshal(template)
-	if err != nil {
-		msg := "ERROR: cannot marshal template;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	w.Write(out)
-}
-
 func hosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		// get all hosts
 		hosts, err := dbSelectHosts()
 		if err != nil {
 			msg := "ERROR: cannot retrieve hosts;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
 		b, err := json.Marshal(hosts)
 		if err != nil {
 			msg := "ERROR: cannot marshal hosts;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
@@ -191,11 +107,11 @@ func hosts(w http.ResponseWriter, r *http.Request) {
 
 		// new host
 		msg := "Saved host"
-		log.Println(msg)
+		log.Println(msg, err)
 		w.Write([]byte(msg))
 	} else {
 		msg := "HTTP 405"
-		log.Println(msg)
+		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
@@ -239,14 +155,14 @@ func hostsTemplates(w http.ResponseWriter, r *http.Request) {
 		hts, err := dbSelectHostsTemplates()
 		if err != nil {
 			msg := "ERROR: cannot retrieve hosts templates;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
 		b, err := json.Marshal(hts)
 		if err != nil {
 			msg := "ERROR: cannot marshal hosts templates;"
-			log.Println(msg)
+			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
@@ -279,11 +195,118 @@ func hostsTemplates(w http.ResponseWriter, r *http.Request) {
 
 		// new host
 		msg := "Saved hosts templates"
-		log.Println(msg)
+		log.Println(msg, err)
 		w.Write([]byte(msg))
 	} else {
 		msg := "HTTP 405"
-		log.Println(msg)
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+}
+
+func getTemplates(w http.ResponseWriter, r *http.Request) {
+	log.Println("get all templates")
+
+	// get all templates
+	templates, err := dbSelectTemplates()
+	if err != nil {
+		msg := "ERROR: cannot retrieve templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(templates)
+	if err != nil {
+		msg := "ERROR: cannot marshal templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
+}
+
+func getTemplate(w http.ResponseWriter, r *http.Request) {
+	log.Println("get a template")
+
+	// parse out int64 id
+	// remove /templates/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse template id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	template, err := dbSelectTemplate(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(template)
+	if err != nil {
+		msg := "ERROR: cannot marshal template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
+func newTemplate(w http.ResponseWriter, r *http.Request) {
+	log.Println("new template")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var template model.Template
+	err = json.Unmarshal(body, &template)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbInsertTemplate(template)
+	if err != nil {
+		msg := "ERROR: cannot insert template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	// new template
+	msg := "Saved template"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func deleteTemplate(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete template")
+
+	// parse out int64 id
+	// remove /templates/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse template id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	err = dbDeleteTemplate(id)
+	if err != nil {
+		msg := "ERROR: cannot delete template;"
+		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
@@ -296,8 +319,13 @@ func main() {
 	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("./ui/"))))
 
 	r.HandleFunc("/audit", audit)
-	r.HandleFunc("/templates", templates)
-	r.HandleFunc("/templates/", template)
+	templatesRouter := r.PathPrefix("/templates").Subrouter()
+	templatesRouter.HandleFunc("", getTemplates).Methods("GET")
+	templatesRouter.HandleFunc("/", getTemplates).Methods("GET")
+	templatesRouter.HandleFunc("", newTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/", newTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", getTemplate).Methods("GET")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", deleteTemplate).Methods("DELETE")
 	r.HandleFunc("/hosts", hosts)
 	r.HandleFunc("/hosts/", host)
 	r.HandleFunc("/hosts_templates", hostsTemplates)

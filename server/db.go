@@ -75,7 +75,7 @@ func dbInsertState(state string) error {
 	return nil
 }
 
-func dbSelectTemplates() ([]model.Template, error) {
+func dbSelectTemplates() ([]map[int64]model.Template, error) {
 	rows, err := db.Query("SELECT id, template FROM templates")
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func dbSelectTemplates() ([]model.Template, error) {
 
 	var id int64
 	var templateBytes []byte
-	templates := make([]model.Template, 0)
+	templates := make([]map[int64]model.Template, 0)
 
 	for rows.Next() {
 		err = rows.Scan(&id, &templateBytes)
@@ -96,7 +96,9 @@ func dbSelectTemplates() ([]model.Template, error) {
 		if err != nil {
 			continue
 		}
-		templates = append(templates, template)
+		entry := make(map[int64]model.Template)
+		entry[id] = template
+		templates = append(templates, entry)
 	}
 
 	return templates, nil
@@ -124,6 +126,19 @@ func dbSelectTemplate(id int64) (model.Template, error) {
 	}
 
 	return template, nil
+}
+
+func dbDeleteTemplate(id int64) error {
+	stmt, err := db.Prepare("DELETE FROM templates where id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
