@@ -7,8 +7,6 @@ class App extends React.Component {
         <Hosts />
 
         <Templates />
-
-        <CreateTemplate />
       </div>
     );
   }
@@ -22,7 +20,6 @@ class Hosts extends React.Component {
 
   componentDidMount() {    
     var url = '/hosts';
-    var t = this;
   
     fetch(url)
     .then(function(response) {
@@ -32,8 +29,8 @@ class Hosts extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      t.setState({hosts: data})
-    });
+      this.setState({hosts: data})
+    }.bind(this));
   }
 
   render() {
@@ -53,12 +50,22 @@ class Hosts extends React.Component {
 class Templates extends React.Component {
   constructor() {
     super();
-    this.state = {templates: []};
+    this.state = {
+      templates: [],
+      showModal: false,
+      selectedTemplate: {}
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   componentDidMount() {
+    this.populateTemplates();
+  }
+
+  populateTemplates() {
     var url = "/templates";
-    var t = this;
   
     fetch(url)
     .then(function(response) {
@@ -68,8 +75,8 @@ class Templates extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      t.setState({templates: data})
-    });
+      this.setState({templates: data})
+    }.bind(this));
   }
 
   deleteTemplate(id) {
@@ -82,47 +89,23 @@ class Templates extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      window.location.reload();
-    });
-  }
-
-  render() {
-    let rows = [];
-    for (let i = 0; i < this.state.templates.length; i++) {
-      let entry = this.state.templates[i];
-      Object.keys(entry).map(id => {
-        rows.push(<li key={id}>{id} - {entry[id].Name}<button onClick={this.deleteTemplate.bind(this, id)}>-</button></li>);
-      });
-    }
-    return (
-      <div className="Templates">
-        <strong>Templates</strong>
-        <ul>{rows}</ul>
-      </div>
-    );
-  }
-}
-
-class CreateTemplate extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      showModal: false,
-      templates: {}
-    };
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+      this.populateTemplates();
+    }.bind(this));
   }
 
   handleChange(event) {
-    this.state.templates[event.target.name] = event.target.value;
+    this.setState({
+      selectedTemplate: {
+        ...this.state.template,
+        [event.target.name]: event.target.value
+      }
+    })
   }
 
   handleSubmit(event) {
     event.preventDefault();
 
-    if (Object.keys(this.state.templates) == 0) {
+    if (Object.keys(this.state.selectedTemplate) == 0) {
       return;
     }
 
@@ -133,14 +116,15 @@ class CreateTemplate extends React.Component {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(this.state.templates)
+      body: JSON.stringify(this.state.selectedTemplate)
     })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      window.location.reload();
-    });
+      this.populateTemplates();
+      this.toggleModal();
+    }.bind(this));
   }
 
   toggleModal = () => {
@@ -150,10 +134,19 @@ class CreateTemplate extends React.Component {
   }
 
   render() {
+    let rows = [];
+    for (let i = 0; i < this.state.templates.length; i++) {
+      let entry = this.state.templates[i];
+      Object.keys(entry).map(id => {
+        rows.push(<li key={id}>{id} - {entry[id].Name}<button type="button" onClick={this.deleteTemplate.bind(this, id)}>-</button></li>);
+      });
+    }
     return (
-      <div className="CreateTemplate">
+      <div className="Templates">
+        <strong>Templates</strong>
+        <ul>{rows}</ul>
+        <p />
         <button onClick={this.toggleModal}>Create Template</button>
-        
         <TemplateModal show={this.state.showModal} onClose={this.toggleModal} change={this.handleChange} submit={this.handleSubmit}/>
       </div>
     );
@@ -189,7 +182,7 @@ class TemplateModal extends React.Component {
             <input name="Name" />
             <br />
             <button type="submit">Submit</button>
-            <button onClick={this.props.onClose}>Cancel</button>
+            <button type="button" onClick={this.props.onClose}>Cancel</button>
           </form>
         </div>
       </div>
