@@ -106,18 +106,19 @@ func dbSelectTemplates() ([]map[int64]model.Template, error) {
 
 func dbSelectTemplate(id int64) (model.Template, error) {
 	var template model.Template
+	var templateBytes []byte
 
-	stmt, err := db.Prepare("SELECT template FROM templates where id=(?)")
-	if err != nil {
-		return template, err
-	}
-	rows, err := stmt.Query(id)
+	rows, err := db.Query("SELECT template FROM templates where id=(?)", id)
 	if err != nil {
 		return template, err
 	}
 
 	for rows.Next() {
-		err := rows.Scan(&template)
+		err := rows.Scan(&templateBytes)
+		if err != nil {
+			return template, err
+		}
+		err = json.Unmarshal(templateBytes, &template)
 		if err != nil {
 			return template, err
 		}
@@ -172,6 +173,23 @@ func dbInsertTemplate(template model.Template) error {
 		return err
 	}
 	_, err = stmt.Exec(b)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbUpdateTemplate(id int64, template model.Template) error {
+	stmt, err := db.Prepare("UPDATE templates SET template=(?) WHERE id=(?)")
+	if err != nil {
+		return err
+	}
+	b, err := json.Marshal(template)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(b, id)
 	if err != nil {
 		return err
 	}

@@ -290,6 +290,50 @@ func newTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
+func editTemplate(w http.ResponseWriter, r *http.Request) {
+	log.Println("edit template")
+
+	// parse out int64 id
+	// remove /templates/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse template id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var template model.Template
+	err = json.Unmarshal(body, &template)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbUpdateTemplate(id, template)
+	if err != nil {
+		msg := "ERROR: cannot update template;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	msg := "Updated template"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
 func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete template")
 
@@ -325,6 +369,7 @@ func main() {
 	templatesRouter.HandleFunc("", newTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/", newTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", getTemplate).Methods("GET")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", editTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", deleteTemplate).Methods("DELETE")
 	r.HandleFunc("/hosts", hosts)
 	r.HandleFunc("/hosts/", host)
