@@ -245,6 +245,7 @@ func dbSelectHost(id int64) (model.Host, error) {
 			return host, err
 		}
 		// only get first result
+		host.ID = id
 		host.Hostname = hostname
 		host.OS = os
 		count++
@@ -254,12 +255,38 @@ func dbSelectHost(id int64) (model.Host, error) {
 	return host, nil
 }
 
+func dbDeleteHost(id int64) error {
+	stmt, err := db.Prepare("DELETE FROM hosts where id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func dbInsertHost(host model.Host) error {
 	stmt, err := db.Prepare("INSERT INTO hosts(hostname, os) VALUES(?, ?)")
 	if err != nil {
 		return err
 	}
 	_, err = stmt.Exec(host.Hostname, host.OS)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbUpdateHost(id int64, host model.Host) error {
+	stmt, err := db.Prepare("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(host.Hostname, host.OS, id)
 	if err != nil {
 		return err
 	}

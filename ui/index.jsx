@@ -15,10 +15,20 @@ class App extends React.Component {
 class Hosts extends React.Component {
   constructor() {
     super();
-    this.state = {hosts: []};
+    this.state = {
+      hosts: [],
+      showModal: false,
+      selectedHostID: null
+    };
+
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  componentDidMount() {    
+  componentDidMount() {
+    this.populateHosts();
+  }
+
+  populateHosts() {
     var url = '/hosts';
   
     fetch(url)
@@ -33,15 +43,161 @@ class Hosts extends React.Component {
     }.bind(this));
   }
 
+  createHost() {
+    this.setState({
+      selectedHostID: null,
+      selectedHost: null
+    });
+    this.toggleModal();
+  }
+
+  editHost(id, host) {
+    this.setState({
+      selectedHostID: id,
+      selectedHost: host
+    });
+    this.toggleModal();
+  }
+
+  deleteHost(id) {
+    var url = "/hosts/" + id;
+
+    fetch(url, {
+      method: 'DELETE'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.populateHosts();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateHosts();
+    this.toggleModal();
+  }
+
+  toggleModal = () => {
+    this.setState({
+      showModal: !this.state.showModal
+    })
+  }
+
   render() {
+    let rows = [];
+    for (let i = 0; i < this.state.hosts.length; i++) {
+      let host = this.state.hosts[i];
+      rows.push(
+        <li key={host.ID}>
+          {host.ID} - {host.Hostname} - {host.OS}
+          <button type="button" onClick={this.editHost.bind(this, host.ID, host)}>Edit</button>
+          <button type="button" onClick={this.deleteHost.bind(this, host.ID)}>-</button>
+        </li>
+      );
+    }
+  
     return (
       <div className="Hosts">
         <strong>Hosts</strong>
-        <ul>
-          {this.state.hosts.map(host => {
-            return <li>{host.ID} - {host.Hostname} - {host.OS}</li>
-          })}
-        </ul>
+        <ul>{rows}</ul>
+        <p />
+        <button onClick={this.createHost.bind(this)}>Add Host</button>
+        <HostModal hostID={this.state.selectedHostID} host={this.state.selectedHost} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+      </div>
+    );
+  }
+}
+
+class HostModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      host: {}
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({
+      host: {
+        ...this.state.host,
+        [event.target.name]: event.target.value
+      }
+    })
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.host) == 0) {
+      return;
+    }
+
+    var url = "/hosts";
+    if (this.props.hostID != null) {
+      url += "/" + this.props.hostID;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.host)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.submit();
+    }.bind(this));
+  }
+
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    var host = {};
+    if (this.props.hostID != null) {
+      host = this.props.host;
+    }
+
+    const backgroundStyle = {
+      position: 'fixed',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 50
+    }
+
+    const modalStyle = {
+      backgroundColor: 'white',
+      padding: 30
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+            <label htmlFor="ID">ID</label>
+            <input name="ID" defaultValue={host.ID} disabled="true"></input>
+            <br />
+            <label htmlFor="Hostname">Hostname</label>
+            <input name="Hostname" defaultValue={host.Hostname}></input>
+            <br />
+            <label htmlFor="OS">OS</label>
+            <input name="OS" defaultValue={host.OS}></input>
+            <br />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={this.props.onClose}>Cancel</button>
+          </form>
+        </div>
       </div>
     );
   }

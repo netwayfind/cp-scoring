@@ -61,63 +61,30 @@ func audit(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(response))
 }
 
-func hosts(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// get all hosts
-		hosts, err := dbSelectHosts()
-		if err != nil {
-			msg := "ERROR: cannot retrieve hosts;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		b, err := json.Marshal(hosts)
-		if err != nil {
-			msg := "ERROR: cannot marshal hosts;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		w.Write(b)
-	} else if r.Method == "POST" {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			msg := "ERROR: cannot retrieve body;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
+func getHosts(w http.ResponseWriter, r *http.Request) {
+	log.Println("get all hosts")
 
-		var host model.Host
-		err = json.Unmarshal(body, &host)
-		if err != nil {
-			msg := "ERROR: cannot unmarshal host;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		err = dbInsertHost(host)
-		if err != nil {
-			msg := "ERROR: cannot insert host;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		// new host
-		msg := "Saved host"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-	} else {
-		msg := "HTTP 405"
+	// get all hosts
+	hosts, err := dbSelectHosts()
+	if err != nil {
+		msg := "ERROR: cannot retrieve hosts;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
+	b, err := json.Marshal(hosts)
+	if err != nil {
+		msg := "ERROR: cannot marshal hosts;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
 }
 
-func host(w http.ResponseWriter, r *http.Request) {
+func getHost(w http.ResponseWriter, r *http.Request) {
+	log.Println("get a host")
+
 	// parse out int64 id
 	// remove /hosts/ from URL
 	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
@@ -127,7 +94,7 @@ func host(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-
+	log.Println(id)
 	host, err := dbSelectHost(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve host;"
@@ -135,17 +102,113 @@ func host(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-	if (model.Host{}) == host {
-		w.Write([]byte("Host not found"))
-	} else {
-		out, err := json.Marshal(host)
-		if err != nil {
-			msg := "ERROR: cannot marshal host;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		w.Write([]byte(out))
+	out, err := json.Marshal(host)
+	if err != nil {
+		msg := "ERROR: cannot marshal host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
+func newHost(w http.ResponseWriter, r *http.Request) {
+	log.Println("new host")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var host model.Host
+	err = json.Unmarshal(body, &host)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbInsertHost(host)
+	if err != nil {
+		msg := "ERROR: cannot insert host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	// new host
+	msg := "Saved host"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func editHost(w http.ResponseWriter, r *http.Request) {
+	log.Println("edit host")
+
+	// parse out int64 id
+	// remove /hosts/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var host model.Host
+	err = json.Unmarshal(body, &host)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbUpdateHost(id, host)
+	if err != nil {
+		msg := "ERROR: cannot update host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	msg := "Updated host"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func deleteHost(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete host")
+
+	// parse out int64 id
+	// remove /hosts/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	err = dbDeleteHost(id)
+	if err != nil {
+		msg := "ERROR: cannot delete host;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
 	}
 }
 
@@ -371,8 +434,14 @@ func main() {
 	templatesRouter.HandleFunc("/{id:[0-9]+}", getTemplate).Methods("GET")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", editTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", deleteTemplate).Methods("DELETE")
-	r.HandleFunc("/hosts", hosts)
-	r.HandleFunc("/hosts/", host)
+	hostsRouter := r.PathPrefix("/hosts").Subrouter()
+	hostsRouter.HandleFunc("", getHosts).Methods("GET")
+	hostsRouter.HandleFunc("/", getHosts).Methods("GET")
+	hostsRouter.HandleFunc("", newHost).Methods("POST")
+	hostsRouter.HandleFunc("/", newHost).Methods("POST")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", getHost).Methods("GET")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", editHost).Methods("POST")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", deleteHost).Methods("DELETE")
 	r.HandleFunc("/hosts_templates", hostsTemplates)
 
 	http.ListenAndServe(":8080", r)
