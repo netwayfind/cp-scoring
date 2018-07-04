@@ -101,10 +101,10 @@ class Hosts extends React.Component {
     return (
       <div className="Hosts">
         <strong>Hosts</strong>
-        <ul>{rows}</ul>
         <p />
         <button onClick={this.createHost.bind(this)}>Add Host</button>
         <HostModal hostID={this.state.selectedHostID} host={this.state.selectedHost} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <ul>{rows}</ul>
       </div>
     );
   }
@@ -306,10 +306,10 @@ class Templates extends React.Component {
     return (
       <div className="Templates">
         <strong>Templates</strong>
-        <ul>{rows}</ul>
         <p />
         <button onClick={this.createTemplate.bind(this)}>Create Template</button>
         <TemplateModal templateID={this.state.selectedTemplateID} template={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <ul>{rows}</ul>
       </div>
     );
   }
