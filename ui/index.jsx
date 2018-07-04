@@ -18,7 +18,8 @@ class Hosts extends React.Component {
     this.state = {
       hosts: [],
       showModal: false,
-      selectedHostID: null
+      selectedHostID: null,
+      selectedHost: null
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -112,17 +113,23 @@ class Hosts extends React.Component {
 class HostModal extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      host: {}
-    };
+    this.state = this.defaultState();
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+  }
+
+  defaultState() {
+    return {
+      host: {}
+    }
   }
 
   handleChange(event) {
     this.setState({
       host: {
+        ...this.props.host,
         ...this.state.host,
         [event.target.name]: event.target.value
       }
@@ -153,7 +160,13 @@ class HostModal extends React.Component {
         throw new Error("Bad response from server");
       }
       this.props.submit();
+      this.setState(this.defaultState());
     }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
   }
 
   render() {
@@ -195,7 +208,7 @@ class HostModal extends React.Component {
             <input name="OS" defaultValue={host.OS}></input>
             <br />
             <button type="submit">Submit</button>
-            <button type="button" onClick={this.props.onClose}>Cancel</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
           </form>
         </div>
       </div>
@@ -209,7 +222,8 @@ class Templates extends React.Component {
     this.state = {
       templates: [],
       showModal: false,
-      selectedTemplateID: null
+      selectedTemplateID: null,
+      selectedTemplate: null
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -304,17 +318,23 @@ class Templates extends React.Component {
 class TemplateModal extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      template: {}
-    };
+    this.state = this.defaultState();
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+  }
+
+  defaultState() {
+    return {
+      template: {}
+    }
   }
 
   handleChange(event) {
     this.setState({
       template: {
+        ...this.props.template,
         ...this.state.template,
         [event.target.name]: event.target.value
       }
@@ -345,7 +365,13 @@ class TemplateModal extends React.Component {
         throw new Error("Bad response from server");
       }
       this.props.submit();
+      this.setState(this.defaultState());
     }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
   }
 
   render() {
@@ -381,7 +407,7 @@ class TemplateModal extends React.Component {
             <input name="Name" defaultValue={template.Name}></input>
             <br />
             <button type="submit">Submit</button>
-            <button type="button" onClick={this.props.onClose}>Cancel</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
           </form>
         </div>
       </div>
