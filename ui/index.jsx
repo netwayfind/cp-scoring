@@ -323,6 +323,9 @@ class TemplateModal extends React.Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleClose = this.handleClose.bind(this);
+    this.callbackUsersAdd = this.callbackUsersAdd.bind(this);
+    this.callbackUsersKeep = this.callbackUsersKeep.bind(this);
+    this.callbackUsersRemove = this.callbackUsersRemove.bind(this);
   }
 
   defaultState() {
@@ -374,6 +377,36 @@ class TemplateModal extends React.Component {
     this.setState(this.defaultState());
   }
 
+  callbackUsersAdd(users) {
+    this.setState({
+      template: {
+        ...this.props.template,
+        ...this.state.template,
+        UsersAdd: users
+      }
+    });
+  }
+
+  callbackUsersKeep(users) {
+    this.setState({
+      template: {
+        ...this.props.template,
+        ...this.state.template,
+        UsersKeep: users
+      }
+    });
+  }
+
+  callbackUsersRemove(users) {
+    this.setState({
+      template: {
+        ...this.props.template,
+        ...this.state.template,
+        UsersRemove: users
+      }
+    });
+  }
+
   render() {
     if (!this.props.show) {
       return null;
@@ -383,6 +416,7 @@ class TemplateModal extends React.Component {
     if (this.props.templateID != null) {
       template = this.props.template;
     }
+    template = Object.assign({}, template, this.state.template);
 
     const backgroundStyle = {
       position: 'fixed',
@@ -406,10 +440,86 @@ class TemplateModal extends React.Component {
             <label htmlFor="Name">Name</label>
             <input name="Name" defaultValue={template.Name}></input>
             <br />
+            <ItemList label="Users to add" items={template.UsersAdd} callback={this.callbackUsersAdd}/>
+            <br />
+            <ItemList label="Users to keep" items={template.UsersKeep} callback={this.callbackUsersKeep}/>
+            <br />
+            <ItemList label="Users to remove" items={template.UsersRemove} callback={this.callbackUsersRemove}/>
+            <br />
             <button type="submit">Submit</button>
             <button type="button" onClick={this.handleClose}>Cancel</button>
           </form>
         </div>
+      </div>
+    );
+  }
+}
+
+class ItemList extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      item: ""
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({
+      item: event.target.value
+    });
+  }
+
+  add() {
+    if (!this.state.item) {
+      return;
+    }
+    if (this.props.items && this.props.items.includes(this.state.item)) {
+      return;
+    }
+
+    if (this.props.items == null) {
+      this.props.callback([this.state.item]);
+    }
+    else {
+      this.props.callback([...this.props.items, this.state.item]);
+    }
+  }
+
+  remove(id) {
+    if (this.props.items == null) {
+      return;
+    }
+
+    let newItems = this.props.items.filter(function(_, index) {
+      return index != id;
+    });
+    this.props.callback(newItems);
+  }
+
+  render() {
+    let rows = [];
+    if (this.props.items) {
+      for (let i = 0; i < this.props.items.length; i++) {
+        rows.push(
+          <li key={i}>
+            {this.props.items[i]}
+            <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          </li>
+        );
+      }
+    }
+
+    return (
+      <div>
+        <label>{this.props.label}</label>
+        <input onChange={this.handleChange}></input>
+        <button type="button" onClick={this.add}>+</button>
+        <br />
+        <ul>{rows}</ul>
       </div>
     );
   }
