@@ -7,6 +7,8 @@ class App extends React.Component {
         <Hosts />
 
         <Templates />
+
+        <HostTemplates />
       </div>
     );
   }
@@ -520,6 +522,188 @@ class ItemList extends React.Component {
         <button type="button" onClick={this.add}>+</button>
         <br />
         <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class HostTemplates extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      showModal: false,
+      hostsTemplates: []
+    };
+
+    this.create = this.create.bind(this);
+    this.delete = this.delete.bind(this);
+    this.submit = this.submit.bind(this);
+  }
+
+  populateHostsTemplates() {
+    var url = "/hosts_templates";
+  
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      this.setState({hostsTemplates: data})
+    }.bind(this));
+  }
+
+  componentDidMount() {
+    this.populateHostsTemplates();
+  }
+
+  create() {
+    this.toggleModal();
+  }
+
+  delete(hostID, templateID) {
+    var url = "/hosts_templates";
+
+    fetch(url, {
+      method: 'DELETE',
+      body: JSON.stringify({
+        HostID: hostID,
+        TemplateID: templateID
+      })
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.populateHostsTemplates();
+    }.bind(this));
+  }
+
+  submit() {
+    this.populateHostsTemplates();
+    this.toggleModal();
+  }
+
+  toggleModal = () => {
+    this.setState({
+      showModal: !this.state.showModal
+    })
+  }
+
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.hostsTemplates.length; i++) {
+      let entry = this.state.hostsTemplates[i];
+      rows.push(
+        <li key={i}>
+          {entry.HostID} - {entry.TemplateID}
+          <button type="button" onClick={this.delete.bind(this, entry.HostID, entry.TemplateID)}>-</button>
+        </li>
+      );
+    }
+
+    return (
+      <div className="HostTemplates">
+        <strong>Host Templates</strong>
+        <p />
+        <button onClick={this.create.bind(this)}>Add Host Template</button>
+        <HostTemplateModal show={this.state.showModal} onClose={this.toggleModal} submit={this.submit}/>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class HostTemplateModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = this.defaultState();
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+  }
+
+  defaultState() {
+    return {
+      hostTemplate: {}
+    }
+  }
+
+  handleChange(event) {
+    this.setState({
+      hostTemplate: {
+        ...this.state.hostTemplate,
+        [event.target.name]: parseInt(event.target.value, 10)
+      }
+    })
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.hostTemplate) == 0) {
+      return;
+    }
+
+    var url = "/hosts_templates";
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.hostTemplate)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.submit();
+      this.setState(this.defaultState());
+    }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+  }
+
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    const backgroundStyle = {
+      position: 'fixed',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 50
+    }
+
+    const modalStyle = {
+      backgroundColor: 'white',
+      padding: 30
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+            <label htmlFor="HostID">Name</label>
+            <input name="HostID" type="number"></input>
+            <p />
+            <label htmlFor="TemplateID">Template</label>
+            <input name="TemplateID" type="number"></input>
+            <p />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
+          </form>
+        </div>
       </div>
     );
   }

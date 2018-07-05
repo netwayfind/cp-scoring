@@ -331,3 +331,16 @@ func dbInsertHostsTemplates(hostID int64, templateID int64) error {
 
 	return nil
 }
+
+func dbDeleteHostsTemplates(hostID int64, templateID int64) error {
+	stmt, err := db.Prepare("DELETE FROM hosts_templates WHERE host_id=(?) AND template_id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(hostID, templateID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

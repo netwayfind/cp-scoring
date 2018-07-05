@@ -212,62 +212,6 @@ func deleteHost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func hostsTemplates(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// get all hosts templates
-		hts, err := dbSelectHostsTemplates()
-		if err != nil {
-			msg := "ERROR: cannot retrieve hosts templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		b, err := json.Marshal(hts)
-		if err != nil {
-			msg := "ERROR: cannot marshal hosts templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-		w.Write(b)
-	} else if r.Method == "POST" {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			msg := "ERROR: cannot retrieve body;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		var hostsTemplates model.HostsTemplates
-		err = json.Unmarshal(body, &hostsTemplates)
-		if err != nil {
-			msg := "ERROR: cannot unmarshal hosts templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		err = dbInsertHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
-		if err != nil {
-			msg := "ERROR: cannot insert hosts templates;"
-			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
-		}
-
-		// new host
-		msg := "Saved hosts templates"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-	} else {
-		msg := "HTTP 405"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-}
-
 func getTemplates(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all templates")
 
@@ -419,6 +363,98 @@ func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getHostsTemplates(w http.ResponseWriter, r *http.Request) {
+	log.Println("get hosts templates")
+
+	// get all hosts templates
+	hts, err := dbSelectHostsTemplates()
+	if err != nil {
+		msg := "ERROR: cannot retrieve hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(hts)
+	if err != nil {
+		msg := "ERROR: cannot marshal hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
+}
+
+func newHostsTemplates(w http.ResponseWriter, r *http.Request) {
+	log.Println("new hosts templates")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var hostsTemplates model.HostsTemplates
+	err = json.Unmarshal(body, &hostsTemplates)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbInsertHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
+	if err != nil {
+		msg := "ERROR: cannot insert hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(hostsTemplates.HostID)
+	log.Println(hostsTemplates.TemplateID)
+
+	msg := "Saved hosts templates"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func deleteHostTemplates(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete hosts templates")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var hostsTemplates model.HostsTemplates
+	err = json.Unmarshal(body, &hostsTemplates)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbDeleteHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
+	if err != nil {
+		msg := "ERROR: cannot delete hosts templates;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(hostsTemplates.HostID)
+	log.Println(hostsTemplates.TemplateID)
+
+	// new host
+	msg := "Deleted hosts templates"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
 func main() {
 	dbInit()
 
@@ -442,7 +478,13 @@ func main() {
 	hostsRouter.HandleFunc("/{id:[0-9]+}", getHost).Methods("GET")
 	hostsRouter.HandleFunc("/{id:[0-9]+}", editHost).Methods("POST")
 	hostsRouter.HandleFunc("/{id:[0-9]+}", deleteHost).Methods("DELETE")
-	r.HandleFunc("/hosts_templates", hostsTemplates)
+	hostsTemplatesRouter := r.PathPrefix("/hosts_templates").Subrouter()
+	hostsTemplatesRouter.HandleFunc("", getHostsTemplates).Methods("GET")
+	hostsTemplatesRouter.HandleFunc("/", getHostsTemplates).Methods("GET")
+	hostsTemplatesRouter.HandleFunc("", newHostsTemplates).Methods("POST")
+	hostsTemplatesRouter.HandleFunc("/", newHostsTemplates).Methods("POST")
+	hostsTemplatesRouter.HandleFunc("", deleteHostTemplates).Methods("DELETE")
+	hostsTemplatesRouter.HandleFunc("/", deleteHostTemplates).Methods("DELETE")
 
 	http.ListenAndServe(":8080", r)
 }
