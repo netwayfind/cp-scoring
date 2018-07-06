@@ -143,24 +143,26 @@ func dbDeleteTemplate(id int64) error {
 }
 
 func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
-	stmt, err := db.Prepare("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id")
-	if err != nil {
-		return nil, err
-	}
-	rows, err := stmt.Query(hostname)
+	rows, err := db.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname)
 	if err != nil {
 		return nil, err
 	}
 
-	var template model.Template
+	templates := make([]model.Template, 0)
+	var templateBytes []byte
 	for rows.Next() {
-		err := rows.Scan(&template)
+		err := rows.Scan(&templateBytes)
 		if err != nil {
 			return nil, err
 		}
-		log.Println(template)
+		var template model.Template
+		err = json.Unmarshal(templateBytes, &template)
+		if err != nil {
+			return nil, err
+		}
+		templates = append(templates, template)
 	}
-	return nil, nil
+	return templates, nil
 }
 
 func dbInsertTemplate(template model.Template) error {

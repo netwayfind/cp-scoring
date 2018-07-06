@@ -54,7 +54,8 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-	auditor.Audit(state, templates)
+	report := auditor.Audit(state, templates)
+	log.Println(report)
 
 	response := "Received and saved"
 	log.Println(response)

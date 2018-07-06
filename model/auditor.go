@@ -15,5 +15,12 @@ type HostsTemplates struct {
 	TemplateID int64
 }
 
+type Finding struct {
+	Value   int
+	Hidden  bool
+	Message string
+}
+
 type Report struct {
+	Findings []Finding
 }
