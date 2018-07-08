@@ -19,59 +19,12 @@ func dbInit() {
 	}
 	log.Println("Connected to database")
 
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table states;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table states;", err)
-	}
-
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL)")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table teams;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table teams;", err)
-	}
-
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS teams_tokens(team_id INTEGER NOT NULL, token VARCHAR NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id))")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table teams_tokens;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table teams_tokens;", err)
-	}
-
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table templates;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table templates;", err)
-	}
-
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table hosts;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table hosts;", err)
-	}
-
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS hosts_templates(host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
-	if err != nil {
-		log.Fatal("ERROR: cannot create table hosts_templates;", err)
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		log.Fatal("ERROR: cannot create table hosts_templates;", err)
-	}
+	createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
+	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL)")
+	createTable("teams_tokens", "CREATE TABLE IF NOT EXISTS teams_tokens(team_id INTEGER NOT NULL, token VARCHAR NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id))")
+	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
+	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
+	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 
 	log.Println("Finished setting up database")
 }
@@ -80,17 +33,58 @@ func dbClose() {
 	db.Close()
 }
 
-func dbInsertState(state string) error {
-	stmt, err := db.Prepare("INSERT INTO states(state) VALUES(?)")
+func createTable(name string, stmtStr string) {
+	stmt, err := db.Prepare(stmtStr)
+	if err != nil {
+		log.Fatal("ERROR: cannot create table "+name+";", err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Fatal("ERROR: cannot create table "+name+";", err)
+	}
+}
+
+func dbInsert(stmtStr string, args ...interface{}) error {
+	stmt, err := db.Prepare(stmtStr)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(state)
+	_, err = stmt.Exec(args...)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func dbDelete(stmtStr string, args ...interface{}) error {
+	stmt, err := db.Prepare(stmtStr)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbUpdate(stmtStr string, args ...interface{}) error {
+	stmt, err := db.Prepare(stmtStr)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbInsertState(state string) error {
+	return dbInsert("INSERT INTO states(state) VALUES(?)", state)
 }
 
 func dbSelectTeams() ([]model.TeamSummary, error) {
@@ -149,42 +143,15 @@ func dbSelectTeam(id int64) (model.Team, error) {
 }
 
 func dbDeleteTeam(id int64) error {
-	stmt, err := db.Prepare("DELETE FROM teams where id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbDelete("DELETE FROM teams where id=(?)", id)
 }
 
 func dbInsertTeam(team model.Team) error {
-	stmt, err := db.Prepare("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(team.Name, team.POC, team.Email, team.Enabled)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbInsert("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled)
 }
 
 func dbUpdateTeam(id int64, team model.Team) error {
-	stmt, err := db.Prepare("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?) WHERE id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(team.Name, team.POC, team.Email, team.Enabled, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, id)
 }
 
 func dbSelectTemplates() ([]map[int64]model.Template, error) {
@@ -243,16 +210,7 @@ func dbSelectTemplate(id int64) (model.Template, error) {
 }
 
 func dbDeleteTemplate(id int64) error {
-	stmt, err := db.Prepare("DELETE FROM templates where id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbDelete("DELETE FROM templates where id=(?)", id)
 }
 
 func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
@@ -280,37 +238,19 @@ func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
 }
 
 func dbInsertTemplate(template model.Template) error {
-	stmt, err := db.Prepare("INSERT INTO templates(template) VALUES(?)")
-	if err != nil {
-		return err
-	}
 	b, err := json.Marshal(template)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(b)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbInsert("INSERT INTO templates(template) VALUES(?)", b)
 }
 
 func dbUpdateTemplate(id int64, template model.Template) error {
-	stmt, err := db.Prepare("UPDATE templates SET template=(?) WHERE id=(?)")
-	if err != nil {
-		return err
-	}
 	b, err := json.Marshal(template)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(b, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbUpdate("UPDATE templates SET template=(?) WHERE id=(?)", b, id)
 }
 
 func dbSelectHosts() ([]model.Host, error) {
@@ -373,42 +313,15 @@ func dbSelectHost(id int64) (model.Host, error) {
 }
 
 func dbDeleteHost(id int64) error {
-	stmt, err := db.Prepare("DELETE FROM hosts where id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbDelete("DELETE FROM hosts where id=(?)", id)
 }
 
 func dbInsertHost(host model.Host) error {
-	stmt, err := db.Prepare("INSERT INTO hosts(hostname, os) VALUES(?, ?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(host.Hostname, host.OS)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
 }
 
 func dbUpdateHost(id int64, host model.Host) error {
-	stmt, err := db.Prepare("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(host.Hostname, host.OS, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbUpdate("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)", host.Hostname, host.OS, id)
 }
 
 func dbSelectHostsTemplates() ([]model.HostsTemplates, error) {
@@ -437,27 +350,9 @@ func dbSelectHostsTemplates() ([]model.HostsTemplates, error) {
 }
 
 func dbInsertHostsTemplates(hostID int64, templateID int64) error {
-	stmt, err := db.Prepare("INSERT INTO hosts_templates(host_id, template_id) VALUES(?, ?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(hostID, templateID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbInsert("INSERT INTO hosts_templates(host_id, template_id) VALUES(?, ?)", hostID, templateID)
 }
 
 func dbDeleteHostsTemplates(hostID int64, templateID int64) error {
-	stmt, err := db.Prepare("DELETE FROM hosts_templates WHERE host_id=(?) AND template_id=(?)")
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(hostID, templateID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dbDelete("DELETE FROM hosts_templates WHERE host_id=(?) AND template_id=(?)", hostID, templateID)
 }
