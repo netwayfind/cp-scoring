@@ -28,6 +28,24 @@ func dbInit() {
 		log.Fatal("ERROR: cannot create table states;", err)
 	}
 
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL)")
+	if err != nil {
+		log.Fatal("ERROR: cannot create table teams;", err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Fatal("ERROR: cannot create table teams;", err)
+	}
+
+	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS teams_tokens(team_id INTEGER NOT NULL, token VARCHAR NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id))")
+	if err != nil {
+		log.Fatal("ERROR: cannot create table teams_tokens;", err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Fatal("ERROR: cannot create table teams_tokens;", err)
+	}
+
 	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
 	if err != nil {
 		log.Fatal("ERROR: cannot create table templates;", err)
@@ -68,6 +86,100 @@ func dbInsertState(state string) error {
 		return err
 	}
 	_, err = stmt.Exec(state)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbSelectTeams() ([]model.TeamSummary, error) {
+	rows, err := db.Query("SELECT id, name FROM teams")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var id int64
+	var name string
+	teams := make([]model.TeamSummary, 0)
+
+	for rows.Next() {
+		err = rows.Scan(&id, &name)
+		if err != nil {
+			return nil, err
+		}
+		var entry model.TeamSummary
+		entry.ID = id
+		entry.Name = name
+		teams = append(teams, entry)
+	}
+
+	return teams, nil
+}
+
+func dbSelectTeam(id int64) (model.Team, error) {
+	var team model.Team
+
+	rows, err := db.Query("SELECT name, poc, email, enabled FROM teams where id=(?)", id)
+	if err != nil {
+		return team, err
+	}
+	defer rows.Close()
+
+	var name string
+	var poc string
+	var email string
+	var enabled bool
+	for rows.Next() {
+		err := rows.Scan(&name, &poc, &email, &enabled)
+		if err != nil {
+			return team, err
+		}
+		team.ID = id
+		team.Name = name
+		team.POC = poc
+		team.Email = email
+		team.Enabled = enabled
+		// only get first result
+		break
+	}
+
+	return team, nil
+}
+
+func dbDeleteTeam(id int64) error {
+	stmt, err := db.Prepare("DELETE FROM teams where id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbInsertTeam(team model.Team) error {
+	stmt, err := db.Prepare("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(team.Name, team.POC, team.Email, team.Enabled)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbUpdateTeam(id int64, team model.Team) error {
+	stmt, err := db.Prepare("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?) WHERE id=(?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(team.Name, team.POC, team.Email, team.Enabled, id)
 	if err != nil {
 		return err
 	}

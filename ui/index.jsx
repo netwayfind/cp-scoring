@@ -4,11 +4,237 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
+        <Teams />
+
         <Hosts />
 
         <Templates />
 
         <HostTemplates />
+      </div>
+    );
+  }
+}
+
+class Teams extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      teams: [],
+      showModal: false,
+      selectedTeamID: null
+    }
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  componentDidMount() {
+    this.populateTeams();
+  }
+
+  populateTeams() {
+    var url = '/teams';
+  
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      this.setState({teams: data})
+    }.bind(this));
+  }
+
+  createTeam() {
+    this.setState({
+      selectedTeamID: null,
+      selectedTeam: {Enabled: true}
+    });
+    this.toggleModal();
+  }
+
+  editTeam(id) {
+    let url = "/teams/" + id;
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    })
+    .then(function(data) {
+      this.setState({
+        selectedTeamID: id,
+        selectedTeam: data
+      });
+      this.toggleModal();
+    }.bind(this));
+  }
+
+  deleteTeam(id) {
+    var url = "/teams/" + id;
+
+    fetch(url, {
+      method: 'DELETE'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.populateTeams();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateTeams();
+    this.toggleModal();
+  }
+
+  toggleModal = () => {
+    this.setState({
+      showModal: !this.state.showModal
+    })
+  }
+
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.teams.length; i++) {
+      let team = this.state.teams[i];
+      rows.push(
+        <li key={team.ID}>
+          {team.ID} - {team.Name}
+          <button type="button" onClick={this.editTeam.bind(this, team.ID)}>Edit</button>
+          <button type="button" onClick={this.deleteTeam.bind(this, team.ID)}>-</button>
+        </li>
+      );
+    }
+
+    return (
+      <div className="Teams">
+        <strong>Teams</strong>
+        <p />
+        <button onClick={this.createTeam.bind(this)}>Add Team</button>
+        <TeamModal teamID={this.state.selectedTeamID} team={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class TeamModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = this.defaultState();
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+  }
+
+  defaultState() {
+    return {
+      team: {}
+    }
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      team: {
+        ...this.props.team,
+        ...this.state.team,
+        [event.target.name]: value
+      }
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.team) == 0) {
+      return;
+    }
+
+    var url = "/teams";
+    if (this.props.teamID != null) {
+      url += "/" + this.props.teamID;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.team)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.submit();
+      this.setState(this.defaultState());
+    }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
+  }
+  
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    let team = {}
+    if (this.props.team != null) {
+      team = this.props.team;
+    }
+
+    const backgroundStyle = {
+      position: 'fixed',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      padding: 50
+    }
+
+    const modalStyle = {
+      backgroundColor: 'white',
+      padding: 30
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+            <label htmlFor="ID">ID</label>
+            <input name="ID" defaultValue={team.ID} disabled="true"></input>
+            <br />
+            <label htmlFor="Name">Name</label>
+            <input name="Name" defaultValue={team.Name}></input>
+            <br />
+            <label htmlFor="POC">Point of contact</label>
+            <input name="POC" defaultValue={team.POC}></input>
+            <br />
+            <label htmlFor="Email">Email address</label>
+            <input name="Email" type="email" defaultValue={team.Email}></input>
+            <br />
+            <label htmlFor="Enabled">Enabled</label>
+            <input name="Enabled" type="checkbox" defaultChecked={!!team.Enabled}></input>
+            <br />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
+          </form>
+        </div>
       </div>
     );
   }

@@ -213,6 +213,157 @@ func deleteHost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getTeams(w http.ResponseWriter, r *http.Request) {
+	log.Println("get all teams")
+
+	// get all teams
+	teams, err := dbSelectTeams()
+	if err != nil {
+		msg := "ERROR: cannot retrieve teams;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(teams)
+	if err != nil {
+		msg := "ERROR: cannot marshal teams;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
+}
+
+func getTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("get a team")
+
+	// parse out int64 id
+	// remove /teams/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	team, err := dbSelectTeam(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(team)
+	if err != nil {
+		msg := "ERROR: cannot marshal team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
+func newTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("new team")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var team model.Team
+	err = json.Unmarshal(body, &team)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbInsertTeam(team)
+	if err != nil {
+		msg := "ERROR: cannot insert team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	// new team
+	msg := "Saved team"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func editTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("edit team")
+
+	// parse out int64 id
+	// remove /teams/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var team model.Team
+	err = json.Unmarshal(body, &team)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbUpdateTeam(id, team)
+	if err != nil {
+		msg := "ERROR: cannot update team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	msg := "Updated team"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func deleteTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete team")
+
+	// parse out int64 id
+	// remove /teams/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	err = dbDeleteTeam(id)
+	if err != nil {
+		msg := "ERROR: cannot delete team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+}
+
 func getTemplates(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all templates")
 
@@ -486,6 +637,14 @@ func main() {
 	hostsTemplatesRouter.HandleFunc("/", newHostsTemplates).Methods("POST")
 	hostsTemplatesRouter.HandleFunc("", deleteHostTemplates).Methods("DELETE")
 	hostsTemplatesRouter.HandleFunc("/", deleteHostTemplates).Methods("DELETE")
+	teamsRouter := r.PathPrefix("/teams").Subrouter()
+	teamsRouter.HandleFunc("", getTeams).Methods("GET")
+	teamsRouter.HandleFunc("/", getTeams).Methods("GET")
+	teamsRouter.HandleFunc("", newTeam).Methods("POST")
+	teamsRouter.HandleFunc("/", newTeam).Methods("POST")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", getTeam).Methods("GET")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", editTeam).Methods("POST")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", deleteTeam).Methods("DELETE")
 
 	http.ListenAndServe(":8080", r)
 }
