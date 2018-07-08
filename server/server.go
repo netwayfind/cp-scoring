@@ -515,6 +515,157 @@ func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getScenarios(w http.ResponseWriter, r *http.Request) {
+	log.Println("get all scenarios")
+
+	// get all scenarios
+	scenarios, err := dbSelectScenarios()
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenarios;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(scenarios)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenarios;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
+}
+
+func getScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("get a scenario")
+
+	// parse out int64 id
+	// remove /scenarios/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	scenario, err := dbSelectScenario(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(scenario)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
+func newScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("new scenario")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var scenario model.Scenario
+	err = json.Unmarshal(body, &scenario)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbInsertScenario(scenario)
+	if err != nil {
+		msg := "ERROR: cannot insert scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	// new scenario
+	msg := "Saved scenario"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func editScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("edit scenario")
+
+	// parse out int64 id
+	// remove /scenarios/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var scenario model.Scenario
+	err = json.Unmarshal(body, &scenario)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbUpdateScenario(id, scenario)
+	if err != nil {
+		msg := "ERROR: cannot update scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	msg := "Updated scenario"
+	log.Println(msg)
+	w.Write([]byte(msg))
+}
+
+func deleteScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete scenario")
+
+	// parse out int64 id
+	// remove /scenarios/ from URL
+	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	err = dbDeleteScenario(id)
+	if err != nil {
+		msg := "ERROR: cannot delete scenario;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+}
+
 func getHostsTemplates(w http.ResponseWriter, r *http.Request) {
 	log.Println("get hosts templates")
 
@@ -630,6 +781,14 @@ func main() {
 	hostsRouter.HandleFunc("/{id:[0-9]+}", getHost).Methods("GET")
 	hostsRouter.HandleFunc("/{id:[0-9]+}", editHost).Methods("POST")
 	hostsRouter.HandleFunc("/{id:[0-9]+}", deleteHost).Methods("DELETE")
+	scenariosRouter := r.PathPrefix("/scenarios").Subrouter()
+	scenariosRouter.HandleFunc("", getScenarios).Methods("GET")
+	scenariosRouter.HandleFunc("/", getScenarios).Methods("GET")
+	scenariosRouter.HandleFunc("", newScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/", newScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", getScenario).Methods("GET")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
 	hostsTemplatesRouter := r.PathPrefix("/hosts_templates").Subrouter()
 	hostsTemplatesRouter.HandleFunc("", getHostsTemplates).Methods("GET")
 	hostsTemplatesRouter.HandleFunc("/", getHostsTemplates).Methods("GET")

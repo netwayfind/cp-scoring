@@ -25,6 +25,7 @@ func dbInit() {
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
 
 	log.Println("Finished setting up database")
 }
@@ -355,4 +356,77 @@ func dbInsertHostsTemplates(hostID int64, templateID int64) error {
 
 func dbDeleteHostsTemplates(hostID int64, templateID int64) error {
 	return dbDelete("DELETE FROM hosts_templates WHERE host_id=(?) AND template_id=(?)", hostID, templateID)
+}
+
+func dbSelectScenarios() ([]model.Scenario, error) {
+	rows, err := db.Query("SELECT id, name, description, enabled FROM scenarios")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var id int64
+	var name string
+	var description string
+	var enabled bool
+	scenarios := make([]model.Scenario, 0)
+
+	for rows.Next() {
+		err = rows.Scan(&id, &name, &description, &enabled)
+		if err != nil {
+			return nil, err
+		}
+		var scenario model.Scenario
+		scenario.ID = id
+		scenario.Name = name
+		scenario.Description = description
+		scenario.Enabled = enabled
+		scenarios = append(scenarios, scenario)
+	}
+
+	return scenarios, nil
+}
+
+func dbSelectScenario(id int64) (model.Scenario, error) {
+	var scenario model.Scenario
+
+	stmt, err := db.Prepare("SELECT name, description, enabled FROM scenarios where id=(?)")
+	if err != nil {
+		return scenario, err
+	}
+	rows, err := stmt.Query(id)
+	if err != nil {
+		return scenario, err
+	}
+	defer rows.Close()
+
+	var name string
+	var description string
+	var enabled bool
+	for rows.Next() {
+		err := rows.Scan(&name, &description, &enabled)
+		if err != nil {
+			return scenario, err
+		}
+		// only get first result
+		scenario.ID = id
+		scenario.Name = name
+		scenario.Description = description
+		scenario.Enabled = enabled
+		break
+	}
+
+	return scenario, nil
+}
+
+func dbDeleteScenario(id int64) error {
+	return dbDelete("DELETE FROM scenarios where id=(?)", id)
+}
+
+func dbInsertScenario(scenario model.Scenario) error {
+	return dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
+}
+
+func dbUpdateScenario(id int64, scenario model.Scenario) error {
+	return dbUpdate("UPDATE scenarios SET name=(?), description=(?), enabled=(?) WHERE id=(?)", scenario.Name, scenario.Description, scenario.Enabled, id)
 }

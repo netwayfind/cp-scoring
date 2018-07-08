@@ -37,3 +37,10 @@ type Team struct {
 	Email   string
 	Enabled bool
 }
+
+type Scenario struct {
+	ID          int64
+	Name        string
+	Description string
+	Enabled     bool
+}

@@ -10,6 +10,8 @@ class App extends React.Component {
 
         <Templates />
 
+        <Scenarios />
+
         <HostTemplates />
       </div>
     );
@@ -229,6 +231,211 @@ class TeamModal extends React.Component {
             <br />
             <label htmlFor="Enabled">Enabled</label>
             <input name="Enabled" type="checkbox" defaultChecked={!!team.Enabled}></input>
+            <br />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+}
+
+class Scenarios extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      scenarios: [],
+      showModal: false
+    }
+
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  componentDidMount() {
+    this.populateScenarios();
+  }
+
+  populateScenarios() {
+    var url = '/scenarios';
+  
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      this.setState({scenarios: data})
+    }.bind(this));
+  }
+
+  createScenario() {
+    this.setState({
+      selectedScenarioID: null,
+      selectedScenario: {Enabled: true}
+    });
+    this.toggleModal();
+  }
+
+  editScenario(id) {
+    let url = "/scenarios/" + id;
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    })
+    .then(function(data) {
+      this.setState({
+        selectedScenarioID: id,
+        selectedScenario: data
+      });
+      this.toggleModal();
+    }.bind(this));
+  }
+
+  deleteScenario(id) {
+    var url = "/scenarios/" + id;
+
+    fetch(url, {
+      method: 'DELETE'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.populateScenarios();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateScenarios();
+    this.toggleModal();
+  }
+
+  toggleModal = () => {
+    this.setState({
+      showModal: !this.state.showModal
+    })
+  }
+
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.scenarios.length; i++) {
+      let scenario = this.state.scenarios[i];
+      rows.push(
+        <li key={scenario.ID}>
+          {scenario.ID} - {scenario.Name}
+          <button type="button" onClick={this.editScenario.bind(this, scenario.ID)}>Edit</button>
+          <button type="button" onClick={this.deleteScenario.bind(this, scenario.ID)}>-</button>
+        </li>
+      );
+    }
+
+    return (
+      <div className="Scenarios">
+        <strong>Scenarios</strong>
+        <p />
+        <button onClick={this.createScenario.bind(this)}>Add Scenario</button>
+        <ScenarioModal scenarioID={this.state.selectedScenarioID} scenario={this.state.selectedScenario} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class ScenarioModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = this.defaultState();
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+  }
+
+  defaultState() {
+    return {
+      scenario: {}
+    }
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      scenario: {
+        ...this.props.scenario,
+        ...this.state.scenario,
+        [event.target.name]: value
+      }
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.scenario) == 0) {
+      return;
+    }
+
+    var url = "/scenarios";
+    if (this.props.scenarioID != null) {
+      url += "/" + this.props.scenarioID;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.scenario)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.submit();
+      this.setState(this.defaultState());
+    }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
+  }
+  
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    let scenario = {}
+    if (this.props.scenario != null) {
+      scenario = this.props.scenario;
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <label htmlFor="ID">ID</label>
+          <input name="ID" defaultValue={this.props.scenarioID} disabled></input>
+          <br />
+          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+            <label htmlFor="Name">Name</label>
+            <input name="Name" defaultValue={scenario.Name}></input>
+            <br />
+            <label htmlFor="Description">Description</label>
+            <input name="Description" defaultValue={scenario.Description}></input>
+            <br />
+            <label htmlFor="Enabled">Enabled</label>
+            <input name="Enabled" type="checkbox" defaultChecked={!!scenario.Enabled}></input>
             <br />
             <button type="submit">Submit</button>
             <button type="button" onClick={this.handleClose}>Cancel</button>
