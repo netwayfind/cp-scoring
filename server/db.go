@@ -19,7 +19,7 @@ func dbInit() {
 	}
 	log.Println("Connected to database")
 
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS states(state varchar)")
+	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
 	if err != nil {
 		log.Fatal("ERROR: cannot create table states;", err)
 	}
@@ -224,6 +224,7 @@ func dbSelectTemplate(id int64) (model.Template, error) {
 	if err != nil {
 		return template, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&templateBytes)
@@ -259,6 +260,7 @@ func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	templates := make([]model.Template, 0)
 	var templateBytes []byte
@@ -349,6 +351,7 @@ func dbSelectHost(id int64) (model.Host, error) {
 	if err != nil {
 		return host, err
 	}
+	defer rows.Close()
 
 	var hostname string
 	var os string

@@ -16,13 +16,27 @@ class App extends React.Component {
   }
 }
 
+const backgroundStyle = {
+  position: 'fixed',
+  top: 0,
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: 'rgba(0,0,0,0.5)',
+  padding: 50
+}
+
+const modalStyle = {
+  backgroundColor: 'white',
+  padding: 30
+}
+
 class Teams extends React.Component {
   constructor() {
     super();
     this.state = {
       teams: [],
-      showModal: false,
-      selectedTeamID: null
+      showModal: false
     }
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -197,28 +211,13 @@ class TeamModal extends React.Component {
       team = this.props.team;
     }
 
-    const backgroundStyle = {
-      position: 'fixed',
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: 50
-    }
-
-    const modalStyle = {
-      backgroundColor: 'white',
-      padding: 30
-    }
-
     return (
       <div className="background" style={backgroundStyle}>
         <div className="modal" style={modalStyle}>
+          <label htmlFor="ID">ID</label>
+          <input name="ID" defaultValue={this.props.teamID} disabled></input>
+          <br />
           <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="ID">ID</label>
-            <input name="ID" defaultValue={team.ID} disabled="true"></input>
-            <br />
             <label htmlFor="Name">Name</label>
             <input name="Name" defaultValue={team.Name}></input>
             <br />
@@ -245,9 +244,7 @@ class Hosts extends React.Component {
     super();
     this.state = {
       hosts: [],
-      showModal: false,
-      selectedHostID: null,
-      selectedHost: null
+      showModal: false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -403,32 +400,17 @@ class HostModal extends React.Component {
     }
 
     var host = {};
-    if (this.props.hostID != null) {
+    if (this.props.host != null) {
       host = this.props.host;
-    }
-
-    const backgroundStyle = {
-      position: 'fixed',
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: 50
-    }
-
-    const modalStyle = {
-      backgroundColor: 'white',
-      padding: 30
     }
 
     return (
       <div className="background" style={backgroundStyle}>
         <div className="modal" style={modalStyle}>
+          <label htmlFor="ID">ID</label>
+          <input name="ID" defaultValue={this.props.hostID} disabled></input>
+          <br />
           <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="ID">ID</label>
-            <input name="ID" defaultValue={host.ID} disabled="true"></input>
-            <br />
             <label htmlFor="Hostname">Hostname</label>
             <input name="Hostname" defaultValue={host.Hostname}></input>
             <br />
@@ -449,9 +431,7 @@ class Templates extends React.Component {
     super();
     this.state = {
       templates: [],
-      showModal: false,
-      selectedTemplateID: null,
-      selectedTemplate: null
+      showModal: false
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -641,29 +621,17 @@ class TemplateModal extends React.Component {
     }
 
     var template = {};
-    if (this.props.templateID != null) {
+    if (this.props.template != null) {
       template = this.props.template;
     }
     template = Object.assign({}, template, this.state.template);
 
-    const backgroundStyle = {
-      position: 'fixed',
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      padding: 50
-    }
-
-    const modalStyle = {
-      backgroundColor: 'white',
-      padding: 30
-    }
-
     return (
       <div className="background" style={backgroundStyle}>
         <div className="modal" style={modalStyle}>
+          <label htmlFor="ID" >ID</label>
+          <input name="ID" defaultValue={this.props.templateID} disabled></input>
+          <br />
           <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
             <label htmlFor="Name">Name</label>
             <input name="Name" defaultValue={template.Name}></input>
