@@ -33,12 +33,111 @@ const modalStyle = {
   padding: 30
 }
 
+class BasicModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = this.defaultState();
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+    this.setValue = this.setValue.bind(this);
+  }
+
+  defaultState() {
+    return {
+      subject: {}
+    }
+  }
+
+  setValue(key, value) {
+    this.setState({
+      subject: {
+        ...this.props.subject,
+        ...this.state.subject,
+        [key]: value
+      }
+    });
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      subject: {
+        ...this.props.subject,
+        ...this.state.subject,
+        [event.target.name]: value
+      }
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.subject) == 0) {
+      return;
+    }
+
+    var url = "/" + this.props.subjectClass;
+    if (this.props.subjectID != null) {
+      url += "/" + this.props.subjectID;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.subject)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.submit();
+      this.setState(this.defaultState());
+    }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
+  }
+  
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    return (
+      <div className="background" style={backgroundStyle}>
+        <div className="modal" style={modalStyle}>
+          <label htmlFor="ID">ID</label>
+          <input name="ID" defaultValue={this.props.subjectID} disabled></input>
+          <br />
+          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+            {this.props.children}
+            <br />
+            <button type="submit">Submit</button>
+            <button type="button" onClick={this.handleClose}>Cancel</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+}
+
 class Teams extends React.Component {
   constructor() {
     super();
     this.state = {
       teams: [],
-      showModal: false
+      showModal: false,
+      selectedTeamID: null,
+      selectedTeam: {}
     }
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -133,109 +232,14 @@ class Teams extends React.Component {
         <strong>Teams</strong>
         <p />
         <button onClick={this.createTeam.bind(this)}>Add Team</button>
-        <TeamModal teamID={this.state.selectedTeamID} team={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <BasicModal subjectClass="teams" subjectID={this.state.selectedTeamID} subject={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
+          <Item name="Name" defaultValue={this.state.selectedTeam.Name}/>
+          <Item name="POC" defaultValue={this.state.selectedTeam.POC}/>
+          <Item name="Email" type="email" defaultValue={this.state.selectedTeam.Email}/>
+          <label htmlFor="Enabled">Enabled</label>
+          <input name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedTeam.Enabled}></input>
+        </BasicModal>
         <ul>{rows}</ul>
-      </div>
-    );
-  }
-}
-
-class TeamModal extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = this.defaultState();
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
-  }
-
-  defaultState() {
-    return {
-      team: {}
-    }
-  }
-
-  handleChange(event) {
-    let value = event.target.value;
-    if (event.target.type == 'checkbox') {
-      value = event.target.checked;
-    }
-    this.setState({
-      team: {
-        ...this.props.team,
-        ...this.state.team,
-        [event.target.name]: value
-      }
-    });
-  }
-
-  handleSubmit(event) {
-    event.preventDefault();
-
-    if (Object.keys(this.state.team) == 0) {
-      return;
-    }
-
-    var url = "/teams";
-    if (this.props.teamID != null) {
-      url += "/" + this.props.teamID;
-    }
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(this.state.team)
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.submit();
-      this.setState(this.defaultState());
-    }.bind(this));
-  }
-
-  handleClose() {
-    this.props.onClose();
-    this.setState(this.defaultState());
-  }
-  
-  render() {
-    if (!this.props.show) {
-      return null;
-    }
-
-    let team = {}
-    if (this.props.team != null) {
-      team = this.props.team;
-    }
-
-    return (
-      <div className="background" style={backgroundStyle}>
-        <div className="modal" style={modalStyle}>
-          <label htmlFor="ID">ID</label>
-          <input name="ID" defaultValue={this.props.teamID} disabled></input>
-          <br />
-          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="Name">Name</label>
-            <input name="Name" defaultValue={team.Name}></input>
-            <br />
-            <label htmlFor="POC">Point of contact</label>
-            <input name="POC" defaultValue={team.POC}></input>
-            <br />
-            <label htmlFor="Email">Email address</label>
-            <input name="Email" type="email" defaultValue={team.Email}></input>
-            <br />
-            <label htmlFor="Enabled">Enabled</label>
-            <input name="Enabled" type="checkbox" defaultChecked={!!team.Enabled}></input>
-            <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={this.handleClose}>Cancel</button>
-          </form>
-        </div>
       </div>
     );
   }
@@ -246,7 +250,8 @@ class Scenarios extends React.Component {
     super();
     this.state = {
       scenarios: [],
-      showModal: false
+      showModal: false,
+      selectedScenario: {}
     }
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -341,106 +346,12 @@ class Scenarios extends React.Component {
         <strong>Scenarios</strong>
         <p />
         <button onClick={this.createScenario.bind(this)}>Add Scenario</button>
-        <ScenarioModal scenarioID={this.state.selectedScenarioID} scenario={this.state.selectedScenario} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <BasicModal subjectClass="scenarios" subjectID={this.state.selectedScenarioID} subject={this.state.selectedScenario} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
+          <Item name="Name" defaultValue={this.state.selectedScenario.Name}/>
+          <Item name="Description" defaultValue={this.state.selectedScenario.Description}/>
+          <Item name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedScenario.Enabled}/>
+        </BasicModal>
         <ul>{rows}</ul>
-      </div>
-    );
-  }
-}
-
-class ScenarioModal extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = this.defaultState();
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
-  }
-
-  defaultState() {
-    return {
-      scenario: {}
-    }
-  }
-
-  handleChange(event) {
-    let value = event.target.value;
-    if (event.target.type == 'checkbox') {
-      value = event.target.checked;
-    }
-    this.setState({
-      scenario: {
-        ...this.props.scenario,
-        ...this.state.scenario,
-        [event.target.name]: value
-      }
-    });
-  }
-
-  handleSubmit(event) {
-    event.preventDefault();
-
-    if (Object.keys(this.state.scenario) == 0) {
-      return;
-    }
-
-    var url = "/scenarios";
-    if (this.props.scenarioID != null) {
-      url += "/" + this.props.scenarioID;
-    }
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(this.state.scenario)
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.submit();
-      this.setState(this.defaultState());
-    }.bind(this));
-  }
-
-  handleClose() {
-    this.props.onClose();
-    this.setState(this.defaultState());
-  }
-  
-  render() {
-    if (!this.props.show) {
-      return null;
-    }
-
-    let scenario = {}
-    if (this.props.scenario != null) {
-      scenario = this.props.scenario;
-    }
-
-    return (
-      <div className="background" style={backgroundStyle}>
-        <div className="modal" style={modalStyle}>
-          <label htmlFor="ID">ID</label>
-          <input name="ID" defaultValue={this.props.scenarioID} disabled></input>
-          <br />
-          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="Name">Name</label>
-            <input name="Name" defaultValue={scenario.Name}></input>
-            <br />
-            <label htmlFor="Description">Description</label>
-            <input name="Description" defaultValue={scenario.Description}></input>
-            <br />
-            <label htmlFor="Enabled">Enabled</label>
-            <input name="Enabled" type="checkbox" defaultChecked={!!scenario.Enabled}></input>
-            <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={this.handleClose}>Cancel</button>
-          </form>
-        </div>
       </div>
     );
   }
@@ -451,7 +362,8 @@ class Hosts extends React.Component {
     super();
     this.state = {
       hosts: [],
-      showModal: false
+      showModal: false,
+      selectedHost: {}
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -479,7 +391,7 @@ class Hosts extends React.Component {
   createHost() {
     this.setState({
       selectedHostID: null,
-      selectedHost: null
+      selectedHost: {}
     });
     this.toggleModal();
   }
@@ -535,99 +447,11 @@ class Hosts extends React.Component {
         <strong>Hosts</strong>
         <p />
         <button onClick={this.createHost.bind(this)}>Add Host</button>
-        <HostModal hostID={this.state.selectedHostID} host={this.state.selectedHost} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <BasicModal subjectClass="hosts" subjectID={this.state.selectedHostID} subject={this.state.selectedHost} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
+          <Item name="Hostname" type="text" defaultValue={this.state.selectedHost.Hostname}/>
+          <Item name="OS" type="text" defaultValue={this.state.selectedHost.OS}/>
+        </BasicModal>
         <ul>{rows}</ul>
-      </div>
-    );
-  }
-}
-
-class HostModal extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = this.defaultState();
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
-  }
-
-  defaultState() {
-    return {
-      host: {}
-    }
-  }
-
-  handleChange(event) {
-    this.setState({
-      host: {
-        ...this.props.host,
-        ...this.state.host,
-        [event.target.name]: event.target.value
-      }
-    })
-  }
-
-  handleSubmit(event) {
-    event.preventDefault();
-
-    if (Object.keys(this.state.host) == 0) {
-      return;
-    }
-
-    var url = "/hosts";
-    if (this.props.hostID != null) {
-      url += "/" + this.props.hostID;
-    }
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(this.state.host)
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.submit();
-      this.setState(this.defaultState());
-    }.bind(this));
-  }
-
-  handleClose() {
-    this.props.onClose();
-    this.setState(this.defaultState());
-  }
-
-  render() {
-    if (!this.props.show) {
-      return null;
-    }
-
-    var host = {};
-    if (this.props.host != null) {
-      host = this.props.host;
-    }
-
-    return (
-      <div className="background" style={backgroundStyle}>
-        <div className="modal" style={modalStyle}>
-          <label htmlFor="ID">ID</label>
-          <input name="ID" defaultValue={this.props.hostID} disabled></input>
-          <br />
-          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="Hostname">Hostname</label>
-            <input name="Hostname" defaultValue={host.Hostname}></input>
-            <br />
-            <label htmlFor="OS">OS</label>
-            <input name="OS" defaultValue={host.OS}></input>
-            <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={this.handleClose}>Cancel</button>
-          </form>
-        </div>
       </div>
     );
   }
@@ -638,10 +462,13 @@ class Templates extends React.Component {
     super();
     this.state = {
       templates: [],
-      showModal: false
+      showModal: false,
+      selectedTemplate: {}
     };
+    this.modal = React.createRef();
 
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleCallback = this.handleCallback.bind(this);
   }
 
   componentDidMount() {
@@ -666,7 +493,7 @@ class Templates extends React.Component {
   createTemplate() {
     this.setState({
       selectedTemplateID: null,
-      selectedTemplate: null
+      selectedTemplate: {}
     });
     this.toggleModal();
   }
@@ -704,6 +531,10 @@ class Templates extends React.Component {
     })
   }
 
+  handleCallback(key, value) {
+    this.modal.current.setValue(key, value);
+  }
+
   render() {
     let rows = [];
     for (let i = 0; i < this.state.templates.length; i++) {
@@ -718,143 +549,36 @@ class Templates extends React.Component {
         );
       });
     }
+
     return (
       <div className="Templates">
         <strong>Templates</strong>
         <p />
         <button onClick={this.createTemplate.bind(this)}>Create Template</button>
-        <TemplateModal templateID={this.state.selectedTemplateID} template={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}/>
+        <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
+          <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
+          <ItemList name="UsersAdd" label="Users to add" defaultValue={this.state.selectedTemplate.UsersAdd} callback={this.handleCallback}/>
+          <ItemList name="UsersKeep" label="Users to keep" defaultValue={this.state.selectedTemplate.UsersKeep} callback={this.handleCallback}/>
+          <ItemList name="UsersRemove" label="Users to remove" defaultValue={this.state.selectedTemplate.UsersRemove} callback={this.handleCallback}/>
+        </BasicModal>
         <ul>{rows}</ul>
       </div>
     );
   }
 }
 
-class TemplateModal extends React.Component {
+class Item extends React.Component {
   constructor(props) {
     super(props);
-    this.state = this.defaultState();
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleClose = this.handleClose.bind(this);
-    this.callbackUsersAdd = this.callbackUsersAdd.bind(this);
-    this.callbackUsersKeep = this.callbackUsersKeep.bind(this);
-    this.callbackUsersRemove = this.callbackUsersRemove.bind(this);
-  }
-
-  defaultState() {
-    return {
-      template: {}
-    }
-  }
-
-  handleChange(event) {
-    this.setState({
-      template: {
-        ...this.props.template,
-        ...this.state.template,
-        [event.target.name]: event.target.value
-      }
-    })
-  }
-
-  handleSubmit(event) {
-    event.preventDefault();
-
-    if (Object.keys(this.state.template) == 0) {
-      return;
-    }
-
-    var url = "/templates";
-    if (this.props.templateID != null) {
-      url += "/" + this.props.templateID;
-    }
-
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(this.state.template)
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.submit();
-      this.setState(this.defaultState());
-    }.bind(this));
-  }
-
-  handleClose() {
-    this.props.onClose();
-    this.setState(this.defaultState());
-  }
-
-  callbackUsersAdd(users) {
-    this.setState({
-      template: {
-        ...this.props.template,
-        ...this.state.template,
-        UsersAdd: users
-      }
-    });
-  }
-
-  callbackUsersKeep(users) {
-    this.setState({
-      template: {
-        ...this.props.template,
-        ...this.state.template,
-        UsersKeep: users
-      }
-    });
-  }
-
-  callbackUsersRemove(users) {
-    this.setState({
-      template: {
-        ...this.props.template,
-        ...this.state.template,
-        UsersRemove: users
-      }
-    });
   }
 
   render() {
-    if (!this.props.show) {
-      return null;
-    }
-
-    var template = {};
-    if (this.props.template != null) {
-      template = this.props.template;
-    }
-    template = Object.assign({}, template, this.state.template);
-
     return (
-      <div className="background" style={backgroundStyle}>
-        <div className="modal" style={modalStyle}>
-          <label htmlFor="ID" >ID</label>
-          <input name="ID" defaultValue={this.props.templateID} disabled></input>
-          <br />
-          <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
-            <label htmlFor="Name">Name</label>
-            <input name="Name" defaultValue={template.Name}></input>
-            <br />
-            <ItemList label="Users to add" items={template.UsersAdd} callback={this.callbackUsersAdd}/>
-            <br />
-            <ItemList label="Users to keep" items={template.UsersKeep} callback={this.callbackUsersKeep}/>
-            <br />
-            <ItemList label="Users to remove" items={template.UsersRemove} callback={this.callbackUsersRemove}/>
-            <br />
-            <button type="submit">Submit</button>
-            <button type="button" onClick={this.handleClose}>Cancel</button>
-          </form>
-        </div>
+      <div>
+        <label htmlFor={this.props.name}>{this.props.name}</label>
+        <input name={this.props.name} type={this.props.type} defaultValue={this.props.defaultValue} defaultChecked={this.props.defaultChecked}></input>
       </div>
-    );
+    )
   }
 }
 
@@ -862,7 +586,8 @@ class ItemList extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      item: ""
+      item: "",
+      value: this.props.defaultValue
     }
 
     this.add = this.add.bind(this);
@@ -880,36 +605,44 @@ class ItemList extends React.Component {
     if (!this.state.item) {
       return;
     }
-    if (this.props.items && this.props.items.includes(this.state.item)) {
+    if (this.state.value && this.state.value.includes(this.state.item)) {
       return;
     }
 
-    if (this.props.items == null) {
-      this.props.callback([this.state.item]);
+    let value = null;
+    if (this.state.value == null) {
+      value = [this.state.item];
     }
-    else {
-      this.props.callback([...this.props.items, this.state.item]);
+    else  {
+      value = [...this.state.value, this.state.item];
     }
+    this.setState({
+      value: value
+    })
+    this.props.callback(this.props.name, value);
   }
 
   remove(id) {
-    if (this.props.items == null) {
+    if (this.state.value == null) {
       return;
     }
 
-    let newItems = this.props.items.filter(function(_, index) {
+    let value = this.state.value.filter(function(_, index) {
       return index != id;
     });
-    this.props.callback(newItems);
+    this.setState({
+      value: value
+    });
+    this.props.callback(this.props.name, value);
   }
 
   render() {
     let rows = [];
-    if (this.props.items) {
-      for (let i = 0; i < this.props.items.length; i++) {
+    if (this.props.defaultValue) {
+      for (let i = 0; i < this.state.value.length; i++) {
         rows.push(
           <li key={i}>
-            {this.props.items[i]}
+            {this.state.value[i]}
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
           </li>
         );
@@ -919,10 +652,11 @@ class ItemList extends React.Component {
     return (
       <div>
         <label>{this.props.label}</label>
-        <input onChange={this.handleChange}></input>
-        <button type="button" onClick={this.add}>+</button>
-        <br />
-        <ul>{rows}</ul>
+        <ul>
+          {rows}
+          <input onChange={this.handleChange}></input>
+          <button type="button" onClick={this.add}>+</button>
+        </ul>
       </div>
     );
   }
