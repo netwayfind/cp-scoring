@@ -638,7 +638,7 @@ class ItemList extends React.Component {
 
   render() {
     let rows = [];
-    if (this.props.defaultValue) {
+    if (this.state.value) {
       for (let i = 0; i < this.state.value.length; i++) {
         rows.push(
           <li key={i}>
