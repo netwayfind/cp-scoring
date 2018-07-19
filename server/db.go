@@ -24,7 +24,7 @@ func dbInit() {
 	createTable("teams_tokens", "CREATE TABLE IF NOT EXISTS teams_tokens(team_id INTEGER NOT NULL, token VARCHAR NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id))")
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
-	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
 
 	log.Println("Finished setting up database")
@@ -45,17 +45,21 @@ func createTable(name string, stmtStr string) {
 	}
 }
 
-func dbInsert(stmtStr string, args ...interface{}) error {
+func dbInsert(stmtStr string, args ...interface{}) (int64, error) {
 	stmt, err := db.Prepare(stmtStr)
 	if err != nil {
-		return err
+		return -1, err
 	}
-	_, err = stmt.Exec(args...)
+	res, err := stmt.Exec(args...)
 	if err != nil {
-		return err
+		return -1, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return -1, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func dbDelete(stmtStr string, args ...interface{}) error {
@@ -85,7 +89,8 @@ func dbUpdate(stmtStr string, args ...interface{}) error {
 }
 
 func dbInsertState(state string) error {
-	return dbInsert("INSERT INTO states(state) VALUES(?)", state)
+	_, err := dbInsert("INSERT INTO states(state) VALUES(?)", state)
+	return err
 }
 
 func dbSelectTeams() ([]model.TeamSummary, error) {
@@ -148,7 +153,8 @@ func dbDeleteTeam(id int64) error {
 }
 
 func dbInsertTeam(team model.Team) error {
-	return dbInsert("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled)
+	_, err := dbInsert("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled)
+	return err
 }
 
 func dbUpdateTeam(id int64, team model.Team) error {
@@ -243,7 +249,8 @@ func dbInsertTemplate(template model.Template) error {
 	if err != nil {
 		return err
 	}
-	return dbInsert("INSERT INTO templates(template) VALUES(?)", b)
+	_, err = dbInsert("INSERT INTO templates(template) VALUES(?)", b)
+	return err
 }
 
 func dbUpdateTemplate(id int64, template model.Template) error {
@@ -318,15 +325,16 @@ func dbDeleteHost(id int64) error {
 }
 
 func dbInsertHost(host model.Host) error {
-	return dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
+	_, err := dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
+	return err
 }
 
 func dbUpdateHost(id int64, host model.Host) error {
 	return dbUpdate("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)", host.Hostname, host.OS, id)
 }
 
-func dbSelectHostsTemplates() ([]model.HostsTemplates, error) {
-	rows, err := db.Query("SELECT host_id, template_id FROM hosts_templates")
+func dbSelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) {
+	rows, err := db.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -334,28 +342,24 @@ func dbSelectHostsTemplates() ([]model.HostsTemplates, error) {
 
 	var templateID int64
 	var hostID int64
-	hostsTemplates := make([]model.HostsTemplates, 0)
+	hostTemplates := make(map[int64][]int64)
 
 	for rows.Next() {
 		err = rows.Scan(&hostID, &templateID)
 		if err != nil {
 			return nil, err
 		}
-		var entry model.HostsTemplates
-		entry.HostID = hostID
-		entry.TemplateID = templateID
-		hostsTemplates = append(hostsTemplates, entry)
+		entry := hostTemplates[hostID]
+		if entry == nil {
+			entry = make([]int64, 1)
+			entry[0] = templateID
+			hostTemplates[hostID] = entry
+		} else {
+			hostTemplates[hostID] = append(entry, templateID)
+		}
 	}
 
-	return hostsTemplates, nil
-}
-
-func dbInsertHostsTemplates(hostID int64, templateID int64) error {
-	return dbInsert("INSERT INTO hosts_templates(host_id, template_id) VALUES(?, ?)", hostID, templateID)
-}
-
-func dbDeleteHostsTemplates(hostID int64, templateID int64) error {
-	return dbDelete("DELETE FROM hosts_templates WHERE host_id=(?) AND template_id=(?)", hostID, templateID)
+	return hostTemplates, nil
 }
 
 func dbSelectScenarios() ([]model.Scenario, error) {
@@ -408,25 +412,63 @@ func dbSelectScenario(id int64) (model.Scenario, error) {
 		if err != nil {
 			return scenario, err
 		}
+		hostTemplates, err := dbSelectScenarioHostTemplates(id)
+		if err != nil {
+			return scenario, err
+		}
 		// only get first result
 		scenario.ID = id
 		scenario.Name = name
 		scenario.Description = description
 		scenario.Enabled = enabled
+		scenario.HostTemplates = hostTemplates
 		break
 	}
 
 	return scenario, nil
 }
 
+func dbDeleteScenarioHostTemplates(scenarioID int64) error {
+	return dbDelete("DELETE FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
+}
+
 func dbDeleteScenario(id int64) error {
-	return dbDelete("DELETE FROM scenarios where id=(?)", id)
+	err := dbDelete("DELETE FROM scenarios WHERE id=(?)", id)
+	if err != nil {
+		return err
+	}
+	return dbDeleteScenarioHostTemplates(id)
+}
+
+func dbInsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
+	for hostID, templateIDs := range scenario.HostTemplates {
+		for _, templateID := range templateIDs {
+			_, err = dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES(?, ?, ?)", id, hostID, templateID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func dbInsertScenario(scenario model.Scenario) error {
-	return dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
+	id, err := dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
+	if err != nil {
+		return err
+	}
+
+	return dbInsertScenarioHostTemplates(id, scenario)
 }
 
 func dbUpdateScenario(id int64, scenario model.Scenario) error {
-	return dbUpdate("UPDATE scenarios SET name=(?), description=(?), enabled=(?) WHERE id=(?)", scenario.Name, scenario.Description, scenario.Enabled, id)
+	err := dbUpdate("UPDATE scenarios SET name=(?), description=(?), enabled=(?) WHERE id=(?)", scenario.Name, scenario.Description, scenario.Enabled, id)
+	if err != nil {
+		return err
+	}
+	err = dbDeleteScenarioHostTemplates(id)
+	if err != nil {
+		return err
+	}
+	return dbInsertScenarioHostTemplates(id, scenario)
 }

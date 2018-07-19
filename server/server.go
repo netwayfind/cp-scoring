@@ -666,98 +666,6 @@ func deleteScenario(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getHostsTemplates(w http.ResponseWriter, r *http.Request) {
-	log.Println("get hosts templates")
-
-	// get all hosts templates
-	hts, err := dbSelectHostsTemplates()
-	if err != nil {
-		msg := "ERROR: cannot retrieve hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	b, err := json.Marshal(hts)
-	if err != nil {
-		msg := "ERROR: cannot marshal hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	w.Write(b)
-}
-
-func newHostsTemplates(w http.ResponseWriter, r *http.Request) {
-	log.Println("new hosts templates")
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		msg := "ERROR: cannot retrieve body;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-
-	var hostsTemplates model.HostsTemplates
-	err = json.Unmarshal(body, &hostsTemplates)
-	if err != nil {
-		msg := "ERROR: cannot unmarshal hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-
-	err = dbInsertHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
-	if err != nil {
-		msg := "ERROR: cannot insert hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	log.Println(hostsTemplates.HostID)
-	log.Println(hostsTemplates.TemplateID)
-
-	msg := "Saved hosts templates"
-	log.Println(msg)
-	w.Write([]byte(msg))
-}
-
-func deleteHostTemplates(w http.ResponseWriter, r *http.Request) {
-	log.Println("delete hosts templates")
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		msg := "ERROR: cannot retrieve body;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-
-	var hostsTemplates model.HostsTemplates
-	err = json.Unmarshal(body, &hostsTemplates)
-	if err != nil {
-		msg := "ERROR: cannot unmarshal hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-
-	err = dbDeleteHostsTemplates(hostsTemplates.HostID, hostsTemplates.TemplateID)
-	if err != nil {
-		msg := "ERROR: cannot delete hosts templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	log.Println(hostsTemplates.HostID)
-	log.Println(hostsTemplates.TemplateID)
-
-	// new host
-	msg := "Deleted hosts templates"
-	log.Println(msg)
-	w.Write([]byte(msg))
-}
-
 func main() {
 	dbInit()
 
@@ -789,13 +697,6 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", getScenario).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
-	hostsTemplatesRouter := r.PathPrefix("/hosts_templates").Subrouter()
-	hostsTemplatesRouter.HandleFunc("", getHostsTemplates).Methods("GET")
-	hostsTemplatesRouter.HandleFunc("/", getHostsTemplates).Methods("GET")
-	hostsTemplatesRouter.HandleFunc("", newHostsTemplates).Methods("POST")
-	hostsTemplatesRouter.HandleFunc("/", newHostsTemplates).Methods("POST")
-	hostsTemplatesRouter.HandleFunc("", deleteHostTemplates).Methods("DELETE")
-	hostsTemplatesRouter.HandleFunc("/", deleteHostTemplates).Methods("DELETE")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")

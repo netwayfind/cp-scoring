@@ -10,11 +10,6 @@ type Template struct {
 	GroupMembersRemove map[string]string
 }
 
-type HostsTemplates struct {
-	HostID     int64
-	TemplateID int64
-}
-
 type Finding struct {
 	Value   int
 	Hidden  bool
@@ -39,8 +34,9 @@ type Team struct {
 }
 
 type Scenario struct {
-	ID          int64
-	Name        string
-	Description string
-	Enabled     bool
+	ID            int64
+	Name          string
+	Description   string
+	Enabled       bool
+	HostTemplates map[int64][]int64
 }
