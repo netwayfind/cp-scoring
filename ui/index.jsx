@@ -354,7 +354,7 @@ class Scenarios extends React.Component {
           <Item name="Name" defaultValue={this.state.selectedScenario.Name}/>
           <Item name="Description" defaultValue={this.state.selectedScenario.Description}/>
           <Item name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedScenario.Enabled}/>
-          <ItemMap name="HostTemplates" label="Host Templates" defaultValue={this.state.selectedScenario.HostTemplates} callback={this.handleCallback}/>
+          <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" defaultValue={this.state.selectedScenario.HostTemplates} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -659,7 +659,7 @@ class ItemMap extends React.Component {
           <li key={i}>
             {i}
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-            <ItemList ItemList name={i} label="Templates" type="number" defaultValue={this.state.value[i]} callback={this.handleCallback}/>
+            <ItemList ItemList name={i} label={this.props.listLabel} type="number" defaultValue={this.state.value[i]} callback={this.handleCallback}/>
           </li>
         );
       }
