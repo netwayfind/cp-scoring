@@ -426,8 +426,8 @@ func newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var template model.Template
-	err = json.Unmarshal(body, &template)
+	var templateEntry model.TemplateEntry
+	err = json.Unmarshal(body, &templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
@@ -435,7 +435,7 @@ func newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertTemplate(template)
+	err = dbInsertTemplate(templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot insert template;"
 		log.Println(msg, err)
@@ -471,8 +471,8 @@ func editTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var template model.Template
-	err = json.Unmarshal(body, &template)
+	var templateEntry model.TemplateEntry
+	err = json.Unmarshal(body, &templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
@@ -480,7 +480,7 @@ func editTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateTemplate(id, template)
+	err = dbUpdateTemplate(id, templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot update template;"
 		log.Println(msg, err)

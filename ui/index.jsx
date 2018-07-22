@@ -366,19 +366,11 @@ class Scenarios extends React.Component {
       return response.json()
     }.bind(this))
     .then(function(data) {
-      let items = data.map(function(entry) {
-        let result = {};
-        for (let id in entry) {
-          let template = entry[id]
-          let display = "";
-          if (template.Name != null) {
-            display = template.Name
-          }
-          // should only be one in entry
-          result.ID = Number(id);
-          result.Display = display;
+      let items = data.map(function(template) {
+        return {
+          ID: template.ID,
+          Display: template.Name
         }
-        return result;
       });
       callback(items);
     });
@@ -520,7 +512,9 @@ class Templates extends React.Component {
     this.state = {
       templates: [],
       showModal: false,
-      selectedTemplate: {}
+      selectedTemplate: {
+        Template: {}
+      }
     };
     this.modal = React.createRef();
 
@@ -550,17 +544,30 @@ class Templates extends React.Component {
   createTemplate() {
     this.setState({
       selectedTemplateID: null,
-      selectedTemplate: {}
+      selectedTemplate: {
+        Template: {}
+      }
     });
     this.toggleModal();
   }
 
-  editTemplate(id, template) {
-    this.setState({
-      selectedTemplateID: id,
-      selectedTemplate: template
-    });
-    this.toggleModal();
+  editTemplate(id) {
+    let url = "/templates/" + id;
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    })
+    .then(function(data) {
+      this.setState({
+        selectedTemplateID: id,
+        selectedTemplate: data
+      });
+      this.toggleModal();
+    }.bind(this));
   }
 
   deleteTemplate(id) {
@@ -589,22 +596,30 @@ class Templates extends React.Component {
   }
 
   handleCallback(key, value) {
-    this.modal.current.setValue(key, value);
+    let template = {
+      ...this.state.selectedTemplate.Template,
+      [key]: value
+    }
+    this.setState({
+      selectedTemplate: {
+        ...this.state.selectedTemplate,
+        Template: template
+      }
+    })
+    this.modal.current.setValue("Template", template);
   }
 
   render() {
     let rows = [];
     for (let i = 0; i < this.state.templates.length; i++) {
-      let entry = this.state.templates[i];
-      Object.keys(entry).map(id => {
-        rows.push(
-          <li key={id}>
-            {id} - {entry[id].Name}
-            <button type="button" onClick={this.editTemplate.bind(this, id, entry[id])}>Edit</button>
-            <button type="button" onClick={this.deleteTemplate.bind(this, id)}>-</button>
-          </li>
-        );
-      });
+      let template = this.state.templates[i];
+      rows.push(
+        <li key={template.ID}>
+          {template.ID} - {template.Name}
+          <button type="button" onClick={this.editTemplate.bind(this, template.ID)}>Edit</button>
+          <button type="button" onClick={this.deleteTemplate.bind(this, template.ID)}>-</button>
+        </li>
+      );
     }
 
     return (
@@ -614,9 +629,9 @@ class Templates extends React.Component {
         <button onClick={this.createTemplate.bind(this)}>Create Template</button>
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
-          <ItemList name="UsersAdd" label="Users to add" type="text" defaultValue={this.state.selectedTemplate.UsersAdd} callback={this.handleCallback}/>
-          <ItemList name="UsersKeep" label="Users to keep" type="text" defaultValue={this.state.selectedTemplate.UsersKeep} callback={this.handleCallback}/>
-          <ItemList name="UsersRemove" label="Users to remove" type="text" defaultValue={this.state.selectedTemplate.UsersRemove} callback={this.handleCallback}/>
+          <ItemList name="UsersAdd" label="Users to add" type="text" defaultValue={this.state.selectedTemplate.Template.UsersAdd} callback={this.handleCallback}/>
+          <ItemList name="UsersKeep" label="Users to keep" type="text" defaultValue={this.state.selectedTemplate.Template.UsersKeep} callback={this.handleCallback}/>
+          <ItemList name="UsersRemove" label="Users to remove" type="text" defaultValue={this.state.selectedTemplate.Template.UsersRemove} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>

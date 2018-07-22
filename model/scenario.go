@@ -1,7 +1,12 @@
 package model
 
+type TemplateEntry struct {
+	ID       int64
+	Name     string
+	Template Template
+}
+
 type Template struct {
-	Name               string
 	UsersAdd           []string
 	UsersKeep          []string
 	UsersRemove        []string
