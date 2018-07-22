@@ -55,6 +55,16 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	report := auditor.Audit(state, templates)
+	hostID, err := dbSelectHostIDForHostname(state.Hostname)
+	if err != nil {
+		msg := "ERROR: cannot get host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	report.HostID = hostID
+	// TODO: team key
+	report.TeamID = -1
 	log.Println(report)
 
 	response := "Received and saved"

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -14,6 +15,7 @@ type Host struct {
 }
 
 type State struct {
+	TeamKey   string
 	Timestamp int64
 	OS        string
 	Hostname  string
@@ -29,6 +31,11 @@ func GetNewStateTemplate() State {
 	state.Hostname, err = os.Hostname()
 	if err != nil {
 		log.Println("ERROR: unable to get hostname;", err)
+	}
+
+	b, err := ioutil.ReadFile("team.key")
+	if err == nil {
+		state.TeamKey = string(b)
 	}
 
 	return state

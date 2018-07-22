@@ -118,6 +118,26 @@ func dbSelectTeams() ([]model.TeamSummary, error) {
 	return teams, nil
 }
 
+func dbSelectHostIDForHostname(hostname string) (int64, error) {
+	var id int64
+
+	rows, err := db.Query("SELECT id FROM hosts WHERE hostname=(?)", hostname)
+	if err != nil {
+		return id, err
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return id, err
+		}
+		// only get first result
+		break
+	}
+
+	return id, err
+}
+
 func dbSelectTeam(id int64) (model.Team, error) {
 	var team model.Team
 
