@@ -255,6 +255,8 @@ class Scenarios extends React.Component {
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleCallback = this.handleCallback.bind(this);
+    this.mapItems = this.mapItems.bind(this);
+    this.listItems = this.listItems.bind(this);
   }
 
   componentDidMount() {
@@ -332,6 +334,56 @@ class Scenarios extends React.Component {
     this.modal.current.setValue(key, value);
   }
 
+  mapItems(callback) {
+    var url = "/hosts";
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    }.bind(this))
+    .then(function(data) {
+      let items = data.map(function(host) {
+        return {
+          ID: host.ID,
+          Display: host.Hostname
+        }
+      });
+      callback(items);
+    });
+  };
+
+  listItems(callback) {
+    var url = "/templates";
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    }.bind(this))
+    .then(function(data) {
+      let items = data.map(function(entry) {
+        let result = {};
+        for (let id in entry) {
+          let template = entry[id]
+          let display = "";
+          if (template.Name != null) {
+            display = template.Name
+          }
+          // should only be one in entry
+          result.ID = Number(id);
+          result.Display = display;
+        }
+        return result;
+      });
+      callback(items);
+    });
+  };
+
   render() {
     let rows = [];
     for (let i = 0; i < this.state.scenarios.length; i++) {
@@ -354,7 +406,7 @@ class Scenarios extends React.Component {
           <Item name="Name" defaultValue={this.state.selectedScenario.Name}/>
           <Item name="Description" defaultValue={this.state.selectedScenario.Description}/>
           <Item name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedScenario.Enabled}/>
-          <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" defaultValue={this.state.selectedScenario.HostTemplates} callback={this.handleCallback}/>
+          <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" defaultValue={this.state.selectedScenario.HostTemplates} callback={this.handleCallback} mapItems={this.mapItems} listItems={this.listItems}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -592,7 +644,9 @@ class ItemMap extends React.Component {
     super(props);
     this.state = {
       item: "",
-      value: this.props.defaultValue
+      value: this.props.defaultValue,
+      mapItems: [],
+      listItems: []
     }
 
     this.add = this.add.bind(this);
@@ -602,8 +656,9 @@ class ItemMap extends React.Component {
   }
 
   handleChange(event) {
+    let value = Number(event.target.value)
     this.setState({
-      item: event.target.value
+      item: value
     });
   }
 
@@ -651,18 +706,60 @@ class ItemMap extends React.Component {
     this.props.callback(this.props.name, value);
   }
 
+  componentWillMount() {
+    this.props.mapItems((items) => {
+      this.setState({
+        mapItems: items
+      });
+    });
+    this.props.listItems((items) => {
+      this.setState({
+        listItems: items
+      });
+    });
+  }
+
   render() {
     let rows = [];
     if (this.state.value) {
       for (let i in this.state.value) {
+        if (this.state.value[i] === undefined) {
+          continue;
+        }
+        let text = i;
+        let matches = this.state.mapItems.filter((obj) => {
+          return obj.ID == i;
+        });
+        if (matches.length > 0) {
+          text = matches[0].Display;
+        }
         rows.push(
           <li key={i}>
-            {i}
+            {text}
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-            <ItemList ItemList name={i} label={this.props.listLabel} type="number" defaultValue={this.state.value[i]} callback={this.handleCallback}/>
+            <ItemList name={i} label={this.props.listLabel} type="select" listItems={this.state.listItems} defaultValue={this.state.value[i]} callback={this.handleCallback}/>
           </li>
         );
       }
+    }
+
+    let optionsMap = [];
+    // empty selection
+    optionsMap.push(
+      <option disabled key="" value="">
+      </option>
+    );
+    for (let i in this.state.mapItems) {
+      let option = this.state.mapItems[i];
+      // skip already selected
+      if (this.state.value && this.state.value[option.ID] != null) {
+        continue;
+      }
+      optionsMap.push(
+        <option key={option.ID} value={option.ID}>
+          {option.Display}
+        </option>
+      );
     }
 
     return (
@@ -670,7 +767,7 @@ class ItemMap extends React.Component {
         <label>{this.props.label}</label>
         <ul>
           {rows}
-          <input type="number" onChange={this.handleChange}></input>
+          <select value={this.state.item} onChange={this.handleChange}>{optionsMap}</select>
           <button type="button" onClick={this.add}>+</button>
         </ul>
       </div>
@@ -693,7 +790,7 @@ class ItemList extends React.Component {
 
   handleChange(event) {
     let value = event.target.value;
-    if (this.props.type == "number") {
+    if (this.props.type === "select") {
       value = Number(value);
     }
     this.setState({
@@ -739,14 +836,50 @@ class ItemList extends React.Component {
   render() {
     let rows = [];
     if (this.state.value) {
-      for (let i = 0; i < this.state.value.length; i++) {
+      for (let i in this.state.value) {
+        let text = this.state.value[i];
+        if (this.props.type === "select") {
+          let matches = this.props.listItems.filter((obj) => {
+            return obj.ID == text;
+          });
+          if (matches.length > 0) {
+            text = matches[0].Display;
+          }
+        }
         rows.push(
           <li key={i}>
-            {this.state.value[i]}
+            {text}
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
           </li>
         );
       }
+    }
+
+    let input = (
+      <input type={this.props.type} value={this.state.item} onChange={this.handleChange}></input>
+    );
+    if (this.props.type === "select") {
+      let optionsList = [];
+      // empty selection
+      optionsList.push(
+        <option disabled key="" value="">
+        </option>
+      );
+      for (let i in this.props.listItems) {
+        let option = this.props.listItems[i];
+        // skip already selected
+        if (this.state.value && this.state.value.indexOf(option.ID) != -1) {
+          continue;
+        }
+        optionsList.push(
+          <option key={option.ID} value={option.ID}>
+            {option.Display}
+          </option>
+        );
+      }
+      input = (
+        <select value={this.state.item} onChange={this.handleChange}>{optionsList}</select>
+      );
     }
 
     return (
@@ -754,7 +887,7 @@ class ItemList extends React.Component {
         <label>{this.props.label}</label>
         <ul>
           {rows}
-          <input type={this.props.type} onChange={this.handleChange}></input>
+          {input}
           <button type="button" onClick={this.add}>+</button>
         </ul>
       </div>
