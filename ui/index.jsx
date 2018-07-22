@@ -138,7 +138,9 @@ class Teams extends React.Component {
       selectedTeam: {}
     }
 
+    this.modal = React.createRef()
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.regenKey = this.regenKey.bind(this);
   }
 
   componentDidMount() {
@@ -160,10 +162,17 @@ class Teams extends React.Component {
     }.bind(this));
   }
 
+  newKey() {
+    return Math.random().toString(16).substring(7);
+  }
+
   createTeam() {
     this.setState({
       selectedTeamID: null,
-      selectedTeam: {Enabled: true}
+      selectedTeam: {
+        Enabled: true,
+        Key: this.newKey()
+      }
     });
     this.toggleModal();
   }
@@ -212,6 +221,17 @@ class Teams extends React.Component {
     })
   }
 
+  regenKey() {
+    let key = this.newKey()
+    this.setState({
+      selectedTeam: {
+        ...this.state.selectedTeam,
+        Key: key
+      }
+    })
+    this.modal.current.setValue("Key", key)
+  }
+
   render() {
     let rows = [];
     for (let i = 0; i < this.state.teams.length; i++) {
@@ -230,12 +250,20 @@ class Teams extends React.Component {
         <strong>Teams</strong>
         <p />
         <button onClick={this.createTeam.bind(this)}>Add Team</button>
-        <BasicModal subjectClass="teams" subjectID={this.state.selectedTeamID} subject={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
+        <BasicModal ref={this.modal} subjectClass="teams" subjectID={this.state.selectedTeamID} subject={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" defaultValue={this.state.selectedTeam.Name}/>
           <Item name="POC" defaultValue={this.state.selectedTeam.POC}/>
           <Item name="Email" type="email" defaultValue={this.state.selectedTeam.Email}/>
           <label htmlFor="Enabled">Enabled</label>
           <input name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedTeam.Enabled}></input>
+          <br />
+          <label htmlFor="Key">Key</label>
+          <ul>
+            <li>
+              {this.state.selectedTeam.Key}
+            </li>
+            <button type="button" onClick={this.regenKey.bind(this)}>Regenerate</button>
+          </ul>
         </BasicModal>
         <ul>{rows}</ul>
       </div>

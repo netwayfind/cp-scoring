@@ -63,8 +63,14 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	report.HostID = hostID
-	// TODO: team key
-	report.TeamID = -1
+	teamID, err := dbSelectTeamIDForKey(state.TeamKey)
+	if err != nil {
+		msg := "ERROR: cannot get team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	report.TeamID = teamID
 	log.Println(report)
 
 	response := "Received and saved"

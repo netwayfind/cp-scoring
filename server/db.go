@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sumwonyuno/cp-scoring/model"
@@ -20,8 +21,7 @@ func dbInit() {
 	log.Println("Connected to database")
 
 	createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
-	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL)")
-	createTable("teams_tokens", "CREATE TABLE IF NOT EXISTS teams_tokens(team_id INTEGER NOT NULL, token VARCHAR NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id))")
+	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
@@ -138,10 +138,44 @@ func dbSelectHostIDForHostname(hostname string) (int64, error) {
 	return id, err
 }
 
+type errorStr struct {
+	error string
+}
+
+func (e *errorStr) Error() string {
+	return e.error
+}
+
+func dbSelectTeamIDForKey(key string) (int64, error) {
+	var id int64 = -1
+	key = strings.TrimSpace(key)
+
+	rows, err := db.Query("SELECT id FROM teams WHERE key=(?)", key)
+	if err != nil {
+		return id, err
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return id, err
+		}
+		// only get first result
+		break
+	}
+
+	// did not find any
+	if id == -1 {
+		return id, &errorStr{key + " key not found"}
+	}
+
+	return id, err
+}
+
 func dbSelectTeam(id int64) (model.Team, error) {
 	var team model.Team
 
-	rows, err := db.Query("SELECT name, poc, email, enabled FROM teams where id=(?)", id)
+	rows, err := db.Query("SELECT name, poc, email, enabled, key FROM teams where id=(?)", id)
 	if err != nil {
 		return team, err
 	}
@@ -151,8 +185,9 @@ func dbSelectTeam(id int64) (model.Team, error) {
 	var poc string
 	var email string
 	var enabled bool
+	var key string
 	for rows.Next() {
-		err := rows.Scan(&name, &poc, &email, &enabled)
+		err := rows.Scan(&name, &poc, &email, &enabled, &key)
 		if err != nil {
 			return team, err
 		}
@@ -161,6 +196,7 @@ func dbSelectTeam(id int64) (model.Team, error) {
 		team.POC = poc
 		team.Email = email
 		team.Enabled = enabled
+		team.Key = key
 		// only get first result
 		break
 	}
@@ -173,12 +209,12 @@ func dbDeleteTeam(id int64) error {
 }
 
 func dbInsertTeam(team model.Team) error {
-	_, err := dbInsert("INSERT INTO teams(name, poc, email, enabled) VALUES(?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled)
+	_, err := dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES(?, ?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled, team.Key)
 	return err
 }
 
 func dbUpdateTeam(id int64, team model.Team) error {
-	return dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, id)
+	return dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?), key=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, team.Key, id)
 }
 
 func dbSelectTemplates() ([]model.TemplateEntry, error) {

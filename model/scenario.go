@@ -38,6 +38,7 @@ type Team struct {
 	POC     string
 	Email   string
 	Enabled bool
+	Key     string
 }
 
 type Scenario struct {
