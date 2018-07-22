@@ -125,6 +125,7 @@ func dbSelectHostIDForHostname(hostname string) (int64, error) {
 	if err != nil {
 		return id, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&id)
@@ -154,6 +155,7 @@ func dbSelectTeamIDForKey(key string) (int64, error) {
 	if err != nil {
 		return id, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		err := rows.Scan(&id)
@@ -355,11 +357,7 @@ func dbSelectHosts() ([]model.Host, error) {
 func dbSelectHost(id int64) (model.Host, error) {
 	var host model.Host
 
-	stmt, err := db.Prepare("SELECT hostname, os FROM hosts where id=(?)")
-	if err != nil {
-		return host, err
-	}
-	rows, err := stmt.Query(id)
+	rows, err := db.Query("SELECT hostname, os FROM hosts where id=(?)", id)
 	if err != nil {
 		return host, err
 	}
