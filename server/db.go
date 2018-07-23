@@ -584,6 +584,35 @@ func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore
 	return scores, nil
 }
 
+func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioScore, error) {
+	rows, err := db.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp DESC", scenarioID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	scores := make([]model.ScenarioScore, 0)
+	var hostID int64
+	var timestamp int64
+	var score int64
+
+	for rows.Next() {
+		err := rows.Scan(&hostID, &timestamp, &score)
+		if err != nil {
+			return nil, err
+		}
+		var entry model.ScenarioScore
+		entry.ScenarioID = scenarioID
+		entry.TeamID = teamID
+		entry.HostID = hostID
+		entry.Timestamp = timestamp
+		entry.Score = score
+		scores = append(scores, entry)
+	}
+
+	return scores, nil
+}
+
 func dbInsertScenarioScore(entry model.ScenarioScore) error {
 	_, err := dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
 	if err != nil {

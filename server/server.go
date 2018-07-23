@@ -766,6 +766,46 @@ func getScenarioScores(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+func getScenarioScoresTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenario scores for team")
+
+	// parse out int64 id
+	vars := mux.Vars(r)
+
+	scenarioID, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
+	teamKey := r.FormValue("team_key")
+	teamID, err := dbSelectTeamIDForKey(teamKey)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+	scores, err := dbSelectScenarioScores(scenarioID, teamID)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario scores for team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(scores)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenario scores for team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
 func main() {
 	dbInit()
 
@@ -798,6 +838,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores", getScenarioScores).Methods("GET")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/team", getScenarioScoresTeam).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")
