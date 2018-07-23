@@ -556,24 +556,26 @@ func dbUpdateScenario(id int64, scenario model.Scenario) error {
 }
 
 func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
-	rows, err := db.Query("SELECT team_id, timestamp, score FROM scores WHERE scenario_id=(?) GROUP BY team_id ORDER BY max(timestamp) DESC", scenarioID)
+	rows, err := db.Query("SELECT scores.team_id, teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY team_id ORDER BY max(timestamp) DESC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var teamID int64
+	var teamName string
 	var timestamp int64
 	var score int64
 	scores := make([]model.ScenarioLatestScore, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&teamID, &timestamp, &score)
+		err = rows.Scan(&teamID, &teamName, &timestamp, &score)
 		if err != nil {
 			return nil, err
 		}
 		var entry model.ScenarioLatestScore
 		entry.TeamID = teamID
+		entry.TeamName = teamName
 		entry.Timestamp = timestamp
 		entry.Score = score
 		scores = append(scores, entry)
