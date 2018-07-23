@@ -152,7 +152,7 @@ func dbSelectTeamIDForKey(key string) (int64, error) {
 	var id int64 = -1
 	key = strings.TrimSpace(key)
 
-	rows, err := db.Query("SELECT id FROM teams WHERE key=(?)", key)
+	rows, err := db.Query("SELECT id FROM teams WHERE key=(?) AND enabled=1", key)
 	if err != nil {
 		return id, err
 	}
