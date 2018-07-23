@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,23 +47,7 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Auditing state")
-	templates, err := dbSelectTemplatesForHostname(state.Hostname)
-	if err != nil {
-		msg := "ERROR: cannot get templates;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	report := auditor.Audit(state, templates)
-	hostID, err := dbSelectHostIDForHostname(state.Hostname)
-	if err != nil {
-		msg := "ERROR: cannot get host id;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	report.HostID = hostID
+	log.Println("Getting information")
 	teamID, err := dbSelectTeamIDForKey(state.TeamKey)
 	if err != nil {
 		msg := "ERROR: cannot get team id;"
@@ -70,8 +55,76 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-	report.TeamID = teamID
-	log.Println(report)
+	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+	hostID, err := dbSelectHostIDForHostname(state.Hostname)
+	if err != nil {
+		msg := "ERROR: cannot get host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Host ID: %d", hostID))
+
+	log.Println("Getting scenarios")
+	scenarioIDs, err := dbSelectScenariosForHostname(state.Hostname)
+	if err != nil {
+		msg := "ERROR: cannot get scenario IDs;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	if len(scenarioIDs) == 0 {
+		msg := "ERROR: no scenarios found"
+		log.Println(msg)
+		w.Write([]byte(msg))
+		return
+	}
+	for _, scenarioID := range scenarioIDs {
+		log.Println(fmt.Sprintf("Processing scenario ID: %d", scenarioID))
+
+		log.Println("Getting scenario templates")
+		templates, err := dbSelectTemplatesForHostname(scenarioID, state.Hostname)
+		if err != nil {
+			msg := "ERROR: cannot get templates;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+		log.Println(fmt.Sprintf("Found template count: %d", len(templates)))
+		if len(templates) == 0 {
+			msg := "ERROR: no templates found"
+			log.Println(msg)
+			w.Write([]byte(msg))
+			return
+		}
+
+		log.Println("Auditing state")
+		report := auditor.Audit(state, templates)
+		report.HostID = hostID
+		report.TeamID = teamID
+		// TODO: save report
+		log.Println(report)
+
+		log.Println("Saving score")
+		var score int64
+		for _, finding := range report.Findings {
+			score += finding.Value
+		}
+
+		var scoreEntry model.ScenarioScore
+		scoreEntry.ScenarioID = scenarioID
+		scoreEntry.TeamID = teamID
+		scoreEntry.HostID = hostID
+		scoreEntry.Timestamp = state.Timestamp
+		scoreEntry.Score = score
+		err = dbInsertScenarioScore(scoreEntry)
+		if err != nil {
+			msg := "ERROR: cannot insert scenario score;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+	}
 
 	response := "Received and saved"
 	log.Println(response)
@@ -682,6 +735,37 @@ func deleteScenario(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func getScenarioScores(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenario scores")
+
+	// parse out int64 id
+	vars := mux.Vars(r)
+
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(id)
+	scores, err := dbSelectScenarioLatestScores(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario scores;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(scores)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenario scores;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
 func main() {
 	dbInit()
 
@@ -713,6 +797,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", getScenario).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores", getScenarioScores).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")

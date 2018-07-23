@@ -16,7 +16,7 @@ type Template struct {
 }
 
 type Finding struct {
-	Value   int
+	Value   int64
 	Hidden  bool
 	Message string
 }
@@ -47,4 +47,18 @@ type Scenario struct {
 	Description   string
 	Enabled       bool
 	HostTemplates map[int64][]int64
+}
+
+type ScenarioLatestScore struct {
+	TeamID    int64
+	Timestamp int64
+	Score     int64
+}
+
+type ScenarioScore struct {
+	ScenarioID int64
+	TeamID     int64
+	HostID     int64
+	Timestamp  int64
+	Score      int64
 }

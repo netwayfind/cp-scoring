@@ -24,8 +24,9 @@ func dbInit() {
 	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
-	createTable("host_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
+	createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 
 	log.Println("Finished setting up database")
 }
@@ -286,8 +287,27 @@ func dbDeleteTemplate(id int64) error {
 	return dbDelete("DELETE FROM templates where id=(?)", id)
 }
 
-func dbSelectTemplatesForHostname(hostname string) ([]model.Template, error) {
-	rows, err := db.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname)
+func dbSelectScenariosForHostname(hostname string) ([]int64, error) {
+	rows, err := db.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=1", hostname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	scenarioIDs := make([]int64, 0)
+	var id int64
+	for rows.Next() {
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		scenarioIDs = append(scenarioIDs, id)
+	}
+	return scenarioIDs, nil
+}
+
+func dbSelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error) {
+	rows, err := db.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.scenario_id=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -533,4 +553,40 @@ func dbUpdateScenario(id int64, scenario model.Scenario) error {
 		return err
 	}
 	return dbInsertScenarioHostTemplates(id, scenario)
+}
+
+func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
+	rows, err := db.Query("SELECT team_id, timestamp, score FROM scores WHERE scenario_id=(?) GROUP BY team_id ORDER BY max(timestamp) DESC", scenarioID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teamID int64
+	var timestamp int64
+	var score int64
+	scores := make([]model.ScenarioLatestScore, 0)
+
+	for rows.Next() {
+		err = rows.Scan(&teamID, &timestamp, &score)
+		if err != nil {
+			return nil, err
+		}
+		var entry model.ScenarioLatestScore
+		entry.TeamID = teamID
+		entry.Timestamp = timestamp
+		entry.Score = score
+		scores = append(scores, entry)
+	}
+
+	return scores, nil
+}
+
+func dbInsertScenarioScore(entry model.ScenarioScore) error {
+	_, err := dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
