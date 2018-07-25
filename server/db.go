@@ -613,6 +613,49 @@ func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioSco
 	return scores, nil
 }
 
+func dbSelectScenarioTimeline(scenarioID int64, teamID int64) ([]model.ScenarioTimeline, error) {
+	rows, err := db.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp ASC", scenarioID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// store entries, one per host (key)
+	entries := make(map[int64]model.ScenarioTimeline)
+	var hostID int64
+	var timestamp int64
+	var score int64
+
+	for rows.Next() {
+		err := rows.Scan(&hostID, &timestamp, &score)
+		if err != nil {
+			return nil, err
+		}
+		if timeline, ok := entries[hostID]; ok {
+			log.Println("prev")
+			timeline.Timestamps = append(timeline.Timestamps, timestamp)
+			timeline.Scores = append(timeline.Scores, score)
+			entries[hostID] = timeline
+		} else {
+			log.Println("new")
+			var timeline model.ScenarioTimeline
+			timeline.ScenarioID = scenarioID
+			timeline.TeamID = teamID
+			timeline.HostID = hostID
+			timeline.Timestamps = []int64{timestamp}
+			timeline.Scores = []int64{score}
+			entries[hostID] = timeline
+		}
+	}
+
+	results := make([]model.ScenarioTimeline, 0)
+	for _, entry := range entries {
+		results = append(results, entry)
+	}
+
+	return results, nil
+}
+
 func dbInsertScenarioScore(entry model.ScenarioScore) error {
 	_, err := dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
 	if err != nil {

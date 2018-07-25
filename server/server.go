@@ -766,8 +766,8 @@ func getScenarioScores(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func getScenarioScoresTeam(w http.ResponseWriter, r *http.Request) {
-	log.Println("get scenario scores for team")
+func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenario timeline for team")
 
 	// parse out int64 id
 	vars := mux.Vars(r)
@@ -789,16 +789,16 @@ func getScenarioScoresTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
-	scores, err := dbSelectScenarioScores(scenarioID, teamID)
+	timeline, err := dbSelectScenarioTimeline(scenarioID, teamID)
 	if err != nil {
-		msg := "ERROR: cannot retrieve scenario scores for team;"
+		msg := "ERROR: cannot retrieve scenario timeline for team;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
-	out, err := json.Marshal(scores)
+	out, err := json.Marshal(timeline)
 	if err != nil {
-		msg := "ERROR: cannot marshal scenario scores for team;"
+		msg := "ERROR: cannot marshal scenario timeline for team;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
@@ -838,7 +838,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores", getScenarioScores).Methods("GET")
-	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/team", getScenarioScoresTeam).Methods("GET")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/timeline", getScenarioScoresTimeline).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")

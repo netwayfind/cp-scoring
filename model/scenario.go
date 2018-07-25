@@ -63,3 +63,11 @@ type ScenarioScore struct {
 	Timestamp  int64
 	Score      int64
 }
+
+type ScenarioTimeline struct {
+	ScenarioID int64
+	TeamID     int64
+	HostID     int64
+	Timestamps []int64
+	Scores     []int64
+}
