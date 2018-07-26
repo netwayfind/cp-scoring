@@ -12,6 +12,7 @@ GOOS=linux GOARCH=amd64 go build -o cp-scoring-server-linux $PKG_BASE/server
 echo "Copying UI files"
 rm -rf ./ui
 mkdir -p ui
-cp -r $(dirname $0)/ui/* ui
+cp $(dirname $0)/ui/index.html ui
+cp $(dirname $0)/ui/index.js ui
 
 echo "Done"
