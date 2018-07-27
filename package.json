@@ -19,6 +19,8 @@
   "homepage": "https://github.com/sumwonyuno/cp-scoring#readme",
   "dependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-react-app": "^3.1.2"
+    "babel-preset-react-app": "^3.1.2",
+    "plotly.js": "^1.39.3",
+    "react-plotly.js": "^2.2.0"
   }
 }
