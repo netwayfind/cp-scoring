@@ -27,6 +27,7 @@ func dbInit() {
 	createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
 	createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 
 	log.Println("Finished setting up database")
 }
@@ -120,7 +121,7 @@ func dbSelectTeams() ([]model.TeamSummary, error) {
 }
 
 func dbSelectHostIDForHostname(hostname string) (int64, error) {
-	var id int64
+	var id int64 = -1
 
 	rows, err := db.Query("SELECT id FROM hosts WHERE hostname=(?)", hostname)
 	if err != nil {
@@ -137,7 +138,12 @@ func dbSelectHostIDForHostname(hostname string) (int64, error) {
 		break
 	}
 
-	return id, err
+	// did not find any
+	if id == -1 {
+		return id, &errorStr{hostname + " hostname not found"}
+	}
+
+	return id, nil
 }
 
 type errorStr struct {
@@ -632,12 +638,10 @@ func dbSelectScenarioTimeline(scenarioID int64, teamID int64) ([]model.ScenarioT
 			return nil, err
 		}
 		if timeline, ok := entries[hostID]; ok {
-			log.Println("prev")
 			timeline.Timestamps = append(timeline.Timestamps, timestamp)
 			timeline.Scores = append(timeline.Scores, score)
 			entries[hostID] = timeline
 		} else {
-			log.Println("new")
 			var timeline model.ScenarioTimeline
 			timeline.ScenarioID = scenarioID
 			timeline.TeamID = teamID
@@ -658,6 +662,40 @@ func dbSelectScenarioTimeline(scenarioID int64, teamID int64) ([]model.ScenarioT
 
 func dbInsertScenarioScore(entry model.ScenarioScore) error {
 	_, err := dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func dbSelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) (model.Report, error) {
+	var report model.Report
+	rows, err := db.Query("SELECT report FROM reports WHERE scenario_id=(?) AND team_id=(?) and host_id=(?) GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, teamID, hostID)
+	if err != nil {
+		return report, err
+	}
+	defer rows.Close()
+
+	var reportBytes []byte
+
+	for rows.Next() {
+		err := rows.Scan(&reportBytes)
+		if err != nil {
+			return report, err
+		}
+		json.Unmarshal(reportBytes, &report)
+	}
+
+	return report, nil
+}
+
+func dbInsertScenarioReport(scenarioID int64, entry model.Report) error {
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return err
+	}
+	_, err = dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, entry.TeamID, entry.HostID, entry.Timestamp, b)
 	if err != nil {
 		return err
 	}

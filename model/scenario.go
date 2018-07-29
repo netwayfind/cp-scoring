@@ -22,9 +22,10 @@ type Finding struct {
 }
 
 type Report struct {
-	TeamID   int64
-	HostID   int64
-	Findings []Finding
+	Timestamp int64
+	TeamID    int64
+	HostID    int64
+	Findings  []Finding
 }
 
 type TeamSummary struct {

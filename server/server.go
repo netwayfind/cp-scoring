@@ -100,10 +100,18 @@ func audit(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("Auditing state")
 		report := auditor.Audit(state, templates)
+
+		log.Println("Saving report")
+		report.Timestamp = state.Timestamp
 		report.HostID = hostID
 		report.TeamID = teamID
-		// TODO: save report
-		log.Println(report)
+		err = dbInsertScenarioReport(scenarioID, report)
+		if err != nil {
+			msg := "ERROR: cannot insert report;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
 
 		log.Println("Saving score")
 		var score int64
@@ -806,6 +814,55 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenario report for team")
+
+	// parse out int64 id
+	vars := mux.Vars(r)
+
+	scenarioID, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
+	teamKey := r.FormValue("team_key")
+	teamID, err := dbSelectTeamIDForKey(teamKey)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+	hostname := r.FormValue("hostname")
+	hostID, err := dbSelectHostIDForHostname(hostname)
+	if err != nil {
+		msg := "ERROR: cannot retrieve host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Host ID: %d", hostID))
+	report, err := dbSelectLatestScenarioReport(scenarioID, teamID, hostID)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario report for team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(report)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenario report  for team;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
 func main() {
 	dbInit()
 
@@ -839,6 +896,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores", getScenarioScores).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/timeline", getScenarioScoresTimeline).Methods("GET")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/report", getScenarioScoresReport).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")
