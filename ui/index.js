@@ -34,7 +34,7 @@ var App = function (_React$Component) {
         React.createElement(Templates, null),
         React.createElement(Scenarios, null),
         React.createElement(Scoreboard, { scenarioID: "1" }),
-        React.createElement(ScoreTimeline, null)
+        React.createElement(ScoreTimeline, { scenarioID: "1", teamKey: "key", hostname: "hostname" })
       );
     }
   }]);
@@ -1328,22 +1328,78 @@ var ScoreTimeline = function (_React$Component11) {
   function ScoreTimeline() {
     _classCallCheck(this, ScoreTimeline);
 
-    return _possibleConstructorReturn(this, (ScoreTimeline.__proto__ || Object.getPrototypeOf(ScoreTimeline)).apply(this, arguments));
+    var _this14 = _possibleConstructorReturn(this, (ScoreTimeline.__proto__ || Object.getPrototypeOf(ScoreTimeline)).call(this));
+
+    _this14.state = {
+      timestamps: [],
+      scores: [],
+      report: {}
+    };
+    return _this14;
   }
 
   _createClass(ScoreTimeline, [{
+    key: "populateScores",
+    value: function populateScores() {
+      var scenarioID = this.props.scenarioID;
+      var teamKey = this.props.teamKey;
+      var url = '/scenarios/' + scenarioID + '/scores/timeline?team_key=' + teamKey;
+
+      fetch(url).then(function (response) {
+        if (response.status >= 400) {
+          throw new Error("Bad response from server");
+        }
+        return response.json();
+      }).then(function (data) {
+        if (data) {
+          this.setState({
+            scores: data[0].Scores,
+            // timestamps is seconds, need milliseconds
+            timestamps: data[0].Timestamps.map(function (timestamp) {
+              return timestamp * 1000;
+            })
+          });
+        }
+      }.bind(this));
+    }
+  }, {
+    key: "populateReport",
+    value: function populateReport() {
+      var scenarioID = this.props.scenarioID;
+      var teamKey = this.props.teamKey;
+      var hostname = this.props.hostname;
+      var url = '/scenarios/' + scenarioID + '/scores/report?team_key=' + teamKey + '&hostname=' + hostname;
+
+      fetch(url).then(function (response) {
+        if (response.status >= 400) {
+          throw new Error("Bad response from server");
+        }
+        return response.json();
+      }).then(function (data) {
+        this.setState({
+          report: data
+        });
+      }.bind(this));
+    }
+  }, {
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      this.populateScores();
+      this.populateReport();
+    }
+  }, {
     key: "render",
     value: function render() {
       var data = [{
-        x: [1, 2, 3],
-        y: [1, 2, 3],
+        x: this.state.timestamps,
+        y: this.state.scores,
         type: 'scatter',
-        marker: { color: 'red' }
+        mode: 'lines+markers'
       }];
 
       var layout = {
         xaxis: {
-          fixedrange: true
+          type: 'date'
         },
         yaxis: {
           fixedrange: true
@@ -1354,6 +1410,28 @@ var ScoreTimeline = function (_React$Component11) {
         displayModeBar: false
       };
 
+      var rows = [];
+      if (this.state.report) {
+        for (var i in this.state.report.Findings) {
+          var finding = this.state.report.Findings[i];
+          if (!finding.Hidden) {
+            rows.push(React.createElement(
+              "li",
+              { key: i },
+              finding.Value,
+              " - ",
+              finding.Message
+            ));
+          } else {
+            rows.push(React.createElement(
+              "li",
+              { key: i },
+              "?"
+            ));
+          }
+        }
+      }
+
       return React.createElement(
         "div",
         { className: "ScoreTimeline" },
@@ -1363,7 +1441,12 @@ var ScoreTimeline = function (_React$Component11) {
           "Score Timeline"
         ),
         React.createElement("p", null),
-        React.createElement(Plot, { data: data, layout: layout, config: config })
+        React.createElement(Plot, { data: data, layout: layout, config: config }),
+        React.createElement(
+          "ul",
+          null,
+          rows
+        )
       );
     }
   }]);
