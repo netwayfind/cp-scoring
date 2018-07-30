@@ -1,15 +1,22 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/sumwonyuno/cp-scoring/auditor"
@@ -858,12 +865,77 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := json.Marshal(report)
 	if err != nil {
-		msg := "ERROR: cannot marshal scenario report  for team;"
+		msg := "ERROR: cannot marshal scenario report for team;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
 	w.Write(out)
+}
+
+func prepareHTTPS(fileKey string, fileCert string) {
+	// create server key and cert if it doesn't exist
+	if _, err := os.Stat(fileKey); os.IsNotExist(err) {
+		log.Println("Server key and cert not found. Going to generate")
+
+		// generate private key
+		reader := rand.Reader
+		key, err := rsa.GenerateKey(reader, 2048)
+		if err != nil {
+			log.Fatal("ERROR: could not generate key;", err)
+		}
+
+		// save private key
+		outFile, err := os.Create(fileKey)
+		if err != nil {
+			log.Fatal("ERROR: could not create server key file;", err)
+		}
+		defer outFile.Close()
+		privKey := &pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: x509.MarshalPKCS1PrivateKey(key),
+		}
+		pem.Encode(outFile, privKey)
+		log.Println("create server key")
+
+		notBefore := time.Now()
+		// 10 years
+		notAfter := notBefore.AddDate(10, 0, 0)
+
+		// generate self-signed cert
+		cert := x509.Certificate{
+			SerialNumber: big.NewInt(1),
+			Subject: pkix.Name{
+				CommonName: "localhost",
+			},
+			NotBefore: notBefore,
+			NotAfter:  notAfter,
+
+			DNSNames: []string{"localhost"},
+
+			IsCA:                  true,
+			KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+			ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			BasicConstraintsValid: true,
+		}
+		certBytes, err := x509.CreateCertificate(reader, &cert, &cert, &key.PublicKey, key)
+		if err != nil {
+			log.Fatal("ERROR: could not generate cert;", err)
+		}
+
+		// save cert
+		outFile, err = os.Create(fileCert)
+		if err != nil {
+			log.Fatal("ERROR: could not create server cert file;", err)
+		}
+		defer outFile.Close()
+		pubKey := &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: certBytes,
+		}
+		pem.Encode(outFile, pubKey)
+		log.Println("create server cert")
+	}
 }
 
 func main() {
@@ -874,6 +946,10 @@ func main() {
 	dir := filepath.Dir(ex)
 
 	dbInit(dir)
+
+	fileKey := path.Join(dir, "server.key")
+	fileCert := path.Join(dir, "server.crt")
+	prepareHTTPS(fileKey, fileCert)
 
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
@@ -917,5 +993,6 @@ func main() {
 	teamsRouter.HandleFunc("/{id:[0-9]+}", editTeam).Methods("POST")
 	teamsRouter.HandleFunc("/{id:[0-9]+}", deleteTeam).Methods("DELETE")
 
-	http.ListenAndServe(":8080", r)
+	log.Println("Ready to serve requests")
+	http.ListenAndServeTLS(":8443", fileCert, fileKey, r)
 }
