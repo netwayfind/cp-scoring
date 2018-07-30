@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"flag"
 	"io/ioutil"
@@ -18,7 +20,7 @@ import (
 func main() {
 	var server string
 
-	flag.StringVar(&server, "server", "http://localhost:8080", "server URL")
+	flag.StringVar(&server, "server", "https://localhost:8443", "server URL")
 	flag.Parse()
 
 	ex, err := os.Executable()
@@ -27,6 +29,7 @@ func main() {
 	}
 	dir := filepath.Dir(ex)
 
+	log.Println("Reading team key")
 	teamKeyBytes, err := ioutil.ReadFile(path.Join(dir, "team.key"))
 	if err != nil {
 		log.Println("ERROR: cannot read team id file;", err)
@@ -34,18 +37,30 @@ func main() {
 	}
 	teamKey := string(teamKeyBytes)
 
-	log.Println("Sending state to server", server)
+	certs := x509.NewCertPool()
+
+	log.Println("Reading server cert file")
+	certBytes, err := ioutil.ReadFile(path.Join(dir, "server.crt"))
+	if err != nil {
+		log.Println("ERROR: cannot read server cert file;", err)
+		return
+	}
+	certs.AppendCertsFromPEM(certBytes)
+	tlsConfig := &tls.Config{
+		RootCAs: certs,
+	}
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
-		sendState(server, teamKey)
+		sendState(server, transport, teamKey)
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
 }
 
-func sendState(server string, teamKey string) {
+func sendState(server string, transport *http.Transport, teamKey string) {
 	var state model.State
 
 	// TODO: choose correct function based on OS
@@ -60,7 +75,9 @@ func sendState(server string, teamKey string) {
 	}
 
 	url := server + "/audit"
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(b))
+	c := &http.Client{Transport: transport}
+	log.Println("Sending state to server", server)
+	resp, err := c.Post(url, "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		log.Println("ERROR:", err)
 		return
