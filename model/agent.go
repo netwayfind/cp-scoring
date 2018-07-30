@@ -1,7 +1,6 @@
 package model
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -31,11 +30,6 @@ func GetNewStateTemplate() State {
 	state.Hostname, err = os.Hostname()
 	if err != nil {
 		log.Println("ERROR: unable to get hostname;", err)
-	}
-
-	b, err := ioutil.ReadFile("team.key")
-	if err == nil {
-		state.TeamKey = string(b)
 	}
 
 	return state
