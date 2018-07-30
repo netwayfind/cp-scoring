@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -864,10 +867,18 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	dbInit()
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatal("ERROR: unable to get executable", err)
+	}
+	dir := filepath.Dir(ex)
+
+	dbInit(dir)
 
 	r := mux.NewRouter()
-	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir("./ui/"))))
+	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
+	r.Handle("/", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
+	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(path.Join(dir, "ui")))))
 
 	r.HandleFunc("/audit", audit)
 	templatesRouter := r.PathPrefix("/templates").Subrouter()

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"path"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -13,8 +14,8 @@ import (
 var db *sql.DB
 var err error
 
-func dbInit() {
-	db, err = sql.Open("sqlite3", "cp-scoring.db")
+func dbInit(dir string) {
+	db, err = sql.Open("sqlite3", path.Join(dir, "cp-scoring.db"))
 	if err != nil {
 		log.Fatal("ERROR: cannot open db file;", err)
 	}
