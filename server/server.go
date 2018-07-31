@@ -33,8 +33,16 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var stateSubmission model.StateSubmission
+	err = json.Unmarshal(body, &stateSubmission)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal state submission;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
 	var state model.State
-	err = json.Unmarshal(body, &state)
+	err = json.Unmarshal(stateSubmission.StateBytes, &state)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal state;"
 		log.Println(msg, err)
@@ -52,7 +60,7 @@ func audit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Getting information")
-	teamID, err := dbSelectTeamIDForKey(state.TeamKey)
+	teamID, err := dbSelectTeamIDForKey(stateSubmission.TeamKey)
 	if err != nil {
 		msg := "ERROR: cannot get team id;"
 		log.Println(msg, err)

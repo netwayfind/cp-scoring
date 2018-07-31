@@ -13,8 +13,12 @@ type Host struct {
 	OS       string
 }
 
+type StateSubmission struct {
+	TeamKey    string
+	StateBytes []byte
+}
+
 type State struct {
-	TeamKey   string
 	Timestamp int64
 	OS        string
 	Hostname  string

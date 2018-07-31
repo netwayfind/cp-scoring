@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
@@ -28,6 +29,13 @@ func main() {
 		log.Fatal("ERROR: unable to get executable", err)
 	}
 	dir := filepath.Dir(ex)
+
+	log.Println("Setting up data directory")
+	dataDir := path.Join(dir, "data")
+	err = os.MkdirAll(dataDir, 0700)
+	if err != nil {
+		log.Fatal("Unable to set up data directory;", err)
+	}
 
 	log.Println("Reading team key")
 	teamKeyBytes, err := ioutil.ReadFile(path.Join(dir, "team.key"))
@@ -54,18 +62,19 @@ func main() {
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
-		sendState(server, transport, teamKey)
+		saveState(dataDir)
+		go sendState(dataDir, server, transport, teamKey)
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
 }
 
-func sendState(server string, transport *http.Transport, teamKey string) {
+func saveState(dir string) {
 	var state model.State
 
 	// TODO: choose correct function based on OS
+	log.Println("Getting state")
 	state = getLinuxState()
-	state.TeamKey = teamKey
 
 	// convert to json bytes
 	b, err := json.Marshal(state)
@@ -74,15 +83,52 @@ func sendState(server string, transport *http.Transport, teamKey string) {
 		return
 	}
 
-	url := server + "/audit"
-	c := &http.Client{Transport: transport}
-	log.Println("Sending state to server", server)
-	resp, err := c.Post(url, "application/json", bytes.NewBuffer(b))
+	log.Println("Saving state")
+	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	filePath := path.Join(dir, timestamp)
+	err = ioutil.WriteFile(filePath, b, 0600)
 	if err != nil {
-		log.Println("ERROR:", err)
+		log.Println("ERROR: saving state;", err)
 		return
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	log.Println(string(body))
+}
+
+func sendState(dir string, server string, transport *http.Transport, teamKey string) {
+	url := server + "/audit"
+	c := &http.Client{Transport: transport}
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		log.Println("ERROR: cannot read data directory;", err)
+		return
+	}
+	for _, file := range files {
+		fullPath := path.Join(dir, file.Name())
+		log.Println("Found state file:", fullPath)
+		stateBytes, err := ioutil.ReadFile(fullPath)
+		if err != nil {
+			log.Println("ERROR: unable to read state file;", err)
+			log.Println("DELETING", fullPath)
+			os.Remove(fullPath)
+		} else {
+			log.Println("Sending state to server", server)
+			var submission model.StateSubmission
+			submission.TeamKey = teamKey
+			submission.StateBytes = stateBytes
+			b, err := json.Marshal(submission)
+			resp, err := c.Post(url, "application/json", bytes.NewBuffer(b))
+			if err != nil {
+				log.Println("ERROR:", err)
+				return
+			}
+			defer resp.Body.Close()
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Println("ERROR: unable to read server body")
+			}
+			log.Println(string(body))
+			log.Println("DELETING", fullPath)
+			os.Remove(fullPath)
+		}
+	}
 }
