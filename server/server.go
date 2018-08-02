@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -15,9 +16,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
 )
 
-func audit(w http.ResponseWriter, r *http.Request) {
+func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) {
+	log.Println("Received audit request")
 	if r.Method != "POST" {
 		msg := "HTTP 405"
 		log.Println(msg, err)
@@ -41,8 +45,20 @@ func audit(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
+	stateBytes := stateSubmission.StateBytes
+	buf := bytes.NewBuffer(stateBytes)
+	result, err := armor.Decode(buf)
+	if err != nil {
+		msg := "ERROR: cannot decode openpgp message;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	message, err := openpgp.ReadMessage(result.Body, entities, nil, nil)
+	messageBytes, err := ioutil.ReadAll(message.UnverifiedBody)
+
 	var state model.State
-	err = json.Unmarshal(stateSubmission.StateBytes, &state)
+	err = json.Unmarshal(messageBytes, &state)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal state;"
 		log.Println(msg, err)
@@ -875,6 +891,59 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+func createEncryptionKeys(filePGPPub string, filePGPPriv string) {
+	log.Println("Creating openpgp files")
+	entity, err := openpgp.NewEntity("cp-scoring", "test", "test@example.com", nil)
+	if err != nil {
+		log.Fatal("ERROR: could not generate openpgp files;", err)
+	}
+	for _, id := range entity.Identities {
+		err := id.SelfSignature.SignUserId(id.UserId.Id, entity.PrimaryKey, entity.PrivateKey, nil)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+	bufPub := bytes.NewBuffer(nil)
+	writerPub, err := armor.Encode(bufPub, openpgp.PublicKeyType, nil)
+	if err != nil {
+		log.Println("ERROR: cannot encode public key;", err)
+		return
+	}
+	err = entity.Serialize(writerPub)
+	if err != nil {
+		log.Println("ERROR: cannot serialize writer;", err)
+		return
+	}
+	writerPub.Close()
+	log.Println("Writing openpgp public key")
+	err = ioutil.WriteFile(filePGPPub, bufPub.Bytes(), 0600)
+	if err != nil {
+		log.Println("ERROR: cannot write public key file;", err)
+		return
+	}
+
+	bufPriv := bytes.NewBuffer(nil)
+	writerPriv, err := armor.Encode(bufPriv, openpgp.PrivateKeyType, nil)
+	if err != nil {
+		log.Println("ERROR: cannot encode private key;", err)
+		return
+	}
+	err = entity.SerializePrivate(writerPriv, nil)
+	if err != nil {
+		log.Println("ERROR: cannot serialize writer;", err)
+		return
+	}
+	writerPriv.Close()
+	log.Println("Writing openpgp private key")
+	err = ioutil.WriteFile(filePGPPriv, bufPriv.Bytes(), 0600)
+	if err != nil {
+		log.Println("ERROR: cannot write private key file;", err)
+		return
+	}
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -894,12 +963,32 @@ func main() {
 
 	dbInit(dir)
 
+	filePGPPub := path.Join(dir, "server.pub")
+	filePGPPriv := path.Join(dir, "server.priv")
+	if _, err := os.Stat(filePGPPriv); os.IsNotExist(err) {
+		createEncryptionKeys(filePGPPub, filePGPPriv)
+	}
+
+	log.Println("Reading server openpgp private key file")
+	privKeyFile, err := os.Open(filePGPPriv)
+	if err != nil {
+		log.Println("ERROR: cannot read server openpgp private key file;", err)
+		return
+	}
+	entities, err := openpgp.ReadArmoredKeyRing(privKeyFile)
+	if err != nil {
+		log.Println("ERROR: cannot read entity;", err)
+		return
+	}
+
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
 	r.Handle("/", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
 	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(path.Join(dir, "ui")))))
 
-	r.HandleFunc("/audit", audit)
+	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
+		audit(w, r, entities)
+	})
 	templatesRouter := r.PathPrefix("/templates").Subrouter()
 	templatesRouter.HandleFunc("", getTemplates).Methods("GET")
 	templatesRouter.HandleFunc("/", getTemplates).Methods("GET")

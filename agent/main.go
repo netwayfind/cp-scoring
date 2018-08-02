@@ -16,6 +16,10 @@ import (
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+
+	_ "golang.org/x/crypto/ripemd160"
 )
 
 func main() {
@@ -59,17 +63,49 @@ func main() {
 	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
+	log.Println("Reading server openpgp public key file")
+	pubKeyFile, err := os.Open(path.Join(dir, "server.pub"))
+	if err != nil {
+		log.Println("ERROR: cannot read server openpgp public key file;", err)
+		return
+	}
+	defer pubKeyFile.Close()
+	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
+	if err != nil {
+		log.Println("ERROR: cannot read entity;", err)
+		return
+	}
+
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
-		saveState(dataDir)
+		saveState(dataDir, entities)
 		go sendState(dataDir, server, transport, teamKey)
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
 }
 
-func saveState(dir string) {
+func encryptBytes(theBytes []byte, entities []*openpgp.Entity) ([]byte, error) {
+	log.Println("Encrypting bytes")
+	encbuf := bytes.NewBuffer(nil)
+	writer, err := armor.Encode(encbuf, openpgp.PublicKeyType, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	plaintext, err := openpgp.Encrypt(writer, entities, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	plaintext.Write(theBytes)
+	plaintext.Close()
+	writer.Close()
+
+	return encbuf.Bytes(), nil
+}
+
+func saveState(dir string, entities []*openpgp.Entity) {
 	var state model.State
 
 	// TODO: choose correct function based on OS
@@ -82,11 +118,16 @@ func saveState(dir string) {
 		log.Println("ERROR: marshalling state;", err)
 		return
 	}
+	encryptedBytes, err := encryptBytes(b, entities)
+	if err != nil {
+		log.Println("ERROR: cannot encrypt state bytes;", err)
+		return
+	}
 
 	log.Println("Saving state")
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	filePath := path.Join(dir, timestamp)
-	err = ioutil.WriteFile(filePath, b, 0600)
+	filePath := path.Join(dir, timestamp+".enc")
+	err = ioutil.WriteFile(filePath, encryptedBytes, 0600)
 	if err != nil {
 		log.Println("ERROR: saving state;", err)
 		return
