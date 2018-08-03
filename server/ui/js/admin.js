@@ -24,16 +24,15 @@ var App = function (_React$Component) {
   }
 
   _createClass(App, [{
-    key: "render",
+    key: 'render',
     value: function render() {
       return React.createElement(
-        "div",
-        { className: "App" },
+        'div',
+        { className: 'App' },
         React.createElement(Teams, null),
         React.createElement(Hosts, null),
         React.createElement(Templates, null),
-        React.createElement(Scenarios, null),
-        React.createElement(ScoreTimeline, { scenarioID: "1", teamKey: "key", hostname: "hostname" })
+        React.createElement(Scenarios, null)
       );
     }
   }]);
@@ -74,21 +73,21 @@ var BasicModal = function (_React$Component2) {
   }
 
   _createClass(BasicModal, [{
-    key: "defaultState",
+    key: 'defaultState',
     value: function defaultState() {
       return {
         subject: {}
       };
     }
   }, {
-    key: "setValue",
+    key: 'setValue',
     value: function setValue(key, value) {
       this.setState({
         subject: Object.assign({}, this.props.subject, this.state.subject, _defineProperty({}, key, value))
       });
     }
   }, {
-    key: "handleChange",
+    key: 'handleChange',
     value: function handleChange(event) {
       var value = event.target.value;
       if (event.target.type == 'checkbox') {
@@ -99,7 +98,7 @@ var BasicModal = function (_React$Component2) {
       });
     }
   }, {
-    key: "handleSubmit",
+    key: 'handleSubmit',
     value: function handleSubmit(event) {
       event.preventDefault();
 
@@ -127,45 +126,45 @@ var BasicModal = function (_React$Component2) {
       }.bind(this));
     }
   }, {
-    key: "handleClose",
+    key: 'handleClose',
     value: function handleClose() {
       this.props.onClose();
       this.setState(this.defaultState());
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       if (!this.props.show) {
         return null;
       }
 
       return React.createElement(
-        "div",
-        { className: "background", style: backgroundStyle },
+        'div',
+        { className: 'background', style: backgroundStyle },
         React.createElement(
-          "div",
-          { className: "modal", style: modalStyle },
+          'div',
+          { className: 'modal', style: modalStyle },
           React.createElement(
-            "label",
-            { htmlFor: "ID" },
-            "ID"
+            'label',
+            { htmlFor: 'ID' },
+            'ID'
           ),
-          React.createElement("input", { name: "ID", defaultValue: this.props.subjectID, disabled: true }),
-          React.createElement("br", null),
+          React.createElement('input', { name: 'ID', defaultValue: this.props.subjectID, disabled: true }),
+          React.createElement('br', null),
           React.createElement(
-            "form",
+            'form',
             { onChange: this.handleChange, onSubmit: this.handleSubmit },
             this.props.children,
-            React.createElement("br", null),
+            React.createElement('br', null),
             React.createElement(
-              "button",
-              { type: "submit" },
-              "Submit"
+              'button',
+              { type: 'submit' },
+              'Submit'
             ),
             React.createElement(
-              "button",
-              { type: "button", onClick: this.handleClose },
-              "Cancel"
+              'button',
+              { type: 'button', onClick: this.handleClose },
+              'Cancel'
             )
           )
         )
@@ -204,12 +203,12 @@ var Teams = function (_React$Component3) {
   }
 
   _createClass(Teams, [{
-    key: "componentDidMount",
+    key: 'componentDidMount',
     value: function componentDidMount() {
       this.populateTeams();
     }
   }, {
-    key: "populateTeams",
+    key: 'populateTeams',
     value: function populateTeams() {
       var url = '/teams';
 
@@ -223,12 +222,12 @@ var Teams = function (_React$Component3) {
       }.bind(this));
     }
   }, {
-    key: "newKey",
+    key: 'newKey',
     value: function newKey() {
       return Math.random().toString(16).substring(7);
     }
   }, {
-    key: "createTeam",
+    key: 'createTeam',
     value: function createTeam() {
       this.setState({
         selectedTeamID: null,
@@ -240,7 +239,7 @@ var Teams = function (_React$Component3) {
       this.toggleModal();
     }
   }, {
-    key: "editTeam",
+    key: 'editTeam',
     value: function editTeam(id) {
       var url = "/teams/" + id;
 
@@ -258,7 +257,7 @@ var Teams = function (_React$Component3) {
       }.bind(this));
     }
   }, {
-    key: "deleteTeam",
+    key: 'deleteTeam',
     value: function deleteTeam(id) {
       var url = "/teams/" + id;
 
@@ -272,13 +271,13 @@ var Teams = function (_React$Component3) {
       }.bind(this));
     }
   }, {
-    key: "handleSubmit",
+    key: 'handleSubmit',
     value: function handleSubmit() {
       this.populateTeams();
       this.toggleModal();
     }
   }, {
-    key: "regenKey",
+    key: 'regenKey',
     value: function regenKey() {
       var key = this.newKey();
       this.setState({
@@ -289,79 +288,79 @@ var Teams = function (_React$Component3) {
       this.modal.current.setValue("Key", key);
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var rows = [];
       for (var i = 0; i < this.state.teams.length; i++) {
         var team = this.state.teams[i];
         rows.push(React.createElement(
-          "li",
+          'li',
           { key: team.ID },
           team.ID,
-          " - ",
+          ' - ',
           team.Name,
           React.createElement(
-            "button",
-            { type: "button", onClick: this.editTeam.bind(this, team.ID) },
-            "Edit"
+            'button',
+            { type: 'button', onClick: this.editTeam.bind(this, team.ID) },
+            'Edit'
           ),
           React.createElement(
-            "button",
-            { type: "button", onClick: this.deleteTeam.bind(this, team.ID) },
-            "-"
+            'button',
+            { type: 'button', onClick: this.deleteTeam.bind(this, team.ID) },
+            '-'
           )
         ));
       }
 
       return React.createElement(
-        "div",
-        { className: "Teams" },
+        'div',
+        { className: 'Teams' },
         React.createElement(
-          "strong",
+          'strong',
           null,
-          "Teams"
+          'Teams'
         ),
-        React.createElement("p", null),
+        React.createElement('p', null),
         React.createElement(
-          "button",
+          'button',
           { onClick: this.createTeam.bind(this) },
-          "Add Team"
+          'Add Team'
         ),
         React.createElement(
           BasicModal,
-          { ref: this.modal, subjectClass: "teams", subjectID: this.state.selectedTeamID, subject: this.state.selectedTeam, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: "Name", defaultValue: this.state.selectedTeam.Name }),
-          React.createElement(Item, { name: "POC", defaultValue: this.state.selectedTeam.POC }),
-          React.createElement(Item, { name: "Email", type: "email", defaultValue: this.state.selectedTeam.Email }),
+          { ref: this.modal, subjectClass: 'teams', subjectID: this.state.selectedTeamID, subject: this.state.selectedTeam, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
+          React.createElement(Item, { name: 'Name', defaultValue: this.state.selectedTeam.Name }),
+          React.createElement(Item, { name: 'POC', defaultValue: this.state.selectedTeam.POC }),
+          React.createElement(Item, { name: 'Email', type: 'email', defaultValue: this.state.selectedTeam.Email }),
           React.createElement(
-            "label",
-            { htmlFor: "Enabled" },
-            "Enabled"
+            'label',
+            { htmlFor: 'Enabled' },
+            'Enabled'
           ),
-          React.createElement("input", { name: "Enabled", type: "checkbox", defaultChecked: !!this.state.selectedTeam.Enabled }),
-          React.createElement("br", null),
+          React.createElement('input', { name: 'Enabled', type: 'checkbox', defaultChecked: !!this.state.selectedTeam.Enabled }),
+          React.createElement('br', null),
           React.createElement(
-            "label",
-            { htmlFor: "Key" },
-            "Key"
+            'label',
+            { htmlFor: 'Key' },
+            'Key'
           ),
           React.createElement(
-            "ul",
+            'ul',
             null,
             React.createElement(
-              "li",
+              'li',
               null,
               this.state.selectedTeam.Key
             ),
             React.createElement(
-              "button",
-              { type: "button", onClick: this.regenKey.bind(this) },
-              "Regenerate"
+              'button',
+              { type: 'button', onClick: this.regenKey.bind(this) },
+              'Regenerate'
             )
           )
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows
         )
@@ -401,12 +400,12 @@ var Scenarios = function (_React$Component4) {
   }
 
   _createClass(Scenarios, [{
-    key: "componentDidMount",
+    key: 'componentDidMount',
     value: function componentDidMount() {
       this.populateScenarios();
     }
   }, {
-    key: "populateScenarios",
+    key: 'populateScenarios',
     value: function populateScenarios() {
       var url = '/scenarios';
 
@@ -420,7 +419,7 @@ var Scenarios = function (_React$Component4) {
       }.bind(this));
     }
   }, {
-    key: "createScenario",
+    key: 'createScenario',
     value: function createScenario() {
       this.setState({
         selectedScenarioID: null,
@@ -429,7 +428,7 @@ var Scenarios = function (_React$Component4) {
       this.toggleModal();
     }
   }, {
-    key: "editScenario",
+    key: 'editScenario',
     value: function editScenario(id) {
       var url = "/scenarios/" + id;
 
@@ -447,7 +446,7 @@ var Scenarios = function (_React$Component4) {
       }.bind(this));
     }
   }, {
-    key: "deleteScenario",
+    key: 'deleteScenario',
     value: function deleteScenario(id) {
       var url = "/scenarios/" + id;
 
@@ -461,18 +460,18 @@ var Scenarios = function (_React$Component4) {
       }.bind(this));
     }
   }, {
-    key: "handleSubmit",
+    key: 'handleSubmit',
     value: function handleSubmit() {
       this.populateScenarios();
       this.toggleModal();
     }
   }, {
-    key: "handleCallback",
+    key: 'handleCallback',
     value: function handleCallback(key, value) {
       this.modal.current.setValue(key, value);
     }
   }, {
-    key: "mapItems",
+    key: 'mapItems',
     value: function mapItems(callback) {
       var url = "/hosts";
 
@@ -492,7 +491,7 @@ var Scenarios = function (_React$Component4) {
       });
     }
   }, {
-    key: "listItems",
+    key: 'listItems',
     value: function listItems(callback) {
       var url = "/templates";
 
@@ -512,54 +511,54 @@ var Scenarios = function (_React$Component4) {
       });
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var rows = [];
       for (var i = 0; i < this.state.scenarios.length; i++) {
         var scenario = this.state.scenarios[i];
         rows.push(React.createElement(
-          "li",
+          'li',
           { key: scenario.ID },
           scenario.ID,
-          " - ",
+          ' - ',
           scenario.Name,
           React.createElement(
-            "button",
-            { type: "button", onClick: this.editScenario.bind(this, scenario.ID) },
-            "Edit"
+            'button',
+            { type: 'button', onClick: this.editScenario.bind(this, scenario.ID) },
+            'Edit'
           ),
           React.createElement(
-            "button",
-            { type: "button", onClick: this.deleteScenario.bind(this, scenario.ID) },
-            "-"
+            'button',
+            { type: 'button', onClick: this.deleteScenario.bind(this, scenario.ID) },
+            '-'
           )
         ));
       }
 
       return React.createElement(
-        "div",
-        { className: "Scenarios" },
+        'div',
+        { className: 'Scenarios' },
         React.createElement(
-          "strong",
+          'strong',
           null,
-          "Scenarios"
+          'Scenarios'
         ),
-        React.createElement("p", null),
+        React.createElement('p', null),
         React.createElement(
-          "button",
+          'button',
           { onClick: this.createScenario.bind(this) },
-          "Add Scenario"
+          'Add Scenario'
         ),
         React.createElement(
           BasicModal,
-          { ref: this.modal, subjectClass: "scenarios", subjectID: this.state.selectedScenarioID, subject: this.state.selectedScenario, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: "Name", defaultValue: this.state.selectedScenario.Name }),
-          React.createElement(Item, { name: "Description", defaultValue: this.state.selectedScenario.Description }),
-          React.createElement(Item, { name: "Enabled", type: "checkbox", defaultChecked: !!this.state.selectedScenario.Enabled }),
-          React.createElement(ItemMap, { name: "HostTemplates", label: "Hosts", listLabel: "Templates", defaultValue: this.state.selectedScenario.HostTemplates, callback: this.handleCallback, mapItems: this.mapItems, listItems: this.listItems })
+          { ref: this.modal, subjectClass: 'scenarios', subjectID: this.state.selectedScenarioID, subject: this.state.selectedScenario, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
+          React.createElement(Item, { name: 'Name', defaultValue: this.state.selectedScenario.Name }),
+          React.createElement(Item, { name: 'Description', defaultValue: this.state.selectedScenario.Description }),
+          React.createElement(Item, { name: 'Enabled', type: 'checkbox', defaultChecked: !!this.state.selectedScenario.Enabled }),
+          React.createElement(ItemMap, { name: 'HostTemplates', label: 'Hosts', listLabel: 'Templates', defaultValue: this.state.selectedScenario.HostTemplates, callback: this.handleCallback, mapItems: this.mapItems, listItems: this.listItems })
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows
         )
@@ -595,12 +594,12 @@ var Hosts = function (_React$Component5) {
   }
 
   _createClass(Hosts, [{
-    key: "componentDidMount",
+    key: 'componentDidMount',
     value: function componentDidMount() {
       this.populateHosts();
     }
   }, {
-    key: "populateHosts",
+    key: 'populateHosts',
     value: function populateHosts() {
       var url = '/hosts';
 
@@ -614,7 +613,7 @@ var Hosts = function (_React$Component5) {
       }.bind(this));
     }
   }, {
-    key: "createHost",
+    key: 'createHost',
     value: function createHost() {
       this.setState({
         selectedHostID: null,
@@ -623,7 +622,7 @@ var Hosts = function (_React$Component5) {
       this.toggleModal();
     }
   }, {
-    key: "editHost",
+    key: 'editHost',
     value: function editHost(id, host) {
       this.setState({
         selectedHostID: id,
@@ -632,7 +631,7 @@ var Hosts = function (_React$Component5) {
       this.toggleModal();
     }
   }, {
-    key: "deleteHost",
+    key: 'deleteHost',
     value: function deleteHost(id) {
       var url = "/hosts/" + id;
 
@@ -646,60 +645,60 @@ var Hosts = function (_React$Component5) {
       }.bind(this));
     }
   }, {
-    key: "handleSubmit",
+    key: 'handleSubmit',
     value: function handleSubmit() {
       this.populateHosts();
       this.toggleModal();
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var rows = [];
       for (var i = 0; i < this.state.hosts.length; i++) {
         var host = this.state.hosts[i];
         rows.push(React.createElement(
-          "li",
+          'li',
           { key: host.ID },
           host.ID,
-          " - ",
+          ' - ',
           host.Hostname,
-          " - ",
+          ' - ',
           host.OS,
           React.createElement(
-            "button",
-            { type: "button", onClick: this.editHost.bind(this, host.ID, host) },
-            "Edit"
+            'button',
+            { type: 'button', onClick: this.editHost.bind(this, host.ID, host) },
+            'Edit'
           ),
           React.createElement(
-            "button",
-            { type: "button", onClick: this.deleteHost.bind(this, host.ID) },
-            "-"
+            'button',
+            { type: 'button', onClick: this.deleteHost.bind(this, host.ID) },
+            '-'
           )
         ));
       }
 
       return React.createElement(
-        "div",
-        { className: "Hosts" },
+        'div',
+        { className: 'Hosts' },
         React.createElement(
-          "strong",
+          'strong',
           null,
-          "Hosts"
+          'Hosts'
         ),
-        React.createElement("p", null),
+        React.createElement('p', null),
         React.createElement(
-          "button",
+          'button',
           { onClick: this.createHost.bind(this) },
-          "Add Host"
+          'Add Host'
         ),
         React.createElement(
           BasicModal,
-          { subjectClass: "hosts", subjectID: this.state.selectedHostID, subject: this.state.selectedHost, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: "Hostname", type: "text", defaultValue: this.state.selectedHost.Hostname }),
-          React.createElement(Item, { name: "OS", type: "text", defaultValue: this.state.selectedHost.OS })
+          { subjectClass: 'hosts', subjectID: this.state.selectedHostID, subject: this.state.selectedHost, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
+          React.createElement(Item, { name: 'Hostname', type: 'text', defaultValue: this.state.selectedHost.Hostname }),
+          React.createElement(Item, { name: 'OS', type: 'text', defaultValue: this.state.selectedHost.OS })
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows
         )
@@ -739,12 +738,12 @@ var Templates = function (_React$Component6) {
   }
 
   _createClass(Templates, [{
-    key: "componentDidMount",
+    key: 'componentDidMount',
     value: function componentDidMount() {
       this.populateTemplates();
     }
   }, {
-    key: "populateTemplates",
+    key: 'populateTemplates',
     value: function populateTemplates() {
       var url = "/templates";
 
@@ -758,7 +757,7 @@ var Templates = function (_React$Component6) {
       }.bind(this));
     }
   }, {
-    key: "createTemplate",
+    key: 'createTemplate',
     value: function createTemplate() {
       this.setState({
         selectedTemplateID: null,
@@ -769,7 +768,7 @@ var Templates = function (_React$Component6) {
       this.toggleModal();
     }
   }, {
-    key: "editTemplate",
+    key: 'editTemplate',
     value: function editTemplate(id) {
       var url = "/templates/" + id;
 
@@ -787,7 +786,7 @@ var Templates = function (_React$Component6) {
       }.bind(this));
     }
   }, {
-    key: "deleteTemplate",
+    key: 'deleteTemplate',
     value: function deleteTemplate(id) {
       var url = "/templates/" + id;
 
@@ -801,13 +800,13 @@ var Templates = function (_React$Component6) {
       }.bind(this));
     }
   }, {
-    key: "handleSubmit",
+    key: 'handleSubmit',
     value: function handleSubmit() {
       this.populateTemplates();
       this.toggleModal();
     }
   }, {
-    key: "handleCallback",
+    key: 'handleCallback',
     value: function handleCallback(key, value) {
       var template = Object.assign({}, this.state.selectedTemplate.Template, _defineProperty({}, key, value));
       this.setState({
@@ -818,54 +817,54 @@ var Templates = function (_React$Component6) {
       this.modal.current.setValue("Template", template);
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var rows = [];
       for (var i = 0; i < this.state.templates.length; i++) {
         var template = this.state.templates[i];
         rows.push(React.createElement(
-          "li",
+          'li',
           { key: template.ID },
           template.ID,
-          " - ",
+          ' - ',
           template.Name,
           React.createElement(
-            "button",
-            { type: "button", onClick: this.editTemplate.bind(this, template.ID) },
-            "Edit"
+            'button',
+            { type: 'button', onClick: this.editTemplate.bind(this, template.ID) },
+            'Edit'
           ),
           React.createElement(
-            "button",
-            { type: "button", onClick: this.deleteTemplate.bind(this, template.ID) },
-            "-"
+            'button',
+            { type: 'button', onClick: this.deleteTemplate.bind(this, template.ID) },
+            '-'
           )
         ));
       }
 
       return React.createElement(
-        "div",
-        { className: "Templates" },
+        'div',
+        { className: 'Templates' },
         React.createElement(
-          "strong",
+          'strong',
           null,
-          "Templates"
+          'Templates'
         ),
-        React.createElement("p", null),
+        React.createElement('p', null),
         React.createElement(
-          "button",
+          'button',
           { onClick: this.createTemplate.bind(this) },
-          "Create Template"
+          'Create Template'
         ),
         React.createElement(
           BasicModal,
-          { ref: this.modal, subjectClass: "templates", subjectID: this.state.selectedTemplateID, subject: this.state.selectedTemplate, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: "Name", type: "text", defaultValue: this.state.selectedTemplate.Name }),
-          React.createElement(ItemList, { name: "UsersAdd", label: "Users to add", type: "text", defaultValue: this.state.selectedTemplate.Template.UsersAdd, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: "UsersKeep", label: "Users to keep", type: "text", defaultValue: this.state.selectedTemplate.Template.UsersKeep, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: "UsersRemove", label: "Users to remove", type: "text", defaultValue: this.state.selectedTemplate.Template.UsersRemove, callback: this.handleCallback })
+          { ref: this.modal, subjectClass: 'templates', subjectID: this.state.selectedTemplateID, subject: this.state.selectedTemplate, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
+          React.createElement(Item, { name: 'Name', type: 'text', defaultValue: this.state.selectedTemplate.Name }),
+          React.createElement(ItemList, { name: 'UsersAdd', label: 'Users to add', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersAdd, callback: this.handleCallback }),
+          React.createElement(ItemList, { name: 'UsersKeep', label: 'Users to keep', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersKeep, callback: this.handleCallback }),
+          React.createElement(ItemList, { name: 'UsersRemove', label: 'Users to remove', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersRemove, callback: this.handleCallback })
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows
         )
@@ -886,17 +885,17 @@ var Item = function (_React$Component7) {
   }
 
   _createClass(Item, [{
-    key: "render",
+    key: 'render',
     value: function render() {
       return React.createElement(
-        "div",
+        'div',
         null,
         React.createElement(
-          "label",
+          'label',
           { htmlFor: this.props.name },
           this.props.name
         ),
-        React.createElement("input", { name: this.props.name, type: this.props.type, defaultValue: this.props.defaultValue, defaultChecked: this.props.defaultChecked })
+        React.createElement('input', { name: this.props.name, type: this.props.type, defaultValue: this.props.defaultValue, defaultChecked: this.props.defaultChecked })
       );
     }
   }]);
@@ -927,7 +926,7 @@ var ItemMap = function (_React$Component8) {
   }
 
   _createClass(ItemMap, [{
-    key: "handleChange",
+    key: 'handleChange',
     value: function handleChange(event) {
       var value = Number(event.target.value);
       this.setState({
@@ -935,7 +934,7 @@ var ItemMap = function (_React$Component8) {
       });
     }
   }, {
-    key: "handleCallback",
+    key: 'handleCallback',
     value: function handleCallback(key, value) {
       var v = Object.assign({}, this.state.value, _defineProperty({}, key, value));
       this.setState({
@@ -944,7 +943,7 @@ var ItemMap = function (_React$Component8) {
       this.props.callback(this.props.name, v);
     }
   }, {
-    key: "add",
+    key: 'add',
     value: function add() {
       if (!this.state.item) {
         return;
@@ -960,7 +959,7 @@ var ItemMap = function (_React$Component8) {
       this.props.callback(this.props.name, value);
     }
   }, {
-    key: "remove",
+    key: 'remove',
     value: function remove(id) {
       if (this.state.value == null) {
         return;
@@ -973,7 +972,7 @@ var ItemMap = function (_React$Component8) {
       this.props.callback(this.props.name, value);
     }
   }, {
-    key: "componentWillMount",
+    key: 'componentWillMount',
     value: function componentWillMount() {
       var _this9 = this;
 
@@ -989,7 +988,7 @@ var ItemMap = function (_React$Component8) {
       });
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var _this10 = this;
 
@@ -997,7 +996,7 @@ var ItemMap = function (_React$Component8) {
       if (this.state.value) {
         var _loop = function _loop(i) {
           if (_this10.state.value[i] === undefined) {
-            return "continue";
+            return 'continue';
           }
           var text = i;
           var matches = _this10.state.mapItems.filter(function (obj) {
@@ -1007,28 +1006,28 @@ var ItemMap = function (_React$Component8) {
             text = matches[0].Display;
           }
           rows.push(React.createElement(
-            "li",
+            'li',
             { key: i },
             text,
             React.createElement(
-              "button",
-              { type: "button", onClick: _this10.remove.bind(_this10, i) },
-              "-"
+              'button',
+              { type: 'button', onClick: _this10.remove.bind(_this10, i) },
+              '-'
             ),
-            React.createElement(ItemList, { name: i, label: _this10.props.listLabel, type: "select", listItems: _this10.state.listItems, defaultValue: _this10.state.value[i], callback: _this10.handleCallback })
+            React.createElement(ItemList, { name: i, label: _this10.props.listLabel, type: 'select', listItems: _this10.state.listItems, defaultValue: _this10.state.value[i], callback: _this10.handleCallback })
           ));
         };
 
         for (var i in this.state.value) {
           var _ret = _loop(i);
 
-          if (_ret === "continue") continue;
+          if (_ret === 'continue') continue;
         }
       }
 
       var optionsMap = [];
       // empty selection
-      optionsMap.push(React.createElement("option", { disabled: true, key: "", value: "" }));
+      optionsMap.push(React.createElement('option', { disabled: true, key: '', value: '' }));
       for (var i in this.state.mapItems) {
         var option = this.state.mapItems[i];
         // skip already selected
@@ -1036,33 +1035,33 @@ var ItemMap = function (_React$Component8) {
           continue;
         }
         optionsMap.push(React.createElement(
-          "option",
+          'option',
           { key: option.ID, value: option.ID },
           option.Display
         ));
       }
 
       return React.createElement(
-        "div",
+        'div',
         null,
         React.createElement(
-          "label",
+          'label',
           null,
           this.props.label
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows,
           React.createElement(
-            "select",
+            'select',
             { value: this.state.item, onChange: this.handleChange },
             optionsMap
           ),
           React.createElement(
-            "button",
-            { type: "button", onClick: this.add },
-            "+"
+            'button',
+            { type: 'button', onClick: this.add },
+            '+'
           )
         )
       );
@@ -1092,7 +1091,7 @@ var ItemList = function (_React$Component9) {
   }
 
   _createClass(ItemList, [{
-    key: "handleChange",
+    key: 'handleChange',
     value: function handleChange(event) {
       var value = event.target.value;
       if (this.props.type === "select") {
@@ -1103,7 +1102,7 @@ var ItemList = function (_React$Component9) {
       });
     }
   }, {
-    key: "add",
+    key: 'add',
     value: function add() {
       if (!this.state.item) {
         return;
@@ -1124,7 +1123,7 @@ var ItemList = function (_React$Component9) {
       this.props.callback(this.props.name, value);
     }
   }, {
-    key: "remove",
+    key: 'remove',
     value: function remove(id) {
       if (this.state.value == null) {
         return;
@@ -1139,7 +1138,7 @@ var ItemList = function (_React$Component9) {
       this.props.callback(this.props.name, value);
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       var _this12 = this;
 
@@ -1156,13 +1155,13 @@ var ItemList = function (_React$Component9) {
             }
           }
           rows.push(React.createElement(
-            "li",
+            'li',
             { key: i },
             text,
             React.createElement(
-              "button",
-              { type: "button", onClick: _this12.remove.bind(_this12, i) },
-              "-"
+              'button',
+              { type: 'button', onClick: _this12.remove.bind(_this12, i) },
+              '-'
             )
           ));
         };
@@ -1172,11 +1171,11 @@ var ItemList = function (_React$Component9) {
         }
       }
 
-      var input = React.createElement("input", { type: this.props.type, value: this.state.item, onChange: this.handleChange });
+      var input = React.createElement('input', { type: this.props.type, value: this.state.item, onChange: this.handleChange });
       if (this.props.type === "select") {
         var optionsList = [];
         // empty selection
-        optionsList.push(React.createElement("option", { disabled: true, key: "", value: "" }));
+        optionsList.push(React.createElement('option', { disabled: true, key: '', value: '' }));
         for (var i in this.props.listItems) {
           var option = this.props.listItems[i];
           // skip already selected
@@ -1184,35 +1183,35 @@ var ItemList = function (_React$Component9) {
             continue;
           }
           optionsList.push(React.createElement(
-            "option",
+            'option',
             { key: option.ID, value: option.ID },
             option.Display
           ));
         }
         input = React.createElement(
-          "select",
+          'select',
           { value: this.state.item, onChange: this.handleChange },
           optionsList
         );
       }
 
       return React.createElement(
-        "div",
+        'div',
         null,
         React.createElement(
-          "label",
+          'label',
           null,
           this.props.label
         ),
         React.createElement(
-          "ul",
+          'ul',
           null,
           rows,
           input,
           React.createElement(
-            "button",
-            { type: "button", onClick: this.add },
-            "+"
+            'button',
+            { type: 'button', onClick: this.add },
+            '+'
           )
         )
       );
@@ -1220,138 +1219,6 @@ var ItemList = function (_React$Component9) {
   }]);
 
   return ItemList;
-}(React.Component);
-
-var ScoreTimeline = function (_React$Component10) {
-  _inherits(ScoreTimeline, _React$Component10);
-
-  function ScoreTimeline() {
-    _classCallCheck(this, ScoreTimeline);
-
-    var _this13 = _possibleConstructorReturn(this, (ScoreTimeline.__proto__ || Object.getPrototypeOf(ScoreTimeline)).call(this));
-
-    _this13.state = {
-      timestamps: [],
-      scores: [],
-      report: {}
-    };
-    return _this13;
-  }
-
-  _createClass(ScoreTimeline, [{
-    key: "populateScores",
-    value: function populateScores() {
-      var scenarioID = this.props.scenarioID;
-      var teamKey = this.props.teamKey;
-      var url = '/scenarios/' + scenarioID + '/scores/timeline?team_key=' + teamKey;
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        if (data) {
-          this.setState({
-            scores: data[0].Scores,
-            // timestamps is seconds, need milliseconds
-            timestamps: data[0].Timestamps.map(function (timestamp) {
-              return timestamp * 1000;
-            })
-          });
-        }
-      }.bind(this));
-    }
-  }, {
-    key: "populateReport",
-    value: function populateReport() {
-      var scenarioID = this.props.scenarioID;
-      var teamKey = this.props.teamKey;
-      var hostname = this.props.hostname;
-      var url = '/scenarios/' + scenarioID + '/scores/report?team_key=' + teamKey + '&hostname=' + hostname;
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({
-          report: data
-        });
-      }.bind(this));
-    }
-  }, {
-    key: "componentDidMount",
-    value: function componentDidMount() {
-      this.populateScores();
-      this.populateReport();
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      var data = [{
-        x: this.state.timestamps,
-        y: this.state.scores,
-        type: 'scatter',
-        mode: 'lines+markers'
-      }];
-
-      var layout = {
-        xaxis: {
-          type: 'date'
-        },
-        yaxis: {
-          fixedrange: true
-        }
-      };
-
-      var config = {
-        displayModeBar: false
-      };
-
-      var rows = [];
-      if (this.state.report) {
-        for (var i in this.state.report.Findings) {
-          var finding = this.state.report.Findings[i];
-          if (!finding.Hidden) {
-            rows.push(React.createElement(
-              "li",
-              { key: i },
-              finding.Value,
-              " - ",
-              finding.Message
-            ));
-          } else {
-            rows.push(React.createElement(
-              "li",
-              { key: i },
-              "?"
-            ));
-          }
-        }
-      }
-
-      return React.createElement(
-        "div",
-        { className: "ScoreTimeline" },
-        React.createElement(
-          "strong",
-          null,
-          "Score Timeline"
-        ),
-        React.createElement("p", null),
-        React.createElement(Plot, { data: data, layout: layout, config: config }),
-        React.createElement(
-          "ul",
-          null,
-          rows
-        )
-      );
-    }
-  }]);
-
-  return ScoreTimeline;
 }(React.Component);
 
 ReactDOM.render(React.createElement(App, null), document.getElementById('app'));

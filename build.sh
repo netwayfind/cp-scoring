@@ -13,9 +13,11 @@ rm -rf cp-scoring-server/ui
 mkdir -p cp-scoring-server/ui/js
 mkdir -p cp-scoring-server/ui/admin
 mkdir -p cp-scoring-server/ui/scoreboard
+mkdir -p cp-scoring-server/ui/report
 cp $(dirname $0)/server/ui/js/* cp-scoring-server/ui/js/
 cp $(dirname $0)/server/ui/admin/index.html cp-scoring-server/ui/admin
 cp $(dirname $0)/server/ui/scoreboard/index.html cp-scoring-server/ui/scoreboard
+cp $(dirname $0)/server/ui/report/index.html cp-scoring-server/ui/report
 echo "Building linux agent"
 mkdir -p cp-scoring-agent
 GOOS=linux GOARCH=amd64 go build -o cp-scoring-agent/cp-scoring-agent-linux $PKG_BASE/agent
