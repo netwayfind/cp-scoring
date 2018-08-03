@@ -15,6 +15,7 @@ mkdir -p cp-scoring-server/ui/admin
 mkdir -p cp-scoring-server/ui/scoreboard
 mkdir -p cp-scoring-server/ui/report
 cp $(dirname $0)/server/ui/js/* cp-scoring-server/ui/js/
+cp $(dirname $0)/server/ui/index.html cp-scoring-server/ui
 cp $(dirname $0)/server/ui/admin/index.html cp-scoring-server/ui/admin
 cp $(dirname $0)/server/ui/scoreboard/index.html cp-scoring-server/ui/scoreboard
 cp $(dirname $0)/server/ui/report/index.html cp-scoring-server/ui/report
