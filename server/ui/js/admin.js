@@ -33,7 +33,6 @@ var App = function (_React$Component) {
         React.createElement(Hosts, null),
         React.createElement(Templates, null),
         React.createElement(Scenarios, null),
-        React.createElement(Scoreboard, { scenarioID: "1" }),
         React.createElement(ScoreTimeline, { scenarioID: "1", teamKey: "key", hostname: "hostname" })
       );
     }
@@ -1223,119 +1222,20 @@ var ItemList = function (_React$Component9) {
   return ItemList;
 }(React.Component);
 
-var Scoreboard = function (_React$Component10) {
-  _inherits(Scoreboard, _React$Component10);
-
-  function Scoreboard() {
-    _classCallCheck(this, Scoreboard);
-
-    var _this13 = _possibleConstructorReturn(this, (Scoreboard.__proto__ || Object.getPrototypeOf(Scoreboard)).call(this));
-
-    _this13.state = {
-      scores: []
-    };
-    return _this13;
-  }
-
-  _createClass(Scoreboard, [{
-    key: "populateScores",
-    value: function populateScores() {
-      var id = this.props.scenarioID;
-      var url = '/scenarios/' + id + '/scores';
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({ scores: data });
-      }.bind(this));
-    }
-  }, {
-    key: "componentDidMount",
-    value: function componentDidMount() {
-      this.populateScores();
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      var body = [];
-      for (var i in this.state.scores) {
-        var entry = this.state.scores[i];
-        body.push(React.createElement(
-          "tr",
-          { key: i },
-          React.createElement(
-            "td",
-            null,
-            entry.TeamName
-          ),
-          React.createElement(
-            "td",
-            null,
-            entry.Score
-          )
-        ));
-      }
-
-      return React.createElement(
-        "div",
-        { className: "Scoreboard" },
-        React.createElement(
-          "strong",
-          null,
-          "Scoreboard"
-        ),
-        React.createElement("p", null),
-        React.createElement(
-          "table",
-          null,
-          React.createElement(
-            "thead",
-            null,
-            React.createElement(
-              "tr",
-              null,
-              React.createElement(
-                "th",
-                null,
-                "Team"
-              ),
-              React.createElement(
-                "th",
-                null,
-                "Score"
-              )
-            )
-          ),
-          React.createElement(
-            "tbody",
-            null,
-            body
-          )
-        )
-      );
-    }
-  }]);
-
-  return Scoreboard;
-}(React.Component);
-
-var ScoreTimeline = function (_React$Component11) {
-  _inherits(ScoreTimeline, _React$Component11);
+var ScoreTimeline = function (_React$Component10) {
+  _inherits(ScoreTimeline, _React$Component10);
 
   function ScoreTimeline() {
     _classCallCheck(this, ScoreTimeline);
 
-    var _this14 = _possibleConstructorReturn(this, (ScoreTimeline.__proto__ || Object.getPrototypeOf(ScoreTimeline)).call(this));
+    var _this13 = _possibleConstructorReturn(this, (ScoreTimeline.__proto__ || Object.getPrototypeOf(ScoreTimeline)).call(this));
 
-    _this14.state = {
+    _this13.state = {
       timestamps: [],
       scores: [],
       report: {}
     };
-    return _this14;
+    return _this13;
   }
 
   _createClass(ScoreTimeline, [{

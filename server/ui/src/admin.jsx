@@ -14,8 +14,6 @@ class App extends React.Component {
 
         <Scenarios />
 
-        <Scoreboard scenarioID="1"/>
-
         <ScoreTimeline scenarioID="1" teamKey="key" hostname="hostname"/>
       </div>
     );
@@ -939,66 +937,6 @@ class ItemList extends React.Component {
           {input}
           <button type="button" onClick={this.add}>+</button>
         </ul>
-      </div>
-    );
-  }
-}
-
-class Scoreboard extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      scores: []
-    }
-  }
-
-  populateScores() {
-    let id = this.props.scenarioID;
-    let url = '/scenarios/' + id + '/scores';
-  
-    fetch(url)
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      return response.json();
-    })
-    .then(function(data) {
-      this.setState({scores: data})
-    }.bind(this));
-  }
-
-  componentDidMount() {
-    this.populateScores();
-  }
-
-  render() {
-    let body = [];
-    for (let i in this.state.scores) {
-      let entry = this.state.scores[i];
-      body.push(
-        <tr key={i}>
-          <td>{entry.TeamName}</td>
-          <td>{entry.Score}</td>
-        </tr>
-      )
-    }
-
-    return (
-      <div className="Scoreboard">
-        <strong>Scoreboard</strong>
-        <p />
-        <table>
-          <thead>
-            <tr>
-              <th>Team</th>
-              <th>Score</th>
-            </tr>
-          </thead>
-          <tbody>
-            {body}
-          </tbody>
-        </table>
       </div>
     );
   }
