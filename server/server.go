@@ -20,6 +20,26 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 )
 
+type authenticationMiddleware struct {
+	tokenUsers map[string]string
+}
+
+func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("X-Session-Token")
+
+		if user, found := amw.tokenUsers[token]; found {
+			log.Printf("Authenticated user %s\n", user)
+			next.ServeHTTP(w, r)
+		} else {
+			msg := "Unauthorized request"
+			http.Error(w, msg, http.StatusUnauthorized)
+			log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
+			log.Println(msg)
+		}
+	})
+}
+
 func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) {
 	log.Println("Received audit request")
 	if r.Method != "POST" {
@@ -981,6 +1001,8 @@ func main() {
 		return
 	}
 
+	authenticator := authenticationMiddleware{}
+
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
 	r.Handle("/", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
@@ -990,6 +1012,7 @@ func main() {
 		audit(w, r, entities)
 	})
 	templatesRouter := r.PathPrefix("/templates").Subrouter()
+	templatesRouter.Use(authenticator.Middleware)
 	templatesRouter.HandleFunc("", getTemplates).Methods("GET")
 	templatesRouter.HandleFunc("/", getTemplates).Methods("GET")
 	templatesRouter.HandleFunc("", newTemplate).Methods("POST")
@@ -998,6 +1021,7 @@ func main() {
 	templatesRouter.HandleFunc("/{id:[0-9]+}", editTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", deleteTemplate).Methods("DELETE")
 	hostsRouter := r.PathPrefix("/hosts").Subrouter()
+	hostsRouter.Use(authenticator.Middleware)
 	hostsRouter.HandleFunc("", getHosts).Methods("GET")
 	hostsRouter.HandleFunc("/", getHosts).Methods("GET")
 	hostsRouter.HandleFunc("", newHost).Methods("POST")
@@ -1006,6 +1030,7 @@ func main() {
 	hostsRouter.HandleFunc("/{id:[0-9]+}", editHost).Methods("POST")
 	hostsRouter.HandleFunc("/{id:[0-9]+}", deleteHost).Methods("DELETE")
 	scenariosRouter := r.PathPrefix("/scenarios").Subrouter()
+	scenariosRouter.Use(authenticator.Middleware)
 	scenariosRouter.HandleFunc("", getScenarios).Methods("GET")
 	scenariosRouter.HandleFunc("/", getScenarios).Methods("GET")
 	scenariosRouter.HandleFunc("", newScenario).Methods("POST")
@@ -1017,6 +1042,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/timeline", getScenarioScoresTimeline).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/report", getScenarioScoresReport).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
+	teamsRouter.Use(authenticator.Middleware)
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("/", getTeams).Methods("GET")
 	teamsRouter.HandleFunc("", newTeam).Methods("POST")
