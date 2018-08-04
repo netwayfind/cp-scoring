@@ -1038,9 +1038,11 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", getScenario).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
-	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores", getScenarioScores).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/timeline", getScenarioScoresTimeline).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}/scores/report", getScenarioScoresReport).Methods("GET")
+	scoresRouter := r.PathPrefix("/scores").Subrouter()
+	// no auth
+	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScores).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
 	teamsRouter.Use(authenticator.Middleware)
 	teamsRouter.HandleFunc("", getTeams).Methods("GET")

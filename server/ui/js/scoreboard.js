@@ -51,7 +51,7 @@ var Scoreboard = function (_React$Component2) {
     key: "populateScores",
     value: function populateScores() {
       var id = this.props.scenarioID;
-      var url = '/scenarios/' + id + '/scores';
+      var url = '/scores/scenario/' + id;
 
       fetch(url).then(function (response) {
         if (response.status >= 400) {

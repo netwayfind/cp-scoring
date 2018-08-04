@@ -22,7 +22,7 @@ class Scoreboard extends React.Component {
 
   populateScores() {
     let id = this.props.scenarioID;
-    let url = '/scenarios/' + id + '/scores';
+    let url = '/scores/scenario/' + id;
   
     fetch(url)
     .then(function(response) {
