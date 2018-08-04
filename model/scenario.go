@@ -51,7 +51,6 @@ type Scenario struct {
 }
 
 type ScenarioLatestScore struct {
-	TeamID    int64
 	TeamName  string
 	Timestamp int64
 	Score     int64
