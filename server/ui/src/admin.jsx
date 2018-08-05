@@ -3,7 +3,36 @@
 const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      authenticated: false
+    }
+
+    this.authCallback = this.authCallback.bind(this);
+  }
+
+  authCallback(statusCode) {
+    if (statusCode == 200) {
+      this.setState({
+        authenticated: true
+      });
+    }
+    else {
+      this.setState({
+        authenticated: false
+      })
+    }    
+  }
+
   render() {
+    if (!this.state.authenticated) {
+      return (
+        <div className="App">
+          <Login callback={this.authCallback}/>
+        </div>
+      );
+    }
     return (
       <div className="App">
         <Teams />
@@ -13,6 +42,71 @@ class App extends React.Component {
         <Templates />
 
         <Scenarios />
+      </div>
+    );
+  }
+}
+
+class Login extends React.Component {
+  constructor() {
+    super();
+    this.state = {
+      username: "",
+      password: "",
+      messages: ""
+    }
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    this.setState({
+      ...this.state.credentials,
+      [event.target.name]: value
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (this.state.username.length == 0 || this.state.password.length == 0) {
+      return;
+    }
+
+    var url = "/admin/auth";
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: "username=" + this.state.username + "&password=" + this.state.password
+    })
+    .then(function(response) {
+      this.props.callback(response.status);
+      if (response.status >= 400) {
+        this.setState({
+          messages: "Rejected login. Try again."
+        });
+      }
+    }.bind(this));
+  }
+
+  render() {
+    return (
+      <div className="login">
+        {this.state.messages}
+        <form onChange={this.handleChange} onSubmit={this.handleSubmit}>
+          <label htmlFor="username">Username</label>
+          <input name="username" required="required"></input>
+          <br />
+          <label htmlFor="password">Password</label>
+          <input name="password" type="password" required="required"></input>
+          <br />
+          <button type="submit">Submit</button>
+        </form>
       </div>
     );
   }

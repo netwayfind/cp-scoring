@@ -964,12 +964,58 @@ func createEncryptionKeys(filePGPPub string, filePGPPriv string) {
 	}
 }
 
+func passwordHash(cleartext string) (string, error) {
+	return cleartext, nil
+}
+
+func authAdmin(w http.ResponseWriter, r *http.Request) {
+	log.Println("Authenticating admin")
+
+	r.ParseForm()
+	username := r.Form.Get("username")
+	log.Println("username: " + username)
+	password := r.Form.Get("password")
+	passwordHash, err := passwordHash(password)
+	if err != nil {
+		msg := "ERROR: cannot generate password hash;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	authenticated, err := dbAuthenticateAdmin(username, passwordHash)
+	if err != nil {
+		msg := "ERROR: cannot authenticate admin;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	if authenticated {
+		msg := "User authentication successful"
+		log.Println(msg)
+		return
+	}
+	msg := "User authenticated failed"
+	log.Println(msg)
+	http.Error(w, msg, http.StatusUnauthorized)
+}
+
+func newAdmin(w http.ResponseWriter, r *http.Request) {
+}
+
+func editAdmin(w http.ResponseWriter, r *http.Request) {
+}
+
+func deleteAdmin(w http.ResponseWriter, r *http.Request) {
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
 		log.Fatal("ERROR: unable to get executable", err)
 	}
 	dir := filepath.Dir(ex)
+
+	dbInit(dir)
 
 	var fileKey string
 	var fileCert string
@@ -980,8 +1026,6 @@ func main() {
 
 	log.Println("Using server key file: " + fileKey)
 	log.Println("Using server cert file: " + fileCert)
-
-	dbInit(dir)
 
 	filePGPPub := path.Join(dir, "server.pub")
 	filePGPPriv := path.Join(dir, "server.priv")
@@ -1011,6 +1055,11 @@ func main() {
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		audit(w, r, entities)
 	})
+	adminRouter := r.PathPrefix("/admin").Subrouter()
+	adminRouter.HandleFunc("/auth", authAdmin).Methods("POST")
+	adminRouter.HandleFunc("/new", newAdmin).Methods("POST")
+	adminRouter.HandleFunc("/edit", editAdmin).Methods("POST")
+	adminRouter.HandleFunc("", deleteAdmin).Methods("DELETE")
 	templatesRouter := r.PathPrefix("/templates").Subrouter()
 	templatesRouter.Use(authenticator.Middleware)
 	templatesRouter.HandleFunc("", getTemplates).Methods("GET")

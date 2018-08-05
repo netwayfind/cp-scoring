@@ -22,6 +22,7 @@ func dbInit(dir string) {
 	log.Println("Connected to database")
 
 	createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
+	createTable("admins", "CREATE TABLE IF NOT EXISTS admins(id INTEGER PRIMARY KEY, username VARCHAR NOT NULL, password_hash VARCHAR NOT NULL)")
 	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
@@ -29,6 +30,17 @@ func dbInit(dir string) {
 	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
 	createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+
+	// generate default admin if no admins
+	count, err := dbCountAdmin()
+	if err != nil {
+		log.Fatal("Could not get admin count;", err)
+	}
+	if count == 0 {
+		log.Println("Creating default admin")
+		// default credentials
+		dbInsertAdmin("admin", "admin")
+	}
 
 	log.Println("Finished setting up database")
 }
@@ -93,6 +105,47 @@ func dbUpdate(stmtStr string, args ...interface{}) error {
 
 func dbInsertState(state string) error {
 	_, err := dbInsert("INSERT INTO states(state) VALUES(?)", state)
+	return err
+}
+
+func dbCountAdmin() (int, error) {
+	rows, err := db.Query("SELECT DISTINCT username FROM admins")
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for rows.Next() {
+		count++
+	}
+
+	return count, nil
+}
+
+func dbAuthenticateAdmin(username string, passwordHash string) (bool, error) {
+	rows, err := db.Query("SELECT username FROM admins WHERE username=(?) AND password_hash=(?)", username, passwordHash)
+	if err != nil {
+		return false, err
+	}
+
+	for rows.Next() {
+		// must have a match
+		return true, nil
+	}
+	// no match
+	return false, nil
+}
+
+func dbDeleteAdmin(username string) error {
+	return dbDelete("DELETE FROM admins where username=(?)", username)
+}
+
+func dbUpdateAdmin(username string, passwordHash string) error {
+	return dbUpdate("UPDATE admins SET password_hash=(?) WHERE username=(?)", passwordHash, username)
+}
+
+func dbInsertAdmin(username string, passwordHash string) error {
+	_, err := dbInsert("INSERT INTO admins(username, password_hash) VALUES(?, ?)", username, passwordHash)
 	return err
 }
 
