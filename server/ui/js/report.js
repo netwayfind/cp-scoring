@@ -54,7 +54,7 @@ var ScoreTimeline = function (_React$Component2) {
     value: function populateScores() {
       var scenarioID = this.props.scenarioID;
       var teamKey = this.props.teamKey;
-      var url = '/scenarios/' + scenarioID + '/scores/timeline?team_key=' + teamKey;
+      var url = '/reports/scenario/' + scenarioID + '/timeline?team_key=' + teamKey;
 
       fetch(url).then(function (response) {
         if (response.status >= 400) {
@@ -79,7 +79,7 @@ var ScoreTimeline = function (_React$Component2) {
       var scenarioID = this.props.scenarioID;
       var teamKey = this.props.teamKey;
       var hostname = this.props.hostname;
-      var url = '/scenarios/' + scenarioID + '/scores/report?team_key=' + teamKey + '&hostname=' + hostname;
+      var url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;
 
       fetch(url).then(function (response) {
         if (response.status >= 400) {

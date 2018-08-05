@@ -25,7 +25,7 @@ class ScoreTimeline extends React.Component {
   populateScores() {
     let scenarioID = this.props.scenarioID;
     let teamKey = this.props.teamKey;
-    let url = '/scenarios/' + scenarioID + '/scores/timeline?team_key=' + teamKey;
+    let url = '/reports/scenario/' + scenarioID + '/timeline?team_key=' + teamKey;
   
     fetch(url)
     .then(function(response) {
@@ -51,7 +51,7 @@ class ScoreTimeline extends React.Component {
     let scenarioID = this.props.scenarioID;
     let teamKey = this.props.teamKey;
     let hostname = this.props.hostname;
-    let url = '/scenarios/' + scenarioID + '/scores/report?team_key=' + teamKey + '&hostname=' + hostname;
+    let url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;
   
     fetch(url)
     .then(function(response) {
