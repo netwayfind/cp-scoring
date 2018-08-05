@@ -113,6 +113,7 @@ func dbCountAdmin() (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 
 	var count int
 	for rows.Next() {
@@ -127,6 +128,7 @@ func dbAuthenticateAdmin(username string, passwordHash string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		// must have a match

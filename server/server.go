@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -14,11 +15,14 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
 	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
+
+const cookieName string = "cp-scoring"
 
 type authenticationMiddleware struct {
 	tokenUsers map[string]string
@@ -26,9 +30,14 @@ type authenticationMiddleware struct {
 
 func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("X-Session-Token")
+		cookie, err := r.Cookie(cookieName)
+		if err != nil {
+			msg := "Unauthorized request"
+			http.Error(w, msg, http.StatusUnauthorized)
+			return
+		}
 
-		if user, found := amw.tokenUsers[token]; found {
+		if user, found := amw.tokenUsers[cookie.Value]; found {
 			log.Printf("Authenticated user %s\n", user)
 			next.ServeHTTP(w, r)
 		} else {
@@ -968,7 +977,7 @@ func passwordHash(cleartext string) (string, error) {
 	return cleartext, nil
 }
 
-func authAdmin(w http.ResponseWriter, r *http.Request) {
+func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
 	log.Println("Authenticating admin")
 
 	r.ParseForm()
@@ -992,6 +1001,18 @@ func authAdmin(w http.ResponseWriter, r *http.Request) {
 	if authenticated {
 		msg := "User authentication successful"
 		log.Println(msg)
+
+		randKey := securecookie.GenerateRandomKey(32)
+		value := base64.StdEncoding.EncodeToString(randKey)
+		amw.tokenUsers[value] = username
+
+		cookie := &http.Cookie{
+			Name:     cookieName,
+			Value:    value,
+			Path:     "/",
+			HttpOnly: true,
+		}
+		http.SetCookie(w, cookie)
 		return
 	}
 	msg := "User authenticated failed"
@@ -1006,6 +1027,18 @@ func editAdmin(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteAdmin(w http.ResponseWriter, r *http.Request) {
+}
+
+func logoutAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
+	log.Println("logout request")
+	cookie, err := r.Cookie(cookieName)
+	if err != nil {
+		return
+	}
+	if user, found := amw.tokenUsers[cookie.Value]; found {
+		log.Println("Logging out user " + user)
+		delete(amw.tokenUsers, cookie.Value)
+	}
 }
 
 func main() {
@@ -1046,6 +1079,7 @@ func main() {
 	}
 
 	authenticator := authenticationMiddleware{}
+	authenticator.tokenUsers = make(map[string]string)
 
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
@@ -1055,8 +1089,14 @@ func main() {
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		audit(w, r, entities)
 	})
+	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		authAdmin(w, r, authenticator)
+	}).Methods("POST")
+	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		logoutAdmin(w, r, authenticator)
+	}).Methods("DELETE")
 	adminRouter := r.PathPrefix("/admin").Subrouter()
-	adminRouter.HandleFunc("/auth", authAdmin).Methods("POST")
+	adminRouter.Use(authenticator.Middleware)
 	adminRouter.HandleFunc("/new", newAdmin).Methods("POST")
 	adminRouter.HandleFunc("/edit", editAdmin).Methods("POST")
 	adminRouter.HandleFunc("", deleteAdmin).Methods("DELETE")

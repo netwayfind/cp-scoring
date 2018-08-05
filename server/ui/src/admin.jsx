@@ -10,6 +10,7 @@ class App extends React.Component {
     }
 
     this.authCallback = this.authCallback.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
   authCallback(statusCode) {
@@ -25,6 +26,30 @@ class App extends React.Component {
     }    
   }
 
+  logout() {
+    let url = "/logout"
+    fetch(url, {
+      credentials: 'same-origin',
+      method: "DELETE"
+    })
+    .then(function(_) {
+      this.setState({
+        authenticated: false
+      })
+    }.bind(this));
+  }
+
+  componentDidMount() {
+    // check if logged in by visiting the following URL
+    let url = "/templates";
+    fetch(url, {
+      credentials: 'same-origin'
+    })
+    .then(function(response) {
+      this.authCallback(response.status);
+    }.bind(this));
+  }
+
   render() {
     if (!this.state.authenticated) {
       return (
@@ -35,6 +60,8 @@ class App extends React.Component {
     }
     return (
       <div className="App">
+        <button onClick={this.logout}>Logout</button>
+        <p/>
         <Teams />
 
         <Hosts />
@@ -75,7 +102,7 @@ class Login extends React.Component {
       return;
     }
 
-    var url = "/admin/auth";
+    var url = "/login";
 
     fetch(url, {
       method: 'POST',
