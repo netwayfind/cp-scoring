@@ -18,6 +18,7 @@ import (
 	"github.com/gorilla/securecookie"
 	"github.com/sumwonyuno/cp-scoring/auditor"
 	"github.com/sumwonyuno/cp-scoring/model"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
@@ -37,14 +38,27 @@ func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler 
 			return
 		}
 
-		if user, found := amw.tokenUsers[cookie.Value]; found {
-			log.Printf("Authenticated user %s\n", user)
+		if username, found := amw.tokenUsers[cookie.Value]; found {
+			isAdmin, err := dbIsAdmin(username)
+			if err != nil {
+				msg := "ERROR: unable to check if user is admin"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+			if !isAdmin {
+				// delete any existing sessions
+				delete(amw.tokenUsers, cookie.Value)
+				msg := "Unauthorized request"
+				http.Error(w, msg, http.StatusUnauthorized)
+				log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
+				return
+			}
 			next.ServeHTTP(w, r)
 		} else {
 			msg := "Unauthorized request"
 			http.Error(w, msg, http.StatusUnauthorized)
 			log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
-			log.Println(msg)
 		}
 	})
 }
@@ -974,7 +988,40 @@ func createEncryptionKeys(filePGPPub string, filePGPPriv string) {
 }
 
 func passwordHash(cleartext string) (string, error) {
-	return cleartext, nil
+	hashed, err := bcrypt.GenerateFromPassword([]byte(cleartext), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashed), nil
+}
+
+func checkPasswordHash(cleartext string, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(cleartext))
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func getAdmins(w http.ResponseWriter, r *http.Request) {
+	log.Println("get all admins")
+
+	// get all admins
+	admins, err := dbSelectAdmins()
+	if err != nil {
+		msg := "ERROR: cannot retrieve admins;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(admins)
+	if err != nil {
+		msg := "ERROR: cannot marshal admins;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
 }
 
 func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
@@ -984,23 +1031,16 @@ func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddlew
 	username := r.Form.Get("username")
 	log.Println("username: " + username)
 	password := r.Form.Get("password")
-	passwordHash, err := passwordHash(password)
-	if err != nil {
-		msg := "ERROR: cannot generate password hash;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
-	}
-	authenticated, err := dbAuthenticateAdmin(username, passwordHash)
+
+	storedPasswordHash, err := dbSelectAdminPasswordHash(username)
 	if err != nil {
 		msg := "ERROR: cannot authenticate admin;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
-	if authenticated {
-		msg := "User authentication successful"
-		log.Println(msg)
+	if checkPasswordHash(password, storedPasswordHash) {
+		log.Println("User authentication successful")
 
 		randKey := securecookie.GenerateRandomKey(32)
 		value := base64.StdEncoding.EncodeToString(randKey)
@@ -1020,13 +1060,123 @@ func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddlew
 	http.Error(w, msg, http.StatusUnauthorized)
 }
 
+type credentials struct {
+	Username string
+	Password string
+}
+
 func newAdmin(w http.ResponseWriter, r *http.Request) {
+	log.Println("new admin")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var creds credentials
+	err = json.Unmarshal(body, &creds)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal credentials;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	if len(creds.Username) == 0 || len(creds.Password) == 0 {
+		msg := "ERROR: invalid username or password;"
+		log.Println(msg)
+		w.Write([]byte(msg))
+		return
+	}
+
+	log.Println("username: " + creds.Username)
+	passwordHash, err := passwordHash(creds.Password)
+	if err != nil {
+		msg := "ERROR: cannot generate password hash;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	err = dbInsertAdmin(creds.Username, passwordHash)
+	if err != nil {
+		msg := "ERROR: cannot insert admin;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	log.Println("Admin added")
 }
 
 func editAdmin(w http.ResponseWriter, r *http.Request) {
+	log.Println("editing admin")
+
+	// parse out int64 id
+	vars := mux.Vars(r)
+
+	username := vars["username"]
+	log.Println("username: " + username)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	var creds credentials
+	err = json.Unmarshal(body, &creds)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal credentials;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	if len(username) == 0 || len(creds.Password) == 0 {
+		msg := "ERROR: invalid username or password;"
+		log.Println(msg)
+		w.Write([]byte(msg))
+		return
+	}
+
+	passwordHash, err := passwordHash(creds.Password)
+	if err != nil {
+		msg := "ERROR: cannot generate password hash;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	err = dbUpdateAdmin(username, passwordHash)
+	if err != nil {
+		msg := "ERROR: cannot update admin;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	log.Println("Admin edited")
 }
 
 func deleteAdmin(w http.ResponseWriter, r *http.Request) {
+	log.Println("deleting admin")
+
+	vars := mux.Vars(r)
+
+	username := vars["username"]
+	log.Println("username: " + username)
+	err = dbDeleteAdmin(username)
+	if err != nil {
+		msg := "ERROR: cannot delete admin;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	log.Println("Admin deleted")
 }
 
 func logoutAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
@@ -1049,6 +1199,21 @@ func main() {
 	dir := filepath.Dir(ex)
 
 	dbInit(dir)
+
+	// generate default admin if no admins
+	admins, err := dbSelectAdmins()
+	if err != nil {
+		log.Fatal("Could not get admin list;", err)
+	}
+	if len(admins) == 0 {
+		log.Println("Creating default admin")
+		// default credentials
+		passwordHash, err := passwordHash("admin")
+		if err != nil {
+			log.Fatal("ERROR: cannot generate password hash;", err)
+		}
+		dbInsertAdmin("admin", passwordHash)
+	}
 
 	var fileKey string
 	var fileCert string
@@ -1095,11 +1260,14 @@ func main() {
 	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
 		logoutAdmin(w, r, authenticator)
 	}).Methods("DELETE")
-	adminRouter := r.PathPrefix("/admin").Subrouter()
+	adminRouter := r.PathPrefix("/admins").Subrouter()
 	adminRouter.Use(authenticator.Middleware)
-	adminRouter.HandleFunc("/new", newAdmin).Methods("POST")
-	adminRouter.HandleFunc("/edit", editAdmin).Methods("POST")
-	adminRouter.HandleFunc("", deleteAdmin).Methods("DELETE")
+	adminRouter.HandleFunc("", getAdmins).Methods("GET")
+	adminRouter.HandleFunc("/", getAdmins).Methods("GET")
+	adminRouter.HandleFunc("", newAdmin).Methods("POST")
+	adminRouter.HandleFunc("/", newAdmin).Methods("POST")
+	adminRouter.HandleFunc("/{username}", editAdmin).Methods("POST")
+	adminRouter.HandleFunc("/{username}", deleteAdmin).Methods("DELETE")
 	templatesRouter := r.PathPrefix("/templates").Subrouter()
 	templatesRouter.Use(authenticator.Middleware)
 	templatesRouter.HandleFunc("", getTemplates).Methods("GET")

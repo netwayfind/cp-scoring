@@ -23,24 +23,13 @@ func dbInit(dir string) {
 
 	createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
 	createTable("admins", "CREATE TABLE IF NOT EXISTS admins(id INTEGER PRIMARY KEY, username VARCHAR NOT NULL, password_hash VARCHAR NOT NULL)")
-	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
+	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(name VARCHAR PRIMARY KEY NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
 	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
 	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
 	createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
-
-	// generate default admin if no admins
-	count, err := dbCountAdmin()
-	if err != nil {
-		log.Fatal("Could not get admin count;", err)
-	}
-	if count == 0 {
-		log.Println("Creating default admin")
-		// default credentials
-		dbInsertAdmin("admin", "admin")
-	}
 
 	log.Println("Finished setting up database")
 }
@@ -108,34 +97,66 @@ func dbInsertState(state string) error {
 	return err
 }
 
-func dbCountAdmin() (int, error) {
+func dbSelectAdmins() ([]string, error) {
+	var admins []string
 	rows, err := db.Query("SELECT DISTINCT username FROM admins")
 	if err != nil {
-		return 0, err
+		return admins, err
 	}
 	defer rows.Close()
 
-	var count int
+	admins = make([]string, 0)
+	var username string
 	for rows.Next() {
-		count++
+		err = rows.Scan(&username)
+		if err != nil {
+			return admins, err
+		}
+		admins = append(admins, username)
 	}
 
-	return count, nil
+	return admins, nil
 }
 
-func dbAuthenticateAdmin(username string, passwordHash string) (bool, error) {
-	rows, err := db.Query("SELECT username FROM admins WHERE username=(?) AND password_hash=(?)", username, passwordHash)
+func dbIsAdmin(username string) (bool, error) {
+	rows, err := db.Query("SELECT username FROM admins WHERE username=(?)", username)
 	if err != nil {
 		return false, err
 	}
 	defer rows.Close()
 
+	var count int
+	var u string
 	for rows.Next() {
-		// must have a match
-		return true, nil
+		err := rows.Scan(&u)
+		if err != nil {
+			return false, err
+		}
+		count++
 	}
-	// no match
-	return false, nil
+
+	if count == 0 {
+		return false, nil
+	}
+	return true, nil
+}
+
+func dbSelectAdminPasswordHash(username string) (string, error) {
+	rows, err := db.Query("SELECT password_hash FROM admins WHERE username=(?)", username)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var passwordHash string
+	for rows.Next() {
+		err := rows.Scan(&passwordHash)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return passwordHash, nil
 }
 
 func dbDeleteAdmin(username string) error {
