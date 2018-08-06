@@ -24,5 +24,7 @@ cp $(dirname $0)/server/ui/scoreboard/index.html $BASEDIR/ui/scoreboard
 cp $(dirname $0)/server/ui/report/index.html $BASEDIR/ui/report
 echo "Building linux agent"
 GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux $PKG_BASE/agent
+echo "Building windows agent"
+GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows $PKG_BASE/agent
 
 echo "Done"
