@@ -1254,7 +1254,9 @@ func main() {
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
 	r.Handle("/", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
-	r.PathPrefix("/ui").Handler(http.StripPrefix("/ui", http.FileServer(http.Dir(path.Join(dir, "ui")))))
+	r.PathPrefix("/ui").Handler(http.FileServer(http.Dir(dir)))
+
+	r.PathPrefix("/public").Handler(http.FileServer(http.Dir(dir)))
 
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		audit(w, r, entities)
