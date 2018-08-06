@@ -23,16 +23,41 @@ import (
 )
 
 func main() {
-	var server string
-
-	flag.StringVar(&server, "server", "https://localhost:8443", "server URL")
-	flag.Parse()
-
 	ex, err := os.Executable()
 	if err != nil {
 		log.Fatal("ERROR: unable to get executable", err)
 	}
 	dir := filepath.Dir(ex)
+
+	var serverURL string
+	defaultURL := "https://localhost:8443"
+
+	flag.StringVar(&serverURL, "server", defaultURL, "server URL")
+	flag.Parse()
+
+	serverURLFile := path.Join(dir, "server")
+	serverPubFile := path.Join(dir, "server.pub")
+	serverCrtFile := path.Join(dir, "server.crt")
+	teamKeyFile := path.Join(dir, "team.key")
+
+	// read server URL from saved file
+	if _, err := os.Stat(serverURLFile); os.IsExist(err) {
+		log.Println("Found server URL file")
+		b, err := ioutil.ReadFile(serverURLFile)
+		if err != nil {
+			log.Fatal("ERROR: cannot read from server URL file")
+		}
+		serverURL = string(b)
+	} else {
+		// not set up, save server URL
+		log.Println("Saving server URL")
+		serverFileText := []byte(serverURL)
+		err = ioutil.WriteFile(serverURLFile, serverFileText, 0600)
+		if err != nil {
+			log.Fatal("ERROR: cannot write to server URL file;", err)
+		}
+	}
+	log.Println("Server URL: " + serverURL)
 
 	log.Println("Setting up data directory")
 	dataDir := path.Join(dir, "data")
@@ -42,7 +67,7 @@ func main() {
 	}
 
 	log.Println("Reading team key")
-	teamKeyBytes, err := ioutil.ReadFile(path.Join(dir, "team.key"))
+	teamKeyBytes, err := ioutil.ReadFile(teamKeyFile)
 	if err != nil {
 		log.Println("ERROR: cannot read team id file;", err)
 		return
@@ -52,7 +77,7 @@ func main() {
 	certs := x509.NewCertPool()
 
 	log.Println("Reading server cert file")
-	certBytes, err := ioutil.ReadFile(path.Join(dir, "server.crt"))
+	certBytes, err := ioutil.ReadFile(serverCrtFile)
 	if err != nil {
 		log.Println("ERROR: cannot read server cert file;", err)
 		return
@@ -64,7 +89,7 @@ func main() {
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
 	log.Println("Reading server openpgp public key file")
-	pubKeyFile, err := os.Open(path.Join(dir, "server.pub"))
+	pubKeyFile, err := os.Open(serverPubFile)
 	if err != nil {
 		log.Println("ERROR: cannot read server openpgp public key file;", err)
 		return
@@ -80,7 +105,7 @@ func main() {
 	for {
 		nextTime = nextTime.Add(time.Minute)
 		saveState(dataDir, entities)
-		go sendState(dataDir, server, transport, teamKey)
+		go sendState(dataDir, serverURL, transport, teamKey)
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
