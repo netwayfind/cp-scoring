@@ -1215,18 +1215,23 @@ func main() {
 		dbInsertAdmin("admin", passwordHash)
 	}
 
+	publicDir := path.Join(dir, "public")
+	privateDir := path.Join(dir, "private")
+	err = os.MkdirAll(publicDir, 0700)
+	err = os.MkdirAll(privateDir, 0700)
+
 	var fileKey string
 	var fileCert string
 
-	flag.StringVar(&fileKey, "key", path.Join(dir, "server.key"), "server key")
-	flag.StringVar(&fileCert, "cert", path.Join(dir, "server.crt"), "server cert")
+	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
+	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
 	flag.Parse()
 
 	log.Println("Using server key file: " + fileKey)
 	log.Println("Using server cert file: " + fileCert)
 
-	filePGPPub := path.Join(dir, "server.pub")
-	filePGPPriv := path.Join(dir, "server.priv")
+	filePGPPub := path.Join(publicDir, "server.pub")
+	filePGPPriv := path.Join(privateDir, "server.priv")
 	if _, err := os.Stat(filePGPPriv); os.IsNotExist(err) {
 		createEncryptionKeys(filePGPPub, filePGPPriv)
 	}
