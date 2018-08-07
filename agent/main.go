@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -135,7 +136,13 @@ func saveState(dir string, entities []*openpgp.Entity) {
 
 	// TODO: choose correct function based on OS
 	log.Println("Getting state")
-	state = getLinuxState()
+	if runtime.GOOS == "linux" {
+		state = getLinuxState()
+	} else if runtime.GOOS == "windows" {
+		state = getWindowsState()
+	} else {
+		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
+	}
 
 	// convert to json bytes
 	b, err := json.Marshal(state)
