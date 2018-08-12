@@ -93,6 +93,9 @@ func getUsers() []model.User {
 		} else {
 			entry.AccountExpires = true
 		}
+
+		// save changes
+		usersMap[username] = entry
 	}
 
 	// turn users map into users array

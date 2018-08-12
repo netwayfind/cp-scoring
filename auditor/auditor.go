@@ -35,23 +35,23 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		if templateUser.AccountPresent && !present {
 			presentFinding.Show = true
 			presentFinding.Value = -1
-			presentFinding.Message = "Required user missing: " + user.Name
+			presentFinding.Message = "Required user missing: " + templateUser.Name
 		} else if !templateUser.AccountPresent && !present {
 			presentFinding.Show = true
 			presentFinding.Value = 1
-			presentFinding.Message = "User removed: " + user.Name
+			presentFinding.Message = "User removed: " + templateUser.Name
 		} else if templateUser.AccountPresent {
 			presentFinding.Show = true
 			presentFinding.Value = 1
-			presentFinding.Message = "Required user present: " + user.Name
+			presentFinding.Message = "Required user present: " + templateUser.Name
 		} else if !templateUser.AccountActive {
 			presentFinding.Show = false
 			presentFinding.Value = 0
-			presentFinding.Message = "User not removed: " + user.Name
+			presentFinding.Message = "User not removed: " + templateUser.Name
 		} else {
 			presentFinding.Show = false
 			presentFinding.Value = 0
-			presentFinding.Message = "Unknown user present state: " + user.Name
+			presentFinding.Message = "Unknown user present state: " + templateUser.Name
 		}
 		findings = append(findings, presentFinding)
 
@@ -60,23 +60,23 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		if templateUser.AccountActive && user.AccountActive {
 			activeFinding.Show = true
 			activeFinding.Value = 1
-			activeFinding.Message = "User active: " + user.Name
+			activeFinding.Message = "User active: " + templateUser.Name
 		} else if templateUser.AccountActive && !user.AccountActive {
 			activeFinding.Show = true
 			activeFinding.Value = -1
-			activeFinding.Message = "User not active: " + user.Name
+			activeFinding.Message = "User not active: " + templateUser.Name
 		} else if !templateUser.AccountActive && user.AccountActive {
 			activeFinding.Show = false
 			activeFinding.Value = 0
-			activeFinding.Message = "User active: " + user.Name
+			activeFinding.Message = "User active: " + templateUser.Name
 		} else if !templateUser.AccountActive && !user.AccountActive {
 			activeFinding.Show = true
 			activeFinding.Value = 1
-			activeFinding.Message = "User not active: " + user.Name
+			activeFinding.Message = "User not active: " + templateUser.Name
 		} else {
 			activeFinding.Show = true
 			activeFinding.Value = 0
-			activeFinding.Message = "Unknown user active state: " + user.Name
+			activeFinding.Message = "Unknown user active state: " + templateUser.Name
 		}
 		findings = append(findings, activeFinding)
 	}
