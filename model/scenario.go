@@ -7,9 +7,7 @@ type TemplateEntry struct {
 }
 
 type Template struct {
-	UsersAdd           []string
-	UsersKeep          []string
-	UsersRemove        []string
+	Users              []User
 	GroupMembersAdd    map[string]string
 	GroupMembersKeep   map[string]string
 	GroupMembersRemove map[string]string
@@ -17,7 +15,7 @@ type Template struct {
 
 type Finding struct {
 	Value   int64
-	Hidden  bool
+	Show    bool
 	Message string
 }
 

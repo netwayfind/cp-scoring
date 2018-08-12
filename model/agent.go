@@ -22,8 +22,18 @@ type State struct {
 	Timestamp int64
 	OS        string
 	Hostname  string
-	Users     []string
+	Users     []User
 	Groups    map[string][]string
+}
+
+type User struct {
+	Name            string
+	ID              string
+	AccountPresent  bool
+	AccountActive   bool
+	AccountExpires  bool
+	PasswordLastSet int64
+	PasswordExpires bool
 }
 
 func GetNewStateTemplate() State {

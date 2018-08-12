@@ -137,9 +137,9 @@ func saveState(dir string, entities []*openpgp.Entity) {
 	// TODO: choose correct function based on OS
 	log.Println("Getting state")
 	if runtime.GOOS == "linux" {
-		state = getLinuxState()
+		state = getState()
 	} else if runtime.GOOS == "windows" {
-		state = getWindowsState()
+		state = getState()
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
 	}

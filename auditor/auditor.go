@@ -21,51 +21,64 @@ func Audit(state model.State, templates []model.Template) model.Report {
 func auditUsers(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	usersPresent := make(map[string]bool)
+	foundUsers := make(map[string]model.User)
 	for _, user := range state.Users {
-		usersPresent[user] = true
+		// all users should have AccountPresent as true
+		foundUsers[user.Name] = user
 	}
 
-	for _, user := range template.UsersAdd {
-		var finding model.Finding
-		if _, present := usersPresent[user]; present {
-			finding.Value = 1
-			finding.Hidden = false
-			finding.Message = "Added user " + user
-		} else {
-			finding.Value = 0
-			finding.Hidden = true
-			finding.Message = "Missing user " + user
-		}
-		findings = append(findings, finding)
-	}
+	for _, templateUser := range template.Users {
+		user, present := foundUsers[templateUser.Name]
 
-	for _, user := range template.UsersKeep {
-		var finding model.Finding
-		if _, present := usersPresent[user]; !present {
-			finding.Value = -1
-			finding.Hidden = false
-			finding.Message = "Removed required user " + user
+		// check for user presence
+		var presentFinding model.Finding
+		if templateUser.AccountPresent && !present {
+			presentFinding.Show = true
+			presentFinding.Value = -1
+			presentFinding.Message = "Required user missing: " + user.Name
+		} else if !templateUser.AccountPresent && !present {
+			presentFinding.Show = true
+			presentFinding.Value = 1
+			presentFinding.Message = "User removed: " + user.Name
+		} else if templateUser.AccountPresent {
+			presentFinding.Show = true
+			presentFinding.Value = 1
+			presentFinding.Message = "Required user present: " + user.Name
+		} else if !templateUser.AccountActive {
+			presentFinding.Show = false
+			presentFinding.Value = 0
+			presentFinding.Message = "User not removed: " + user.Name
 		} else {
-			finding.Value = 0
-			finding.Hidden = true
-			finding.Message = "Found required user " + user
+			presentFinding.Show = false
+			presentFinding.Value = 0
+			presentFinding.Message = "Unknown user present state: " + user.Name
 		}
-		findings = append(findings, finding)
-	}
+		findings = append(findings, presentFinding)
 
-	for _, user := range template.UsersRemove {
-		var finding model.Finding
-		if _, present := usersPresent[user]; !present {
-			finding.Value = 1
-			finding.Hidden = false
-			finding.Message = "Removed user " + user
+		// check if user is active/unlocked
+		var activeFinding model.Finding
+		if templateUser.AccountActive && user.AccountActive {
+			activeFinding.Show = true
+			activeFinding.Value = 1
+			activeFinding.Message = "User active: " + user.Name
+		} else if templateUser.AccountActive && !user.AccountActive {
+			activeFinding.Show = true
+			activeFinding.Value = -1
+			activeFinding.Message = "User not active: " + user.Name
+		} else if !templateUser.AccountActive && user.AccountActive {
+			activeFinding.Show = false
+			activeFinding.Value = 0
+			activeFinding.Message = "User active: " + user.Name
+		} else if !templateUser.AccountActive && !user.AccountActive {
+			activeFinding.Show = true
+			activeFinding.Value = 1
+			activeFinding.Message = "User not active: " + user.Name
 		} else {
-			finding.Value = 0
-			finding.Hidden = true
-			finding.Message = "Did not remove user " + user
+			activeFinding.Show = true
+			activeFinding.Value = 0
+			activeFinding.Message = "Unknown user active state: " + user.Name
 		}
-		findings = append(findings, finding)
+		findings = append(findings, activeFinding)
 	}
 
 	return findings

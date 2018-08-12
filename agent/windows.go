@@ -1,20 +1,22 @@
+// +build windows
+
 package main
 
 import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func getWindowsState() model.State {
+func getState() model.State {
 	state := model.GetNewStateTemplate()
-	state.Users = getUsersWindows()
-	state.Groups = getGroupsWindows()
+	state.Users = getUsers()
+	state.Groups = getGroups()
 	return state
 }
 
-func getUsersWindows() []string {
+func getUsers() []model.User {
 	return nil
 }
 
-func getGroupsWindows() map[string][]string {
+func getGroups() map[string][]string {
 	return nil
 }
