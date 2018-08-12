@@ -760,6 +760,7 @@ func dbSelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) 
 			return report, err
 		}
 		json.Unmarshal(reportBytes, &report)
+		break
 	}
 
 	return report, nil
