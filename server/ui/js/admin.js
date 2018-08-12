@@ -1005,9 +1005,7 @@ var Templates = function (_React$Component7) {
           BasicModal,
           { ref: this.modal, subjectClass: 'templates', subjectID: this.state.selectedTemplateID, subject: this.state.selectedTemplate, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
           React.createElement(Item, { name: 'Name', type: 'text', defaultValue: this.state.selectedTemplate.Name }),
-          React.createElement(ItemList, { name: 'UsersAdd', label: 'Users to add', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersAdd, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'UsersKeep', label: 'Users to keep', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersKeep, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'UsersRemove', label: 'Users to remove', type: 'text', defaultValue: this.state.selectedTemplate.Template.UsersRemove, callback: this.handleCallback })
+          React.createElement(Users, { users: this.state.selectedTemplate.Template.Users, callback: this.handleCallback })
         ),
         React.createElement(
           'ul',
@@ -1021,8 +1019,164 @@ var Templates = function (_React$Component7) {
   return Templates;
 }(React.Component);
 
-var Item = function (_React$Component8) {
-  _inherits(Item, _React$Component8);
+var Users = function (_React$Component8) {
+  _inherits(Users, _React$Component8);
+
+  function Users(props) {
+    _classCallCheck(this, Users);
+
+    var _this8 = _possibleConstructorReturn(this, (Users.__proto__ || Object.getPrototypeOf(Users)).call(this, props));
+
+    var users = props.users;
+    if (users === undefined || users === null) {
+      users = [];
+    }
+    _this8.state = {
+      users: users
+    };
+
+    _this8.addUser = _this8.addUser.bind(_this8);
+    _this8.removeUser = _this8.removeUser.bind(_this8);
+    _this8.updateUser = _this8.updateUser.bind(_this8);
+    return _this8;
+  }
+
+  _createClass(Users, [{
+    key: 'addUser',
+    value: function addUser() {
+      var empty = {
+        Name: "",
+        AccountPresent: true,
+        AccountActive: true
+      };
+      var users = [].concat(_toConsumableArray(this.state.users), [empty]);
+      this.setState({
+        users: users
+      });
+      this.props.callback("Users", users);
+    }
+  }, {
+    key: 'removeUser',
+    value: function removeUser(id) {
+      var users = this.state.users.filter(function (_, index) {
+        return index != id;
+      });
+      this.setState({
+        users: users
+      });
+      this.props.callback("Users", users);
+    }
+  }, {
+    key: 'updateUser',
+    value: function updateUser(id, field, event) {
+      var updated = this.state.users;
+      var value = event.target.value;
+      if (event.target.type === "checkbox") {
+        if (event.target.checked) {
+          value = true;
+        } else {
+          value = false;
+        }
+      }
+      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
+      this.setState({
+        users: updated
+      });
+      this.props.callback("Users", updated);
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this9 = this;
+
+      var users = [];
+
+      var _loop = function _loop(i) {
+        var user = _this9.state.users[i];
+        users.push(React.createElement(
+          'li',
+          { key: "user" + i },
+          user.Name,
+          React.createElement(
+            'button',
+            { type: 'button', onClick: _this9.removeUser.bind(_this9, i) },
+            '-'
+          ),
+          React.createElement(
+            'ul',
+            null,
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Name'
+              ),
+              React.createElement('input', { type: 'text', value: user.Name, onChange: function onChange(event) {
+                  return _this9.updateUser(i, "Name", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Present'
+              ),
+              React.createElement('input', { type: 'checkbox', checked: user.AccountPresent, onChange: function onChange(event) {
+                  return _this9.updateUser(i, "AccountPresent", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Active'
+              ),
+              React.createElement('input', { type: 'checkbox', checked: user.AccountActive, onChange: function onChange(event) {
+                  return _this9.updateUser(i, "AccountActive", event);
+                } })
+            )
+          )
+        ));
+      };
+
+      for (var i = 0; i < this.state.users.length; i++) {
+        _loop(i);
+      }
+
+      return React.createElement(
+        'div',
+        null,
+        React.createElement(
+          'label',
+          { htmlFor: 'Users' },
+          'Users'
+        ),
+        React.createElement('p', null),
+        React.createElement(
+          'button',
+          { type: 'button', onClick: this.addUser.bind(this) },
+          'Add User'
+        ),
+        React.createElement(
+          'ul',
+          null,
+          users
+        )
+      );
+    }
+  }]);
+
+  return Users;
+}(React.Component);
+
+var Item = function (_React$Component9) {
+  _inherits(Item, _React$Component9);
 
   function Item(props) {
     _classCallCheck(this, Item);
@@ -1049,26 +1203,26 @@ var Item = function (_React$Component8) {
   return Item;
 }(React.Component);
 
-var ItemMap = function (_React$Component9) {
-  _inherits(ItemMap, _React$Component9);
+var ItemMap = function (_React$Component10) {
+  _inherits(ItemMap, _React$Component10);
 
   function ItemMap(props) {
     _classCallCheck(this, ItemMap);
 
-    var _this9 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
+    var _this11 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
 
-    _this9.state = {
+    _this11.state = {
       item: "",
-      value: _this9.props.defaultValue,
+      value: _this11.props.defaultValue,
       mapItems: [],
       listItems: []
     };
 
-    _this9.add = _this9.add.bind(_this9);
-    _this9.remove = _this9.remove.bind(_this9);
-    _this9.handleChange = _this9.handleChange.bind(_this9);
-    _this9.handleCallback = _this9.handleCallback.bind(_this9);
-    return _this9;
+    _this11.add = _this11.add.bind(_this11);
+    _this11.remove = _this11.remove.bind(_this11);
+    _this11.handleChange = _this11.handleChange.bind(_this11);
+    _this11.handleCallback = _this11.handleCallback.bind(_this11);
+    return _this11;
   }
 
   _createClass(ItemMap, [{
@@ -1120,15 +1274,15 @@ var ItemMap = function (_React$Component9) {
   }, {
     key: 'componentWillMount',
     value: function componentWillMount() {
-      var _this10 = this;
+      var _this12 = this;
 
       this.props.mapItems(function (items) {
-        _this10.setState({
+        _this12.setState({
           mapItems: items
         });
       });
       this.props.listItems(function (items) {
-        _this10.setState({
+        _this12.setState({
           listItems: items
         });
       });
@@ -1136,16 +1290,16 @@ var ItemMap = function (_React$Component9) {
   }, {
     key: 'render',
     value: function render() {
-      var _this11 = this;
+      var _this13 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop = function _loop(i) {
-          if (_this11.state.value[i] === undefined) {
+        var _loop2 = function _loop2(i) {
+          if (_this13.state.value[i] === undefined) {
             return 'continue';
           }
           var text = i;
-          var matches = _this11.state.mapItems.filter(function (obj) {
+          var matches = _this13.state.mapItems.filter(function (obj) {
             return obj.ID == i;
           });
           if (matches.length > 0) {
@@ -1157,17 +1311,17 @@ var ItemMap = function (_React$Component9) {
             text,
             React.createElement(
               'button',
-              { type: 'button', onClick: _this11.remove.bind(_this11, i) },
+              { type: 'button', onClick: _this13.remove.bind(_this13, i) },
               '-'
             ),
-            React.createElement(ItemList, { name: i, label: _this11.props.listLabel, type: 'select', listItems: _this11.state.listItems, defaultValue: _this11.state.value[i], callback: _this11.handleCallback })
+            React.createElement(ItemList, { name: i, label: _this13.props.listLabel, type: 'select', listItems: _this13.state.listItems, defaultValue: _this13.state.value[i], callback: _this13.handleCallback })
           ));
         };
 
         for (var i in this.state.value) {
-          var _ret = _loop(i);
+          var _ret2 = _loop2(i);
 
-          if (_ret === 'continue') continue;
+          if (_ret2 === 'continue') continue;
         }
       }
 
@@ -1217,23 +1371,23 @@ var ItemMap = function (_React$Component9) {
   return ItemMap;
 }(React.Component);
 
-var ItemList = function (_React$Component10) {
-  _inherits(ItemList, _React$Component10);
+var ItemList = function (_React$Component11) {
+  _inherits(ItemList, _React$Component11);
 
   function ItemList(props) {
     _classCallCheck(this, ItemList);
 
-    var _this12 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
+    var _this14 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
 
-    _this12.state = {
+    _this14.state = {
       item: "",
-      value: _this12.props.defaultValue
+      value: _this14.props.defaultValue
     };
 
-    _this12.add = _this12.add.bind(_this12);
-    _this12.remove = _this12.remove.bind(_this12);
-    _this12.handleChange = _this12.handleChange.bind(_this12);
-    return _this12;
+    _this14.add = _this14.add.bind(_this14);
+    _this14.remove = _this14.remove.bind(_this14);
+    _this14.handleChange = _this14.handleChange.bind(_this14);
+    return _this14;
   }
 
   _createClass(ItemList, [{
@@ -1286,14 +1440,14 @@ var ItemList = function (_React$Component10) {
   }, {
     key: 'render',
     value: function render() {
-      var _this13 = this;
+      var _this15 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop2 = function _loop2(i) {
-          var text = _this13.state.value[i];
-          if (_this13.props.type === "select") {
-            var _matches = _this13.props.listItems.filter(function (obj) {
+        var _loop3 = function _loop3(i) {
+          var text = _this15.state.value[i];
+          if (_this15.props.type === "select") {
+            var _matches = _this15.props.listItems.filter(function (obj) {
               return obj.ID == text;
             });
             if (_matches.length > 0) {
@@ -1306,14 +1460,14 @@ var ItemList = function (_React$Component10) {
             text,
             React.createElement(
               'button',
-              { type: 'button', onClick: _this13.remove.bind(_this13, i) },
+              { type: 'button', onClick: _this15.remove.bind(_this15, i) },
               '-'
             )
           ));
         };
 
         for (var i in this.state.value) {
-          _loop2(i);
+          _loop3(i);
         }
       }
 

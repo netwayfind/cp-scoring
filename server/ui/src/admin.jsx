@@ -780,13 +780,114 @@ class Templates extends React.Component {
         <button onClick={this.createTemplate.bind(this)}>Create Template</button>
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
-          <ItemList name="UsersAdd" label="Users to add" type="text" defaultValue={this.state.selectedTemplate.Template.UsersAdd} callback={this.handleCallback}/>
-          <ItemList name="UsersKeep" label="Users to keep" type="text" defaultValue={this.state.selectedTemplate.Template.UsersKeep} callback={this.handleCallback}/>
-          <ItemList name="UsersRemove" label="Users to remove" type="text" defaultValue={this.state.selectedTemplate.Template.UsersRemove} callback={this.handleCallback}/>
+          <Users users={this.state.selectedTemplate.Template.Users} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
     );
+  }
+}
+
+class Users extends React.Component {
+  constructor(props) {
+    super(props);
+
+    let users = props.users;
+    if (users === undefined || users === null) {
+      users = [];
+    }
+    this.state = {
+      users: users
+    }
+
+    this.addUser = this.addUser.bind(this);
+    this.removeUser = this.removeUser.bind(this);
+    this.updateUser = this.updateUser.bind(this);
+  }
+
+  addUser() {
+    let empty = {
+      Name: "",
+      AccountPresent: true,
+      AccountActive: true
+    };
+    let users = [
+      ...this.state.users,
+      empty
+    ];
+    this.setState({
+      users: users
+    });
+    this.props.callback("Users", users)
+  }
+
+  removeUser(id) {
+    let users = this.state.users.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      users: users
+    });
+    this.props.callback("Users", users);
+  }
+
+  updateUser(id, field, event) {
+    let updated = this.state.users;
+    let value = event.target.value;
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      }
+      else {
+        value = false;
+      }
+    }
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      users: updated
+    })
+    this.props.callback("Users", updated);
+  }
+
+  render() {
+    let users = [];
+    for (let i = 0; i < this.state.users.length; i++) {
+      let user = this.state.users[i];
+      users.push(
+        <li key={"user" + i}>
+          {user.Name}
+          <button type="button" onClick={this.removeUser.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Name</label>
+              <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
+            </li>
+            <li>
+              <label>Present</label>
+              <input type="checkbox" checked={user.AccountPresent} onChange={event=> this.updateUser(i, "AccountPresent", event)}/>
+            </li>
+            <li>
+              <label>Active</label>
+              <input type="checkbox" checked={user.AccountActive} onChange={event=> this.updateUser(i, "AccountActive", event)}/>
+            </li>
+          </ul>
+        </li>
+      );
+    }
+
+    return (
+      <div>
+        <label htmlFor="Users">Users</label>
+        <p />
+        <button type="button" onClick={this.addUser.bind(this)}>Add User</button>
+        <ul>
+          {users}
+        </ul>
+      </div>
+    )
   }
 }
 
