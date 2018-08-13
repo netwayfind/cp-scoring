@@ -22,10 +22,28 @@ var App = function (_React$Component) {
   _createClass(App, [{
     key: "render",
     value: function render() {
+      var scenario = "0";
+      var teamKey = "key";
+      var hostname = "hostname";
+      var query = window.location.search.substring(1);
+      var params = query.split("&");
+      for (var i = 0; i < params.length; i++) {
+        var param = params[i].split("=");
+        if (param.length != 2) {
+          continue;
+        }
+        if (param[0] === "scenario") {
+          scenario = param[1];
+        } else if (param[0] === "team_key") {
+          teamKey = param[1];
+        } else if (param[0] === "hostname") {
+          hostname = param[1];
+        }
+      }
       return React.createElement(
         "div",
         { className: "App" },
-        React.createElement(ScoreTimeline, { scenarioID: "1", teamKey: "key", hostname: "hostname" })
+        React.createElement(ScoreTimeline, { scenarioID: scenario, teamKey: teamKey, hostname: hostname })
       );
     }
   }]);

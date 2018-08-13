@@ -4,9 +4,29 @@ const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
   render() {
+    let scenario = "0";
+    let teamKey = "key";
+    let hostname = "hostname";
+    let query = window.location.search.substring(1);
+    let params = query.split("&");
+    for (let i = 0; i < params.length; i++) {
+      let param = params[i].split("=");
+      if (param.length != 2) {
+        continue;
+      }
+      if (param[0] === "scenario") {
+        scenario = param[1];
+      }
+      else if (param[0] === "team_key") {
+        teamKey = param[1];
+      }
+      else if (param[0] === "hostname") {
+        hostname = param[1];
+      }
+    }
     return (
       <div className="App">
-        <ScoreTimeline scenarioID="1" teamKey="key" hostname="hostname"/>
+        <ScoreTimeline scenarioID={scenario} teamKey={teamKey} hostname={hostname}/>
       </div>
     );
   }
