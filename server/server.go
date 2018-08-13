@@ -924,6 +924,14 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
+	// take out findings to not show
+	findingsToShow := report.Findings[:0]
+	for _, finding := range report.Findings {
+		if finding.Show {
+			findingsToShow = append(findingsToShow, finding)
+		}
+	}
+	report.Findings = findingsToShow
 	out, err := json.Marshal(report)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario report for team;"
