@@ -72,7 +72,8 @@ var ScoreTimeline = function (_React$Component2) {
     value: function populateScores() {
       var scenarioID = this.props.scenarioID;
       var teamKey = this.props.teamKey;
-      var url = '/reports/scenario/' + scenarioID + '/timeline?team_key=' + teamKey;
+      var hostname = this.props.hostname;
+      var url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
 
       fetch(url).then(function (response) {
         if (response.status >= 400) {
@@ -81,10 +82,11 @@ var ScoreTimeline = function (_React$Component2) {
         return response.json();
       }).then(function (data) {
         if (data) {
+          // should only be one match
           this.setState({
-            scores: data[0].Scores,
+            scores: data.Scores,
             // timestamps is seconds, need milliseconds
-            timestamps: data[0].Timestamps.map(function (timestamp) {
+            timestamps: data.Timestamps.map(function (timestamp) {
               return timestamp * 1000;
             })
           });

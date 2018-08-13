@@ -868,7 +868,16 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
-	timeline, err := dbSelectScenarioTimeline(scenarioID, teamID)
+	hostname := r.FormValue("hostname")
+	hostID, err := dbSelectHostIDForHostname(hostname)
+	if err != nil {
+		msg := "ERROR: cannot retrieve host id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Host ID: %d", hostID))
+	timeline, err := dbSelectScenarioTimeline(scenarioID, teamID, hostID)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario timeline for team;"
 		log.Println(msg, err)

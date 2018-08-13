@@ -45,7 +45,8 @@ class ScoreTimeline extends React.Component {
   populateScores() {
     let scenarioID = this.props.scenarioID;
     let teamKey = this.props.teamKey;
-    let url = '/reports/scenario/' + scenarioID + '/timeline?team_key=' + teamKey;
+    let hostname = this.props.hostname;
+    let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
   
     fetch(url)
     .then(function(response) {
@@ -56,10 +57,11 @@ class ScoreTimeline extends React.Component {
     })
     .then(function(data) {
       if (data) {
+        // should only be one match
         this.setState({
-          scores: data[0].Scores,
+          scores: data.Scores,
           // timestamps is seconds, need milliseconds
-          timestamps: data[0].Timestamps.map(function(timestamp) {
+          timestamps: data.Timestamps.map(function(timestamp) {
             return timestamp * 1000;
           })
         })

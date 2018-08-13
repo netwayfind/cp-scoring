@@ -694,45 +694,33 @@ func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioSco
 	return scores, nil
 }
 
-func dbSelectScenarioTimeline(scenarioID int64, teamID int64) ([]model.ScenarioTimeline, error) {
-	rows, err := db.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp ASC", scenarioID, teamID)
+func dbSelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error) {
+	var timeline model.ScenarioTimeline
+	timeline.ScenarioID = scenarioID
+	timeline.TeamID = teamID
+	timeline.HostID = hostID
+	timeline.Timestamps = make([]int64, 0)
+	timeline.Scores = make([]int64, 0)
+
+	rows, err := db.Query("SELECT timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) AND host_id=(?) ORDER BY timestamp ASC", scenarioID, teamID, hostID)
 	if err != nil {
-		return nil, err
+		return timeline, err
 	}
 	defer rows.Close()
 
-	// store entries, one per host (key)
-	entries := make(map[int64]model.ScenarioTimeline)
-	var hostID int64
 	var timestamp int64
 	var score int64
 
 	for rows.Next() {
-		err := rows.Scan(&hostID, &timestamp, &score)
+		err := rows.Scan(&timestamp, &score)
 		if err != nil {
-			return nil, err
+			return timeline, err
 		}
-		if timeline, ok := entries[hostID]; ok {
-			timeline.Timestamps = append(timeline.Timestamps, timestamp)
-			timeline.Scores = append(timeline.Scores, score)
-			entries[hostID] = timeline
-		} else {
-			var timeline model.ScenarioTimeline
-			timeline.ScenarioID = scenarioID
-			timeline.TeamID = teamID
-			timeline.HostID = hostID
-			timeline.Timestamps = []int64{timestamp}
-			timeline.Scores = []int64{score}
-			entries[hostID] = timeline
-		}
+		timeline.Timestamps = append(timeline.Timestamps, timestamp)
+		timeline.Scores = append(timeline.Scores, score)
 	}
 
-	results := make([]model.ScenarioTimeline, 0)
-	for _, entry := range entries {
-		results = append(results, entry)
-	}
-
-	return results, nil
+	return timeline, nil
 }
 
 func dbInsertScenarioScore(entry model.ScenarioScore) error {
