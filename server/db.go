@@ -696,9 +696,6 @@ func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioSco
 
 func dbSelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error) {
 	var timeline model.ScenarioTimeline
-	timeline.ScenarioID = scenarioID
-	timeline.TeamID = teamID
-	timeline.HostID = hostID
 	timeline.Timestamps = make([]int64, 0)
 	timeline.Scores = make([]int64, 0)
 
@@ -754,12 +751,12 @@ func dbSelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) 
 	return report, nil
 }
 
-func dbInsertScenarioReport(scenarioID int64, entry model.Report) error {
+func dbInsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry model.Report) error {
 	b, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	_, err = dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, entry.TeamID, entry.HostID, entry.Timestamp, b)
+	_, err = dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, teamID, hostID, entry.Timestamp, b)
 	if err != nil {
 		return err
 	}

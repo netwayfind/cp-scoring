@@ -21,8 +21,6 @@ type Finding struct {
 
 type Report struct {
 	Timestamp int64
-	TeamID    int64
-	HostID    int64
 	Findings  []Finding
 }
 
@@ -63,9 +61,6 @@ type ScenarioScore struct {
 }
 
 type ScenarioTimeline struct {
-	ScenarioID int64
-	TeamID     int64
-	HostID     int64
 	Timestamps []int64
 	Scores     []int64
 }

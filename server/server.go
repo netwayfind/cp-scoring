@@ -174,9 +174,7 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 
 		log.Println("Saving report")
 		report.Timestamp = state.Timestamp
-		report.HostID = hostID
-		report.TeamID = teamID
-		err = dbInsertScenarioReport(scenarioID, report)
+		err = dbInsertScenarioReport(scenarioID, teamID, hostID, report)
 		if err != nil {
 			msg := "ERROR: cannot insert report;"
 			log.Println(msg, err)
