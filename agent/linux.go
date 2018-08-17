@@ -104,7 +104,6 @@ func getUsers() []model.User {
 	for i, username := range usernames {
 		users[i] = usersMap[username]
 	}
-	log.Println(users)
 
 	return users
 }
