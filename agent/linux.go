@@ -3,6 +3,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os/exec"
 	"strconv"
@@ -26,16 +27,16 @@ func getUsers() []model.User {
 	usersMap := make(map[string]model.User)
 
 	// get user and uid
-	out, err := exec.Command("/bin/sh", "-c", "/usr/bin/getent passwd | /usr/bin/cut -d: -f1,3").Output()
+	bs, err := ioutil.ReadFile("/etc/passwd")
 	if err != nil {
 		log.Fatal("ERROR: cannot get users info;", err)
 	}
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(string(bs), "\n") {
 		tokens := strings.Split(line, ":")
-		if len(tokens) != 2 {
+		if len(tokens) != 7 {
 			continue
 		}
-		username, id := tokens[0], tokens[1]
+		username, id := tokens[0], tokens[2]
 		var entry model.User
 		entry.Name = username
 		entry.ID = id
@@ -45,16 +46,16 @@ func getUsers() []model.User {
 	}
 
 	// get other user information (sensitive)
-	out, err = exec.Command("/bin/sh", "-c", "/usr/bin/getent shadow | /usr/bin/cut -d: -f1,2,3,5,8").Output()
+	bs, err = ioutil.ReadFile("/etc/shadow")
 	if err != nil {
 		log.Fatal("ERROR: cannot get users info;", err)
 	}
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(string(bs), "\n") {
 		tokens := strings.Split(line, ":")
-		if len(tokens) != 5 {
+		if len(tokens) != 9 {
 			continue
 		}
-		username, passwordHash, unixDayPasswordLastChange, unixDayPasswordExpires, unixDayAccountDisabled := tokens[0], tokens[1], tokens[2], tokens[3], tokens[4]
+		username, passwordHash, unixDayPasswordLastChange, unixDayPasswordExpires, unixDayAccountDisabled := tokens[0], tokens[1], tokens[2], tokens[4], tokens[7]
 		entry, present := usersMap[username]
 		// user should be in /etc/passwd, but if not, create entry
 		if !present {
@@ -103,6 +104,7 @@ func getUsers() []model.User {
 	for i, username := range usernames {
 		users[i] = usersMap[username]
 	}
+	log.Println(users)
 
 	return users
 }
