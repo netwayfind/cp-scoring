@@ -639,7 +639,7 @@ func dbUpdateScenario(id int64, scenario model.Scenario) error {
 }
 
 func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
-	rows, err := db.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY team_id ORDER BY max(timestamp) DESC", scenarioID)
+	rows, err := db.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY scores.team_id,scores.host_id ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -662,7 +662,30 @@ func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore
 		scores = append(scores, entry)
 	}
 
-	return scores, nil
+	// combine scores into total scores
+	totalScoresMap := make(map[string]model.ScenarioLatestScore)
+	teamNames := make([]string, 0)
+	for _, score := range scores {
+		storedScore, present := totalScoresMap[score.TeamName]
+		if !present {
+			totalScoresMap[score.TeamName] = score
+			storedScore = score
+			teamNames = append(teamNames, score.TeamName)
+			continue
+		}
+		storedScore.Score += score.Score
+		if score.Timestamp > storedScore.Timestamp {
+			storedScore.Timestamp = score.Timestamp
+		}
+		totalScoresMap[score.TeamName] = storedScore
+	}
+	totalScores := make([]model.ScenarioLatestScore, len(teamNames))
+	for i, teamName := range teamNames {
+		storedScore, _ := totalScoresMap[teamName]
+		totalScores[i] = storedScore
+	}
+
+	return totalScores, nil
 }
 
 func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioScore, error) {
