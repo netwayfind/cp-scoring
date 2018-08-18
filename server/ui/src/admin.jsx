@@ -783,6 +783,9 @@ class Templates extends React.Component {
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
           <Users users={this.state.selectedTemplate.Template.Users} callback={this.handleCallback}/>
+          <Groups name="GroupMembersAdd" label="Group members to add" groups={this.state.selectedTemplate.Template.GroupMembersAdd} callback={this.handleCallback}/>
+          <Groups name="GroupMembersKeep" label="Group members to keep" groups={this.state.selectedTemplate.Template.GroupMembersKeep} callback={this.handleCallback}/>
+          <Groups name="GroupMembersRemove" label="Group members to remove" groups={this.state.selectedTemplate.Template.GroupMembersRemove} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -910,6 +913,86 @@ class Users extends React.Component {
         <button type="button" onClick={this.addUser.bind(this)}>Add User</button>
         <ul>
           {users}
+        </ul>
+      </div>
+    )
+  }
+}
+
+class Groups extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    let groups = props.groups;
+    if (groups === undefined || groups === null) {
+      groups = {};
+    }
+    this.state = {
+      groups: groups
+    }
+
+    this.newGroupName = React.createRef();
+
+    this.addGroup = this.addGroup.bind(this);
+    this.removeGroup = this.removeGroup.bind(this);
+    this.updateGroup = this.updateGroup.bind(this);
+  }
+
+  addGroup() {
+    if (this.newGroupName.current === null) {
+      return;
+    }
+    let groups = {
+      ...this.state.groups,
+      [this.newGroupName.current.value]: []
+    };
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups)
+  }
+
+  removeGroup(name) {
+    let groups = this.state.groups;
+    delete groups[name];
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups);
+  }
+
+  updateGroup(name, members) {
+    let groups = {
+      ...this.state.groups,
+      [name]: members
+    }
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups);
+  }
+
+  render() {
+    let groups = [];
+    for (let groupName in this.state.groups) {
+      let members = this.state.groups[groupName];
+      groups.push(
+        <li key={groupName}>
+          {groupName}
+          <button type="button" onClick={this.removeGroup.bind(this, groupName)}>-</button>
+          <ItemList name={groupName} defaultValue={members} callback={this.updateGroup}/>
+        </li>
+      );
+    }
+
+    return (
+      <div>
+        <label htmlFor={this.props.name}>{this.props.label}</label>
+        <p />
+        <input ref={this.newGroupName}></input>
+        <button type="button" onClick={this.addGroup.bind(this)}>Add Group</button>
+        <ul>
+          {groups}
         </ul>
       </div>
     )
