@@ -198,7 +198,9 @@ var backgroundStyle = {
 
 var modalStyle = {
   backgroundColor: 'white',
-  padding: 30
+  padding: 30,
+  maxHeight: '100%',
+  overflowY: 'auto'
 };
 
 var BasicModal = function (_React$Component3) {

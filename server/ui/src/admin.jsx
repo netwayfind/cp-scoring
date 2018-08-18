@@ -151,7 +151,9 @@ const backgroundStyle = {
 
 const modalStyle = {
   backgroundColor: 'white',
-  padding: 30
+  padding: 30,
+  maxHeight: '100%',
+  overflowY: 'auto',
 }
 
 class BasicModal extends React.Component {
