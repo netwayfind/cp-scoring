@@ -8,9 +8,9 @@ type TemplateEntry struct {
 
 type Template struct {
 	Users              []User
-	GroupMembersAdd    map[string]string
-	GroupMembersKeep   map[string]string
-	GroupMembersRemove map[string]string
+	GroupMembersAdd    map[string][]string
+	GroupMembersKeep   map[string][]string
+	GroupMembersRemove map[string][]string
 }
 
 type Finding struct {

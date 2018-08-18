@@ -9,8 +9,10 @@ func Audit(state model.State, templates []model.Template) model.Report {
 	var report model.Report
 
 	for _, template := range templates {
-		r := auditUsers(state, template)
-		for _, result := range r {
+		for _, result := range auditUsers(state, template) {
+			report.Findings = append(report.Findings, result)
+		}
+		for _, result := range auditGroups(state, template) {
 			report.Findings = append(report.Findings, result)
 		}
 	}
@@ -117,6 +119,71 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 			passwordChangedFinding.Message = "User password not changed: " + templateUser.Name
 		}
 		findings = append(findings, passwordChangedFinding)
+	}
+
+	return findings
+}
+
+func auditGroups(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for group, members := range state.Groups {
+		foundMembers := make(map[string]bool)
+		for _, member := range members {
+			foundMembers[member] = true
+		}
+
+		templateMembers, present := template.GroupMembersAdd[group]
+		if present {
+			for _, templateMember := range templateMembers {
+				_, p := foundMembers[templateMember]
+				var finding model.Finding
+				if p {
+					finding.Show = true
+					finding.Value = 1
+					finding.Message = "User " + templateMember + " added to group " + group
+				} else {
+					finding.Show = false
+					finding.Value = 0
+					finding.Message = "User " + templateMember + " not added to group " + group
+				}
+				findings = append(findings, finding)
+			}
+		}
+		templateMembers, present = template.GroupMembersKeep[group]
+		if present {
+			for _, templateMember := range templateMembers {
+				_, p := foundMembers[templateMember]
+				var finding model.Finding
+				if p {
+					finding.Show = false
+					finding.Value = 0
+					finding.Message = "User " + templateMember + " in group " + group
+				} else {
+					finding.Show = true
+					finding.Value = -1
+					finding.Message = "User " + templateMember + " not in group " + group
+				}
+				findings = append(findings, finding)
+			}
+		}
+		templateMembers, present = template.GroupMembersRemove[group]
+		if present {
+			for _, templateMember := range templateMembers {
+				_, p := foundMembers[templateMember]
+				var finding model.Finding
+				if p {
+					finding.Show = false
+					finding.Value = 0
+					finding.Message = "User " + templateMember + " in group " + group
+				} else {
+					finding.Show = true
+					finding.Value = 1
+					finding.Message = "User " + templateMember + " removed from group " + group
+				}
+				findings = append(findings, finding)
+			}
+		}
 	}
 
 	return findings
