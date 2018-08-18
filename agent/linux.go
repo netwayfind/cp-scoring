@@ -5,7 +5,6 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -109,26 +108,20 @@ func getUsers() []model.User {
 }
 
 func getGroups() map[string][]string {
-	out, err := exec.Command("sh", "-c", "getent group | awk -F':' '{print $1 \":\" $4}'").Output()
+	bs, err := ioutil.ReadFile("/etc/group")
 	if err != nil {
-		panic(err)
+		log.Fatal("ERROR: cannot get groups;", err)
 	}
 
-	results := make(map[string][]string)
-	lines := strings.Split(string(out), "\n")
-	for i := range lines {
-		entry := strings.Split(lines[i], ":")
-		group := entry[0]
-		if len(group) == 0 {
+	groups := make(map[string][]string)
+	for _, line := range strings.Split(string(bs), "\n") {
+		tokens := strings.Split(line, ":")
+		if len(tokens) != 4 {
 			continue
 		}
-		var members []string
-		if len(entry) > 1 {
-			members = strings.Split(entry[1], ",")
-		}
-
-		results[group] = members
+		group, membersStr := tokens[0], tokens[3]
+		groups[group] = strings.Split(membersStr, ",")
 	}
 
-	return results
+	return groups
 }
