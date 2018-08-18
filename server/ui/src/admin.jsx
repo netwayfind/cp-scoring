@@ -809,7 +809,10 @@ class Users extends React.Component {
     let empty = {
       Name: "",
       AccountPresent: true,
-      AccountActive: true
+      AccountActive: true,
+      PasswordExpires: true,
+      // unix timestamp in seconds
+      PasswordLastSet: Date.now() / 1000
     };
     let users = [
       ...this.state.users,
@@ -842,6 +845,12 @@ class Users extends React.Component {
         value = false;
       }
     }
+    if (event.target.type === "date") {
+      value = new Date(event.target.value).getTime() / 1000
+      if (Number.isNaN(value)) {
+        return
+      }
+    }
     updated[id] = {
       ...updated[id],
       [field]: value
@@ -856,6 +865,12 @@ class Users extends React.Component {
     let users = [];
     for (let i = 0; i < this.state.users.length; i++) {
       let user = this.state.users[i];
+      let d = new Date(user.PasswordLastSet * 1000)
+      let passwordLastSet = ("000" + d.getUTCFullYear()).slice(-4);
+      passwordLastSet += "-";
+      passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
+      passwordLastSet += "-";
+      passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
       users.push(
         <li key={"user" + i}>
           {user.Name}
@@ -872,6 +887,14 @@ class Users extends React.Component {
             <li>
               <label>Active</label>
               <input type="checkbox" checked={user.AccountActive} onChange={event=> this.updateUser(i, "AccountActive", event)}/>
+            </li>
+            <li>
+              <label>Password Expires</label>
+              <input type="checkbox" checked={user.PasswordExpires} onChange={event=> this.updateUser(i, "PasswordExpires", event)}/>
+            </li>
+            <li>
+              <label>Password Last Set</label>
+              <input type="date" value={passwordLastSet} onChange={event=> this.updateUser(i, "PasswordLastSet", event)}/>
             </li>
           </ul>
         </li>

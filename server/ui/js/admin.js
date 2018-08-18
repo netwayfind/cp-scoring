@@ -1047,7 +1047,10 @@ var Users = function (_React$Component8) {
       var empty = {
         Name: "",
         AccountPresent: true,
-        AccountActive: true
+        AccountActive: true,
+        PasswordExpires: true,
+        // unix timestamp in seconds
+        PasswordLastSet: Date.now() / 1000
       };
       var users = [].concat(_toConsumableArray(this.state.users), [empty]);
       this.setState({
@@ -1078,6 +1081,12 @@ var Users = function (_React$Component8) {
           value = false;
         }
       }
+      if (event.target.type === "date") {
+        value = new Date(event.target.value).getTime() / 1000;
+        if (Number.isNaN(value)) {
+          return;
+        }
+      }
       updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
       this.setState({
         users: updated
@@ -1093,6 +1102,12 @@ var Users = function (_React$Component8) {
 
       var _loop = function _loop(i) {
         var user = _this9.state.users[i];
+        var d = new Date(user.PasswordLastSet * 1000);
+        var passwordLastSet = ("000" + d.getUTCFullYear()).slice(-4);
+        passwordLastSet += "-";
+        passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
+        passwordLastSet += "-";
+        passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
         users.push(React.createElement(
           'li',
           { key: "user" + i },
@@ -1139,6 +1154,30 @@ var Users = function (_React$Component8) {
               ),
               React.createElement('input', { type: 'checkbox', checked: user.AccountActive, onChange: function onChange(event) {
                   return _this9.updateUser(i, "AccountActive", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Password Expires'
+              ),
+              React.createElement('input', { type: 'checkbox', checked: user.PasswordExpires, onChange: function onChange(event) {
+                  return _this9.updateUser(i, "PasswordExpires", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Password Last Set'
+              ),
+              React.createElement('input', { type: 'date', value: passwordLastSet, onChange: function onChange(event) {
+                  return _this9.updateUser(i, "PasswordLastSet", event);
                 } })
             )
           )

@@ -79,6 +79,44 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 			activeFinding.Message = "Unknown user active state: " + templateUser.Name
 		}
 		findings = append(findings, activeFinding)
+
+		// check if user password expires
+		var passwordExpiresFinding model.Finding
+		if templateUser.PasswordExpires && user.PasswordExpires {
+			passwordExpiresFinding.Show = true
+			passwordExpiresFinding.Value = 1
+			passwordExpiresFinding.Message = "User password expires: " + templateUser.Name
+		} else if templateUser.PasswordExpires && !user.PasswordExpires {
+			passwordExpiresFinding.Show = false
+			passwordExpiresFinding.Value = 0
+			passwordExpiresFinding.Message = "User password does not expire: " + templateUser.Name
+		} else if !templateUser.PasswordExpires && user.PasswordExpires {
+			passwordExpiresFinding.Show = true
+			passwordExpiresFinding.Value = -1
+			passwordExpiresFinding.Message = "User password expires: " + templateUser.Name
+		} else if !templateUser.PasswordExpires && !user.PasswordExpires {
+			passwordExpiresFinding.Show = true
+			passwordExpiresFinding.Value = 1
+			passwordExpiresFinding.Message = "User password does not expire: " + templateUser.Name
+		} else {
+			passwordExpiresFinding.Show = true
+			passwordExpiresFinding.Value = 0
+			passwordExpiresFinding.Message = "User password expires unknown: " + templateUser.Name
+		}
+		findings = append(findings, passwordExpiresFinding)
+
+		// check if user changed password
+		var passwordChangedFinding model.Finding
+		if templateUser.PasswordLastSet < user.PasswordLastSet {
+			passwordChangedFinding.Show = true
+			passwordChangedFinding.Value = 1
+			passwordChangedFinding.Message = "User password changed: " + templateUser.Name
+		} else {
+			passwordChangedFinding.Show = false
+			passwordChangedFinding.Value = 0
+			passwordChangedFinding.Message = "User password not changed: " + templateUser.Name
+		}
+		findings = append(findings, passwordChangedFinding)
 	}
 
 	return findings
