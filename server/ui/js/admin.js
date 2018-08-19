@@ -1461,9 +1461,13 @@ var ItemMap = function (_React$Component11) {
             text = matches[0].Display;
           }
           rows.push(React.createElement(
-            'li',
+            'details',
             { key: i },
-            text,
+            React.createElement(
+              'summary',
+              null,
+              text
+            ),
             React.createElement(
               'button',
               { type: 'button', onClick: _this14.remove.bind(_this14, i) },

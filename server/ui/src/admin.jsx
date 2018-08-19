@@ -1109,11 +1109,11 @@ class ItemMap extends React.Component {
           text = matches[0].Display;
         }
         rows.push(
-          <li key={i}>
-            {text}
+          <details key={i}>
+            <summary>{text}</summary>
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
             <ItemList name={i} label={this.props.listLabel} type="select" listItems={this.state.listItems} defaultValue={this.state.value[i]} callback={this.handleCallback}/>
-          </li>
+          </details>
         );
       }
     }
