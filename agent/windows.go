@@ -3,8 +3,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/csv"
 	"log"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -142,7 +146,58 @@ func getGroups() map[string][]string {
 }
 
 func getProcesses() []model.Process {
+	// get user and PID
+	pidUserMap := make(map[int64]string)
+	out, err := exec.Command("tasklist", "/V", "/FO:csv").Output()
+	if err != nil {
+		log.Fatal("ERROR: cannot get process list;", err)
+	}
+
+	r := csv.NewReader(bytes.NewReader(out))
+	records, err := r.ReadAll()
+	if err != nil {
+		log.Fatal("ERROR: cannot read process list csv; ", err)
+	}
+	for _, tokens := range records {
+		pid, _ := strconv.ParseInt(tokens[1], 10, 64)
+		user := tokens[6]
+		// local account, remove hostname
+		hostname, _ := os.Hostname()
+		if strings.Index(user, hostname) != -1 {
+			user = user[len(hostname)+1:]
+		}
+		pidUserMap[pid] = user
+	}
+
+	// get PID and command line
 	processes := make([]model.Process, 0)
+	var posCommandLine int
+	var posProcessID int
+	out, err = exec.Command("wmic", "process", "get", "CommandLine,ProcessId").Output()
+	if err != nil {
+		log.Fatal("ERROR: cannot get process list;", err)
+	}
+
+	for i, line := range strings.Split(string(out), "\r\n") {
+		if len(line) <= 1 {
+			continue
+		}
+
+		// get position of columns
+		if i == 0 {
+			posCommandLine = strings.Index(line, "CommandLine")
+			posProcessID = strings.Index(line, "ProcessId")
+			continue
+		}
+
+		var process model.Process
+		process.CommandLine = strings.TrimSpace(line[posCommandLine:posProcessID])
+		pid, _ := strconv.ParseInt(strings.TrimSpace(line[posProcessID:]), 10, 64)
+		process.PID = pid
+		user, _ := pidUserMap[pid]
+		process.User = user
+		processes = append(processes, process)
+	}
 
 	return processes
 }
