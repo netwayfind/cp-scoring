@@ -31,7 +31,7 @@ func getUsers() []model.User {
 	users := make([]model.User, 0)
 
 	// get users and info
-	out, err := exec.Command("wmic", "UserAccount", "get", "Name,SID").Output()
+	out, err := exec.Command("C:\\Windows\\System32\\wbem\\WMIC.exe", "UserAccount", "get", "Name,SID").Output()
 	if err != nil {
 		log.Fatal("ERROR: cannot get users info;", err)
 	}
@@ -57,7 +57,7 @@ func getUsers() []model.User {
 		user.ID = strings.TrimSpace(line[posSID:])
 
 		// use net user to get additional information
-		out, err := exec.Command("net", "user", user.Name).Output()
+		out, err := exec.Command("C:\\Windows\\System32\\net.exe", "user", user.Name).Output()
 		if err != nil {
 			log.Println("ERROR: cannot get user info;", err)
 			continue
@@ -106,7 +106,7 @@ func getUsers() []model.User {
 }
 
 func getGroups() map[string][]string {
-	out, err := exec.Command("wmic", "path", "win32_groupuser").Output()
+	out, err := exec.Command("C:\\Windows\\System32\\wbem\\WMIC.exe", "path", "win32_groupuser").Output()
 	if err != nil {
 		log.Fatal("ERROR: unable to get group users;", err)
 	}
@@ -148,7 +148,7 @@ func getGroups() map[string][]string {
 func getProcesses() []model.Process {
 	// get user and PID
 	pidUserMap := make(map[int64]string)
-	out, err := exec.Command("tasklist", "/V", "/FO:csv").Output()
+	out, err := exec.Command("C:\\Windows\\System32\\tasklist.exe", "/V", "/FO:csv").Output()
 	if err != nil {
 		log.Fatal("ERROR: cannot get process list;", err)
 	}
@@ -173,7 +173,7 @@ func getProcesses() []model.Process {
 	processes := make([]model.Process, 0)
 	var posCommandLine int
 	var posProcessID int
-	out, err = exec.Command("wmic", "process", "get", "CommandLine,ProcessId").Output()
+	out, err = exec.Command("C:\\Windows\\System32\\wbem\\WMIC.exe", "process", "get", "CommandLine,ProcessId").Output()
 	if err != nil {
 		log.Fatal("ERROR: cannot get process list;", err)
 	}

@@ -129,7 +129,7 @@ func getGroups() map[string][]string {
 }
 
 func getProcesses() []model.Process {
-	out, err := exec.Command("ps", "-eo", "pid,user,command", "--sort=pid").Output()
+	out, err := exec.Command("/bin/ps", "-eo", "pid,user,command", "--sort=pid").Output()
 	if err != nil {
 		log.Fatal("ERROR: cannot get processes;", err)
 	}
