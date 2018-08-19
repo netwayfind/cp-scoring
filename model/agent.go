@@ -24,6 +24,7 @@ type State struct {
 	Hostname  string
 	Users     []User
 	Groups    map[string][]string
+	Processes []Process
 }
 
 type User struct {
@@ -34,6 +35,12 @@ type User struct {
 	AccountExpires  bool
 	PasswordLastSet int64
 	PasswordExpires bool
+}
+
+type Process struct {
+	PID         int64
+	User        string
+	CommandLine string
 }
 
 func GetNewStateTemplate() State {

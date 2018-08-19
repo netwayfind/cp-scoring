@@ -15,6 +15,7 @@ func getState() model.State {
 	state := model.GetNewStateTemplate()
 	state.Users = getUsers()
 	state.Groups = getGroups()
+	state.Processes = getProcesses()
 	return state
 }
 
@@ -138,4 +139,10 @@ func getGroups() map[string][]string {
 	}
 
 	return groups
+}
+
+func getProcesses() []model.Process {
+	processes := make([]model.Process, 0)
+
+	return processes
 }
