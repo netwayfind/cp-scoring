@@ -819,7 +819,7 @@ class Users extends React.Component {
       AccountActive: true,
       PasswordExpires: true,
       // unix timestamp in seconds
-      PasswordLastSet: Date.now() / 1000
+      PasswordLastSet: Math.trunc(Date.now() / 1000)
     };
     let users = [
       ...this.state.users,
@@ -853,7 +853,7 @@ class Users extends React.Component {
       }
     }
     if (event.target.type === "date") {
-      value = new Date(event.target.value).getTime() / 1000
+      value = Math.trunc(new Date(event.target.value).getTime() / 1000);
       if (Number.isNaN(value)) {
         return
       }

@@ -1059,7 +1059,7 @@ var Users = function (_React$Component8) {
         AccountActive: true,
         PasswordExpires: true,
         // unix timestamp in seconds
-        PasswordLastSet: Date.now() / 1000
+        PasswordLastSet: Math.trunc(Date.now() / 1000)
       };
       var users = [].concat(_toConsumableArray(this.state.users), [empty]);
       this.setState({
@@ -1091,7 +1091,7 @@ var Users = function (_React$Component8) {
         }
       }
       if (event.target.type === "date") {
-        value = new Date(event.target.value).getTime() / 1000;
+        value = Math.trunc(new Date(event.target.value).getTime() / 1000);
         if (Number.isNaN(value)) {
           return;
         }
