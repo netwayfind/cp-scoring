@@ -488,22 +488,26 @@ var Teams = function (_React$Component4) {
           React.createElement('input', { name: 'Enabled', type: 'checkbox', defaultChecked: !!this.state.selectedTeam.Enabled }),
           React.createElement('br', null),
           React.createElement(
-            'label',
-            { htmlFor: 'Key' },
-            'Key'
-          ),
-          React.createElement(
-            'ul',
+            'details',
             null,
             React.createElement(
-              'li',
+              'summary',
               null,
-              this.state.selectedTeam.Key
+              'Key'
             ),
             React.createElement(
-              'button',
-              { type: 'button', onClick: this.regenKey.bind(this) },
-              'Regenerate'
+              'ul',
+              null,
+              React.createElement(
+                'li',
+                null,
+                this.state.selectedTeam.Key,
+                React.createElement(
+                  'button',
+                  { type: 'button', onClick: this.regenKey.bind(this) },
+                  'Regenerate'
+                )
+              )
             )
           )
         ),
@@ -1114,9 +1118,13 @@ var Users = function (_React$Component8) {
         passwordLastSet += "-";
         passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
         users.push(React.createElement(
-          'li',
-          { key: "user" + i },
-          user.Name,
+          'details',
+          { key: i },
+          React.createElement(
+            'summary',
+            null,
+            user.Name
+          ),
           React.createElement(
             'button',
             { type: 'button', onClick: _this9.removeUser.bind(_this9, i) },
@@ -1194,14 +1202,13 @@ var Users = function (_React$Component8) {
       }
 
       return React.createElement(
-        'div',
+        'details',
         null,
         React.createElement(
-          'label',
-          { htmlFor: 'Users' },
+          'summary',
+          null,
           'Users'
         ),
-        React.createElement('p', null),
         React.createElement(
           'button',
           { type: 'button', onClick: this.addUser.bind(this) },
@@ -1281,9 +1288,13 @@ var Groups = function (_React$Component9) {
       for (var groupName in this.state.groups) {
         var members = this.state.groups[groupName];
         groups.push(React.createElement(
-          'li',
+          'details',
           { key: groupName },
-          groupName,
+          React.createElement(
+            'summary',
+            null,
+            groupName
+          ),
           React.createElement(
             'button',
             { type: 'button', onClick: this.removeGroup.bind(this, groupName) },
@@ -1294,14 +1305,13 @@ var Groups = function (_React$Component9) {
       }
 
       return React.createElement(
-        'div',
+        'details',
         null,
         React.createElement(
-          'label',
-          { htmlFor: this.props.name },
+          'summary',
+          null,
           this.props.label
         ),
-        React.createElement('p', null),
         React.createElement('input', { ref: this.newGroupName }),
         React.createElement(
           'button',

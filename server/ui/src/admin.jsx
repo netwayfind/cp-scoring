@@ -382,13 +382,15 @@ class Teams extends React.Component {
           <label htmlFor="Enabled">Enabled</label>
           <input name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedTeam.Enabled}></input>
           <br />
-          <label htmlFor="Key">Key</label>
-          <ul>
-            <li>
-              {this.state.selectedTeam.Key}
-            </li>
-            <button type="button" onClick={this.regenKey.bind(this)}>Regenerate</button>
-          </ul>
+          <details>
+            <summary>Key</summary>
+            <ul>
+              <li>
+                {this.state.selectedTeam.Key}
+                <button type="button" onClick={this.regenKey.bind(this)}>Regenerate</button>
+              </li>
+            </ul>
+          </details>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -877,8 +879,8 @@ class Users extends React.Component {
       passwordLastSet += "-";
       passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
       users.push(
-        <li key={"user" + i}>
-          {user.Name}
+        <details key={i}>
+          <summary>{user.Name}</summary>
           <button type="button" onClick={this.removeUser.bind(this, i)}>-</button>
           <ul>
             <li>
@@ -902,19 +904,18 @@ class Users extends React.Component {
               <input type="date" value={passwordLastSet} onChange={event=> this.updateUser(i, "PasswordLastSet", event)}/>
             </li>
           </ul>
-        </li>
+        </details>
       );
     }
 
     return (
-      <div>
-        <label htmlFor="Users">Users</label>
-        <p />
+      <details>
+        <summary>Users</summary>
         <button type="button" onClick={this.addUser.bind(this)}>Add User</button>
         <ul>
           {users}
         </ul>
-      </div>
+      </details>
     )
   }
 }
@@ -977,24 +978,23 @@ class Groups extends React.Component {
     for (let groupName in this.state.groups) {
       let members = this.state.groups[groupName];
       groups.push(
-        <li key={groupName}>
-          {groupName}
+        <details key={groupName}>
+          <summary>{groupName}</summary>
           <button type="button" onClick={this.removeGroup.bind(this, groupName)}>-</button>
           <ItemList name={groupName} defaultValue={members} callback={this.updateGroup}/>
-        </li>
+        </details>
       );
     }
 
     return (
-      <div>
-        <label htmlFor={this.props.name}>{this.props.label}</label>
-        <p />
+      <details>
+        <summary>{this.props.label}</summary>
         <input ref={this.newGroupName}></input>
         <button type="button" onClick={this.addGroup.bind(this)}>Add Group</button>
         <ul>
           {groups}
         </ul>
-      </div>
+      </details>
     )
   }
 }
