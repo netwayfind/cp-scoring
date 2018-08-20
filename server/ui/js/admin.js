@@ -1476,7 +1476,11 @@ var ItemMap = function (_React$Component11) {
               { type: 'button', onClick: _this14.remove.bind(_this14, i) },
               '-'
             ),
-            React.createElement(ItemList, { name: i, label: _this14.props.listLabel, type: 'select', listItems: _this14.state.listItems, defaultValue: _this14.state.value[i], callback: _this14.handleCallback })
+            React.createElement(
+              'ul',
+              null,
+              React.createElement(ItemList, { name: i, label: _this14.props.listLabel, type: 'select', listItems: _this14.state.listItems, defaultValue: _this14.state.value[i], callback: _this14.handleCallback })
+            )
           ));
         };
 
@@ -1658,10 +1662,10 @@ var ItemList = function (_React$Component12) {
       }
 
       return React.createElement(
-        'div',
+        'details',
         null,
         React.createElement(
-          'label',
+          'summary',
           null,
           this.props.label
         ),

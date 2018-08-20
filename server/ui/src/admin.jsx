@@ -1115,7 +1115,9 @@ class ItemMap extends React.Component {
           <details key={i}>
             <summary>{text}</summary>
             <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-            <ItemList name={i} label={this.props.listLabel} type="select" listItems={this.state.listItems} defaultValue={this.state.value[i]} callback={this.handleCallback}/>
+            <ul>
+              <ItemList name={i} label={this.props.listLabel} type="select" listItems={this.state.listItems} defaultValue={this.state.value[i]} callback={this.handleCallback}/>
+            </ul>
           </details>
         );
       }
@@ -1261,14 +1263,14 @@ class ItemList extends React.Component {
     }
 
     return (
-      <div>
-        <label>{this.props.label}</label>
+      <details>
+        <summary>{this.props.label}</summary>
         <ul>
           {rows}
           {input}
           <button type="button" onClick={this.add}>+</button>
         </ul>
-      </div>
+      </details>
     );
   }
 }
