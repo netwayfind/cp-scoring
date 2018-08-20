@@ -191,44 +191,52 @@ func auditGroups(state model.State, template model.Template) []model.Finding {
 func auditProcesses(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for _, process := range state.Processes {
-		for _, templateProcess := range template.ProcessesAdd {
-			var finding model.Finding
-			if strings.HasPrefix(process.CommandLine, templateProcess) {
-				finding.Show = true
-				finding.Value = 1
-				finding.Message = "Process found: " + templateProcess
-			} else {
-				finding.Show = false
-				finding.Value = 0
-				finding.Message = "Process not found: " + templateProcess
+	for _, templateProcess := range template.ProcessesAdd {
+		for _, process := range state.Processes {
+			if !strings.HasPrefix(process.CommandLine, templateProcess) {
+				continue
 			}
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Process found: " + templateProcess
+			findings = append(findings, finding)
+			break
+		}
+	}
+
+	for _, templateProcess := range template.ProcessesKeep {
+		match := false
+		for _, process := range state.Processes {
+			if !strings.HasPrefix(process.CommandLine, templateProcess) {
+				continue
+			}
+			match = true
+			break
+		}
+		if !match {
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Process not found: " + templateProcess
 			findings = append(findings, finding)
 		}
-		for _, templateProcess := range template.ProcessesKeep {
-			var finding model.Finding
-			if strings.HasPrefix(process.CommandLine, templateProcess) {
-				finding.Show = false
-				finding.Value = 0
-				finding.Message = "Process found: " + templateProcess
-			} else {
-				finding.Show = true
-				finding.Value = -1
-				finding.Message = "Process not found: " + templateProcess
+	}
+
+	for _, templateProcess := range template.ProcessesRemove {
+		match := false
+		for _, process := range state.Processes {
+			if !strings.HasPrefix(process.CommandLine, templateProcess) {
+				continue
 			}
-			findings = append(findings, finding)
+			match = true
+			break
 		}
-		for _, templateProcess := range template.ProcessesRemove {
+		if !match {
 			var finding model.Finding
-			if strings.HasPrefix(process.CommandLine, templateProcess) {
-				finding.Show = false
-				finding.Value = 0
-				finding.Message = "Process found: " + templateProcess
-			} else {
-				finding.Show = true
-				finding.Value = 1
-				finding.Message = "Process removed: " + templateProcess
-			}
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Process removed: " + templateProcess
 			findings = append(findings, finding)
 		}
 	}

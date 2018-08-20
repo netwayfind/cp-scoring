@@ -1014,7 +1014,10 @@ var Templates = function (_React$Component7) {
           React.createElement(Users, { users: this.state.selectedTemplate.Template.Users, callback: this.handleCallback }),
           React.createElement(Groups, { name: 'GroupMembersAdd', label: 'Group members to add', groups: this.state.selectedTemplate.Template.GroupMembersAdd, callback: this.handleCallback }),
           React.createElement(Groups, { name: 'GroupMembersKeep', label: 'Group members to keep', groups: this.state.selectedTemplate.Template.GroupMembersKeep, callback: this.handleCallback }),
-          React.createElement(Groups, { name: 'GroupMembersRemove', label: 'Group members to remove', groups: this.state.selectedTemplate.Template.GroupMembersRemove, callback: this.handleCallback })
+          React.createElement(Groups, { name: 'GroupMembersRemove', label: 'Group members to remove', groups: this.state.selectedTemplate.Template.GroupMembersRemove, callback: this.handleCallback }),
+          React.createElement(ItemList, { name: 'ProcessesAdd', label: 'Processes to add', defaultValue: this.state.selectedTemplate.Template.ProcessesAdd, callback: this.handleCallback }),
+          React.createElement(ItemList, { name: 'ProcessesKeep', label: 'Processes to keep', defaultValue: this.state.selectedTemplate.Template.ProcessesKeep, callback: this.handleCallback }),
+          React.createElement(ItemList, { name: 'ProcessesRemove', label: 'Processes to remove', defaultValue: this.state.selectedTemplate.Template.ProcessesRemove, callback: this.handleCallback })
         ),
         React.createElement(
           'ul',
