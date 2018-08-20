@@ -25,6 +25,7 @@ type State struct {
 	Users     []User
 	Groups    map[string][]string
 	Processes []Process
+	Software  []Software
 }
 
 type User struct {
@@ -41,6 +42,11 @@ type Process struct {
 	PID         int64
 	User        string
 	CommandLine string
+}
+
+type Software struct {
+	Name    string
+	Version string
 }
 
 func GetNewStateTemplate() State {

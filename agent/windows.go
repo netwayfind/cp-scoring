@@ -20,6 +20,7 @@ func getState() model.State {
 	state.Users = getUsers()
 	state.Groups = getGroups()
 	state.Processes = getProcesses()
+	state.Software = getSoftware()
 	return state
 }
 
@@ -200,4 +201,10 @@ func getProcesses() []model.Process {
 	}
 
 	return processes
+}
+
+func getSoftware() []model.Software {
+	software := make([]model.Software, 0)
+
+	return software
 }

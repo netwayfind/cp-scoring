@@ -17,6 +17,7 @@ func getState() model.State {
 	state.Users = getUsers()
 	state.Groups = getGroups()
 	state.Processes = getProcesses()
+	state.Software = getSoftware()
 	return state
 }
 
@@ -159,4 +160,32 @@ func getProcesses() []model.Process {
 	}
 
 	return processes
+}
+
+func getSoftware() []model.Software {
+	software := make([]model.Software, 0)
+
+	out, err := exec.Command("/usr/bin/apt", "list", "--installed").Output()
+	if err != nil {
+		log.Fatal("ERROR: unable to get software list;", err)
+	}
+
+	for _, line := range strings.Split(string(out), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+
+		tokens := strings.Split(line, " ")
+		if len(tokens) != 4 {
+			continue
+		}
+		pkgStr, version := tokens[0], tokens[1]
+		pkg := strings.Split(pkgStr, "/")[0]
+		var sw model.Software
+		sw.Name = pkg
+		sw.Version = version
+		software = append(software, sw)
+	}
+
+	return software
 }
