@@ -14,6 +14,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditUsers(state, template)...)
 		report.Findings = append(report.Findings, auditGroups(state, template)...)
 		report.Findings = append(report.Findings, auditProcesses(state, template)...)
+		report.Findings = append(report.Findings, auditSoftware(state, template)...)
 	}
 
 	return report
@@ -237,6 +238,69 @@ func auditProcesses(state model.State, template model.Template) []model.Finding 
 			finding.Show = true
 			finding.Value = 1
 			finding.Message = "Process removed: " + templateProcess
+			findings = append(findings, finding)
+		}
+	}
+
+	return findings
+}
+
+func auditSoftware(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	// keep track of software and version from state
+	software := make(map[string]string)
+	for _, sw := range state.Software {
+		software[sw.Name] = sw.Version
+	}
+
+	for _, templateSoftware := range template.SoftwareAdd {
+		version, present := software[templateSoftware.Name]
+		if present {
+			if templateSoftware.Version == version {
+				var finding model.Finding
+				finding.Show = true
+				finding.Value = 1
+				finding.Message = "Software added: " + templateSoftware.Name + ", " + templateSoftware.Version
+				findings = append(findings, finding)
+			}
+		}
+	}
+
+	for _, templateSoftware := range template.SoftwareKeep {
+		version, present := software[templateSoftware.Name]
+		if present {
+			if templateSoftware.Version != version {
+				var finding model.Finding
+				finding.Show = true
+				finding.Value = -1
+				finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+				findings = append(findings, finding)
+			}
+		} else {
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+			findings = append(findings, finding)
+		}
+	}
+
+	for _, templateSoftware := range template.SoftwareRemove {
+		version, present := software[templateSoftware.Name]
+		if present {
+			if templateSoftware.Version != version {
+				var finding model.Finding
+				finding.Show = true
+				finding.Value = 1
+				finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+				findings = append(findings, finding)
+			}
+		} else {
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
 			findings = append(findings, finding)
 		}
 	}

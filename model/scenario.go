@@ -14,6 +14,9 @@ type Template struct {
 	ProcessesAdd       []string
 	ProcessesKeep      []string
 	ProcessesRemove    []string
+	SoftwareAdd        []Software
+	SoftwareKeep       []Software
+	SoftwareRemove     []Software
 }
 
 type Finding struct {

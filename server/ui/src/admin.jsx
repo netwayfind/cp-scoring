@@ -791,6 +791,9 @@ class Templates extends React.Component {
           <ItemList name="ProcessesAdd" label="Processes to add" defaultValue={this.state.selectedTemplate.Template.ProcessesAdd} callback={this.handleCallback}/>
           <ItemList name="ProcessesKeep" label="Processes to keep" defaultValue={this.state.selectedTemplate.Template.ProcessesKeep} callback={this.handleCallback}/>
           <ItemList name="ProcessesRemove" label="Processes to remove" defaultValue={this.state.selectedTemplate.Template.ProcessesRemove} callback={this.handleCallback}/>
+          <Software name="SoftwareAdd" label="Software to add" software={this.state.selectedTemplate.Template.SoftwareAdd} callback={this.handleCallback}/>
+          <Software name="SoftwareKeep" label="Software to keep" software={this.state.selectedTemplate.Template.SoftwareKeep} callback={this.handleCallback}/>
+          <Software name="SoftwareRemove" label="Software to remove" software={this.state.selectedTemplate.Template.SoftwareRemove} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -996,6 +999,95 @@ class Groups extends React.Component {
         <button type="button" onClick={this.addGroup.bind(this)}>Add Group</button>
         <ul>
           {groups}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class Software extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    let software = props.software;
+    if (software === undefined || software === null) {
+      software = [];
+    }
+    this.state = {
+      software: software
+    }
+
+    this.addSoftware = this.addSoftware.bind(this);
+    this.removeSoftware = this.removeSoftware.bind(this);
+    this.updateSoftware = this.updateSoftware.bind(this);
+  }
+
+  addSoftware() {
+    let empty = {
+      Name: "",
+      Version: ""
+    };
+    let software = [
+      ...this.state.software,
+      empty
+    ];
+    this.setState({
+      software: software
+    });
+    this.props.callback(this.props.name, software)
+  }
+
+  removeSoftware(id) {
+    let software = this.state.software.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      software: software
+    });
+    this.props.callback(this.props.name, software);
+  }
+
+  updateSoftware(id, field, event) {
+    let updated = this.state.software;
+    let value = event.target.value;
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      software: updated
+    })
+    this.props.callback(this.props.name, updated);
+  }
+
+  render() {
+    let software = [];
+    for (let i in this.state.software) {
+      let entry = this.state.software[i];
+      software.push(
+        <details key={i}>
+          <summary>{entry.Name}</summary>
+          <button type="button" onClick={this.removeSoftware.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Name</label>
+              <input type="text" value={entry.Name} onChange={event=> this.updateSoftware(i, "Name", event)}></input>
+            </li>
+            <li>
+              <label>Version</label>
+              <input type="text" value={entry.Version} onChange={event=> this.updateSoftware(i, "Version", event)}></input>
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>{this.props.label}</summary>
+        <button type="button" onClick={this.addSoftware.bind(this)}>Add Software</button>
+        <ul>
+          {software}
         </ul>
       </details>
     )

@@ -1017,7 +1017,10 @@ var Templates = function (_React$Component7) {
           React.createElement(Groups, { name: 'GroupMembersRemove', label: 'Group members to remove', groups: this.state.selectedTemplate.Template.GroupMembersRemove, callback: this.handleCallback }),
           React.createElement(ItemList, { name: 'ProcessesAdd', label: 'Processes to add', defaultValue: this.state.selectedTemplate.Template.ProcessesAdd, callback: this.handleCallback }),
           React.createElement(ItemList, { name: 'ProcessesKeep', label: 'Processes to keep', defaultValue: this.state.selectedTemplate.Template.ProcessesKeep, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'ProcessesRemove', label: 'Processes to remove', defaultValue: this.state.selectedTemplate.Template.ProcessesRemove, callback: this.handleCallback })
+          React.createElement(ItemList, { name: 'ProcessesRemove', label: 'Processes to remove', defaultValue: this.state.selectedTemplate.Template.ProcessesRemove, callback: this.handleCallback }),
+          React.createElement(Software, { name: 'SoftwareAdd', label: 'Software to add', software: this.state.selectedTemplate.Template.SoftwareAdd, callback: this.handleCallback }),
+          React.createElement(Software, { name: 'SoftwareKeep', label: 'Software to keep', software: this.state.selectedTemplate.Template.SoftwareKeep, callback: this.handleCallback }),
+          React.createElement(Software, { name: 'SoftwareRemove', label: 'Software to remove', software: this.state.selectedTemplate.Template.SoftwareRemove, callback: this.handleCallback })
         ),
         React.createElement(
           'ul',
@@ -1333,8 +1336,147 @@ var Groups = function (_React$Component9) {
   return Groups;
 }(React.Component);
 
-var Item = function (_React$Component10) {
-  _inherits(Item, _React$Component10);
+var Software = function (_React$Component10) {
+  _inherits(Software, _React$Component10);
+
+  function Software(props) {
+    _classCallCheck(this, Software);
+
+    var _this11 = _possibleConstructorReturn(this, (Software.__proto__ || Object.getPrototypeOf(Software)).call(this, props));
+
+    var software = props.software;
+    if (software === undefined || software === null) {
+      software = [];
+    }
+    _this11.state = {
+      software: software
+    };
+
+    _this11.addSoftware = _this11.addSoftware.bind(_this11);
+    _this11.removeSoftware = _this11.removeSoftware.bind(_this11);
+    _this11.updateSoftware = _this11.updateSoftware.bind(_this11);
+    return _this11;
+  }
+
+  _createClass(Software, [{
+    key: 'addSoftware',
+    value: function addSoftware() {
+      var empty = {
+        Name: "",
+        Version: ""
+      };
+      var software = [].concat(_toConsumableArray(this.state.software), [empty]);
+      this.setState({
+        software: software
+      });
+      this.props.callback(this.props.name, software);
+    }
+  }, {
+    key: 'removeSoftware',
+    value: function removeSoftware(id) {
+      var software = this.state.software.filter(function (_, index) {
+        return index != id;
+      });
+      this.setState({
+        software: software
+      });
+      this.props.callback(this.props.name, software);
+    }
+  }, {
+    key: 'updateSoftware',
+    value: function updateSoftware(id, field, event) {
+      var updated = this.state.software;
+      var value = event.target.value;
+      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
+      this.setState({
+        software: updated
+      });
+      this.props.callback(this.props.name, updated);
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this12 = this;
+
+      var software = [];
+
+      var _loop2 = function _loop2(i) {
+        var entry = _this12.state.software[i];
+        software.push(React.createElement(
+          'details',
+          { key: i },
+          React.createElement(
+            'summary',
+            null,
+            entry.Name
+          ),
+          React.createElement(
+            'button',
+            { type: 'button', onClick: _this12.removeSoftware.bind(_this12, i) },
+            '-'
+          ),
+          React.createElement(
+            'ul',
+            null,
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Name'
+              ),
+              React.createElement('input', { type: 'text', value: entry.Name, onChange: function onChange(event) {
+                  return _this12.updateSoftware(i, "Name", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Version'
+              ),
+              React.createElement('input', { type: 'text', value: entry.Version, onChange: function onChange(event) {
+                  return _this12.updateSoftware(i, "Version", event);
+                } })
+            )
+          )
+        ));
+      };
+
+      for (var i in this.state.software) {
+        _loop2(i);
+      }
+
+      return React.createElement(
+        'details',
+        null,
+        React.createElement(
+          'summary',
+          null,
+          this.props.label
+        ),
+        React.createElement(
+          'button',
+          { type: 'button', onClick: this.addSoftware.bind(this) },
+          'Add Software'
+        ),
+        React.createElement(
+          'ul',
+          null,
+          software
+        )
+      );
+    }
+  }]);
+
+  return Software;
+}(React.Component);
+
+var Item = function (_React$Component11) {
+  _inherits(Item, _React$Component11);
 
   function Item(props) {
     _classCallCheck(this, Item);
@@ -1361,26 +1503,26 @@ var Item = function (_React$Component10) {
   return Item;
 }(React.Component);
 
-var ItemMap = function (_React$Component11) {
-  _inherits(ItemMap, _React$Component11);
+var ItemMap = function (_React$Component12) {
+  _inherits(ItemMap, _React$Component12);
 
   function ItemMap(props) {
     _classCallCheck(this, ItemMap);
 
-    var _this12 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
+    var _this14 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
 
-    _this12.state = {
+    _this14.state = {
       item: "",
-      value: _this12.props.defaultValue,
+      value: _this14.props.defaultValue,
       mapItems: [],
       listItems: []
     };
 
-    _this12.add = _this12.add.bind(_this12);
-    _this12.remove = _this12.remove.bind(_this12);
-    _this12.handleChange = _this12.handleChange.bind(_this12);
-    _this12.handleCallback = _this12.handleCallback.bind(_this12);
-    return _this12;
+    _this14.add = _this14.add.bind(_this14);
+    _this14.remove = _this14.remove.bind(_this14);
+    _this14.handleChange = _this14.handleChange.bind(_this14);
+    _this14.handleCallback = _this14.handleCallback.bind(_this14);
+    return _this14;
   }
 
   _createClass(ItemMap, [{
@@ -1432,15 +1574,15 @@ var ItemMap = function (_React$Component11) {
   }, {
     key: 'componentWillMount',
     value: function componentWillMount() {
-      var _this13 = this;
+      var _this15 = this;
 
       this.props.mapItems(function (items) {
-        _this13.setState({
+        _this15.setState({
           mapItems: items
         });
       });
       this.props.listItems(function (items) {
-        _this13.setState({
+        _this15.setState({
           listItems: items
         });
       });
@@ -1448,16 +1590,16 @@ var ItemMap = function (_React$Component11) {
   }, {
     key: 'render',
     value: function render() {
-      var _this14 = this;
+      var _this16 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop2 = function _loop2(i) {
-          if (_this14.state.value[i] === undefined) {
+        var _loop3 = function _loop3(i) {
+          if (_this16.state.value[i] === undefined) {
             return 'continue';
           }
           var text = i;
-          var matches = _this14.state.mapItems.filter(function (obj) {
+          var matches = _this16.state.mapItems.filter(function (obj) {
             return obj.ID == i;
           });
           if (matches.length > 0) {
@@ -1473,21 +1615,21 @@ var ItemMap = function (_React$Component11) {
             ),
             React.createElement(
               'button',
-              { type: 'button', onClick: _this14.remove.bind(_this14, i) },
+              { type: 'button', onClick: _this16.remove.bind(_this16, i) },
               '-'
             ),
             React.createElement(
               'ul',
               null,
-              React.createElement(ItemList, { name: i, label: _this14.props.listLabel, type: 'select', listItems: _this14.state.listItems, defaultValue: _this14.state.value[i], callback: _this14.handleCallback })
+              React.createElement(ItemList, { name: i, label: _this16.props.listLabel, type: 'select', listItems: _this16.state.listItems, defaultValue: _this16.state.value[i], callback: _this16.handleCallback })
             )
           ));
         };
 
         for (var i in this.state.value) {
-          var _ret2 = _loop2(i);
+          var _ret3 = _loop3(i);
 
-          if (_ret2 === 'continue') continue;
+          if (_ret3 === 'continue') continue;
         }
       }
 
@@ -1537,23 +1679,23 @@ var ItemMap = function (_React$Component11) {
   return ItemMap;
 }(React.Component);
 
-var ItemList = function (_React$Component12) {
-  _inherits(ItemList, _React$Component12);
+var ItemList = function (_React$Component13) {
+  _inherits(ItemList, _React$Component13);
 
   function ItemList(props) {
     _classCallCheck(this, ItemList);
 
-    var _this15 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
+    var _this17 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
 
-    _this15.state = {
+    _this17.state = {
       item: "",
-      value: _this15.props.defaultValue
+      value: _this17.props.defaultValue
     };
 
-    _this15.add = _this15.add.bind(_this15);
-    _this15.remove = _this15.remove.bind(_this15);
-    _this15.handleChange = _this15.handleChange.bind(_this15);
-    return _this15;
+    _this17.add = _this17.add.bind(_this17);
+    _this17.remove = _this17.remove.bind(_this17);
+    _this17.handleChange = _this17.handleChange.bind(_this17);
+    return _this17;
   }
 
   _createClass(ItemList, [{
@@ -1606,14 +1748,14 @@ var ItemList = function (_React$Component12) {
   }, {
     key: 'render',
     value: function render() {
-      var _this16 = this;
+      var _this18 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop3 = function _loop3(i) {
-          var text = _this16.state.value[i];
-          if (_this16.props.type === "select") {
-            var _matches = _this16.props.listItems.filter(function (obj) {
+        var _loop4 = function _loop4(i) {
+          var text = _this18.state.value[i];
+          if (_this18.props.type === "select") {
+            var _matches = _this18.props.listItems.filter(function (obj) {
               return obj.ID == text;
             });
             if (_matches.length > 0) {
@@ -1626,14 +1768,14 @@ var ItemList = function (_React$Component12) {
             text,
             React.createElement(
               'button',
-              { type: 'button', onClick: _this16.remove.bind(_this16, i) },
+              { type: 'button', onClick: _this18.remove.bind(_this18, i) },
               '-'
             )
           ));
         };
 
         for (var i in this.state.value) {
-          _loop3(i);
+          _loop4(i);
         }
       }
 
