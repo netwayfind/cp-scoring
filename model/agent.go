@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -19,13 +20,14 @@ type StateSubmission struct {
 }
 
 type State struct {
-	Timestamp int64
-	OS        string
-	Hostname  string
-	Users     []User
-	Groups    map[string][]string
-	Processes []Process
-	Software  []Software
+	Timestamp          int64
+	OS                 string
+	Hostname           string
+	Users              []User
+	Groups             map[string][]string
+	Processes          []Process
+	Software           []Software
+	NetworkConnections []NetworkConnection
 }
 
 type User struct {
@@ -47,6 +49,80 @@ type Process struct {
 type Software struct {
 	Name    string
 	Version string
+}
+
+type NetworkConnectionState string
+
+const (
+	NetworkConnectionClosed      NetworkConnectionState = "CLOSED"
+	NetworkConnectionCloseWait   NetworkConnectionState = "CLOSE_WAIT"
+	NetworkConnectionClosing     NetworkConnectionState = "CLOSING"
+	NetworkConnectionDeleteTcb   NetworkConnectionState = "DELETE_TCB"
+	NetworkConnectionEstablished NetworkConnectionState = "ESTABLISHED"
+	NetworkConnectionFinWait1    NetworkConnectionState = "FIN_WAIT1"
+	NetworkConnectionFinWait2    NetworkConnectionState = "FIN_WAIT2"
+	NetworkConnectionLastAck     NetworkConnectionState = "LAST_ACK"
+	NetworkConnectionListen      NetworkConnectionState = "LISTEN"
+	NetworkConnectionSynReceived NetworkConnectionState = "SYN_RECV"
+	NetworkConnectionSynSent     NetworkConnectionState = "SYN_SENT"
+	NetworkConnectionTimeWait    NetworkConnectionState = "TIME_WAIT"
+	NetworkConnectionUnconn      NetworkConnectionState = "UNCONN"
+	NetworkConnectionUnknown     NetworkConnectionState = "UNKNOWN"
+)
+
+func GetNetworkConnectionState(stateStr string) NetworkConnectionState {
+	// narrow down possible state strings
+	stateStr = strings.ToLower(stateStr)
+	stateStr = strings.Replace(stateStr, "_", "", -1)
+	stateStr = strings.Replace(stateStr, "-", "", -1)
+	switch stateStr {
+	case "closed":
+		return NetworkConnectionClosed
+	case "closewait":
+		return NetworkConnectionCloseWait
+	case "closing":
+		return NetworkConnectionClosing
+	case "deletetcb":
+		return NetworkConnectionDeleteTcb
+	case "estab":
+		return NetworkConnectionEstablished
+	case "established":
+		return NetworkConnectionEstablished
+	case "finwait1":
+		return NetworkConnectionFinWait1
+	case "finwait2":
+		return NetworkConnectionFinWait2
+	case "lastack":
+		return NetworkConnectionLastAck
+	case "listen":
+		return NetworkConnectionListen
+	case "listening":
+		return NetworkConnectionListen
+	case "synrecv":
+		return NetworkConnectionSynReceived
+	case "synreceived":
+		return NetworkConnectionSynReceived
+	case "synsent":
+		return NetworkConnectionSynSent
+	case "timewait":
+		return NetworkConnectionTimeWait
+	case "unconn":
+		return NetworkConnectionUnconn
+	case "unknown":
+		return NetworkConnectionUnknown
+	default:
+		return NetworkConnectionUnknown
+	}
+}
+
+type NetworkConnection struct {
+	Protocol      string
+	PID           int64
+	LocalAddress  string
+	LocalPort     string
+	RemoteAddress string
+	RemotePort    string
+	State         NetworkConnectionState
 }
 
 func GetNewStateTemplate() State {
