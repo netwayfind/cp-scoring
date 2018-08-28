@@ -336,6 +336,7 @@ func getNetworkConnections() []model.NetworkConnection {
 			log.Fatal("ERROR: cannot parse PID;", err)
 		}
 		conn.PID = pid
+		conns = append(conns, conn)
 	}
 
 	return conns

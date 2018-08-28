@@ -251,6 +251,7 @@ func getNetworkConnections() []model.NetworkConnection {
 			conn.RemoteAddress = remoteAddrStr[0:lastColon]
 			conn.RemotePort = remoteAddrStr[lastColon+1:]
 		}
+		conns = append(conns, conn)
 	}
 
 	return conns
