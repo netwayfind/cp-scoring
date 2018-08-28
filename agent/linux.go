@@ -233,7 +233,7 @@ func getNetworkConnections() []model.NetworkConnection {
 				log.Fatal("ERROR: unable to parse PID from network connection;", err)
 			}
 		}
-		conn.Protocol = strings.TrimSpace(line[posNetid:posState])
+		conn.Protocol = strings.ToUpper(strings.TrimSpace(line[posNetid:posState]))
 		conn.State = model.GetNetworkConnectionState(strings.TrimSpace(line[posState:posRecv]))
 		localAddrStr := strings.TrimSpace(line[posLocal:posAddrPort1])
 		lastColon := strings.LastIndex(localAddrStr, ":")
