@@ -794,6 +794,9 @@ class Templates extends React.Component {
           <Software name="SoftwareAdd" label="Software to add" software={this.state.selectedTemplate.Template.SoftwareAdd} callback={this.handleCallback}/>
           <Software name="SoftwareKeep" label="Software to keep" software={this.state.selectedTemplate.Template.SoftwareKeep} callback={this.handleCallback}/>
           <Software name="SoftwareRemove" label="Software to remove" software={this.state.selectedTemplate.Template.SoftwareRemove} callback={this.handleCallback}/>
+          <NetworkConns name="NetworkConnsAdd" label="Network connections to add" conns={this.state.selectedTemplate.Template.NetworkConnsAdd} callback={this.handleCallback}/>
+          <NetworkConns name="NetworkConnsKeep" label="Network connections to keep" conns={this.state.selectedTemplate.Template.NetworkConnsKeep} callback={this.handleCallback}/>
+          <NetworkConns name="NetworkConnsRemove" label="Network connections to remove" conns={this.state.selectedTemplate.Template.NetworkConnsRemove} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -1088,6 +1091,114 @@ class Software extends React.Component {
         <button type="button" onClick={this.addSoftware.bind(this)}>Add Software</button>
         <ul>
           {software}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class NetworkConns extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    let conns = props.conns;
+    if (conns === undefined || conns === null) {
+      conns = [];
+    }
+    this.state = {
+      conns: conns
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  add() {
+    let empty = {
+      Protocol: "",
+      LocalAddress: "",
+      LocalPort: "",
+      RemoteAddress: "",
+      RemotePort: "",
+    };
+    let conns = [
+      ...this.state.conns,
+      empty
+    ];
+    this.setState({
+      conns: conns
+    });
+    this.props.callback(this.props.name, conns)
+  }
+
+  remove(id) {
+    let conns = this.state.conns.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      conns: conns
+    });
+    this.props.callback(this.props.name, conns);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.conns;
+    let value = event.target.value;
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      conns: updated
+    })
+    this.props.callback(this.props.name, updated);
+  }
+
+  render() {
+    let conns = [];
+    for (let i in this.state.conns) {
+      let entry = this.state.conns[i];
+      conns.push(
+        <details key={i}>
+          <summary>{entry.Protocol} {entry.LocalAddress} {entry.LocalPort} {entry.RemoteAddress} {entry.RemotePort}</summary>
+          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Protocol</label>
+              <select value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}>
+                <option value=""></option>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+              </select>
+            </li>
+            <li>
+              <label>Local Address</label>
+              <input type="text" value={entry.LocalAddress} onChange={event=> this.update(i, "LocalAddress", event)}></input>
+            </li>
+            <li>
+              <label>Local Port</label>
+              <input type="text" value={entry.LocalPort} onChange={event=> this.update(i, "LocalPort", event)}></input>
+            </li>
+            <li>
+              <label>Remote Address</label>
+              <input type="text" value={entry.RemoteAddress} onChange={event=> this.update(i, "RemoteAddress", event)}></input>
+            </li>
+            <li>
+              <label>Remote Port</label>
+              <input type="text" value={entry.RemotePort} onChange={event=> this.update(i, "RemotePort", event)}></input>
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>{this.props.label}</summary>
+        <button type="button" onClick={this.add.bind(this)}>Add Network Connection</button>
+        <ul>
+          {conns}
         </ul>
       </details>
     )

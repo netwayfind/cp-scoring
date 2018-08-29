@@ -17,6 +17,9 @@ type Template struct {
 	SoftwareAdd        []Software
 	SoftwareKeep       []Software
 	SoftwareRemove     []Software
+	NetworkConnsAdd    []NetworkConnection
+	NetworkConnsKeep   []NetworkConnection
+	NetworkConnsRemove []NetworkConnection
 }
 
 type Finding struct {

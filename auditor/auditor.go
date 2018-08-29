@@ -15,6 +15,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditGroups(state, template)...)
 		report.Findings = append(report.Findings, auditProcesses(state, template)...)
 		report.Findings = append(report.Findings, auditSoftware(state, template)...)
+		report.Findings = append(report.Findings, auditNetworkConnections(state, template)...)
 	}
 
 	return report
@@ -301,6 +302,104 @@ func auditSoftware(state model.State, template model.Template) []model.Finding {
 			finding.Show = true
 			finding.Value = 1
 			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+			findings = append(findings, finding)
+		}
+	}
+
+	return findings
+}
+
+func auditNetworkConnections(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for _, templateConn := range template.NetworkConnsAdd {
+		connStr := templateConn.Protocol + " " + templateConn.LocalAddress + ":" + templateConn.LocalPort + " " + templateConn.RemoteAddress + ":" + templateConn.RemotePort
+		for _, conn := range state.NetworkConnections {
+			if len(templateConn.Protocol) > 0 && templateConn.Protocol != conn.Protocol {
+				continue
+			}
+			if len(templateConn.LocalAddress) > 0 && templateConn.LocalAddress != conn.LocalAddress {
+				continue
+			}
+			if len(templateConn.LocalPort) > 0 && templateConn.LocalPort != conn.LocalPort {
+				continue
+			}
+			if len(templateConn.RemoteAddress) > 0 && templateConn.RemoteAddress != conn.RemoteAddress {
+				continue
+			}
+			if len(templateConn.RemotePort) > 0 && templateConn.RemotePort != conn.RemotePort {
+				continue
+			}
+			// if here, then matched all
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Network connection added: " + connStr
+			findings = append(findings, finding)
+			break
+		}
+	}
+
+	for _, templateConn := range template.NetworkConnsKeep {
+		connStr := templateConn.Protocol + " " + templateConn.LocalAddress + ":" + templateConn.LocalPort + " " + templateConn.RemoteAddress + ":" + templateConn.RemotePort
+		match := false
+		for _, conn := range state.NetworkConnections {
+			if len(templateConn.Protocol) > 0 && templateConn.Protocol != conn.Protocol {
+				continue
+			}
+			if len(templateConn.LocalAddress) > 0 && templateConn.LocalAddress != conn.LocalAddress {
+				continue
+			}
+			if len(templateConn.LocalPort) > 0 && templateConn.LocalPort != conn.LocalPort {
+				continue
+			}
+			if len(templateConn.RemoteAddress) > 0 && templateConn.RemoteAddress != conn.RemoteAddress {
+				continue
+			}
+			if len(templateConn.RemotePort) > 0 && templateConn.RemotePort != conn.RemotePort {
+				continue
+			}
+			// if here, then above matched
+			match = true
+			break
+		}
+		if !match {
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Network connection missing: " + connStr
+			findings = append(findings, finding)
+		}
+	}
+
+	for _, templateConn := range template.NetworkConnsRemove {
+		connStr := templateConn.Protocol + " " + templateConn.LocalAddress + ":" + templateConn.LocalPort + " " + templateConn.RemoteAddress + ":" + templateConn.RemotePort
+		match := false
+		for _, conn := range state.NetworkConnections {
+			if len(templateConn.Protocol) > 0 && templateConn.Protocol != conn.Protocol {
+				continue
+			}
+			if len(templateConn.LocalAddress) > 0 && templateConn.LocalAddress != conn.LocalAddress {
+				continue
+			}
+			if len(templateConn.LocalPort) > 0 && templateConn.LocalPort != conn.LocalPort {
+				continue
+			}
+			if len(templateConn.RemoteAddress) > 0 && templateConn.RemoteAddress != conn.RemoteAddress {
+				continue
+			}
+			if len(templateConn.RemotePort) > 0 && templateConn.RemotePort != conn.RemotePort {
+				continue
+			}
+			// if here, then above matched
+			match = true
+			break
+		}
+		if !match {
+			var finding model.Finding
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Network connection removed: " + connStr
 			findings = append(findings, finding)
 		}
 	}

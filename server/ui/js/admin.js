@@ -1020,7 +1020,10 @@ var Templates = function (_React$Component7) {
           React.createElement(ItemList, { name: 'ProcessesRemove', label: 'Processes to remove', defaultValue: this.state.selectedTemplate.Template.ProcessesRemove, callback: this.handleCallback }),
           React.createElement(Software, { name: 'SoftwareAdd', label: 'Software to add', software: this.state.selectedTemplate.Template.SoftwareAdd, callback: this.handleCallback }),
           React.createElement(Software, { name: 'SoftwareKeep', label: 'Software to keep', software: this.state.selectedTemplate.Template.SoftwareKeep, callback: this.handleCallback }),
-          React.createElement(Software, { name: 'SoftwareRemove', label: 'Software to remove', software: this.state.selectedTemplate.Template.SoftwareRemove, callback: this.handleCallback })
+          React.createElement(Software, { name: 'SoftwareRemove', label: 'Software to remove', software: this.state.selectedTemplate.Template.SoftwareRemove, callback: this.handleCallback }),
+          React.createElement(NetworkConns, { name: 'NetworkConnsAdd', label: 'Network connections to add', conns: this.state.selectedTemplate.Template.NetworkConnsAdd, callback: this.handleCallback }),
+          React.createElement(NetworkConns, { name: 'NetworkConnsKeep', label: 'Network connections to keep', conns: this.state.selectedTemplate.Template.NetworkConnsKeep, callback: this.handleCallback }),
+          React.createElement(NetworkConns, { name: 'NetworkConnsRemove', label: 'Network connections to remove', conns: this.state.selectedTemplate.Template.NetworkConnsRemove, callback: this.handleCallback })
         ),
         React.createElement(
           'ul',
@@ -1475,8 +1478,208 @@ var Software = function (_React$Component10) {
   return Software;
 }(React.Component);
 
-var Item = function (_React$Component11) {
-  _inherits(Item, _React$Component11);
+var NetworkConns = function (_React$Component11) {
+  _inherits(NetworkConns, _React$Component11);
+
+  function NetworkConns(props) {
+    _classCallCheck(this, NetworkConns);
+
+    var _this13 = _possibleConstructorReturn(this, (NetworkConns.__proto__ || Object.getPrototypeOf(NetworkConns)).call(this, props));
+
+    var conns = props.conns;
+    if (conns === undefined || conns === null) {
+      conns = [];
+    }
+    _this13.state = {
+      conns: conns
+    };
+
+    _this13.add = _this13.add.bind(_this13);
+    _this13.remove = _this13.remove.bind(_this13);
+    _this13.update = _this13.update.bind(_this13);
+    return _this13;
+  }
+
+  _createClass(NetworkConns, [{
+    key: 'add',
+    value: function add() {
+      var empty = {
+        Protocol: "",
+        LocalAddress: "",
+        LocalPort: "",
+        RemoteAddress: "",
+        RemotePort: ""
+      };
+      var conns = [].concat(_toConsumableArray(this.state.conns), [empty]);
+      this.setState({
+        conns: conns
+      });
+      this.props.callback(this.props.name, conns);
+    }
+  }, {
+    key: 'remove',
+    value: function remove(id) {
+      var conns = this.state.conns.filter(function (_, index) {
+        return index != id;
+      });
+      this.setState({
+        conns: conns
+      });
+      this.props.callback(this.props.name, conns);
+    }
+  }, {
+    key: 'update',
+    value: function update(id, field, event) {
+      var updated = this.state.conns;
+      var value = event.target.value;
+      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
+      this.setState({
+        conns: updated
+      });
+      this.props.callback(this.props.name, updated);
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      var _this14 = this;
+
+      var conns = [];
+
+      var _loop3 = function _loop3(i) {
+        var entry = _this14.state.conns[i];
+        conns.push(React.createElement(
+          'details',
+          { key: i },
+          React.createElement(
+            'summary',
+            null,
+            entry.Protocol,
+            ' ',
+            entry.LocalAddress,
+            ' ',
+            entry.LocalPort,
+            ' ',
+            entry.RemoteAddress,
+            ' ',
+            entry.RemotePort
+          ),
+          React.createElement(
+            'button',
+            { type: 'button', onClick: _this14.remove.bind(_this14, i) },
+            '-'
+          ),
+          React.createElement(
+            'ul',
+            null,
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Protocol'
+              ),
+              React.createElement(
+                'select',
+                { value: entry.Protocol, onChange: function onChange(event) {
+                    return _this14.update(i, "Protocol", event);
+                  } },
+                React.createElement('option', { value: '' }),
+                React.createElement(
+                  'option',
+                  { value: 'TCP' },
+                  'TCP'
+                ),
+                React.createElement(
+                  'option',
+                  { value: 'UDP' },
+                  'UDP'
+                )
+              )
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Local Address'
+              ),
+              React.createElement('input', { type: 'text', value: entry.LocalAddress, onChange: function onChange(event) {
+                  return _this14.update(i, "LocalAddress", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Local Port'
+              ),
+              React.createElement('input', { type: 'text', value: entry.LocalPort, onChange: function onChange(event) {
+                  return _this14.update(i, "LocalPort", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Remote Address'
+              ),
+              React.createElement('input', { type: 'text', value: entry.RemoteAddress, onChange: function onChange(event) {
+                  return _this14.update(i, "RemoteAddress", event);
+                } })
+            ),
+            React.createElement(
+              'li',
+              null,
+              React.createElement(
+                'label',
+                null,
+                'Remote Port'
+              ),
+              React.createElement('input', { type: 'text', value: entry.RemotePort, onChange: function onChange(event) {
+                  return _this14.update(i, "RemotePort", event);
+                } })
+            )
+          )
+        ));
+      };
+
+      for (var i in this.state.conns) {
+        _loop3(i);
+      }
+
+      return React.createElement(
+        'details',
+        null,
+        React.createElement(
+          'summary',
+          null,
+          this.props.label
+        ),
+        React.createElement(
+          'button',
+          { type: 'button', onClick: this.add.bind(this) },
+          'Add Network Connection'
+        ),
+        React.createElement(
+          'ul',
+          null,
+          conns
+        )
+      );
+    }
+  }]);
+
+  return NetworkConns;
+}(React.Component);
+
+var Item = function (_React$Component12) {
+  _inherits(Item, _React$Component12);
 
   function Item(props) {
     _classCallCheck(this, Item);
@@ -1503,26 +1706,26 @@ var Item = function (_React$Component11) {
   return Item;
 }(React.Component);
 
-var ItemMap = function (_React$Component12) {
-  _inherits(ItemMap, _React$Component12);
+var ItemMap = function (_React$Component13) {
+  _inherits(ItemMap, _React$Component13);
 
   function ItemMap(props) {
     _classCallCheck(this, ItemMap);
 
-    var _this14 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
+    var _this16 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
 
-    _this14.state = {
+    _this16.state = {
       item: "",
-      value: _this14.props.defaultValue,
+      value: _this16.props.defaultValue,
       mapItems: [],
       listItems: []
     };
 
-    _this14.add = _this14.add.bind(_this14);
-    _this14.remove = _this14.remove.bind(_this14);
-    _this14.handleChange = _this14.handleChange.bind(_this14);
-    _this14.handleCallback = _this14.handleCallback.bind(_this14);
-    return _this14;
+    _this16.add = _this16.add.bind(_this16);
+    _this16.remove = _this16.remove.bind(_this16);
+    _this16.handleChange = _this16.handleChange.bind(_this16);
+    _this16.handleCallback = _this16.handleCallback.bind(_this16);
+    return _this16;
   }
 
   _createClass(ItemMap, [{
@@ -1574,15 +1777,15 @@ var ItemMap = function (_React$Component12) {
   }, {
     key: 'componentWillMount',
     value: function componentWillMount() {
-      var _this15 = this;
+      var _this17 = this;
 
       this.props.mapItems(function (items) {
-        _this15.setState({
+        _this17.setState({
           mapItems: items
         });
       });
       this.props.listItems(function (items) {
-        _this15.setState({
+        _this17.setState({
           listItems: items
         });
       });
@@ -1590,16 +1793,16 @@ var ItemMap = function (_React$Component12) {
   }, {
     key: 'render',
     value: function render() {
-      var _this16 = this;
+      var _this18 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop3 = function _loop3(i) {
-          if (_this16.state.value[i] === undefined) {
+        var _loop4 = function _loop4(i) {
+          if (_this18.state.value[i] === undefined) {
             return 'continue';
           }
           var text = i;
-          var matches = _this16.state.mapItems.filter(function (obj) {
+          var matches = _this18.state.mapItems.filter(function (obj) {
             return obj.ID == i;
           });
           if (matches.length > 0) {
@@ -1615,21 +1818,21 @@ var ItemMap = function (_React$Component12) {
             ),
             React.createElement(
               'button',
-              { type: 'button', onClick: _this16.remove.bind(_this16, i) },
+              { type: 'button', onClick: _this18.remove.bind(_this18, i) },
               '-'
             ),
             React.createElement(
               'ul',
               null,
-              React.createElement(ItemList, { name: i, label: _this16.props.listLabel, type: 'select', listItems: _this16.state.listItems, defaultValue: _this16.state.value[i], callback: _this16.handleCallback })
+              React.createElement(ItemList, { name: i, label: _this18.props.listLabel, type: 'select', listItems: _this18.state.listItems, defaultValue: _this18.state.value[i], callback: _this18.handleCallback })
             )
           ));
         };
 
         for (var i in this.state.value) {
-          var _ret3 = _loop3(i);
+          var _ret4 = _loop4(i);
 
-          if (_ret3 === 'continue') continue;
+          if (_ret4 === 'continue') continue;
         }
       }
 
@@ -1679,23 +1882,23 @@ var ItemMap = function (_React$Component12) {
   return ItemMap;
 }(React.Component);
 
-var ItemList = function (_React$Component13) {
-  _inherits(ItemList, _React$Component13);
+var ItemList = function (_React$Component14) {
+  _inherits(ItemList, _React$Component14);
 
   function ItemList(props) {
     _classCallCheck(this, ItemList);
 
-    var _this17 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
+    var _this19 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
 
-    _this17.state = {
+    _this19.state = {
       item: "",
-      value: _this17.props.defaultValue
+      value: _this19.props.defaultValue
     };
 
-    _this17.add = _this17.add.bind(_this17);
-    _this17.remove = _this17.remove.bind(_this17);
-    _this17.handleChange = _this17.handleChange.bind(_this17);
-    return _this17;
+    _this19.add = _this19.add.bind(_this19);
+    _this19.remove = _this19.remove.bind(_this19);
+    _this19.handleChange = _this19.handleChange.bind(_this19);
+    return _this19;
   }
 
   _createClass(ItemList, [{
@@ -1748,14 +1951,14 @@ var ItemList = function (_React$Component13) {
   }, {
     key: 'render',
     value: function render() {
-      var _this18 = this;
+      var _this20 = this;
 
       var rows = [];
       if (this.state.value) {
-        var _loop4 = function _loop4(i) {
-          var text = _this18.state.value[i];
-          if (_this18.props.type === "select") {
-            var _matches = _this18.props.listItems.filter(function (obj) {
+        var _loop5 = function _loop5(i) {
+          var text = _this20.state.value[i];
+          if (_this20.props.type === "select") {
+            var _matches = _this20.props.listItems.filter(function (obj) {
               return obj.ID == text;
             });
             if (_matches.length > 0) {
@@ -1768,14 +1971,14 @@ var ItemList = function (_React$Component13) {
             text,
             React.createElement(
               'button',
-              { type: 'button', onClick: _this18.remove.bind(_this18, i) },
+              { type: 'button', onClick: _this20.remove.bind(_this20, i) },
               '-'
             )
           ));
         };
 
         for (var i in this.state.value) {
-          _loop4(i);
+          _loop5(i);
         }
       }
 
