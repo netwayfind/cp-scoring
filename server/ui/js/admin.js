@@ -361,7 +361,7 @@ class Teams extends React.Component {
       let team = this.state.teams[i];
       rows.push(React.createElement("li", {
         key: team.ID
-      }, team.ID, " - ", team.Name, React.createElement("button", {
+      }, team.Name, React.createElement("button", {
         type: "button",
         onClick: this.editTeam.bind(this, team.ID)
       }, "Edit"), React.createElement("button", {
@@ -541,7 +541,7 @@ class Scenarios extends React.Component {
       let scenario = this.state.scenarios[i];
       rows.push(React.createElement("li", {
         key: scenario.ID
-      }, scenario.ID, " - ", scenario.Name, React.createElement("button", {
+      }, scenario.Name, React.createElement("button", {
         type: "button",
         onClick: this.editScenario.bind(this, scenario.ID)
       }, "Edit"), React.createElement("button", {
@@ -663,7 +663,7 @@ class Hosts extends React.Component {
       let host = this.state.hosts[i];
       rows.push(React.createElement("li", {
         key: host.ID
-      }, host.ID, " - ", host.Hostname, " - ", host.OS, React.createElement("button", {
+      }, host.Hostname, " - ", host.OS, React.createElement("button", {
         type: "button",
         onClick: this.editHost.bind(this, host.ID, host)
       }, "Edit"), React.createElement("button", {
@@ -802,7 +802,7 @@ class Templates extends React.Component {
       let template = this.state.templates[i];
       rows.push(React.createElement("li", {
         key: template.ID
-      }, template.ID, " - ", template.Name, React.createElement("button", {
+      }, template.Name, React.createElement("button", {
         type: "button",
         onClick: this.editTemplate.bind(this, template.ID)
       }, "Edit"), React.createElement("button", {

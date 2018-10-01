@@ -364,7 +364,7 @@ class Teams extends React.Component {
       let team = this.state.teams[i];
       rows.push(
         <li key={team.ID}>
-          {team.ID} - {team.Name}
+          {team.Name}
           <button type="button" onClick={this.editTeam.bind(this, team.ID)}>Edit</button>
           <button type="button" onClick={this.deleteTeam.bind(this, team.ID)}>-</button>
         </li>
@@ -539,7 +539,7 @@ class Scenarios extends React.Component {
       let scenario = this.state.scenarios[i];
       rows.push(
         <li key={scenario.ID}>
-          {scenario.ID} - {scenario.Name}
+          {scenario.Name}
           <button type="button" onClick={this.editScenario.bind(this, scenario.ID)}>Edit</button>
           <button type="button" onClick={this.deleteScenario.bind(this, scenario.ID)}>-</button>
         </li>
@@ -642,7 +642,7 @@ class Hosts extends React.Component {
       let host = this.state.hosts[i];
       rows.push(
         <li key={host.ID}>
-          {host.ID} - {host.Hostname} - {host.OS}
+          {host.Hostname} - {host.OS}
           <button type="button" onClick={this.editHost.bind(this, host.ID, host)}>Edit</button>
           <button type="button" onClick={this.deleteHost.bind(this, host.ID)}>-</button>
         </li>
@@ -774,7 +774,7 @@ class Templates extends React.Component {
       let template = this.state.templates[i];
       rows.push(
         <li key={template.ID}>
-          {template.ID} - {template.Name}
+          {template.Name}
           <button type="button" onClick={this.editTemplate.bind(this, template.ID)}>Edit</button>
           <button type="button" onClick={this.deleteTemplate.bind(this, template.ID)}>-</button>
         </li>

@@ -173,7 +173,7 @@ func dbInsertAdmin(username string, passwordHash string) error {
 }
 
 func dbSelectTeams() ([]model.TeamSummary, error) {
-	rows, err := db.Query("SELECT id, name FROM teams")
+	rows, err := db.Query("SELECT id, name FROM teams ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +304,7 @@ func dbUpdateTeam(id int64, team model.Team) error {
 }
 
 func dbSelectTemplates() ([]model.TemplateEntry, error) {
-	rows, err := db.Query("SELECT id, name, template FROM templates")
+	rows, err := db.Query("SELECT id, name, template FROM templates ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +431,7 @@ func dbUpdateTemplate(id int64, templateEntry model.TemplateEntry) error {
 }
 
 func dbSelectHosts() ([]model.Host, error) {
-	rows, err := db.Query("SELECT id, hostname, os FROM hosts")
+	rows, err := db.Query("SELECT id, hostname, os FROM hosts ORDER BY hostname ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -528,7 +528,7 @@ func dbSelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) 
 }
 
 func dbSelectScenarios() ([]model.Scenario, error) {
-	rows, err := db.Query("SELECT id, name, description, enabled FROM scenarios")
+	rows, err := db.Query("SELECT id, name, description, enabled FROM scenarios ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
