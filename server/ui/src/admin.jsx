@@ -266,6 +266,7 @@ class Teams extends React.Component {
     this.modal = React.createRef()
     this.handleSubmit = this.handleSubmit.bind(this);
     this.regenKey = this.regenKey.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -340,7 +341,7 @@ class Teams extends React.Component {
     this.toggleModal();
   }
 
-  toggleModal = () => {
+  toggleModal() {
     this.setState({
       showModal: !this.state.showModal
     })
@@ -412,6 +413,7 @@ class Scenarios extends React.Component {
     this.handleCallback = this.handleCallback.bind(this);
     this.mapItems = this.mapItems.bind(this);
     this.listItems = this.listItems.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -479,7 +481,7 @@ class Scenarios extends React.Component {
     this.toggleModal();
   }
 
-  toggleModal = () => {
+  toggleModal() {
     this.setState({
       showModal: !this.state.showModal
     })
@@ -571,6 +573,7 @@ class Hosts extends React.Component {
     };
 
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -627,7 +630,7 @@ class Hosts extends React.Component {
     this.toggleModal();
   }
 
-  toggleModal = () => {
+  toggleModal() {
     this.setState({
       showModal: !this.state.showModal
     })
@@ -675,6 +678,7 @@ class Templates extends React.Component {
 
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleCallback = this.handleCallback.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -744,7 +748,7 @@ class Templates extends React.Component {
     this.toggleModal();
   }
 
-  toggleModal = () => {
+  toggleModal() {
     this.setState({
       showModal: !this.state.showModal
     })

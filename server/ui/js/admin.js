@@ -1,192 +1,142 @@
 'use strict';
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+const Plot = createPlotlyComponent(Plotly);
 
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var Plot = createPlotlyComponent(Plotly);
-
-var App = function (_React$Component) {
-  _inherits(App, _React$Component);
-
-  function App() {
-    _classCallCheck(this, App);
-
-    var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
-
-    _this.state = {
+class App extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       authenticated: false
     };
-
-    _this.authCallback = _this.authCallback.bind(_this);
-    _this.logout = _this.logout.bind(_this);
-    return _this;
+    this.authCallback = this.authCallback.bind(this);
+    this.logout = this.logout.bind(this);
   }
 
-  _createClass(App, [{
-    key: 'authCallback',
-    value: function authCallback(statusCode) {
-      if (statusCode == 200) {
-        this.setState({
-          authenticated: true
-        });
-      } else {
-        this.setState({
-          authenticated: false
-        });
-      }
+  authCallback(statusCode) {
+    if (statusCode == 200) {
+      this.setState({
+        authenticated: true
+      });
+    } else {
+      this.setState({
+        authenticated: false
+      });
     }
-  }, {
-    key: 'logout',
-    value: function logout() {
-      var url = "/logout";
-      fetch(url, {
-        credentials: 'same-origin',
-        method: "DELETE"
-      }).then(function (_) {
-        this.setState({
-          authenticated: false
-        });
-      }.bind(this));
+  }
+
+  logout() {
+    let url = "/logout";
+    fetch(url, {
+      credentials: 'same-origin',
+      method: "DELETE"
+    }).then(function (_) {
+      this.setState({
+        authenticated: false
+      });
+    }.bind(this));
+  }
+
+  componentDidMount() {
+    // check if logged in by visiting the following URL
+    let url = "/templates";
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
+      this.authCallback(response.status);
+    }.bind(this));
+  }
+
+  render() {
+    if (!this.state.authenticated) {
+      return React.createElement("div", {
+        className: "App"
+      }, React.createElement(Login, {
+        callback: this.authCallback
+      }));
     }
-  }, {
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      // check if logged in by visiting the following URL
-      var url = "/templates";
-      fetch(url, {
-        credentials: 'same-origin'
-      }).then(function (response) {
-        this.authCallback(response.status);
-      }.bind(this));
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      if (!this.state.authenticated) {
-        return React.createElement(
-          'div',
-          { className: 'App' },
-          React.createElement(Login, { callback: this.authCallback })
-        );
-      }
-      return React.createElement(
-        'div',
-        { className: 'App' },
-        React.createElement(
-          'button',
-          { onClick: this.logout },
-          'Logout'
-        ),
-        React.createElement('p', null),
-        React.createElement(Teams, null),
-        React.createElement(Hosts, null),
-        React.createElement(Templates, null),
-        React.createElement(Scenarios, null)
-      );
-    }
-  }]);
 
-  return App;
-}(React.Component);
+    return React.createElement("div", {
+      className: "App"
+    }, React.createElement("button", {
+      onClick: this.logout
+    }, "Logout"), React.createElement("p", null), React.createElement(Teams, null), React.createElement(Hosts, null), React.createElement(Templates, null), React.createElement(Scenarios, null));
+  }
 
-var Login = function (_React$Component2) {
-  _inherits(Login, _React$Component2);
+}
 
-  function Login() {
-    _classCallCheck(this, Login);
-
-    var _this2 = _possibleConstructorReturn(this, (Login.__proto__ || Object.getPrototypeOf(Login)).call(this));
-
-    _this2.state = {
+class Login extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       username: "",
       password: "",
       messages: ""
     };
-
-    _this2.handleChange = _this2.handleChange.bind(_this2);
-    _this2.handleSubmit = _this2.handleSubmit.bind(_this2);
-    return _this2;
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  _createClass(Login, [{
-    key: 'handleChange',
-    value: function handleChange(event) {
-      var value = event.target.value;
-      this.setState(Object.assign({}, this.state.credentials, _defineProperty({}, event.target.name, value)));
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit(event) {
-      event.preventDefault();
+  handleChange(event) {
+    let value = event.target.value;
+    this.setState(_objectSpread({}, this.state.credentials, {
+      [event.target.name]: value
+    }));
+  }
 
-      if (this.state.username.length == 0 || this.state.password.length == 0) {
-        return;
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (this.state.username.length == 0 || this.state.password.length == 0) {
+      return;
+    }
+
+    var url = "/login";
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: "username=" + this.state.username + "&password=" + this.state.password
+    }).then(function (response) {
+      this.props.callback(response.status);
+
+      if (response.status >= 400) {
+        this.setState({
+          messages: "Rejected login. Try again."
+        });
       }
+    }.bind(this));
+  }
 
-      var url = "/login";
+  render() {
+    return React.createElement("div", {
+      className: "login"
+    }, this.state.messages, React.createElement("form", {
+      onChange: this.handleChange,
+      onSubmit: this.handleSubmit
+    }, React.createElement("label", {
+      htmlFor: "username"
+    }, "Username"), React.createElement("input", {
+      name: "username",
+      required: "required"
+    }), React.createElement("br", null), React.createElement("label", {
+      htmlFor: "password"
+    }, "Password"), React.createElement("input", {
+      name: "password",
+      type: "password",
+      required: "required"
+    }), React.createElement("br", null), React.createElement("button", {
+      type: "submit"
+    }, "Submit")));
+  }
 
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: "username=" + this.state.username + "&password=" + this.state.password
-      }).then(function (response) {
-        this.props.callback(response.status);
-        if (response.status >= 400) {
-          this.setState({
-            messages: "Rejected login. Try again."
-          });
-        }
-      }.bind(this));
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      return React.createElement(
-        'div',
-        { className: 'login' },
-        this.state.messages,
-        React.createElement(
-          'form',
-          { onChange: this.handleChange, onSubmit: this.handleSubmit },
-          React.createElement(
-            'label',
-            { htmlFor: 'username' },
-            'Username'
-          ),
-          React.createElement('input', { name: 'username', required: 'required' }),
-          React.createElement('br', null),
-          React.createElement(
-            'label',
-            { htmlFor: 'password' },
-            'Password'
-          ),
-          React.createElement('input', { name: 'password', type: 'password', required: 'required' }),
-          React.createElement('br', null),
-          React.createElement(
-            'button',
-            { type: 'submit' },
-            'Submit'
-          )
-        )
-      );
-    }
-  }]);
+}
 
-  return Login;
-}(React.Component);
-
-var backgroundStyle = {
+const backgroundStyle = {
   position: 'fixed',
   top: 0,
   bottom: 0,
@@ -195,1841 +145,1426 @@ var backgroundStyle = {
   backgroundColor: 'rgba(0,0,0,0.5)',
   padding: 50
 };
-
-var modalStyle = {
+const modalStyle = {
   backgroundColor: 'white',
   padding: 30,
   maxHeight: '100%',
   overflowY: 'auto'
 };
 
-var BasicModal = function (_React$Component3) {
-  _inherits(BasicModal, _React$Component3);
-
-  function BasicModal(props) {
-    _classCallCheck(this, BasicModal);
-
-    var _this3 = _possibleConstructorReturn(this, (BasicModal.__proto__ || Object.getPrototypeOf(BasicModal)).call(this, props));
-
-    _this3.state = _this3.defaultState();
-
-    _this3.handleChange = _this3.handleChange.bind(_this3);
-    _this3.handleSubmit = _this3.handleSubmit.bind(_this3);
-    _this3.handleClose = _this3.handleClose.bind(_this3);
-    _this3.setValue = _this3.setValue.bind(_this3);
-    return _this3;
+class BasicModal extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = this.defaultState();
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleClose = this.handleClose.bind(this);
+    this.setValue = this.setValue.bind(this);
   }
 
-  _createClass(BasicModal, [{
-    key: 'defaultState',
-    value: function defaultState() {
-      return {
-        subject: {}
-      };
-    }
-  }, {
-    key: 'setValue',
-    value: function setValue(key, value) {
-      this.setState({
-        subject: Object.assign({}, this.props.subject, this.state.subject, _defineProperty({}, key, value))
-      });
-    }
-  }, {
-    key: 'handleChange',
-    value: function handleChange(event) {
-      var value = event.target.value;
-      if (event.target.type == 'checkbox') {
-        value = event.target.checked;
-      }
-      this.setState({
-        subject: Object.assign({}, this.props.subject, this.state.subject, _defineProperty({}, event.target.name, value))
-      });
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit(event) {
-      event.preventDefault();
-
-      if (Object.keys(this.state.subject) == 0) {
-        return;
-      }
-
-      var url = "/" + this.props.subjectClass;
-      if (this.props.subjectID != null) {
-        url += "/" + this.props.subjectID;
-      }
-
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(this.state.subject)
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        this.props.submit();
-        this.setState(this.defaultState());
-      }.bind(this));
-    }
-  }, {
-    key: 'handleClose',
-    value: function handleClose() {
-      this.props.onClose();
-      this.setState(this.defaultState());
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      if (!this.props.show) {
-        return null;
-      }
-
-      return React.createElement(
-        'div',
-        { className: 'background', style: backgroundStyle },
-        React.createElement(
-          'div',
-          { className: 'modal', style: modalStyle },
-          React.createElement(
-            'label',
-            { htmlFor: 'ID' },
-            'ID'
-          ),
-          React.createElement('input', { name: 'ID', defaultValue: this.props.subjectID, disabled: true }),
-          React.createElement('br', null),
-          React.createElement(
-            'form',
-            { onChange: this.handleChange, onSubmit: this.handleSubmit },
-            this.props.children,
-            React.createElement('br', null),
-            React.createElement(
-              'button',
-              { type: 'submit' },
-              'Submit'
-            ),
-            React.createElement(
-              'button',
-              { type: 'button', onClick: this.handleClose },
-              'Cancel'
-            )
-          )
-        )
-      );
-    }
-  }]);
-
-  return BasicModal;
-}(React.Component);
-
-var Teams = function (_React$Component4) {
-  _inherits(Teams, _React$Component4);
-
-  function Teams() {
-    _classCallCheck(this, Teams);
-
-    var _this4 = _possibleConstructorReturn(this, (Teams.__proto__ || Object.getPrototypeOf(Teams)).call(this));
-
-    _this4.toggleModal = function () {
-      _this4.setState({
-        showModal: !_this4.state.showModal
-      });
+  defaultState() {
+    return {
+      subject: {}
     };
+  }
 
-    _this4.state = {
+  setValue(key, value) {
+    this.setState({
+      subject: _objectSpread({}, this.props.subject, this.state.subject, {
+        [key]: value
+      })
+    });
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+
+    this.setState({
+      subject: _objectSpread({}, this.props.subject, this.state.subject, {
+        [event.target.name]: value
+      })
+    });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    if (Object.keys(this.state.subject) == 0) {
+      return;
+    }
+
+    var url = "/" + this.props.subjectClass;
+
+    if (this.props.subjectID != null) {
+      url += "/" + this.props.subjectID;
+    }
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.subject)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.props.submit();
+      this.setState(this.defaultState());
+    }.bind(this));
+  }
+
+  handleClose() {
+    this.props.onClose();
+    this.setState(this.defaultState());
+  }
+
+  render() {
+    if (!this.props.show) {
+      return null;
+    }
+
+    return React.createElement("div", {
+      className: "background",
+      style: backgroundStyle
+    }, React.createElement("div", {
+      className: "modal",
+      style: modalStyle
+    }, React.createElement("label", {
+      htmlFor: "ID"
+    }, "ID"), React.createElement("input", {
+      name: "ID",
+      defaultValue: this.props.subjectID,
+      disabled: true
+    }), React.createElement("br", null), React.createElement("form", {
+      onChange: this.handleChange,
+      onSubmit: this.handleSubmit
+    }, this.props.children, React.createElement("br", null), React.createElement("button", {
+      type: "submit"
+    }, "Submit"), React.createElement("button", {
+      type: "button",
+      onClick: this.handleClose
+    }, "Cancel"))));
+  }
+
+}
+
+class Teams extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       teams: [],
       showModal: false,
       selectedTeamID: null,
       selectedTeam: {}
     };
-
-    _this4.modal = React.createRef();
-    _this4.handleSubmit = _this4.handleSubmit.bind(_this4);
-    _this4.regenKey = _this4.regenKey.bind(_this4);
-    return _this4;
+    this.modal = React.createRef();
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.regenKey = this.regenKey.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
-  _createClass(Teams, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.populateTeams();
-    }
-  }, {
-    key: 'populateTeams',
-    value: function populateTeams() {
-      var url = '/teams';
+  componentDidMount() {
+    this.populateTeams();
+  }
 
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({ teams: data });
-      }.bind(this));
-    }
-  }, {
-    key: 'newKey',
-    value: function newKey() {
-      return Math.random().toString(16).substring(7);
-    }
-  }, {
-    key: 'createTeam',
-    value: function createTeam() {
-      this.setState({
-        selectedTeamID: null,
-        selectedTeam: {
-          Enabled: true,
-          Key: this.newKey()
-        }
-      });
-      this.toggleModal();
-    }
-  }, {
-    key: 'editTeam',
-    value: function editTeam(id) {
-      var url = "/teams/" + id;
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({
-          selectedTeamID: id,
-          selectedTeam: data
-        });
-        this.toggleModal();
-      }.bind(this));
-    }
-  }, {
-    key: 'deleteTeam',
-    value: function deleteTeam(id) {
-      var url = "/teams/" + id;
-
-      fetch(url, {
-        method: 'DELETE'
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        this.populateTeams();
-      }.bind(this));
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit() {
-      this.populateTeams();
-      this.toggleModal();
-    }
-  }, {
-    key: 'regenKey',
-    value: function regenKey() {
-      var key = this.newKey();
-      this.setState({
-        selectedTeam: Object.assign({}, this.state.selectedTeam, {
-          Key: key
-        })
-      });
-      this.modal.current.setValue("Key", key);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var rows = [];
-      for (var i = 0; i < this.state.teams.length; i++) {
-        var team = this.state.teams[i];
-        rows.push(React.createElement(
-          'li',
-          { key: team.ID },
-          team.ID,
-          ' - ',
-          team.Name,
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.editTeam.bind(this, team.ID) },
-            'Edit'
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.deleteTeam.bind(this, team.ID) },
-            '-'
-          )
-        ));
+  populateTeams() {
+    var url = '/teams';
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
       }
 
-      return React.createElement(
-        'div',
-        { className: 'Teams' },
-        React.createElement(
-          'strong',
-          null,
-          'Teams'
-        ),
-        React.createElement('p', null),
-        React.createElement(
-          'button',
-          { onClick: this.createTeam.bind(this) },
-          'Add Team'
-        ),
-        React.createElement(
-          BasicModal,
-          { ref: this.modal, subjectClass: 'teams', subjectID: this.state.selectedTeamID, subject: this.state.selectedTeam, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: 'Name', defaultValue: this.state.selectedTeam.Name }),
-          React.createElement(Item, { name: 'POC', defaultValue: this.state.selectedTeam.POC }),
-          React.createElement(Item, { name: 'Email', type: 'email', defaultValue: this.state.selectedTeam.Email }),
-          React.createElement(
-            'label',
-            { htmlFor: 'Enabled' },
-            'Enabled'
-          ),
-          React.createElement('input', { name: 'Enabled', type: 'checkbox', defaultChecked: !!this.state.selectedTeam.Enabled }),
-          React.createElement('br', null),
-          React.createElement(
-            'details',
-            null,
-            React.createElement(
-              'summary',
-              null,
-              'Key'
-            ),
-            React.createElement(
-              'ul',
-              null,
-              React.createElement(
-                'li',
-                null,
-                this.state.selectedTeam.Key,
-                React.createElement(
-                  'button',
-                  { type: 'button', onClick: this.regenKey.bind(this) },
-                  'Regenerate'
-                )
-              )
-            )
-          )
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows
-        )
-      );
-    }
-  }]);
-
-  return Teams;
-}(React.Component);
-
-var Scenarios = function (_React$Component5) {
-  _inherits(Scenarios, _React$Component5);
-
-  function Scenarios() {
-    _classCallCheck(this, Scenarios);
-
-    var _this5 = _possibleConstructorReturn(this, (Scenarios.__proto__ || Object.getPrototypeOf(Scenarios)).call(this));
-
-    _this5.toggleModal = function () {
-      _this5.setState({
-        showModal: !_this5.state.showModal
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        teams: data
       });
-    };
+    }.bind(this));
+  }
 
-    _this5.state = {
+  newKey() {
+    return Math.random().toString(16).substring(7);
+  }
+
+  createTeam() {
+    this.setState({
+      selectedTeamID: null,
+      selectedTeam: {
+        Enabled: true,
+        Key: this.newKey()
+      }
+    });
+    this.toggleModal();
+  }
+
+  editTeam(id) {
+    let url = "/teams/" + id;
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        selectedTeamID: id,
+        selectedTeam: data
+      });
+      this.toggleModal();
+    }.bind(this));
+  }
+
+  deleteTeam(id) {
+    var url = "/teams/" + id;
+    fetch(url, {
+      method: 'DELETE'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.populateTeams();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateTeams();
+    this.toggleModal();
+  }
+
+  toggleModal() {
+    this.setState({
+      showModal: !this.state.showModal
+    });
+  }
+
+  regenKey() {
+    let key = this.newKey();
+    this.setState({
+      selectedTeam: _objectSpread({}, this.state.selectedTeam, {
+        Key: key
+      })
+    });
+    this.modal.current.setValue("Key", key);
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.teams.length; i++) {
+      let team = this.state.teams[i];
+      rows.push(React.createElement("li", {
+        key: team.ID
+      }, team.ID, " - ", team.Name, React.createElement("button", {
+        type: "button",
+        onClick: this.editTeam.bind(this, team.ID)
+      }, "Edit"), React.createElement("button", {
+        type: "button",
+        onClick: this.deleteTeam.bind(this, team.ID)
+      }, "-")));
+    }
+
+    return React.createElement("div", {
+      className: "Teams"
+    }, React.createElement("strong", null, "Teams"), React.createElement("p", null), React.createElement("button", {
+      onClick: this.createTeam.bind(this)
+    }, "Add Team"), React.createElement(BasicModal, {
+      ref: this.modal,
+      subjectClass: "teams",
+      subjectID: this.state.selectedTeamID,
+      subject: this.state.selectedTeam,
+      show: this.state.showModal,
+      onClose: this.toggleModal,
+      submit: this.handleSubmit
+    }, React.createElement(Item, {
+      name: "Name",
+      defaultValue: this.state.selectedTeam.Name
+    }), React.createElement(Item, {
+      name: "POC",
+      defaultValue: this.state.selectedTeam.POC
+    }), React.createElement(Item, {
+      name: "Email",
+      type: "email",
+      defaultValue: this.state.selectedTeam.Email
+    }), React.createElement("label", {
+      htmlFor: "Enabled"
+    }, "Enabled"), React.createElement("input", {
+      name: "Enabled",
+      type: "checkbox",
+      defaultChecked: !!this.state.selectedTeam.Enabled
+    }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.selectedTeam.Key, React.createElement("button", {
+      type: "button",
+      onClick: this.regenKey.bind(this)
+    }, "Regenerate"))))), React.createElement("ul", null, rows));
+  }
+
+}
+
+class Scenarios extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       scenarios: [],
       showModal: false,
       selectedScenario: {}
     };
-    _this5.modal = React.createRef();
-
-    _this5.handleSubmit = _this5.handleSubmit.bind(_this5);
-    _this5.handleCallback = _this5.handleCallback.bind(_this5);
-    _this5.mapItems = _this5.mapItems.bind(_this5);
-    _this5.listItems = _this5.listItems.bind(_this5);
-    return _this5;
+    this.modal = React.createRef();
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleCallback = this.handleCallback.bind(this);
+    this.mapItems = this.mapItems.bind(this);
+    this.listItems = this.listItems.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
-  _createClass(Scenarios, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.populateScenarios();
-    }
-  }, {
-    key: 'populateScenarios',
-    value: function populateScenarios() {
-      var url = '/scenarios';
+  componentDidMount() {
+    this.populateScenarios();
+  }
 
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({ scenarios: data });
-      }.bind(this));
-    }
-  }, {
-    key: 'createScenario',
-    value: function createScenario() {
-      this.setState({
-        selectedScenarioID: null,
-        selectedScenario: { Enabled: true }
-      });
-      this.toggleModal();
-    }
-  }, {
-    key: 'editScenario',
-    value: function editScenario(id) {
-      var url = "/scenarios/" + id;
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({
-          selectedScenarioID: id,
-          selectedScenario: data
-        });
-        this.toggleModal();
-      }.bind(this));
-    }
-  }, {
-    key: 'deleteScenario',
-    value: function deleteScenario(id) {
-      var url = "/scenarios/" + id;
-
-      fetch(url, {
-        method: 'DELETE'
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        this.populateScenarios();
-      }.bind(this));
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit() {
-      this.populateScenarios();
-      this.toggleModal();
-    }
-  }, {
-    key: 'handleCallback',
-    value: function handleCallback(key, value) {
-      this.modal.current.setValue(key, value);
-    }
-  }, {
-    key: 'mapItems',
-    value: function mapItems(callback) {
-      var url = "/hosts";
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }.bind(this)).then(function (data) {
-        var items = data.map(function (host) {
-          return {
-            ID: host.ID,
-            Display: host.Hostname
-          };
-        });
-        callback(items);
-      });
-    }
-  }, {
-    key: 'listItems',
-    value: function listItems(callback) {
-      var url = "/templates";
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }.bind(this)).then(function (data) {
-        var items = data.map(function (template) {
-          return {
-            ID: template.ID,
-            Display: template.Name
-          };
-        });
-        callback(items);
-      });
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var rows = [];
-      for (var i = 0; i < this.state.scenarios.length; i++) {
-        var scenario = this.state.scenarios[i];
-        rows.push(React.createElement(
-          'li',
-          { key: scenario.ID },
-          scenario.ID,
-          ' - ',
-          scenario.Name,
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.editScenario.bind(this, scenario.ID) },
-            'Edit'
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.deleteScenario.bind(this, scenario.ID) },
-            '-'
-          )
-        ));
+  populateScenarios() {
+    var url = '/scenarios';
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
       }
 
-      return React.createElement(
-        'div',
-        { className: 'Scenarios' },
-        React.createElement(
-          'strong',
-          null,
-          'Scenarios'
-        ),
-        React.createElement('p', null),
-        React.createElement(
-          'button',
-          { onClick: this.createScenario.bind(this) },
-          'Add Scenario'
-        ),
-        React.createElement(
-          BasicModal,
-          { ref: this.modal, subjectClass: 'scenarios', subjectID: this.state.selectedScenarioID, subject: this.state.selectedScenario, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: 'Name', defaultValue: this.state.selectedScenario.Name }),
-          React.createElement(Item, { name: 'Description', defaultValue: this.state.selectedScenario.Description }),
-          React.createElement(Item, { name: 'Enabled', type: 'checkbox', defaultChecked: !!this.state.selectedScenario.Enabled }),
-          React.createElement(ItemMap, { name: 'HostTemplates', label: 'Hosts', listLabel: 'Templates', defaultValue: this.state.selectedScenario.HostTemplates, callback: this.handleCallback, mapItems: this.mapItems, listItems: this.listItems })
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows
-        )
-      );
-    }
-  }]);
-
-  return Scenarios;
-}(React.Component);
-
-var Hosts = function (_React$Component6) {
-  _inherits(Hosts, _React$Component6);
-
-  function Hosts() {
-    _classCallCheck(this, Hosts);
-
-    var _this6 = _possibleConstructorReturn(this, (Hosts.__proto__ || Object.getPrototypeOf(Hosts)).call(this));
-
-    _this6.toggleModal = function () {
-      _this6.setState({
-        showModal: !_this6.state.showModal
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        scenarios: data
       });
-    };
+    }.bind(this));
+  }
 
-    _this6.state = {
+  createScenario() {
+    this.setState({
+      selectedScenarioID: null,
+      selectedScenario: {
+        Enabled: true
+      }
+    });
+    this.toggleModal();
+  }
+
+  editScenario(id) {
+    let url = "/scenarios/" + id;
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        selectedScenarioID: id,
+        selectedScenario: data
+      });
+      this.toggleModal();
+    }.bind(this));
+  }
+
+  deleteScenario(id) {
+    var url = "/scenarios/" + id;
+    fetch(url, {
+      method: 'DELETE'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.populateScenarios();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateScenarios();
+    this.toggleModal();
+  }
+
+  toggleModal() {
+    this.setState({
+      showModal: !this.state.showModal
+    });
+  }
+
+  handleCallback(key, value) {
+    this.modal.current.setValue(key, value);
+  }
+
+  mapItems(callback) {
+    var url = "/hosts";
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }.bind(this)).then(function (data) {
+      let items = data.map(function (host) {
+        return {
+          ID: host.ID,
+          Display: host.Hostname
+        };
+      });
+      callback(items);
+    });
+  }
+
+  listItems(callback) {
+    var url = "/templates";
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }.bind(this)).then(function (data) {
+      let items = data.map(function (template) {
+        return {
+          ID: template.ID,
+          Display: template.Name
+        };
+      });
+      callback(items);
+    });
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.scenarios.length; i++) {
+      let scenario = this.state.scenarios[i];
+      rows.push(React.createElement("li", {
+        key: scenario.ID
+      }, scenario.ID, " - ", scenario.Name, React.createElement("button", {
+        type: "button",
+        onClick: this.editScenario.bind(this, scenario.ID)
+      }, "Edit"), React.createElement("button", {
+        type: "button",
+        onClick: this.deleteScenario.bind(this, scenario.ID)
+      }, "-")));
+    }
+
+    return React.createElement("div", {
+      className: "Scenarios"
+    }, React.createElement("strong", null, "Scenarios"), React.createElement("p", null), React.createElement("button", {
+      onClick: this.createScenario.bind(this)
+    }, "Add Scenario"), React.createElement(BasicModal, {
+      ref: this.modal,
+      subjectClass: "scenarios",
+      subjectID: this.state.selectedScenarioID,
+      subject: this.state.selectedScenario,
+      show: this.state.showModal,
+      onClose: this.toggleModal,
+      submit: this.handleSubmit
+    }, React.createElement(Item, {
+      name: "Name",
+      defaultValue: this.state.selectedScenario.Name
+    }), React.createElement(Item, {
+      name: "Description",
+      defaultValue: this.state.selectedScenario.Description
+    }), React.createElement(Item, {
+      name: "Enabled",
+      type: "checkbox",
+      defaultChecked: !!this.state.selectedScenario.Enabled
+    }), React.createElement(ItemMap, {
+      name: "HostTemplates",
+      label: "Hosts",
+      listLabel: "Templates",
+      defaultValue: this.state.selectedScenario.HostTemplates,
+      callback: this.handleCallback,
+      mapItems: this.mapItems,
+      listItems: this.listItems
+    })), React.createElement("ul", null, rows));
+  }
+
+}
+
+class Hosts extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       hosts: [],
       showModal: false,
       selectedHost: {}
     };
-
-    _this6.handleSubmit = _this6.handleSubmit.bind(_this6);
-    return _this6;
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
-  _createClass(Hosts, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.populateHosts();
-    }
-  }, {
-    key: 'populateHosts',
-    value: function populateHosts() {
-      var url = '/hosts';
+  componentDidMount() {
+    this.populateHosts();
+  }
 
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({ hosts: data });
-      }.bind(this));
-    }
-  }, {
-    key: 'createHost',
-    value: function createHost() {
-      this.setState({
-        selectedHostID: null,
-        selectedHost: {}
-      });
-      this.toggleModal();
-    }
-  }, {
-    key: 'editHost',
-    value: function editHost(id, host) {
-      this.setState({
-        selectedHostID: id,
-        selectedHost: host
-      });
-      this.toggleModal();
-    }
-  }, {
-    key: 'deleteHost',
-    value: function deleteHost(id) {
-      var url = "/hosts/" + id;
-
-      fetch(url, {
-        method: 'DELETE'
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        this.populateHosts();
-      }.bind(this));
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit() {
-      this.populateHosts();
-      this.toggleModal();
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var rows = [];
-      for (var i = 0; i < this.state.hosts.length; i++) {
-        var host = this.state.hosts[i];
-        rows.push(React.createElement(
-          'li',
-          { key: host.ID },
-          host.ID,
-          ' - ',
-          host.Hostname,
-          ' - ',
-          host.OS,
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.editHost.bind(this, host.ID, host) },
-            'Edit'
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.deleteHost.bind(this, host.ID) },
-            '-'
-          )
-        ));
+  populateHosts() {
+    var url = '/hosts';
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
       }
 
-      return React.createElement(
-        'div',
-        { className: 'Hosts' },
-        React.createElement(
-          'strong',
-          null,
-          'Hosts'
-        ),
-        React.createElement('p', null),
-        React.createElement(
-          'button',
-          { onClick: this.createHost.bind(this) },
-          'Add Host'
-        ),
-        React.createElement(
-          BasicModal,
-          { subjectClass: 'hosts', subjectID: this.state.selectedHostID, subject: this.state.selectedHost, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: 'Hostname', type: 'text', defaultValue: this.state.selectedHost.Hostname }),
-          React.createElement(Item, { name: 'OS', type: 'text', defaultValue: this.state.selectedHost.OS })
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows
-        )
-      );
-    }
-  }]);
-
-  return Hosts;
-}(React.Component);
-
-var Templates = function (_React$Component7) {
-  _inherits(Templates, _React$Component7);
-
-  function Templates() {
-    _classCallCheck(this, Templates);
-
-    var _this7 = _possibleConstructorReturn(this, (Templates.__proto__ || Object.getPrototypeOf(Templates)).call(this));
-
-    _this7.toggleModal = function () {
-      _this7.setState({
-        showModal: !_this7.state.showModal
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        hosts: data
       });
-    };
+    }.bind(this));
+  }
 
-    _this7.state = {
+  createHost() {
+    this.setState({
+      selectedHostID: null,
+      selectedHost: {}
+    });
+    this.toggleModal();
+  }
+
+  editHost(id, host) {
+    this.setState({
+      selectedHostID: id,
+      selectedHost: host
+    });
+    this.toggleModal();
+  }
+
+  deleteHost(id) {
+    var url = "/hosts/" + id;
+    fetch(url, {
+      method: 'DELETE'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.populateHosts();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateHosts();
+    this.toggleModal();
+  }
+
+  toggleModal() {
+    this.setState({
+      showModal: !this.state.showModal
+    });
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.hosts.length; i++) {
+      let host = this.state.hosts[i];
+      rows.push(React.createElement("li", {
+        key: host.ID
+      }, host.ID, " - ", host.Hostname, " - ", host.OS, React.createElement("button", {
+        type: "button",
+        onClick: this.editHost.bind(this, host.ID, host)
+      }, "Edit"), React.createElement("button", {
+        type: "button",
+        onClick: this.deleteHost.bind(this, host.ID)
+      }, "-")));
+    }
+
+    return React.createElement("div", {
+      className: "Hosts"
+    }, React.createElement("strong", null, "Hosts"), React.createElement("p", null), React.createElement("button", {
+      onClick: this.createHost.bind(this)
+    }, "Add Host"), React.createElement(BasicModal, {
+      subjectClass: "hosts",
+      subjectID: this.state.selectedHostID,
+      subject: this.state.selectedHost,
+      show: this.state.showModal,
+      onClose: this.toggleModal,
+      submit: this.handleSubmit
+    }, React.createElement(Item, {
+      name: "Hostname",
+      type: "text",
+      defaultValue: this.state.selectedHost.Hostname
+    }), React.createElement(Item, {
+      name: "OS",
+      type: "text",
+      defaultValue: this.state.selectedHost.OS
+    })), React.createElement("ul", null, rows));
+  }
+
+}
+
+class Templates extends React.Component {
+  constructor() {
+    super();
+    this.state = {
       templates: [],
       showModal: false,
       selectedTemplate: {
         Template: {}
       }
     };
-    _this7.modal = React.createRef();
-
-    _this7.handleSubmit = _this7.handleSubmit.bind(_this7);
-    _this7.handleCallback = _this7.handleCallback.bind(_this7);
-    return _this7;
+    this.modal = React.createRef();
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleCallback = this.handleCallback.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
-  _createClass(Templates, [{
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      this.populateTemplates();
-    }
-  }, {
-    key: 'populateTemplates',
-    value: function populateTemplates() {
-      var url = "/templates";
+  componentDidMount() {
+    this.populateTemplates();
+  }
 
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({ templates: data });
-      }.bind(this));
-    }
-  }, {
-    key: 'createTemplate',
-    value: function createTemplate() {
-      this.setState({
-        selectedTemplateID: null,
-        selectedTemplate: {
-          Template: {}
-        }
-      });
-      this.toggleModal();
-    }
-  }, {
-    key: 'editTemplate',
-    value: function editTemplate(id) {
-      var url = "/templates/" + id;
-
-      fetch(url).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        return response.json();
-      }).then(function (data) {
-        this.setState({
-          selectedTemplateID: id,
-          selectedTemplate: data
-        });
-        this.toggleModal();
-      }.bind(this));
-    }
-  }, {
-    key: 'deleteTemplate',
-    value: function deleteTemplate(id) {
-      var url = "/templates/" + id;
-
-      fetch(url, {
-        method: 'DELETE'
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
-        this.populateTemplates();
-      }.bind(this));
-    }
-  }, {
-    key: 'handleSubmit',
-    value: function handleSubmit() {
-      this.populateTemplates();
-      this.toggleModal();
-    }
-  }, {
-    key: 'handleCallback',
-    value: function handleCallback(key, value) {
-      var template = Object.assign({}, this.state.selectedTemplate.Template, _defineProperty({}, key, value));
-      this.setState({
-        selectedTemplate: Object.assign({}, this.state.selectedTemplate, {
-          Template: template
-        })
-      });
-      this.modal.current.setValue("Template", template);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var rows = [];
-      for (var i = 0; i < this.state.templates.length; i++) {
-        var template = this.state.templates[i];
-        rows.push(React.createElement(
-          'li',
-          { key: template.ID },
-          template.ID,
-          ' - ',
-          template.Name,
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.editTemplate.bind(this, template.ID) },
-            'Edit'
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.deleteTemplate.bind(this, template.ID) },
-            '-'
-          )
-        ));
+  populateTemplates() {
+    var url = "/templates";
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
       }
 
-      return React.createElement(
-        'div',
-        { className: 'Templates' },
-        React.createElement(
-          'strong',
-          null,
-          'Templates'
-        ),
-        React.createElement('p', null),
-        React.createElement(
-          'button',
-          { onClick: this.createTemplate.bind(this) },
-          'Create Template'
-        ),
-        React.createElement(
-          BasicModal,
-          { ref: this.modal, subjectClass: 'templates', subjectID: this.state.selectedTemplateID, subject: this.state.selectedTemplate, show: this.state.showModal, onClose: this.toggleModal, submit: this.handleSubmit },
-          React.createElement(Item, { name: 'Name', type: 'text', defaultValue: this.state.selectedTemplate.Name }),
-          React.createElement(Users, { users: this.state.selectedTemplate.Template.Users, callback: this.handleCallback }),
-          React.createElement(Groups, { name: 'GroupMembersAdd', label: 'Group members to add', groups: this.state.selectedTemplate.Template.GroupMembersAdd, callback: this.handleCallback }),
-          React.createElement(Groups, { name: 'GroupMembersKeep', label: 'Group members to keep', groups: this.state.selectedTemplate.Template.GroupMembersKeep, callback: this.handleCallback }),
-          React.createElement(Groups, { name: 'GroupMembersRemove', label: 'Group members to remove', groups: this.state.selectedTemplate.Template.GroupMembersRemove, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'ProcessesAdd', label: 'Processes to add', defaultValue: this.state.selectedTemplate.Template.ProcessesAdd, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'ProcessesKeep', label: 'Processes to keep', defaultValue: this.state.selectedTemplate.Template.ProcessesKeep, callback: this.handleCallback }),
-          React.createElement(ItemList, { name: 'ProcessesRemove', label: 'Processes to remove', defaultValue: this.state.selectedTemplate.Template.ProcessesRemove, callback: this.handleCallback }),
-          React.createElement(Software, { name: 'SoftwareAdd', label: 'Software to add', software: this.state.selectedTemplate.Template.SoftwareAdd, callback: this.handleCallback }),
-          React.createElement(Software, { name: 'SoftwareKeep', label: 'Software to keep', software: this.state.selectedTemplate.Template.SoftwareKeep, callback: this.handleCallback }),
-          React.createElement(Software, { name: 'SoftwareRemove', label: 'Software to remove', software: this.state.selectedTemplate.Template.SoftwareRemove, callback: this.handleCallback }),
-          React.createElement(NetworkConns, { name: 'NetworkConnsAdd', label: 'Network connections to add', conns: this.state.selectedTemplate.Template.NetworkConnsAdd, callback: this.handleCallback }),
-          React.createElement(NetworkConns, { name: 'NetworkConnsKeep', label: 'Network connections to keep', conns: this.state.selectedTemplate.Template.NetworkConnsKeep, callback: this.handleCallback }),
-          React.createElement(NetworkConns, { name: 'NetworkConnsRemove', label: 'Network connections to remove', conns: this.state.selectedTemplate.Template.NetworkConnsRemove, callback: this.handleCallback })
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows
-        )
-      );
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        templates: data
+      });
+    }.bind(this));
+  }
+
+  createTemplate() {
+    this.setState({
+      selectedTemplateID: null,
+      selectedTemplate: {
+        Template: {}
+      }
+    });
+    this.toggleModal();
+  }
+
+  editTemplate(id) {
+    let url = "/templates/" + id;
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        selectedTemplateID: id,
+        selectedTemplate: data
+      });
+      this.toggleModal();
+    }.bind(this));
+  }
+
+  deleteTemplate(id) {
+    var url = "/templates/" + id;
+    fetch(url, {
+      method: 'DELETE'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.populateTemplates();
+    }.bind(this));
+  }
+
+  handleSubmit() {
+    this.populateTemplates();
+    this.toggleModal();
+  }
+
+  toggleModal() {
+    this.setState({
+      showModal: !this.state.showModal
+    });
+  }
+
+  handleCallback(key, value) {
+    let template = _objectSpread({}, this.state.selectedTemplate.Template, {
+      [key]: value
+    });
+
+    this.setState({
+      selectedTemplate: _objectSpread({}, this.state.selectedTemplate, {
+        Template: template
+      })
+    });
+    this.modal.current.setValue("Template", template);
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.templates.length; i++) {
+      let template = this.state.templates[i];
+      rows.push(React.createElement("li", {
+        key: template.ID
+      }, template.ID, " - ", template.Name, React.createElement("button", {
+        type: "button",
+        onClick: this.editTemplate.bind(this, template.ID)
+      }, "Edit"), React.createElement("button", {
+        type: "button",
+        onClick: this.deleteTemplate.bind(this, template.ID)
+      }, "-")));
     }
-  }]);
 
-  return Templates;
-}(React.Component);
+    return React.createElement("div", {
+      className: "Templates"
+    }, React.createElement("strong", null, "Templates"), React.createElement("p", null), React.createElement("button", {
+      onClick: this.createTemplate.bind(this)
+    }, "Create Template"), React.createElement(BasicModal, {
+      ref: this.modal,
+      subjectClass: "templates",
+      subjectID: this.state.selectedTemplateID,
+      subject: this.state.selectedTemplate,
+      show: this.state.showModal,
+      onClose: this.toggleModal,
+      submit: this.handleSubmit
+    }, React.createElement(Item, {
+      name: "Name",
+      type: "text",
+      defaultValue: this.state.selectedTemplate.Name
+    }), React.createElement(Users, {
+      users: this.state.selectedTemplate.Template.Users,
+      callback: this.handleCallback
+    }), React.createElement(Groups, {
+      name: "GroupMembersAdd",
+      label: "Group members to add",
+      groups: this.state.selectedTemplate.Template.GroupMembersAdd,
+      callback: this.handleCallback
+    }), React.createElement(Groups, {
+      name: "GroupMembersKeep",
+      label: "Group members to keep",
+      groups: this.state.selectedTemplate.Template.GroupMembersKeep,
+      callback: this.handleCallback
+    }), React.createElement(Groups, {
+      name: "GroupMembersRemove",
+      label: "Group members to remove",
+      groups: this.state.selectedTemplate.Template.GroupMembersRemove,
+      callback: this.handleCallback
+    }), React.createElement(ItemList, {
+      name: "ProcessesAdd",
+      label: "Processes to add",
+      defaultValue: this.state.selectedTemplate.Template.ProcessesAdd,
+      callback: this.handleCallback
+    }), React.createElement(ItemList, {
+      name: "ProcessesKeep",
+      label: "Processes to keep",
+      defaultValue: this.state.selectedTemplate.Template.ProcessesKeep,
+      callback: this.handleCallback
+    }), React.createElement(ItemList, {
+      name: "ProcessesRemove",
+      label: "Processes to remove",
+      defaultValue: this.state.selectedTemplate.Template.ProcessesRemove,
+      callback: this.handleCallback
+    }), React.createElement(Software, {
+      name: "SoftwareAdd",
+      label: "Software to add",
+      software: this.state.selectedTemplate.Template.SoftwareAdd,
+      callback: this.handleCallback
+    }), React.createElement(Software, {
+      name: "SoftwareKeep",
+      label: "Software to keep",
+      software: this.state.selectedTemplate.Template.SoftwareKeep,
+      callback: this.handleCallback
+    }), React.createElement(Software, {
+      name: "SoftwareRemove",
+      label: "Software to remove",
+      software: this.state.selectedTemplate.Template.SoftwareRemove,
+      callback: this.handleCallback
+    }), React.createElement(NetworkConns, {
+      name: "NetworkConnsAdd",
+      label: "Network connections to add",
+      conns: this.state.selectedTemplate.Template.NetworkConnsAdd,
+      callback: this.handleCallback
+    }), React.createElement(NetworkConns, {
+      name: "NetworkConnsKeep",
+      label: "Network connections to keep",
+      conns: this.state.selectedTemplate.Template.NetworkConnsKeep,
+      callback: this.handleCallback
+    }), React.createElement(NetworkConns, {
+      name: "NetworkConnsRemove",
+      label: "Network connections to remove",
+      conns: this.state.selectedTemplate.Template.NetworkConnsRemove,
+      callback: this.handleCallback
+    })), React.createElement("ul", null, rows));
+  }
 
-var Users = function (_React$Component8) {
-  _inherits(Users, _React$Component8);
+}
 
-  function Users(props) {
-    _classCallCheck(this, Users);
+class Users extends React.Component {
+  constructor(props) {
+    super(props);
+    let users = props.users;
 
-    var _this8 = _possibleConstructorReturn(this, (Users.__proto__ || Object.getPrototypeOf(Users)).call(this, props));
-
-    var users = props.users;
     if (users === undefined || users === null) {
       users = [];
     }
-    _this8.state = {
+
+    this.state = {
       users: users
     };
-
-    _this8.addUser = _this8.addUser.bind(_this8);
-    _this8.removeUser = _this8.removeUser.bind(_this8);
-    _this8.updateUser = _this8.updateUser.bind(_this8);
-    return _this8;
+    this.addUser = this.addUser.bind(this);
+    this.removeUser = this.removeUser.bind(this);
+    this.updateUser = this.updateUser.bind(this);
   }
 
-  _createClass(Users, [{
-    key: 'addUser',
-    value: function addUser() {
-      var empty = {
-        Name: "",
-        AccountPresent: true,
-        AccountActive: true,
-        PasswordExpires: true,
-        // unix timestamp in seconds
-        PasswordLastSet: Math.trunc(Date.now() / 1000)
-      };
-      var users = [].concat(_toConsumableArray(this.state.users), [empty]);
-      this.setState({
-        users: users
-      });
-      this.props.callback("Users", users);
-    }
-  }, {
-    key: 'removeUser',
-    value: function removeUser(id) {
-      var users = this.state.users.filter(function (_, index) {
-        return index != id;
-      });
-      this.setState({
-        users: users
-      });
-      this.props.callback("Users", users);
-    }
-  }, {
-    key: 'updateUser',
-    value: function updateUser(id, field, event) {
-      var updated = this.state.users;
-      var value = event.target.value;
-      if (event.target.type === "checkbox") {
-        if (event.target.checked) {
-          value = true;
-        } else {
-          value = false;
-        }
+  addUser() {
+    let empty = {
+      Name: "",
+      AccountPresent: true,
+      AccountActive: true,
+      PasswordExpires: true,
+      // unix timestamp in seconds
+      PasswordLastSet: Math.trunc(Date.now() / 1000)
+    };
+    let users = [...this.state.users, empty];
+    this.setState({
+      users: users
+    });
+    this.props.callback("Users", users);
+  }
+
+  removeUser(id) {
+    let users = this.state.users.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      users: users
+    });
+    this.props.callback("Users", users);
+  }
+
+  updateUser(id, field, event) {
+    let updated = this.state.users;
+    let value = event.target.value;
+
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      } else {
+        value = false;
       }
-      if (event.target.type === "date") {
-        value = Math.trunc(new Date(event.target.value).getTime() / 1000);
-        if (Number.isNaN(value)) {
-          return;
-        }
-      }
-      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
-      this.setState({
-        users: updated
-      });
-      this.props.callback("Users", updated);
     }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this9 = this;
 
-      var users = [];
+    if (event.target.type === "date") {
+      value = Math.trunc(new Date(event.target.value).getTime() / 1000);
 
-      var _loop = function _loop(i) {
-        var user = _this9.state.users[i];
-        var d = new Date(user.PasswordLastSet * 1000);
-        var passwordLastSet = ("000" + d.getUTCFullYear()).slice(-4);
-        passwordLastSet += "-";
-        passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
-        passwordLastSet += "-";
-        passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
-        users.push(React.createElement(
-          'details',
-          { key: i },
-          React.createElement(
-            'summary',
-            null,
-            user.Name
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: _this9.removeUser.bind(_this9, i) },
-            '-'
-          ),
-          React.createElement(
-            'ul',
-            null,
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Name'
-              ),
-              React.createElement('input', { type: 'text', value: user.Name, onChange: function onChange(event) {
-                  return _this9.updateUser(i, "Name", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Present'
-              ),
-              React.createElement('input', { type: 'checkbox', checked: user.AccountPresent, onChange: function onChange(event) {
-                  return _this9.updateUser(i, "AccountPresent", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Active'
-              ),
-              React.createElement('input', { type: 'checkbox', checked: user.AccountActive, onChange: function onChange(event) {
-                  return _this9.updateUser(i, "AccountActive", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Password Expires'
-              ),
-              React.createElement('input', { type: 'checkbox', checked: user.PasswordExpires, onChange: function onChange(event) {
-                  return _this9.updateUser(i, "PasswordExpires", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Password Last Set'
-              ),
-              React.createElement('input', { type: 'date', value: passwordLastSet, onChange: function onChange(event) {
-                  return _this9.updateUser(i, "PasswordLastSet", event);
-                } })
-            )
-          )
-        ));
-      };
-
-      for (var i = 0; i < this.state.users.length; i++) {
-        _loop(i);
+      if (Number.isNaN(value)) {
+        return;
       }
-
-      return React.createElement(
-        'details',
-        null,
-        React.createElement(
-          'summary',
-          null,
-          'Users'
-        ),
-        React.createElement(
-          'button',
-          { type: 'button', onClick: this.addUser.bind(this) },
-          'Add User'
-        ),
-        React.createElement(
-          'ul',
-          null,
-          users
-        )
-      );
     }
-  }]);
 
-  return Users;
-}(React.Component);
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      users: updated
+    });
+    this.props.callback("Users", updated);
+  }
 
-var Groups = function (_React$Component9) {
-  _inherits(Groups, _React$Component9);
+  render() {
+    let users = [];
 
-  function Groups(props) {
-    _classCallCheck(this, Groups);
+    for (let i = 0; i < this.state.users.length; i++) {
+      let user = this.state.users[i];
+      let d = new Date(user.PasswordLastSet * 1000);
+      let passwordLastSet = ("000" + d.getUTCFullYear()).slice(-4);
+      passwordLastSet += "-";
+      passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
+      passwordLastSet += "-";
+      passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
+      users.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, user.Name), React.createElement("button", {
+        type: "button",
+        onClick: this.removeUser.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+        type: "text",
+        value: user.Name,
+        onChange: event => this.updateUser(i, "Name", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Present"), React.createElement("input", {
+        type: "checkbox",
+        checked: user.AccountPresent,
+        onChange: event => this.updateUser(i, "AccountPresent", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Active"), React.createElement("input", {
+        type: "checkbox",
+        checked: user.AccountActive,
+        onChange: event => this.updateUser(i, "AccountActive", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Password Expires"), React.createElement("input", {
+        type: "checkbox",
+        checked: user.PasswordExpires,
+        onChange: event => this.updateUser(i, "PasswordExpires", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Password Last Set"), React.createElement("input", {
+        type: "date",
+        value: passwordLastSet,
+        onChange: event => this.updateUser(i, "PasswordLastSet", event)
+      })))));
+    }
 
-    var _this10 = _possibleConstructorReturn(this, (Groups.__proto__ || Object.getPrototypeOf(Groups)).call(this, props));
+    return React.createElement("details", null, React.createElement("summary", null, "Users"), React.createElement("button", {
+      type: "button",
+      onClick: this.addUser.bind(this)
+    }, "Add User"), React.createElement("ul", null, users));
+  }
 
-    var groups = props.groups;
+}
+
+class Groups extends React.Component {
+  constructor(props) {
+    super(props);
+    let groups = props.groups;
+
     if (groups === undefined || groups === null) {
       groups = {};
     }
-    _this10.state = {
+
+    this.state = {
       groups: groups
     };
-
-    _this10.newGroupName = React.createRef();
-
-    _this10.addGroup = _this10.addGroup.bind(_this10);
-    _this10.removeGroup = _this10.removeGroup.bind(_this10);
-    _this10.updateGroup = _this10.updateGroup.bind(_this10);
-    return _this10;
+    this.newGroupName = React.createRef();
+    this.addGroup = this.addGroup.bind(this);
+    this.removeGroup = this.removeGroup.bind(this);
+    this.updateGroup = this.updateGroup.bind(this);
   }
 
-  _createClass(Groups, [{
-    key: 'addGroup',
-    value: function addGroup() {
-      if (this.newGroupName.current === null) {
-        return;
-      }
-      var groups = Object.assign({}, this.state.groups, _defineProperty({}, this.newGroupName.current.value, []));
-      this.setState({
-        groups: groups
-      });
-      this.props.callback(this.props.name, groups);
+  addGroup() {
+    if (this.newGroupName.current === null) {
+      return;
     }
-  }, {
-    key: 'removeGroup',
-    value: function removeGroup(name) {
-      var groups = this.state.groups;
-      delete groups[name];
-      this.setState({
-        groups: groups
-      });
-      this.props.callback(this.props.name, groups);
+
+    let groups = _objectSpread({}, this.state.groups, {
+      [this.newGroupName.current.value]: []
+    });
+
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups);
+  }
+
+  removeGroup(name) {
+    let groups = this.state.groups;
+    delete groups[name];
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups);
+  }
+
+  updateGroup(name, members) {
+    let groups = _objectSpread({}, this.state.groups, {
+      [name]: members
+    });
+
+    this.setState({
+      groups: groups
+    });
+    this.props.callback(this.props.name, groups);
+  }
+
+  render() {
+    let groups = [];
+
+    for (let groupName in this.state.groups) {
+      let members = this.state.groups[groupName];
+      groups.push(React.createElement("details", {
+        key: groupName
+      }, React.createElement("summary", null, groupName), React.createElement("button", {
+        type: "button",
+        onClick: this.removeGroup.bind(this, groupName)
+      }, "-"), React.createElement(ItemList, {
+        name: groupName,
+        defaultValue: members,
+        callback: this.updateGroup
+      })));
     }
-  }, {
-    key: 'updateGroup',
-    value: function updateGroup(name, members) {
-      var groups = Object.assign({}, this.state.groups, _defineProperty({}, name, members));
-      this.setState({
-        groups: groups
-      });
-      this.props.callback(this.props.name, groups);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var groups = [];
-      for (var groupName in this.state.groups) {
-        var members = this.state.groups[groupName];
-        groups.push(React.createElement(
-          'details',
-          { key: groupName },
-          React.createElement(
-            'summary',
-            null,
-            groupName
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.removeGroup.bind(this, groupName) },
-            '-'
-          ),
-          React.createElement(ItemList, { name: groupName, defaultValue: members, callback: this.updateGroup })
-        ));
-      }
 
-      return React.createElement(
-        'details',
-        null,
-        React.createElement(
-          'summary',
-          null,
-          this.props.label
-        ),
-        React.createElement('input', { ref: this.newGroupName }),
-        React.createElement(
-          'button',
-          { type: 'button', onClick: this.addGroup.bind(this) },
-          'Add Group'
-        ),
-        React.createElement(
-          'ul',
-          null,
-          groups
-        )
-      );
-    }
-  }]);
+    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("input", {
+      ref: this.newGroupName
+    }), React.createElement("button", {
+      type: "button",
+      onClick: this.addGroup.bind(this)
+    }, "Add Group"), React.createElement("ul", null, groups));
+  }
 
-  return Groups;
-}(React.Component);
+}
 
-var Software = function (_React$Component10) {
-  _inherits(Software, _React$Component10);
+class Software extends React.Component {
+  constructor(props) {
+    super(props);
+    let software = props.software;
 
-  function Software(props) {
-    _classCallCheck(this, Software);
-
-    var _this11 = _possibleConstructorReturn(this, (Software.__proto__ || Object.getPrototypeOf(Software)).call(this, props));
-
-    var software = props.software;
     if (software === undefined || software === null) {
       software = [];
     }
-    _this11.state = {
+
+    this.state = {
       software: software
     };
-
-    _this11.addSoftware = _this11.addSoftware.bind(_this11);
-    _this11.removeSoftware = _this11.removeSoftware.bind(_this11);
-    _this11.updateSoftware = _this11.updateSoftware.bind(_this11);
-    return _this11;
+    this.addSoftware = this.addSoftware.bind(this);
+    this.removeSoftware = this.removeSoftware.bind(this);
+    this.updateSoftware = this.updateSoftware.bind(this);
   }
 
-  _createClass(Software, [{
-    key: 'addSoftware',
-    value: function addSoftware() {
-      var empty = {
-        Name: "",
-        Version: ""
-      };
-      var software = [].concat(_toConsumableArray(this.state.software), [empty]);
-      this.setState({
-        software: software
-      });
-      this.props.callback(this.props.name, software);
+  addSoftware() {
+    let empty = {
+      Name: "",
+      Version: ""
+    };
+    let software = [...this.state.software, empty];
+    this.setState({
+      software: software
+    });
+    this.props.callback(this.props.name, software);
+  }
+
+  removeSoftware(id) {
+    let software = this.state.software.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      software: software
+    });
+    this.props.callback(this.props.name, software);
+  }
+
+  updateSoftware(id, field, event) {
+    let updated = this.state.software;
+    let value = event.target.value;
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      software: updated
+    });
+    this.props.callback(this.props.name, updated);
+  }
+
+  render() {
+    let software = [];
+
+    for (let i in this.state.software) {
+      let entry = this.state.software[i];
+      software.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.Name), React.createElement("button", {
+        type: "button",
+        onClick: this.removeSoftware.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+        type: "text",
+        value: entry.Name,
+        onChange: event => this.updateSoftware(i, "Name", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Version"), React.createElement("input", {
+        type: "text",
+        value: entry.Version,
+        onChange: event => this.updateSoftware(i, "Version", event)
+      })))));
     }
-  }, {
-    key: 'removeSoftware',
-    value: function removeSoftware(id) {
-      var software = this.state.software.filter(function (_, index) {
-        return index != id;
-      });
-      this.setState({
-        software: software
-      });
-      this.props.callback(this.props.name, software);
-    }
-  }, {
-    key: 'updateSoftware',
-    value: function updateSoftware(id, field, event) {
-      var updated = this.state.software;
-      var value = event.target.value;
-      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
-      this.setState({
-        software: updated
-      });
-      this.props.callback(this.props.name, updated);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this12 = this;
 
-      var software = [];
+    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("button", {
+      type: "button",
+      onClick: this.addSoftware.bind(this)
+    }, "Add Software"), React.createElement("ul", null, software));
+  }
 
-      var _loop2 = function _loop2(i) {
-        var entry = _this12.state.software[i];
-        software.push(React.createElement(
-          'details',
-          { key: i },
-          React.createElement(
-            'summary',
-            null,
-            entry.Name
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: _this12.removeSoftware.bind(_this12, i) },
-            '-'
-          ),
-          React.createElement(
-            'ul',
-            null,
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Name'
-              ),
-              React.createElement('input', { type: 'text', value: entry.Name, onChange: function onChange(event) {
-                  return _this12.updateSoftware(i, "Name", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Version'
-              ),
-              React.createElement('input', { type: 'text', value: entry.Version, onChange: function onChange(event) {
-                  return _this12.updateSoftware(i, "Version", event);
-                } })
-            )
-          )
-        ));
-      };
+}
 
-      for (var i in this.state.software) {
-        _loop2(i);
-      }
+class NetworkConns extends React.Component {
+  constructor(props) {
+    super(props);
+    let conns = props.conns;
 
-      return React.createElement(
-        'details',
-        null,
-        React.createElement(
-          'summary',
-          null,
-          this.props.label
-        ),
-        React.createElement(
-          'button',
-          { type: 'button', onClick: this.addSoftware.bind(this) },
-          'Add Software'
-        ),
-        React.createElement(
-          'ul',
-          null,
-          software
-        )
-      );
-    }
-  }]);
-
-  return Software;
-}(React.Component);
-
-var NetworkConns = function (_React$Component11) {
-  _inherits(NetworkConns, _React$Component11);
-
-  function NetworkConns(props) {
-    _classCallCheck(this, NetworkConns);
-
-    var _this13 = _possibleConstructorReturn(this, (NetworkConns.__proto__ || Object.getPrototypeOf(NetworkConns)).call(this, props));
-
-    var conns = props.conns;
     if (conns === undefined || conns === null) {
       conns = [];
     }
-    _this13.state = {
+
+    this.state = {
       conns: conns
     };
-
-    _this13.add = _this13.add.bind(_this13);
-    _this13.remove = _this13.remove.bind(_this13);
-    _this13.update = _this13.update.bind(_this13);
-    return _this13;
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
   }
 
-  _createClass(NetworkConns, [{
-    key: 'add',
-    value: function add() {
-      var empty = {
-        Protocol: "",
-        LocalAddress: "",
-        LocalPort: "",
-        RemoteAddress: "",
-        RemotePort: ""
-      };
-      var conns = [].concat(_toConsumableArray(this.state.conns), [empty]);
-      this.setState({
-        conns: conns
-      });
-      this.props.callback(this.props.name, conns);
-    }
-  }, {
-    key: 'remove',
-    value: function remove(id) {
-      var conns = this.state.conns.filter(function (_, index) {
-        return index != id;
-      });
-      this.setState({
-        conns: conns
-      });
-      this.props.callback(this.props.name, conns);
-    }
-  }, {
-    key: 'update',
-    value: function update(id, field, event) {
-      var updated = this.state.conns;
-      var value = event.target.value;
-      updated[id] = Object.assign({}, updated[id], _defineProperty({}, field, value));
-      this.setState({
-        conns: updated
-      });
-      this.props.callback(this.props.name, updated);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this14 = this;
-
-      var conns = [];
-
-      var _loop3 = function _loop3(i) {
-        var entry = _this14.state.conns[i];
-        conns.push(React.createElement(
-          'details',
-          { key: i },
-          React.createElement(
-            'summary',
-            null,
-            entry.Protocol,
-            ' ',
-            entry.LocalAddress,
-            ' ',
-            entry.LocalPort,
-            ' ',
-            entry.RemoteAddress,
-            ' ',
-            entry.RemotePort
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: _this14.remove.bind(_this14, i) },
-            '-'
-          ),
-          React.createElement(
-            'ul',
-            null,
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Protocol'
-              ),
-              React.createElement(
-                'select',
-                { value: entry.Protocol, onChange: function onChange(event) {
-                    return _this14.update(i, "Protocol", event);
-                  } },
-                React.createElement('option', { value: '' }),
-                React.createElement(
-                  'option',
-                  { value: 'TCP' },
-                  'TCP'
-                ),
-                React.createElement(
-                  'option',
-                  { value: 'UDP' },
-                  'UDP'
-                )
-              )
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Local Address'
-              ),
-              React.createElement('input', { type: 'text', value: entry.LocalAddress, onChange: function onChange(event) {
-                  return _this14.update(i, "LocalAddress", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Local Port'
-              ),
-              React.createElement('input', { type: 'text', value: entry.LocalPort, onChange: function onChange(event) {
-                  return _this14.update(i, "LocalPort", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Remote Address'
-              ),
-              React.createElement('input', { type: 'text', value: entry.RemoteAddress, onChange: function onChange(event) {
-                  return _this14.update(i, "RemoteAddress", event);
-                } })
-            ),
-            React.createElement(
-              'li',
-              null,
-              React.createElement(
-                'label',
-                null,
-                'Remote Port'
-              ),
-              React.createElement('input', { type: 'text', value: entry.RemotePort, onChange: function onChange(event) {
-                  return _this14.update(i, "RemotePort", event);
-                } })
-            )
-          )
-        ));
-      };
-
-      for (var i in this.state.conns) {
-        _loop3(i);
-      }
-
-      return React.createElement(
-        'details',
-        null,
-        React.createElement(
-          'summary',
-          null,
-          this.props.label
-        ),
-        React.createElement(
-          'button',
-          { type: 'button', onClick: this.add.bind(this) },
-          'Add Network Connection'
-        ),
-        React.createElement(
-          'ul',
-          null,
-          conns
-        )
-      );
-    }
-  }]);
-
-  return NetworkConns;
-}(React.Component);
-
-var Item = function (_React$Component12) {
-  _inherits(Item, _React$Component12);
-
-  function Item(props) {
-    _classCallCheck(this, Item);
-
-    return _possibleConstructorReturn(this, (Item.__proto__ || Object.getPrototypeOf(Item)).call(this, props));
+  add() {
+    let empty = {
+      Protocol: "",
+      LocalAddress: "",
+      LocalPort: "",
+      RemoteAddress: "",
+      RemotePort: ""
+    };
+    let conns = [...this.state.conns, empty];
+    this.setState({
+      conns: conns
+    });
+    this.props.callback(this.props.name, conns);
   }
 
-  _createClass(Item, [{
-    key: 'render',
-    value: function render() {
-      return React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'label',
-          { htmlFor: this.props.name },
-          this.props.name
-        ),
-        React.createElement('input', { name: this.props.name, type: this.props.type, defaultValue: this.props.defaultValue, defaultChecked: this.props.defaultChecked })
-      );
+  remove(id) {
+    let conns = this.state.conns.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      conns: conns
+    });
+    this.props.callback(this.props.name, conns);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.conns;
+    let value = event.target.value;
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      conns: updated
+    });
+    this.props.callback(this.props.name, updated);
+  }
+
+  render() {
+    let conns = [];
+
+    for (let i in this.state.conns) {
+      let entry = this.state.conns[i];
+      conns.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.Protocol, " ", entry.LocalAddress, " ", entry.LocalPort, " ", entry.RemoteAddress, " ", entry.RemotePort), React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Protocol"), React.createElement("select", {
+        value: entry.Protocol,
+        onChange: event => this.update(i, "Protocol", event)
+      }, React.createElement("option", {
+        value: ""
+      }), React.createElement("option", {
+        value: "TCP"
+      }, "TCP"), React.createElement("option", {
+        value: "UDP"
+      }, "UDP"))), React.createElement("li", null, React.createElement("label", null, "Local Address"), React.createElement("input", {
+        type: "text",
+        value: entry.LocalAddress,
+        onChange: event => this.update(i, "LocalAddress", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Local Port"), React.createElement("input", {
+        type: "text",
+        value: entry.LocalPort,
+        onChange: event => this.update(i, "LocalPort", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Remote Address"), React.createElement("input", {
+        type: "text",
+        value: entry.RemoteAddress,
+        onChange: event => this.update(i, "RemoteAddress", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Remote Port"), React.createElement("input", {
+        type: "text",
+        value: entry.RemotePort,
+        onChange: event => this.update(i, "RemotePort", event)
+      })))));
     }
-  }]);
 
-  return Item;
-}(React.Component);
+    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("button", {
+      type: "button",
+      onClick: this.add.bind(this)
+    }, "Add Network Connection"), React.createElement("ul", null, conns));
+  }
 
-var ItemMap = function (_React$Component13) {
-  _inherits(ItemMap, _React$Component13);
+}
 
-  function ItemMap(props) {
-    _classCallCheck(this, ItemMap);
+class Item extends React.Component {
+  constructor(props) {
+    super(props);
+  }
 
-    var _this16 = _possibleConstructorReturn(this, (ItemMap.__proto__ || Object.getPrototypeOf(ItemMap)).call(this, props));
+  render() {
+    return React.createElement("div", null, React.createElement("label", {
+      htmlFor: this.props.name
+    }, this.props.name), React.createElement("input", {
+      name: this.props.name,
+      type: this.props.type,
+      defaultValue: this.props.defaultValue,
+      defaultChecked: this.props.defaultChecked
+    }));
+  }
 
-    _this16.state = {
+}
+
+class ItemMap extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
       item: "",
-      value: _this16.props.defaultValue,
+      value: this.props.defaultValue,
       mapItems: [],
       listItems: []
     };
-
-    _this16.add = _this16.add.bind(_this16);
-    _this16.remove = _this16.remove.bind(_this16);
-    _this16.handleChange = _this16.handleChange.bind(_this16);
-    _this16.handleCallback = _this16.handleCallback.bind(_this16);
-    return _this16;
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleCallback = this.handleCallback.bind(this);
   }
 
-  _createClass(ItemMap, [{
-    key: 'handleChange',
-    value: function handleChange(event) {
-      var value = Number(event.target.value);
-      this.setState({
-        item: value
-      });
-    }
-  }, {
-    key: 'handleCallback',
-    value: function handleCallback(key, value) {
-      var v = Object.assign({}, this.state.value, _defineProperty({}, key, value));
-      this.setState({
-        value: v
-      });
-      this.props.callback(this.props.name, v);
-    }
-  }, {
-    key: 'add',
-    value: function add() {
-      if (!this.state.item) {
-        return;
-      }
-      if (this.state.value && this.state.value[this.state.item] != null) {
-        return;
-      }
+  handleChange(event) {
+    let value = Number(event.target.value);
+    this.setState({
+      item: value
+    });
+  }
 
-      var value = Object.assign({}, this.state.value, _defineProperty({}, this.state.item, []));
-      this.setState({
-        value: value
-      });
-      this.props.callback(this.props.name, value);
-    }
-  }, {
-    key: 'remove',
-    value: function remove(id) {
-      if (this.state.value == null) {
-        return;
-      }
+  handleCallback(key, value) {
+    let v = _objectSpread({}, this.state.value, {
+      [key]: value
+    });
 
-      var value = Object.assign({}, this.state.value, _defineProperty({}, id, undefined));
-      this.setState({
-        value: value
-      });
-      this.props.callback(this.props.name, value);
-    }
-  }, {
-    key: 'componentWillMount',
-    value: function componentWillMount() {
-      var _this17 = this;
+    this.setState({
+      value: v
+    });
+    this.props.callback(this.props.name, v);
+  }
 
-      this.props.mapItems(function (items) {
-        _this17.setState({
-          mapItems: items
+  add() {
+    if (!this.state.item) {
+      return;
+    }
+
+    if (this.state.value && this.state.value[this.state.item] != null) {
+      return;
+    }
+
+    let value = _objectSpread({}, this.state.value, {
+      [this.state.item]: []
+    });
+
+    this.setState({
+      value: value
+    });
+    this.props.callback(this.props.name, value);
+  }
+
+  remove(id) {
+    if (this.state.value == null) {
+      return;
+    }
+
+    let value = _objectSpread({}, this.state.value, {
+      [id]: undefined
+    });
+
+    this.setState({
+      value: value
+    });
+    this.props.callback(this.props.name, value);
+  }
+
+  componentWillMount() {
+    this.props.mapItems(items => {
+      this.setState({
+        mapItems: items
+      });
+    });
+    this.props.listItems(items => {
+      this.setState({
+        listItems: items
+      });
+    });
+  }
+
+  render() {
+    let rows = [];
+
+    if (this.state.value) {
+      for (let i in this.state.value) {
+        if (this.state.value[i] === undefined) {
+          continue;
+        }
+
+        let text = i;
+        let matches = this.state.mapItems.filter(obj => {
+          return obj.ID == i;
         });
-      });
-      this.props.listItems(function (items) {
-        _this17.setState({
-          listItems: items
-        });
-      });
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this18 = this;
 
-      var rows = [];
-      if (this.state.value) {
-        var _loop4 = function _loop4(i) {
-          if (_this18.state.value[i] === undefined) {
-            return 'continue';
-          }
-          var text = i;
-          var matches = _this18.state.mapItems.filter(function (obj) {
-            return obj.ID == i;
+        if (matches.length > 0) {
+          text = matches[0].Display;
+        }
+
+        rows.push(React.createElement("details", {
+          key: i
+        }, React.createElement("summary", null, text), React.createElement("button", {
+          type: "button",
+          onClick: this.remove.bind(this, i)
+        }, "-"), React.createElement("ul", null, React.createElement(ItemList, {
+          name: i,
+          label: this.props.listLabel,
+          type: "select",
+          listItems: this.state.listItems,
+          defaultValue: this.state.value[i],
+          callback: this.handleCallback
+        }))));
+      }
+    }
+
+    let optionsMap = []; // empty selection
+
+    optionsMap.push(React.createElement("option", {
+      disabled: true,
+      key: "",
+      value: ""
+    }));
+
+    for (let i in this.state.mapItems) {
+      let option = this.state.mapItems[i]; // skip already selected
+
+      if (this.state.value && this.state.value[option.ID] != null) {
+        continue;
+      }
+
+      optionsMap.push(React.createElement("option", {
+        key: option.ID,
+        value: option.ID
+      }, option.Display));
+    }
+
+    return React.createElement("div", null, React.createElement("label", null, this.props.label), React.createElement("ul", null, rows, React.createElement("select", {
+      value: this.state.item,
+      onChange: this.handleChange
+    }, optionsMap), React.createElement("button", {
+      type: "button",
+      onClick: this.add
+    }, "+")));
+  }
+
+}
+
+class ItemList extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      item: "",
+      value: this.props.defaultValue
+    };
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+
+    if (this.props.type === "select") {
+      value = Number(value);
+    }
+
+    this.setState({
+      item: value
+    });
+  }
+
+  add() {
+    if (!this.state.item) {
+      return;
+    }
+
+    if (this.state.value && this.state.value.includes(this.state.item)) {
+      return;
+    }
+
+    let value = null;
+
+    if (this.state.value == null) {
+      value = [this.state.item];
+    } else {
+      value = [...this.state.value, this.state.item];
+    }
+
+    this.setState({
+      value: value
+    });
+    this.props.callback(this.props.name, value);
+  }
+
+  remove(id) {
+    if (this.state.value == null) {
+      return;
+    }
+
+    let value = this.state.value.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      value: value
+    });
+    this.props.callback(this.props.name, value);
+  }
+
+  render() {
+    let rows = [];
+
+    if (this.state.value) {
+      for (let i in this.state.value) {
+        let text = this.state.value[i];
+
+        if (this.props.type === "select") {
+          let matches = this.props.listItems.filter(obj => {
+            return obj.ID == text;
           });
+
           if (matches.length > 0) {
             text = matches[0].Display;
           }
-          rows.push(React.createElement(
-            'details',
-            { key: i },
-            React.createElement(
-              'summary',
-              null,
-              text
-            ),
-            React.createElement(
-              'button',
-              { type: 'button', onClick: _this18.remove.bind(_this18, i) },
-              '-'
-            ),
-            React.createElement(
-              'ul',
-              null,
-              React.createElement(ItemList, { name: i, label: _this18.props.listLabel, type: 'select', listItems: _this18.state.listItems, defaultValue: _this18.state.value[i], callback: _this18.handleCallback })
-            )
-          ));
-        };
-
-        for (var i in this.state.value) {
-          var _ret4 = _loop4(i);
-
-          if (_ret4 === 'continue') continue;
         }
-      }
 
-      var optionsMap = [];
-      // empty selection
-      optionsMap.push(React.createElement('option', { disabled: true, key: '', value: '' }));
-      for (var i in this.state.mapItems) {
-        var option = this.state.mapItems[i];
-        // skip already selected
-        if (this.state.value && this.state.value[option.ID] != null) {
+        rows.push(React.createElement("li", {
+          key: i
+        }, text, React.createElement("button", {
+          type: "button",
+          onClick: this.remove.bind(this, i)
+        }, "-")));
+      }
+    }
+
+    let input = React.createElement("input", {
+      type: this.props.type,
+      value: this.state.item,
+      onChange: this.handleChange
+    });
+
+    if (this.props.type === "select") {
+      let optionsList = []; // empty selection
+
+      optionsList.push(React.createElement("option", {
+        disabled: true,
+        key: "",
+        value: ""
+      }));
+
+      for (let i in this.props.listItems) {
+        let option = this.props.listItems[i]; // skip already selected
+
+        if (this.state.value && this.state.value.indexOf(option.ID) != -1) {
           continue;
         }
-        optionsMap.push(React.createElement(
-          'option',
-          { key: option.ID, value: option.ID },
-          option.Display
-        ));
+
+        optionsList.push(React.createElement("option", {
+          key: option.ID,
+          value: option.ID
+        }, option.Display));
       }
 
-      return React.createElement(
-        'div',
-        null,
-        React.createElement(
-          'label',
-          null,
-          this.props.label
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows,
-          React.createElement(
-            'select',
-            { value: this.state.item, onChange: this.handleChange },
-            optionsMap
-          ),
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.add },
-            '+'
-          )
-        )
-      );
+      input = React.createElement("select", {
+        value: this.state.item,
+        onChange: this.handleChange
+      }, optionsList);
     }
-  }]);
 
-  return ItemMap;
-}(React.Component);
-
-var ItemList = function (_React$Component14) {
-  _inherits(ItemList, _React$Component14);
-
-  function ItemList(props) {
-    _classCallCheck(this, ItemList);
-
-    var _this19 = _possibleConstructorReturn(this, (ItemList.__proto__ || Object.getPrototypeOf(ItemList)).call(this, props));
-
-    _this19.state = {
-      item: "",
-      value: _this19.props.defaultValue
-    };
-
-    _this19.add = _this19.add.bind(_this19);
-    _this19.remove = _this19.remove.bind(_this19);
-    _this19.handleChange = _this19.handleChange.bind(_this19);
-    return _this19;
+    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("ul", null, rows, input, React.createElement("button", {
+      type: "button",
+      onClick: this.add
+    }, "+")));
   }
 
-  _createClass(ItemList, [{
-    key: 'handleChange',
-    value: function handleChange(event) {
-      var value = event.target.value;
-      if (this.props.type === "select") {
-        value = Number(value);
-      }
-      this.setState({
-        item: value
-      });
-    }
-  }, {
-    key: 'add',
-    value: function add() {
-      if (!this.state.item) {
-        return;
-      }
-      if (this.state.value && this.state.value.includes(this.state.item)) {
-        return;
-      }
-
-      var value = null;
-      if (this.state.value == null) {
-        value = [this.state.item];
-      } else {
-        value = [].concat(_toConsumableArray(this.state.value), [this.state.item]);
-      }
-      this.setState({
-        value: value
-      });
-      this.props.callback(this.props.name, value);
-    }
-  }, {
-    key: 'remove',
-    value: function remove(id) {
-      if (this.state.value == null) {
-        return;
-      }
-
-      var value = this.state.value.filter(function (_, index) {
-        return index != id;
-      });
-      this.setState({
-        value: value
-      });
-      this.props.callback(this.props.name, value);
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-      var _this20 = this;
-
-      var rows = [];
-      if (this.state.value) {
-        var _loop5 = function _loop5(i) {
-          var text = _this20.state.value[i];
-          if (_this20.props.type === "select") {
-            var _matches = _this20.props.listItems.filter(function (obj) {
-              return obj.ID == text;
-            });
-            if (_matches.length > 0) {
-              text = _matches[0].Display;
-            }
-          }
-          rows.push(React.createElement(
-            'li',
-            { key: i },
-            text,
-            React.createElement(
-              'button',
-              { type: 'button', onClick: _this20.remove.bind(_this20, i) },
-              '-'
-            )
-          ));
-        };
-
-        for (var i in this.state.value) {
-          _loop5(i);
-        }
-      }
-
-      var input = React.createElement('input', { type: this.props.type, value: this.state.item, onChange: this.handleChange });
-      if (this.props.type === "select") {
-        var optionsList = [];
-        // empty selection
-        optionsList.push(React.createElement('option', { disabled: true, key: '', value: '' }));
-        for (var i in this.props.listItems) {
-          var option = this.props.listItems[i];
-          // skip already selected
-          if (this.state.value && this.state.value.indexOf(option.ID) != -1) {
-            continue;
-          }
-          optionsList.push(React.createElement(
-            'option',
-            { key: option.ID, value: option.ID },
-            option.Display
-          ));
-        }
-        input = React.createElement(
-          'select',
-          { value: this.state.item, onChange: this.handleChange },
-          optionsList
-        );
-      }
-
-      return React.createElement(
-        'details',
-        null,
-        React.createElement(
-          'summary',
-          null,
-          this.props.label
-        ),
-        React.createElement(
-          'ul',
-          null,
-          rows,
-          input,
-          React.createElement(
-            'button',
-            { type: 'button', onClick: this.add },
-            '+'
-          )
-        )
-      );
-    }
-  }]);
-
-  return ItemList;
-}(React.Component);
+}
 
 ReactDOM.render(React.createElement(App, null), document.getElementById('app'));

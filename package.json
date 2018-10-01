@@ -17,9 +17,12 @@
     "url": "https://github.com/sumwonyuno/cp-scoring/issues"
   },
   "homepage": "https://github.com/sumwonyuno/cp-scoring#readme",
-  "dependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-react-app": "^3.1.2",
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.1",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-react": "^7.0.0",
     "plotly.js": "^1.40.1",
     "react-plotly.js": "^2.2.0"
   }

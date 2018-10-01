@@ -95,7 +95,7 @@ To build [The Server] and [agents]:
 To build the UI of [The Server]:
 
 1. `cd cp-scoring/server/ui`
-1. `npx babel --watch src --out-dir js --presets react-app/prod`
+1. `npx babel --watch src --out-dir js`
 
 # Deploying and Running
 
