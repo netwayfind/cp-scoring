@@ -20,7 +20,7 @@
   "dependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-react-app": "^3.1.2",
-    "plotly.js": "^1.39.3",
+    "plotly.js": "^1.40.1",
     "react-plotly.js": "^2.2.0"
   }
 }
