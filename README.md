@@ -83,19 +83,12 @@ There are open-source software, but none of the ones researched met the requirem
 
 `npm install react-plotly plotly.js`
 
-## [The Server]
+## Procedure
 
 To build [The Server] and [agents]:
 
 1. `cd cp-scoring`
 1. `sh build.sh`
-
-## UI
-
-To build the UI of [The Server]:
-
-1. `cd cp-scoring/server/ui`
-1. `npx babel --watch src --out-dir js`
 
 # Deploying and Running
 
