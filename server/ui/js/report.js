@@ -113,9 +113,18 @@ class ScoreTimeline extends React.Component {
     let config = {
       displayModeBar: false
     };
+    let lastUpdated = null;
     let rows = [];
 
     if (this.state.report) {
+      console.log(this.state.report);
+
+      if (this.state.report.Timestamp) {
+        lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
+      }
+
+      console.log(lastUpdated);
+
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
 
@@ -131,13 +140,11 @@ class ScoreTimeline extends React.Component {
       }
     }
 
-    return React.createElement("div", {
-      className: "ScoreTimeline"
-    }, React.createElement("strong", null, "Score Timeline"), React.createElement("p", null), React.createElement(Plot, {
+    return React.createElement(React.Fragment, null, React.createElement("strong", null, "Score Timeline"), React.createElement("p", null), React.createElement(Plot, {
       data: data,
       layout: layout,
       config: config
-    }), React.createElement("ul", null, rows));
+    }), React.createElement("p", null), "Hostname: ", this.props.hostname, React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows));
   }
 
 }

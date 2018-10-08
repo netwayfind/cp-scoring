@@ -117,8 +117,16 @@ class ScoreTimeline extends React.Component {
       displayModeBar: false
     }
 
+    let lastUpdated = null;
+
     let rows = [];
     if (this.state.report) {
+      console.log(this.state.report)
+      if (this.state.report.Timestamp) {
+        lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
+      }
+      console.log(lastUpdated)
+
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
         if (!finding.Hidden) {
@@ -139,12 +147,19 @@ class ScoreTimeline extends React.Component {
     }
 
     return (
-      <div className="ScoreTimeline">
+      <React.Fragment>
         <strong>Score Timeline</strong>
         <p />
         <Plot data={data} layout={layout} config={config}/>
+        <p />
+        Hostname: {this.props.hostname}
+        <p />
+        Last Updated: {lastUpdated}
+        <p />
+        Findings:
+        <br />
         <ul>{rows}</ul>
-      </div>
+      </React.Fragment>
     );
   }
 }
