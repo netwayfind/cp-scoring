@@ -527,8 +527,16 @@ func dbSelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) 
 	return hostTemplates, nil
 }
 
-func dbSelectScenarios() ([]model.Scenario, error) {
-	rows, err := db.Query("SELECT id, name, description, enabled FROM scenarios ORDER BY name ASC")
+func dbSelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error) {
+	var q strings.Builder
+
+	q.WriteString("SELECT id, name FROM scenarios")
+	if onlyEnabled {
+		// enabled is a boolean stored as a bit
+		q.WriteString(" WHERE enabled=1")
+	}
+	q.WriteString(" ORDER BY name ASC")
+	rows, err := db.Query(q.String())
 	if err != nil {
 		return nil, err
 	}
@@ -536,20 +544,16 @@ func dbSelectScenarios() ([]model.Scenario, error) {
 
 	var id int64
 	var name string
-	var description string
-	var enabled bool
-	scenarios := make([]model.Scenario, 0)
+	scenarios := make([]model.ScenarioSummary, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&id, &name, &description, &enabled)
+		err = rows.Scan(&id, &name)
 		if err != nil {
 			return nil, err
 		}
-		var scenario model.Scenario
+		var scenario model.ScenarioSummary
 		scenario.ID = id
 		scenario.Name = name
-		scenario.Description = description
-		scenario.Enabled = enabled
 		scenarios = append(scenarios, scenario)
 	}
 

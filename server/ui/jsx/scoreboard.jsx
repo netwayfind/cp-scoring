@@ -6,7 +6,7 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <Scoreboard scenarioID="1"/>
+        <Scoreboard />
       </div>
     );
   }
@@ -16,13 +16,28 @@ class Scoreboard extends React.Component {
   constructor() {
     super();
     this.state = {
+      scenarios: [],
+      selectedScenarioName: null,
       scores: []
     }
   }
 
-  populateScores() {
-    let id = this.props.scenarioID;
+  populateScores(id) {
+    if (id === undefined || id === null || !id) {
+      return;
+    }
+
     let url = '/scores/scenario/' + id;
+
+    id = Number(id);
+    let name = null;
+    for (let i in this.state.scenarios) {
+      let entry = this.state.scenarios[i];
+      if (entry.ID === id) {
+        name = entry.Name;
+        break;
+      }
+    }
   
     fetch(url)
     .then(function(response) {
@@ -32,12 +47,30 @@ class Scoreboard extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      this.setState({scores: data})
+      this.setState({
+        selectedScenarioName: name,
+        scores: data
+      });
+    }.bind(this));
+  }
+
+  getScenarios() {
+    let url = '/scores/scenarios';
+    
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      this.setState({scenarios: data})
     }.bind(this));
   }
 
   componentDidMount() {
-    this.populateScores();
+    this.getScenarios();
   }
 
   render() {
@@ -52,10 +85,22 @@ class Scoreboard extends React.Component {
       )
     }
 
-    return (
-      <div className="Scoreboard">
-        <strong>Scoreboard</strong>
-        <p />
+    let scenarios = [];
+    for (let i in this.state.scenarios) {
+      let entry = this.state.scenarios[i];
+      scenarios.push(
+        <li id={i}>
+          <a href="#" onClick={() => {this.populateScores(entry.ID)}}>{entry.Name}</a>
+        </li>
+      )
+    }
+
+    let content = null;
+
+    if (this.state.selectedScenarioName != null) {
+      content = (
+        <React.Fragment>
+        <b>Scenario: </b>{this.state.selectedScenarioName}
         <table>
           <thead>
             <tr>
@@ -67,7 +112,26 @@ class Scoreboard extends React.Component {
             {body}
           </tbody>
         </table>
-      </div>
+      </React.Fragment>
+      );
+    }
+
+    return (
+      <React.Fragment>
+        <div classname="heading">
+          <h1>Scoreboard</h1>
+        </div>
+        <hr />
+        <div className="toc" id="toc">
+          <b>Scenarios</b>
+          <ul>
+            {scenarios}
+          </ul>
+        </div>
+        <div className="content" id="content">
+          {content}
+        </div>
+      </React.Fragment>
     );
   }
 }

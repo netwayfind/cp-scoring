@@ -47,6 +47,11 @@ type Team struct {
 	Key     string
 }
 
+type ScenarioSummary struct {
+	ID   int64
+	Name string
+}
+
 type Scenario struct {
 	ID            int64
 	Name          string

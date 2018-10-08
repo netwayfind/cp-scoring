@@ -664,8 +664,8 @@ func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 func getScenarios(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all scenarios")
 
-	// get all scenarios
-	scenarios, err := dbSelectScenarios()
+	// get all scenarios, even not enabled
+	scenarios, err := dbSelectScenarios(false)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenarios;"
 		log.Println(msg, err)
@@ -810,6 +810,27 @@ func deleteScenario(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
+}
+
+func getScenariosForScoreboard(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenarios for scoreboard")
+
+	// get scenarios, only enabled
+	scenarios, err := dbSelectScenarios(true)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenarios;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(scenarios)
+	if err != nil {
+		msg := "ERROR: cannot marshal scenarios;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(b)
 }
 
 func getScenarioScores(w http.ResponseWriter, r *http.Request) {
@@ -1319,6 +1340,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
 	scoresRouter := r.PathPrefix("/scores").Subrouter()
 	// no auth
+	scoresRouter.HandleFunc("/scenarios", getScenariosForScoreboard).Methods("GET")
 	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScores).Methods("GET")
 	reportRouter := r.PathPrefix("/reports").Subrouter()
 	// using team key as auth
