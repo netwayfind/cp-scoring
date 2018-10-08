@@ -12,7 +12,7 @@ go get github.com/mattn/go-sqlite3
 echo "Building linux server"
 GOOS=linux GOARCH=amd64 go build -o $BASEDIR/cp-scoring-server-linux $PKG_BASE/server
 echo "Building server UI files"
-npx babel --out-dir $(dirname $0)/server/ui/js $(dirname $0)/server/ui/src
+npx babel --out-dir $(dirname $0)/server/ui/js $(dirname $0)/server/ui/jsx
 echo "Copying server UI files"
 rm -rf $BASEDIR/ui
 mkdir -p $BASEDIR/ui/js
