@@ -1258,13 +1258,16 @@ func main() {
 
 	var fileKey string
 	var fileCert string
+	var port int
 
 	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
 	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
+	flag.IntVar(&port, "port", 8443, "port")
 	flag.Parse()
 
 	log.Println("Using server key file: " + fileKey)
 	log.Println("Using server cert file: " + fileCert)
+	log.Println("Using network port: " + strconv.Itoa(port))
 
 	filePGPPub := path.Join(publicDir, "server.pub")
 	filePGPPriv := path.Join(privateDir, "server.priv")
@@ -1357,7 +1360,8 @@ func main() {
 	teamsRouter.HandleFunc("/{id:[0-9]+}", deleteTeam).Methods("DELETE")
 
 	log.Println("Ready to serve requests")
-	err = http.ListenAndServeTLS(":8443", fileCert, fileKey, r)
+	addr := ":" + strconv.Itoa(port)
+	err = http.ListenAndServeTLS(addr, fileCert, fileKey, r)
 	if err != nil {
 		log.Println("ERROR: cannot start server;", err)
 	}
