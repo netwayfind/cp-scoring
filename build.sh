@@ -10,6 +10,10 @@ mkdir -p $BASEDIR
 
 echo "Fetching dependencies, this may take a while."
 go get github.com/mattn/go-sqlite3
+go get golang.org/x/crypto/openpgp
+go get golang.org/x/crypto/openpgp/armor
+go get golang.org/x/crypto/ripemd160
+go get golang.org/x/sys/windows/registry
 
 echo "Building linux server"
 GOOS=linux GOARCH=amd64 go build -o $BASEDIR/cp-scoring-server-linux $PKG_BASE/server
