@@ -1,7 +1,9 @@
 package main
 
 import (
+	"math"
 	"testing"
+	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -233,5 +235,210 @@ func TestMergeUserMaps(t *testing.T) {
 	}
 	if user.PasswordLastSet != 1000 {
 		t.Error("Unexpected password last set value")
+	}
+}
+
+func TestParseWindowsUsersBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	users := parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// bad string
+	bs = []byte("csv")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5,6,7\r\n1,2,3,4,5,6,7")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// just header
+	bs = []byte("1,2,3,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6\r\n1,2,3,4,5")
+	users = parseWindowsUsers(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+}
+
+func TestParseWindowsUsers(t *testing.T) {
+	// missing name
+	bs := []byte("1,2,3,4,5,6\r\n,2,3,4,5,6")
+	users := parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].Name != "" {
+		t.Error("Expected no user name")
+	}
+	// given name
+	bs = []byte("1,2,3,4,5,6\r\nname,2,3,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].Name != "name" {
+		t.Error("Unexpected user name;", users[0].Name)
+	}
+
+	// present should always be true
+	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountPresent != true {
+		t.Error("Expected account present to be true")
+	}
+
+	// missing id
+	bs = []byte("1,2,3,4,5,6\r\nname,,3,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].ID != "" {
+		t.Error("Expected no user ID")
+	}
+
+	// given id
+	bs = []byte("1,2,3,4,5,6\r\nname,id,3,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].ID != "id" {
+		t.Error("Unexpected user ID;", users[0].ID)
+	}
+
+	// missing account active
+	bs = []byte("1,2,3,4,5,6\r\nname,id,,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountActive != false {
+		t.Error("Expected account active to be false when value is empty")
+	}
+
+	// account active true
+	bs = []byte("1,2,3,4,5,6\r\nname,id,True,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountActive != true {
+		t.Error("Expected account active to be true")
+	}
+
+	// account active false
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,4,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountActive != false {
+		t.Error("Expected account active to be false")
+	}
+
+	// account doesn't expire
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountExpires != false {
+		t.Error("Expected account expire to be false")
+	}
+
+	// account doesn't expire
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,5,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].AccountExpires != true {
+		t.Error("Expected account expire to be true")
+	}
+
+	// missing password last set
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PasswordLastSet != math.MaxInt64 {
+		t.Error("Expected password last set to be max int64 value")
+	}
+
+	// cannot parse password last set
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,today,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PasswordLastSet != 0 {
+		t.Error("Expected password last set to be 0")
+	}
+
+	// password last set
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,6")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	// this is timezone dependent...
+	timezone, _ := time.Now().Zone()
+	timestamp, _ := time.Parse("1/2/2006 3:04:05 PM MST", "1/1/2000 12:34:56 AM"+" "+timezone)
+	if users[0].PasswordLastSet != timestamp.Unix() {
+		t.Error("Expected password last set to be " + string(timestamp.Unix()))
+	}
+
+	// missing password expires
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PasswordExpires != false {
+		t.Error("Expected password expire to be false")
+	}
+
+	// password expires
+	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,tomorrow")
+	users = parseWindowsUsers(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PasswordExpires != true {
+		t.Error("Expected password expire to be true")
 	}
 }

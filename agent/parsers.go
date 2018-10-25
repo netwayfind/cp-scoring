@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/csv"
+	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -83,6 +87,62 @@ func mergeUserMaps(userMapEtcPasswd map[string]model.User, userMapEtcShadow map[
 		entry.PasswordExpires = entryShadow.PasswordExpires
 
 		users = append(users, entry)
+	}
+
+	return users
+}
+
+func parseWindowsUsers(bs []byte) []model.User {
+	users := make([]model.User, 0)
+	c := csv.NewReader(bytes.NewReader(bs))
+	records, err := c.ReadAll()
+	if err != nil {
+		return users
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+		// must have exactly 6 columns, or else ignore line
+		if len(row) != 6 {
+			continue
+		}
+		user := model.User{}
+		user.AccountPresent = true
+		// Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires
+		user.Name = row[0]
+		user.ID = row[1]
+		if row[2] == "True" {
+			user.AccountActive = true
+		} else if row[2] == "False" {
+			user.AccountActive = false
+		} else {
+			user.AccountActive = false
+		}
+		if len(row[3]) == 0 {
+			user.AccountExpires = false
+		} else {
+			user.AccountExpires = true
+		}
+		if len(row[4]) == 0 {
+			// never expire is max value
+			user.PasswordLastSet = math.MaxInt64
+		} else {
+			timezone, _ := time.Now().Zone()
+			value := row[4] + " " + timezone
+			layout := "1/2/2006 3:04:05 PM MST"
+			t, err := time.Parse(layout, value)
+			if err == nil {
+				user.PasswordLastSet = t.Unix()
+			}
+		}
+		if len(row[5]) == 0 {
+			user.PasswordExpires = false
+		} else {
+			user.PasswordExpires = true
+		}
+		users = append(users, user)
 	}
 
 	return users
