@@ -147,3 +147,75 @@ func parseWindowsUsers(bs []byte) []model.User {
 
 	return users
 }
+
+func parseWindowsTCPNetConns(bs []byte) []model.NetworkConnection {
+	conns := make([]model.NetworkConnection, 0)
+	c := csv.NewReader(bytes.NewReader(bs))
+	records, err := c.ReadAll()
+	if err != nil {
+		return conns
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 6 columns, or else ignore line
+		if len(row) != 6 {
+			continue
+		}
+
+		conn := model.NetworkConnection{}
+		conn.Protocol = "TCP"
+		// OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort
+		pid, err := strconv.ParseInt(row[0], 10, 64)
+		if err == nil {
+			conn.PID = pid
+		}
+		conn.State = model.GetNetworkConnectionState(row[1])
+		conn.LocalAddress = row[2]
+		conn.LocalPort = row[3]
+		conn.RemoteAddress = row[4]
+		conn.RemotePort = row[5]
+
+		conns = append(conns, conn)
+	}
+
+	return conns
+}
+
+func parseWindowsUDPNetConns(bs []byte) []model.NetworkConnection {
+	conns := make([]model.NetworkConnection, 0)
+	c := csv.NewReader(bytes.NewReader(bs))
+	records, err := c.ReadAll()
+	if err != nil {
+		return conns
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 3 columns, or else ignore line
+		if len(row) != 3 {
+			continue
+		}
+
+		conn := model.NetworkConnection{}
+		conn.Protocol = "UDP"
+		// OwningProcess,LocalAddress,LocalPort
+		pid, err := strconv.ParseInt(row[0], 10, 64)
+		if err == nil {
+			conn.PID = pid
+		}
+		conn.State = model.GetNetworkConnectionState(row[0])
+		conn.LocalAddress = row[1]
+		conn.LocalPort = row[2]
+
+		conns = append(conns, conn)
+	}
+
+	return conns
+}

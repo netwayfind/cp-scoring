@@ -442,3 +442,329 @@ func TestParseWindowsUsers(t *testing.T) {
 		t.Error("Expected password expire to be true")
 	}
 }
+
+func TestParseWindowsTCPNetConnsBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	users := parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// bad string
+	bs = []byte("not")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5,6,7\r\n1,2,3,4,5,6,7")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// just header
+	bs = []byte("1,2,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6\r\n1,2,3,4,5")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+}
+
+func TestParseWindowsTCPNetConns(t *testing.T) {
+	// protocol should always be set
+	bs := []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6")
+	users := parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].Protocol != "TCP" {
+		t.Error("Expected TCP protocol")
+	}
+
+	// empty PID
+	bs = []byte("1,2,3,4,5,6\r\n,2,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PID != 0 {
+		t.Error("Expected default PID of 0")
+	}
+
+	// given PID
+	bs = []byte("1,2,3,4,5,6\r\n726,2,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 user")
+	}
+	if users[0].PID != 726 {
+		t.Error("Unexpected PID")
+	}
+
+	// missing state
+	bs = []byte("1,2,3,4,5,6\r\n726,,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].State != model.NetworkConnectionUnknown {
+		t.Error("Expected unknown state")
+	}
+
+	// invalid state
+	bs = []byte("1,2,3,4,5,6\r\n726,invalid,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].State != model.NetworkConnectionUnknown {
+		t.Error("Expected unknown state")
+	}
+
+	// given state
+	bs = []byte("1,2,3,4,5,6\r\n726,established,3,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].State != model.NetworkConnectionEstablished {
+		t.Error("Expected unknown state")
+	}
+
+	// missing local address
+	bs = []byte("1,2,3,4,5,6\r\n726,established,,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].LocalAddress) != 0 {
+		t.Error("Expected no local address")
+	}
+
+	// given local address
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,4,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].LocalAddress != "127.0.0.1" {
+		t.Error("Expected unknown local address")
+	}
+
+	// missing local port
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].LocalPort) != 0 {
+		t.Error("Expected no local port")
+	}
+
+	// given local port
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,5,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].LocalPort != "49124" {
+		t.Error("Expected unknown local port")
+	}
+
+	// missing remote address
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].RemoteAddress) != 0 {
+		t.Error("Expected no remote address")
+	}
+
+	// given remote address
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,6")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].RemoteAddress != "192.168.1.109" {
+		t.Error("Expected unknown remote address")
+	}
+
+	// missing remote port
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].RemotePort) != 0 {
+		t.Error("Expected no remote port")
+	}
+
+	// given remote port
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,443")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].RemotePort != "443" {
+		t.Error("Expected unknown remote port")
+	}
+}
+
+func TestParseWindowsUDPNetConnsBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	users := parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// bad string
+	bs = []byte("not")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2\r\n1,2")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4\r\n1,2,3,4")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// just header
+	bs = []byte("1,2,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3\r\n1,2")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+}
+
+func TestParseWindowsUDPNetConns(t *testing.T) {
+	// protocol should always be set
+	bs := []byte("1,2,3\r\n1,2,3")
+	users := parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].Protocol != "UDP" {
+		t.Error("Expected UDP protocol")
+	}
+
+	// empty PID
+	bs = []byte("1,2,3\r\n,2,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PID != 0 {
+		t.Error("Expected default PID of 0")
+	}
+
+	// given PID
+	bs = []byte("1,2,3\r\n726,2,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 user")
+	}
+	if users[0].PID != 726 {
+		t.Error("Unexpected PID")
+	}
+
+	// state should always be unknown
+	bs = []byte("1,2,3\r\n1,2,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].State != model.NetworkConnectionUnknown {
+		t.Error("Expected unknown state")
+	}
+
+	// missing local address
+	bs = []byte("1,2,3r\n726,,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].LocalAddress) != 0 {
+		t.Error("Expected no local address")
+	}
+
+	// given local address
+	bs = []byte("1,2,3\r\n726,127.0.0.1,3")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].LocalAddress != "127.0.0.1" {
+		t.Error("Expected unknown local address")
+	}
+
+	// missing local port
+	bs = []byte("1,2,3\r\n726,127.0.0.1,")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].LocalPort) != 0 {
+		t.Error("Expected no local port")
+	}
+
+	// given local port
+	bs = []byte("1,2,3\r\n726,127.0.0.1,49124")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].LocalPort != "49124" {
+		t.Error("Expected unknown local port")
+	}
+}

@@ -220,55 +220,17 @@ func getSoftware() []model.Software {
 }
 
 func getNetworkConnections() []model.NetworkConnection {
-	out, err := exec.Command("C:\\Windows\\System32\\NETSTAT.exe", "-nao").Output()
+	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-NetTCPConnection | Select-Object OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort | ConvertTo-Csv -NoTypeInformation").Output()
 	if err != nil {
-		log.Fatal("ERROR: cannot get network connections;", err)
+		log.Fatal("ERROR: cannot get TCP network connections;", err)
 	}
+	tcpConns := parseWindowsTCPNetConns(out)
 
-	conns := make([]model.NetworkConnection, 0)
-	for i, line := range strings.Split(string(out), "\r\n") {
-		if len(line) <= 1 {
-			continue
-		}
-
-		// skip header lines
-		if i < 4 {
-			continue
-		}
-
-		tokens := strings.Fields(line)
-
-		var conn model.NetworkConnection
-		conn.Protocol = strings.ToUpper(tokens[0])
-		localAddrStr := tokens[1]
-		lastColon := strings.LastIndex(localAddrStr, ":")
-		if lastColon == -1 {
-			conn.LocalAddress = localAddrStr
-		} else {
-			conn.LocalAddress = localAddrStr[0:lastColon]
-			conn.LocalPort = localAddrStr[lastColon+1:]
-		}
-		remoteAddrStr := tokens[2]
-		lastColon = strings.LastIndex(remoteAddrStr, ":")
-		if lastColon == -1 {
-			conn.RemoteAddress = remoteAddrStr
-		} else {
-			conn.RemoteAddress = remoteAddrStr[0:lastColon]
-			conn.RemotePort = remoteAddrStr[lastColon+1:]
-		}
-		// five tokens has all columns available
-		// four tokens is probably missing state (e.g. UDP)
-		if len(tokens) == 5 {
-			conn.State = model.GetNetworkConnectionState(tokens[3])
-		}
-		pidStr := tokens[len(tokens)-1]
-		pid, err := strconv.ParseInt(pidStr, 10, 64)
-		if err != nil {
-			log.Fatal("ERROR: cannot parse PID;", err)
-		}
-		conn.PID = pid
-		conns = append(conns, conn)
+	out, err = exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-NetUDPEndpoint | Select-Object OwningProcess,LocalAddress,LocalPort | ConvertTo-Csv -NoTypeInformation").Output()
+	if err != nil {
+		log.Fatal("ERROR: cannot get UDP network connections;", err)
 	}
+	udpConns := parseWindowsUDPNetConns(out)
 
-	return conns
+	return append(tcpConns, udpConns...)
 }
