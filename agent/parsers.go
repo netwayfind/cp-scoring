@@ -326,3 +326,33 @@ func parseWindowsGroups(bs []byte) map[string][]string {
 
 	return groups
 }
+
+func parseWindowsSoftware(bs []byte) []model.Software {
+	software := make([]model.Software, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return software
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 2 columns, or else ignore line
+		if len(row) != 2 {
+			continue
+		}
+
+		sw := model.Software{}
+		//DisplayName,DisplayVersion
+		sw.Name = row[0]
+		sw.Version = row[1]
+
+		software = append(software, sw)
+	}
+
+	return software
+}

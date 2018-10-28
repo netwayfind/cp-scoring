@@ -1112,3 +1112,108 @@ func TestParseWindowsGroups(t *testing.T) {
 		t.Fatal("Did not find expected user in group")
 	}
 }
+
+func TestParseWindowsSoftwareBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	software := parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// bad string
+	bs = []byte("not")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// incorrect number
+	bs = []byte("1\r\n1")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3\r\n1,2,3")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// just header
+	bs = []byte("1,2")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2\r\n1")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2\r\n1,2\r\n1")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+}
+
+func TestParseWindowsSoftware(t *testing.T) {
+	// missing name
+	bs := []byte("1,2\r\n,2")
+	software := parseWindowsSoftware(bs)
+	if len(software) != 1 {
+		t.Fatal("Expected 1 software")
+	}
+	if len(software[0].Name) != 0 {
+		t.Fatal("Expected software name to be empty")
+	}
+
+	// missing version
+	bs = []byte("1,2\r\ncp-scoring,")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 1 {
+		t.Fatal("Expected 1 software")
+	}
+	if len(software[0].Version) != 0 {
+		t.Fatal("Expected software version to be empty")
+	}
+
+	// given name and version
+	bs = []byte("1,2\r\ncp-scoring,0.1.0")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 1 {
+		t.Fatal("Expected 1 software")
+	}
+	if software[0].Name != "cp-scoring" {
+		t.Fatal("Unexpected software name")
+	}
+	if software[0].Version != "0.1.0" {
+		t.Fatal("Unexpected software version")
+	}
+
+	// multiple software
+	bs = []byte("1,2\r\ncp-scoring,0.1.0\r\nanother,2")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 2 {
+		t.Fatal("Expected 2 software")
+	}
+	if software[0].Name != "cp-scoring" {
+		t.Fatal("Unexpected software name")
+	}
+	if software[0].Version != "0.1.0" {
+		t.Fatal("Unexpected software version")
+	}
+	if software[1].Name != "another" {
+		t.Fatal("Unexpected software name")
+	}
+	if software[1].Version != "2" {
+		t.Fatal("Unexpected software version")
+	}
+}
