@@ -460,199 +460,199 @@ func TestParseWindowsUsers(t *testing.T) {
 func TestParseWindowsTCPNetConnsBad(t *testing.T) {
 	// empty string
 	bs := []byte("")
-	users := parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns := parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// bad string
 	bs = []byte("not")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4,5,6,7\r\n1,2,3,4,5,6,7")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// just header
 	bs = []byte("1,2,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// mismatch between header and row
 	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// mismatch between header and later row
 	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6\r\n1,2,3,4,5")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 }
 
 func TestParseWindowsTCPNetConns(t *testing.T) {
 	// protocol should always be set
 	bs := []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6")
-	users := parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns := parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].Protocol != "TCP" {
+	if conns[0].Protocol != "TCP" {
 		t.Fatal("Expected TCP protocol")
 	}
 
 	// empty PID
 	bs = []byte("1,2,3,4,5,6\r\n,2,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].PID != 0 {
+	if conns[0].PID != 0 {
 		t.Fatal("Expected default PID of 0")
 	}
 
 	// given PID
 	bs = []byte("1,2,3,4,5,6\r\n726,2,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 user")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].PID != 726 {
+	if conns[0].PID != 726 {
 		t.Fatal("Unexpected PID")
 	}
 
 	// missing state
 	bs = []byte("1,2,3,4,5,6\r\n726,,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].State != model.NetworkConnectionUnknown {
+	if conns[0].State != model.NetworkConnectionUnknown {
 		t.Fatal("Expected unknown state")
 	}
 
 	// invalid state
 	bs = []byte("1,2,3,4,5,6\r\n726,invalid,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].State != model.NetworkConnectionUnknown {
+	if conns[0].State != model.NetworkConnectionUnknown {
 		t.Fatal("Expected unknown state")
 	}
 
 	// given state
 	bs = []byte("1,2,3,4,5,6\r\n726,established,3,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].State != model.NetworkConnectionEstablished {
+	if conns[0].State != model.NetworkConnectionEstablished {
 		t.Fatal("Expected unknown state")
 	}
 
 	// missing local address
 	bs = []byte("1,2,3,4,5,6\r\n726,established,,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if len(users[0].LocalAddress) != 0 {
+	if len(conns[0].LocalAddress) != 0 {
 		t.Fatal("Expected no local address")
 	}
 
 	// given local address
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,4,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].LocalAddress != "127.0.0.1" {
+	if conns[0].LocalAddress != "127.0.0.1" {
 		t.Fatal("Expected unknown local address")
 	}
 
 	// missing local port
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if len(users[0].LocalPort) != 0 {
+	if len(conns[0].LocalPort) != 0 {
 		t.Fatal("Expected no local port")
 	}
 
 	// given local port
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,5,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].LocalPort != "49124" {
+	if conns[0].LocalPort != "49124" {
 		t.Fatal("Expected unknown local port")
 	}
 
 	// missing remote address
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if len(users[0].RemoteAddress) != 0 {
+	if len(conns[0].RemoteAddress) != 0 {
 		t.Fatal("Expected no remote address")
 	}
 
 	// given remote address
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,6")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].RemoteAddress != "192.168.1.109" {
+	if conns[0].RemoteAddress != "192.168.1.109" {
 		t.Fatal("Expected unknown remote address")
 	}
 
 	// missing remote port
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if len(users[0].RemotePort) != 0 {
+	if len(conns[0].RemotePort) != 0 {
 		t.Fatal("Expected no remote port")
 	}
 
 	// given remote port
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,443")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].RemotePort != "443" {
+	if conns[0].RemotePort != "443" {
 		t.Fatal("Expected unknown remote port")
 	}
 
 	// multiple connections
 	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,443\r\n1313,established,10.2.62.124,57321,192.168.1.108,8443")
-	users = parseWindowsTCPNetConns(bs)
-	if len(users) != 2 {
+	conns = parseWindowsTCPNetConns(bs)
+	if len(conns) != 2 {
 		t.Fatal("Expected 2 connections")
 	}
 }
@@ -660,139 +660,139 @@ func TestParseWindowsTCPNetConns(t *testing.T) {
 func TestParseWindowsUDPNetConnsBad(t *testing.T) {
 	// empty string
 	bs := []byte("")
-	users := parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns := parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// bad string
 	bs = []byte("not")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// incorrect number
 	bs = []byte("1,2\r\n1,2")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4\r\n1,2,3,4")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// just header
 	bs = []byte("1,2,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// mismatch between header and row
 	bs = []byte("1,2,3\r\n1,2")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 
 	// mismatch between header and later row
 	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 0 {
+		t.Fatal("Expected 0 connections")
 	}
 }
 
 func TestParseWindowsUDPNetConns(t *testing.T) {
 	// protocol should always be set
 	bs := []byte("1,2,3\r\n1,2,3")
-	users := parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns := parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connections")
 	}
-	if users[0].Protocol != "UDP" {
+	if conns[0].Protocol != "UDP" {
 		t.Fatal("Expected UDP protocol")
 	}
 
 	// empty PID
 	bs = []byte("1,2,3\r\n,2,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].PID != 0 {
+	if conns[0].PID != 0 {
 		t.Fatal("Expected default PID of 0")
 	}
 
 	// given PID
 	bs = []byte("1,2,3\r\n726,2,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 user")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].PID != 726 {
+	if conns[0].PID != 726 {
 		t.Fatal("Unexpected PID")
 	}
 
 	// state should always be unknown
 	bs = []byte("1,2,3\r\n1,2,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connection")
 	}
-	if users[0].State != model.NetworkConnectionUnknown {
+	if conns[0].State != model.NetworkConnectionUnknown {
 		t.Fatal("Expected unknown state")
 	}
 
 	// missing local address
 	bs = []byte("1,2,3r\n726,,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connections")
 	}
-	if len(users[0].LocalAddress) != 0 {
+	if len(conns[0].LocalAddress) != 0 {
 		t.Fatal("Expected no local address")
 	}
 
 	// given local address
 	bs = []byte("1,2,3\r\n726,127.0.0.1,3")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connections")
 	}
-	if users[0].LocalAddress != "127.0.0.1" {
+	if conns[0].LocalAddress != "127.0.0.1" {
 		t.Fatal("Expected unknown local address")
 	}
 
 	// missing local port
 	bs = []byte("1,2,3\r\n726,127.0.0.1,")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connections")
 	}
-	if len(users[0].LocalPort) != 0 {
+	if len(conns[0].LocalPort) != 0 {
 		t.Fatal("Expected no local port")
 	}
 
 	// given local port
 	bs = []byte("1,2,3\r\n726,127.0.0.1,49124")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 1 {
+		t.Fatal("Expected 1 connections")
 	}
-	if users[0].LocalPort != "49124" {
+	if conns[0].LocalPort != "49124" {
 		t.Fatal("Expected unknown local port")
 	}
 
 	// two connections
 	bs = []byte("1,2,3\r\n726,127.0.0.1,49124\r\n3621,127.0.0.1,80")
-	users = parseWindowsUDPNetConns(bs)
-	if len(users) != 2 {
+	conns = parseWindowsUDPNetConns(bs)
+	if len(conns) != 2 {
 		t.Fatal("Expected 2 connections")
 	}
 }
@@ -800,136 +800,136 @@ func TestParseWindowsUDPNetConns(t *testing.T) {
 func TestParseWindowsProcessesBad(t *testing.T) {
 	// empty string
 	bs := []byte("")
-	users := parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes := parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// bad string
 	bs = []byte("not")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// incorrect number
 	bs = []byte("1,2\r\n1,2")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4\r\n1,2,3,4")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// just header
 	bs = []byte("1,2,3")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// mismatch between header and row
 	bs = []byte("1,2,3\r\n1,2")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 
 	// mismatch between header and later row
 	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 0 {
-		t.Fatal("Expected 0 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 0 {
+		t.Fatal("Expected 0 processes")
 	}
 }
 
 func TestParseWindowsProcesses(t *testing.T) {
 	// missing ID
 	bs := []byte("1,2,3\r\n,2,3")
-	users := parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes := parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if users[0].PID != 0 {
+	if processes[0].PID != 0 {
 		t.Fatal("Expected PID 0")
 	}
 
 	// given ID
 	bs = []byte("1,2,3\r\n63,2,3")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if users[0].PID != 63 {
+	if processes[0].PID != 63 {
 		t.Fatal("Expected PID 63")
 	}
 
 	// missing user
 	bs = []byte("1,2,3\r\n63,,3")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if len(users[0].User) != 0 {
+	if len(processes[0].User) != 0 {
 		t.Fatal("Expected empty user")
 	}
 
 	// given user
 	bs = []byte("1,2,3\r\n63,user,3")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if users[0].User != "user" {
+	if processes[0].User != "user" {
 		t.Fatal("Expected user name user")
 	}
 
 	// given user with hostname
 	hostname, _ := os.Hostname()
 	bs = []byte("1,2,3\r\n63," + hostname + "\\user,3")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if users[0].User != "user" {
+	if processes[0].User != "user" {
 		t.Fatal("Expected user name user")
 	}
 
 	// missing command line
 	bs = []byte("1,2,3\r\n63,user,")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if len(users[0].CommandLine) != 0 {
+	if len(processes[0].CommandLine) != 0 {
 		t.Fatal("Expected empty command line")
 	}
 
 	// given command line
 	bs = []byte("1,2,3\r\n63,user,notepad.exe")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 1 {
-		t.Fatal("Expected 1 users")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
 	}
-	if users[0].CommandLine != "notepad.exe" {
+	if processes[0].CommandLine != "notepad.exe" {
 		t.Fatal("Expected command line")
 	}
 
 	// multiple processes
 	bs = []byte("1,2,3\r\n63,user,notepad.exe\r\n72,user,mspaint.exe")
-	users = parseWindowsProcesses(bs)
-	if len(users) != 2 {
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 2 {
 		t.Fatal("Expected 2 processes")
 	}
-	if users[0].CommandLine != "notepad.exe" {
+	if processes[0].CommandLine != "notepad.exe" {
 		t.Fatal("Unexpected command line")
 	}
-	if users[1].CommandLine != "mspaint.exe" {
+	if processes[1].CommandLine != "mspaint.exe" {
 		t.Fatal("Unexpected command line")
 	}
 }
