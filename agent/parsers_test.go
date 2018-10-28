@@ -442,6 +442,19 @@ func TestParseWindowsUsers(t *testing.T) {
 	if users[0].PasswordExpires != true {
 		t.Fatal("Expected password expire to be true")
 	}
+
+	// multiple users
+	bs = []byte("1,2,3,4,5,6\r\nname1,id,False,expire,1/1/2000 12:34:56 AM,tomorrow\r\nname2,id,False,expire,1/1/2000 12:34:56 AM,tomorrow")
+	users = parseWindowsUsers(bs)
+	if len(users) != 2 {
+		t.Fatal("Expected 2 users")
+	}
+	if users[0].Name != "name1" {
+		t.Fatal("Expected user name does not match")
+	}
+	if users[1].Name != "name2" {
+		t.Fatal("Expected user name does not match")
+	}
 }
 
 func TestParseWindowsTCPNetConnsBad(t *testing.T) {
@@ -635,6 +648,13 @@ func TestParseWindowsTCPNetConns(t *testing.T) {
 	if users[0].RemotePort != "443" {
 		t.Fatal("Expected unknown remote port")
 	}
+
+	// multiple connections
+	bs = []byte("1,2,3,4,5,6\r\n726,established,127.0.0.1,49124,192.168.1.109,443\r\n1313,established,10.2.62.124,57321,192.168.1.108,8443")
+	users = parseWindowsTCPNetConns(bs)
+	if len(users) != 2 {
+		t.Fatal("Expected 2 connections")
+	}
 }
 
 func TestParseWindowsUDPNetConnsBad(t *testing.T) {
@@ -768,6 +788,13 @@ func TestParseWindowsUDPNetConns(t *testing.T) {
 	if users[0].LocalPort != "49124" {
 		t.Fatal("Expected unknown local port")
 	}
+
+	// two connections
+	bs = []byte("1,2,3\r\n726,127.0.0.1,49124\r\n3621,127.0.0.1,80")
+	users = parseWindowsUDPNetConns(bs)
+	if len(users) != 2 {
+		t.Fatal("Expected 2 connections")
+	}
 }
 
 func TestParseWindowsProcessesBad(t *testing.T) {
@@ -891,6 +918,19 @@ func TestParseWindowsProcesses(t *testing.T) {
 	}
 	if users[0].CommandLine != "notepad.exe" {
 		t.Fatal("Expected command line")
+	}
+
+	// multiple processes
+	bs = []byte("1,2,3\r\n63,user,notepad.exe\r\n72,user,mspaint.exe")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 2 {
+		t.Fatal("Expected 2 processes")
+	}
+	if users[0].CommandLine != "notepad.exe" {
+		t.Fatal("Unexpected command line")
+	}
+	if users[1].CommandLine != "mspaint.exe" {
+		t.Fatal("Unexpected command line")
 	}
 }
 
