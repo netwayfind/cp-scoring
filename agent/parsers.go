@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -218,4 +219,41 @@ func parseWindowsUDPNetConns(bs []byte) []model.NetworkConnection {
 	}
 
 	return conns
+}
+
+func parseWindowsProcesses(bs []byte) []model.Process {
+	processes := make([]model.Process, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return processes
+	}
+	hostname, _ := os.Hostname()
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 3 columns, or else ignore line
+		if len(row) != 3 {
+			continue
+		}
+
+		process := model.Process{}
+		// ID,Username,Path
+		pid, _ := strconv.ParseInt(row[0], 10, 64)
+		process.PID = pid
+		// local account, remove hostname
+		user := row[1]
+		if strings.Index(row[1], hostname) != -1 {
+			user = user[len(hostname)+1:]
+		}
+		process.User = user
+		process.CommandLine = row[2]
+		processes = append(processes, process)
+	}
+
+	return processes
 }

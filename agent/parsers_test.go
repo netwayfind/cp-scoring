@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"os"
 	"testing"
 	"time"
 
@@ -766,5 +767,129 @@ func TestParseWindowsUDPNetConns(t *testing.T) {
 	}
 	if users[0].LocalPort != "49124" {
 		t.Error("Expected unknown local port")
+	}
+}
+
+func TestParseWindowsProcessesBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	users := parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// bad string
+	bs = []byte("not")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2\r\n1,2")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4\r\n1,2,3,4")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// just header
+	bs = []byte("1,2,3")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3\r\n1,2")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 0 {
+		t.Error("Expected 0 users")
+	}
+}
+
+func TestParseWindowsProcesses(t *testing.T) {
+	// missing ID
+	bs := []byte("1,2,3\r\n,2,3")
+	users := parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PID != 0 {
+		t.Error("Expected PID 0")
+	}
+
+	// given ID
+	bs = []byte("1,2,3\r\n63,2,3")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].PID != 63 {
+		t.Error("Expected PID 63")
+	}
+
+	// missing user
+	bs = []byte("1,2,3\r\n63,,3")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].User) != 0 {
+		t.Error("Expected empty user")
+	}
+
+	// given user
+	bs = []byte("1,2,3\r\n63,user,3")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].User != "user" {
+		t.Error("Expected user name user")
+	}
+
+	// given user with hostname
+	hostname, _ := os.Hostname()
+	bs = []byte("1,2,3\r\n63," + hostname + "\\user,3")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].User != "user" {
+		t.Error("Expected user name user")
+	}
+
+	// missing command line
+	bs = []byte("1,2,3\r\n63,user,")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if len(users[0].CommandLine) != 0 {
+		t.Error("Expected empty command line")
+	}
+
+	// given command line
+	bs = []byte("1,2,3\r\n63,user,notepad.exe")
+	users = parseWindowsProcesses(bs)
+	if len(users) != 1 {
+		t.Error("Expected 1 users")
+	}
+	if users[0].CommandLine != "notepad.exe" {
+		t.Error("Expected command line")
 	}
 }
