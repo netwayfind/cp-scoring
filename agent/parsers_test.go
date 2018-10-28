@@ -893,3 +893,222 @@ func TestParseWindowsProcesses(t *testing.T) {
 		t.Error("Expected command line")
 	}
 }
+
+func TestParseWindowsGroupsBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	groups := parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// bad string
+	bs = []byte("not")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// incorrect number
+	bs = []byte("1\r\n1")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3\r\n1,2,3")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// just header
+	bs = []byte("1,2")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2\r\n1")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2\r\n1,2\r\n1")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+}
+
+func TestParseWindowsGroups(t *testing.T) {
+	// missing group
+	bs := []byte("1,2\r\n,2")
+	groups := parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// given group not expected format
+	bs = []byte("1,2\r\ngroup,2")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// given group empty
+	bs = []byte("1,2\r\n\"extra,Name=\"\"\"\"\",user")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// missing user
+	bs = []byte("1,2\r\ngroup,")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// given user not expected format
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group\"\"\",user")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// given user empty
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group\"\"\",\"extra,Name=\"\"\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 0 {
+		t.Error("Expected 0 groups")
+	}
+
+	// given user and given user
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group\"\"\",\"extra,Name=\"\"user\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 1 {
+		t.Error("Expected 1 group")
+	}
+	users, present := groups["group"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 1 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user" {
+		t.Error("Did not find expected user in group")
+	}
+
+	// 2 users same group
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group\"\"\",\"extra,Name=\"\"user1\"\"\"\r\n\"extra,Name=\"\"group\"\"\",\"extra,Name=\"\"user2\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 1 {
+		t.Error("Expected 1 group")
+	}
+	users, present = groups["group"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 2 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user1" {
+		t.Error("Did not find expected user in group")
+	}
+	if users[1] != "user2" {
+		t.Error("Did not find expected user in group")
+	}
+
+	// 2 users different groups
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group1\"\"\",\"extra,Name=\"\"user1\"\"\"\r\n\"extra,Name=\"\"group2\"\"\",\"extra,Name=\"\"user2\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 2 {
+		t.Error("Expected 2 groups")
+	}
+	users, present = groups["group1"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 1 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user1" {
+		t.Error("Did not find expected user in group")
+	}
+	users, present = groups["group2"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 1 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user2" {
+		t.Error("Did not find expected user in group")
+	}
+
+	// 2 users, 1 in one group, other in two groups
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group1\"\"\",\"extra,Name=\"\"user1\"\"\"\r\n\"extra,Name=\"\"group1\"\"\",\"extra,Name=\"\"user2\"\"\"\r\n\"extra,Name=\"\"group2\"\"\",\"extra,Name=\"\"user1\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 2 {
+		t.Error("Expected 2 groups")
+	}
+	users, present = groups["group1"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 2 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user1" {
+		t.Error("Did not find expected user in group")
+	}
+	if users[1] != "user2" {
+		t.Error("Did not find expected user in group")
+	}
+	users, present = groups["group2"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 1 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user1" {
+		t.Error("Did not find expected user in group")
+	}
+
+	// 3 users, 2 same group, 1 other group
+	bs = []byte("1,2\r\n\"extra,Name=\"\"group1\"\"\",\"extra,Name=\"\"user1\"\"\"\r\n\"extra,Name=\"\"group2\"\"\",\"extra,Name=\"\"user2\"\"\"\r\n\"extra,Name=\"\"group1\"\"\",\"extra,Name=\"\"user3\"\"\"")
+	groups = parseWindowsGroups(bs)
+	if len(groups) != 2 {
+		t.Error("Expected 2 groups")
+	}
+	users, present = groups["group1"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 2 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user1" {
+		t.Error("Did not find expected user in group")
+	}
+	if users[1] != "user3" {
+		t.Error("Did not find expected user in group")
+	}
+	users, present = groups["group2"]
+	if !present {
+		t.Error("Expected group not found")
+	}
+	if len(users) != 1 {
+		t.Error("Did not find expected number of users in group")
+	}
+	if users[0] != "user2" {
+		t.Error("Did not find expected user in group")
+	}
+}

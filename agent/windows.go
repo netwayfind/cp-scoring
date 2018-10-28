@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-	"strings"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 	"golang.org/x/sys/windows/registry"
@@ -41,43 +40,8 @@ func getUsers() []model.User {
 }
 
 func getGroups() map[string][]string {
-	out, err := exec.Command("C:\\Windows\\System32\\wbem\\WMIC.exe", "path", "win32_groupuser").Output()
-	if err != nil {
-		log.Fatal("ERROR: unable to get group users;", err)
-	}
-
-	groups := make(map[string][]string)
-	var posGroupComponent int
-	var posPartComponent int
-	for i, line := range strings.Split(string(out), "\r\n") {
-		if len(line) <= 1 {
-			continue
-		}
-
-		// find positions of columns
-		if i == 0 {
-			// assume these exist
-			posGroupComponent = strings.Index(line, "GroupComponent")
-			posPartComponent = strings.Index(line, "PartComponent")
-			continue
-		}
-
-		// parse out group and member
-		groupComponentStr := strings.TrimSpace(line[posGroupComponent:posPartComponent])
-		groupComponentStr = strings.Split(groupComponentStr, ",")[1]
-		group := groupComponentStr[6 : len(groupComponentStr)-1]
-		partComponentStr := strings.TrimSpace(line[posPartComponent:])
-		partComponentStr = strings.Split(partComponentStr, ",")[1]
-		member := partComponentStr[6 : len(partComponentStr)-1]
-		g, present := groups[group]
-		if !present {
-			g = make([]string, 0)
-		}
-		g = append(g, member)
-		groups[group] = g
-	}
-
-	return groups
+	out := powershellCsv("Get-WmiObject -class Win32_GroupUser", "GroupComponent,PartComponent")
+	return parseWindowsGroups(out)
 }
 
 func getProcesses() []model.Process {

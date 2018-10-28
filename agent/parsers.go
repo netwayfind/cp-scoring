@@ -257,3 +257,72 @@ func parseWindowsProcesses(bs []byte) []model.Process {
 
 	return processes
 }
+
+func parseWindowsGroups(bs []byte) map[string][]string {
+	groups := make(map[string][]string)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return groups
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 2 columns, or else ignore line
+		if len(row) != 2 {
+			continue
+		}
+
+		// GroupComponent,PartComponent
+		// parse out group and member
+		// e.g. GroupComponent = \\DESKTOP\root\cimv2:Win32_Group.Domain="DESKTOP",Name="Administrators"
+		// e.g. PartComponent = \\DESKTOP\root\cimv2:Win32_UserAccount.Domain="DESKTOP",Name="user"
+		if len(row[0]) == 0 {
+			// can't continue without group
+			continue
+		}
+		if len(row[1]) == 0 {
+			// can't continue without user
+			continue
+		}
+
+		// group
+		tokens := strings.Split(row[0], ",")
+		// probably not expected format
+		if len(tokens) != 2 {
+			continue
+		}
+		token := tokens[1]
+		// must have at least something in Name=""
+		if len(token) <= 7 {
+			continue
+		}
+		group := token[6 : len(token)-1]
+
+		// user
+		tokens = strings.Split(row[1], ",")
+		// probably not in expected format
+		if len(tokens) != 2 {
+			continue
+		}
+		token = tokens[1]
+		// must have at least something in Name=""
+		if len(token) <= 7 {
+			continue
+		}
+		user := token[6 : len(token)-1]
+
+		g, present := groups[group]
+		if !present {
+			g = make([]string, 0)
+		}
+		g = append(g, user)
+		groups[group] = g
+	}
+
+	return groups
+}
