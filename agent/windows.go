@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"strings"
@@ -25,13 +26,17 @@ type userinfo struct {
 	username string
 }
 
-func getUsers() []model.User {
-	// get users and info
-	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-LocalUser | Select-Object Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires | ConvertTo-Csv -NoTypeInformation").Output()
+func powershellCsv(command string, columns string) []byte {
+	cmdStr := fmt.Sprintf("%s | Select-Object %s | ConvertTo-Csv -NoTypeInformation", command, columns)
+	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", cmdStr).Output()
 	if err != nil {
-		log.Fatal("ERROR: cannot get users info;", err)
+		log.Println("ERROR: unable to execute powershell command;", err)
 	}
+	return out
+}
 
+func getUsers() []model.User {
+	out := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
 	return parseWindowsUsers(out)
 }
 
@@ -76,11 +81,7 @@ func getGroups() map[string][]string {
 }
 
 func getProcesses() []model.Process {
-	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-Process -IncludeUserName | Select-Object ID,UserName,Path | ConvertTo-Csv -NoTypeInformation").Output()
-	if err != nil {
-		log.Fatal("ERROR: cannot get process list;", err)
-	}
-
+	out := powershellCsv("Get-Process -IncludeUserName", "ID,UserName,Path")
 	return parseWindowsProcesses(out)
 }
 
@@ -168,16 +169,10 @@ func getSoftware() []model.Software {
 }
 
 func getNetworkConnections() []model.NetworkConnection {
-	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-NetTCPConnection | Select-Object OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort | ConvertTo-Csv -NoTypeInformation").Output()
-	if err != nil {
-		log.Fatal("ERROR: cannot get TCP network connections;", err)
-	}
+	out := powershellCsv("Get-NetTCPConnection", "OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort")
 	tcpConns := parseWindowsTCPNetConns(out)
 
-	out, err = exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", "Get-NetUDPEndpoint | Select-Object OwningProcess,LocalAddress,LocalPort | ConvertTo-Csv -NoTypeInformation").Output()
-	if err != nil {
-		log.Fatal("ERROR: cannot get UDP network connections;", err)
-	}
+	out = powershellCsv("Get-NetUDPEndpoint", "OwningProcess,LocalAddress,LocalPort")
 	udpConns := parseWindowsUDPNetConns(out)
 
 	return append(tcpConns, udpConns...)
