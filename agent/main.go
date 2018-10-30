@@ -9,11 +9,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
@@ -23,65 +25,78 @@ import (
 	_ "golang.org/x/crypto/ripemd160"
 )
 
+func getServerURL(path string) string {
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatalln("ERROR: cannot read from server URL file")
+	}
+	serverURL := strings.TrimSpace(string(b))
+	_, err = url.ParseRequestURI(serverURL)
+	if err != nil {
+		log.Fatalln("ERROR: could not parse server URL;", err)
+	}
+	// probably not a https:// URL
+	if len(serverURL) <= 8 || serverURL[0:8] != "https://" {
+		log.Fatalln("ERROR: not a HTTPS URL: " + serverURL)
+	}
+	return serverURL
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
-		log.Fatal("ERROR: unable to get executable", err)
+		log.Fatalln("ERROR: unable to get executable", err)
 	}
 	dir := filepath.Dir(ex)
 
 	var serverURL string
-	defaultURL := "https://localhost:8443"
 
-	flag.StringVar(&serverURL, "server", defaultURL, "server URL")
+	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.Parse()
 
 	serverURLFile := path.Join(dir, "server")
 	serverPubFile := path.Join(dir, "server.pub")
 	serverCrtFile := path.Join(dir, "server.crt")
 	teamKeyFile := path.Join(dir, "team.key")
-
-	// read server URL from saved file
-	if _, err := os.Stat(serverURLFile); os.IsExist(err) {
-		log.Println("Found server URL file")
-		b, err := ioutil.ReadFile(serverURLFile)
-		if err != nil {
-			log.Fatal("ERROR: cannot read from server URL file")
-		}
-		serverURL = string(b)
-	} else {
-		// not set up, save server URL
-		log.Println("Saving server URL")
-		serverFileText := []byte(serverURL)
-		err = ioutil.WriteFile(serverURLFile, serverFileText, 0600)
-		if err != nil {
-			log.Fatal("ERROR: cannot write to server URL file;", err)
-		}
-	}
-	log.Println("Server URL: " + serverURL)
-
-	log.Println("Setting up data directory")
 	dataDir := path.Join(dir, "data")
+
+	// data directory
 	err = os.MkdirAll(dataDir, 0700)
 	if err != nil {
-		log.Fatal("Unable to set up data directory;", err)
+		log.Fatalln("Unable to set up data directory;", err)
 	}
 
-	log.Println("Reading team key")
-	teamKeyBytes, err := ioutil.ReadFile(teamKeyFile)
+	// these files must exist
+	if _, err := os.Stat(serverURLFile); os.IsNotExist(err) {
+		log.Fatalln("ERROR: server file not found")
+	}
+	if _, err := os.Stat(serverPubFile); os.IsNotExist(err) {
+		log.Fatalln("ERROR: server public key not found")
+	}
+	if _, err := os.Stat(serverCrtFile); os.IsNotExist(err) {
+		log.Fatalln("ERROR: server certificate not found")
+	}
+
+	// get values from files
+	// server URL
+	serverURL = getServerURL(serverURLFile)
+
+	// server public key
+	pubKeyFile, err := os.Open(serverPubFile)
 	if err != nil {
-		log.Println("ERROR: cannot read team id file;", err)
-		return
+		log.Fatalln("ERROR: cannot read server openpgp public key file;", err)
 	}
-	teamKey := string(teamKeyBytes)
+	defer pubKeyFile.Close()
+	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
+	if err != nil {
+		log.Fatalln("ERROR: cannot read entity;", err)
+	}
 
+	// server certificate
 	certs := x509.NewCertPool()
-
-	log.Println("Reading server cert file")
 	certBytes, err := ioutil.ReadFile(serverCrtFile)
 	if err != nil {
-		log.Println("ERROR: cannot read server cert file;", err)
-		return
+		log.Fatalln("ERROR: cannot read server cert file;", err)
 	}
 	certs.AppendCertsFromPEM(certBytes)
 	tlsConfig := &tls.Config{
@@ -89,24 +104,26 @@ func main() {
 	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
-	log.Println("Reading server openpgp public key file")
-	pubKeyFile, err := os.Open(serverPubFile)
-	if err != nil {
-		log.Println("ERROR: cannot read server openpgp public key file;", err)
-		return
-	}
-	defer pubKeyFile.Close()
-	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
-	if err != nil {
-		log.Println("ERROR: cannot read entity;", err)
-		return
-	}
+	teamKey := ""
 
+	// main loop
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
 		saveState(dataDir, entities)
-		go sendState(dataDir, serverURL, transport, teamKey)
+		// if team key not set, check for it
+		if len(teamKey) == 0 {
+			log.Println("Looking for team key")
+			teamKeyBytes, err := ioutil.ReadFile(teamKeyFile)
+			if err == nil && len(teamKeyBytes) > 0 {
+				log.Println("Found team key")
+				teamKey = strings.TrimSpace(string(teamKeyBytes))
+			}
+		}
+		// only send if have team key
+		if len(teamKey) > 0 {
+			go sendState(dataDir, serverURL, transport, teamKey)
+		}
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
