@@ -31,7 +31,12 @@ func getServerURL(path string) string {
 		log.Fatalln("ERROR: cannot read from server URL file")
 	}
 	serverURL := strings.TrimSpace(string(b))
-	_, err = url.ParseRequestURI(serverURL)
+	checkValidServerURL(serverURL)
+	return serverURL
+}
+
+func checkValidServerURL(serverURL string) {
+	_, err := url.ParseRequestURI(serverURL)
 	if err != nil {
 		log.Fatalln("ERROR: could not parse server URL;", err)
 	}
@@ -39,7 +44,59 @@ func getServerURL(path string) string {
 	if len(serverURL) <= 8 || serverURL[0:8] != "https://" {
 		log.Fatalln("ERROR: not a HTTPS URL: " + serverURL)
 	}
-	return serverURL
+}
+
+func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFile string, serverCrtFile string) {
+	checkValidServerURL(serverURL)
+
+	// expected URLs
+	serverPubKeyFileURL := serverURL + "public/server.pub"
+	serverCrtFileURL := serverURL + "public/server.crt"
+
+	// do insecure fetch, as need to get cert to check later...
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	log.Println("Retrieving files from server")
+
+	r, err := client.Get(serverPubKeyFileURL)
+	if err != nil {
+		log.Fatalln("ERROR: unable to get server public key;", err)
+	}
+	defer r.Body.Close()
+	serverPubKeyFileBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatalln("ERROR: unable to read server public key response;", err)
+	}
+	log.Println("Fetched server public key")
+
+	r, err = client.Get(serverCrtFileURL)
+	if err != nil {
+		log.Fatalln("ERROR: unabel to get server certificate")
+	}
+	defer r.Body.Close()
+	serverCrtFileBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Fatalln("ERROR: unable to read server public key response;", err)
+	}
+	log.Println("Fetch server certificate")
+
+	// if here, must be OK
+	// write to files, only readable by this process
+	log.Println("Saving server files")
+	err = ioutil.WriteFile(serverURLFile, []byte(serverURL), 0400)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save server URL;", err)
+	}
+	err = ioutil.WriteFile(serverPubKeyFile, serverPubKeyFileBytes, 0400)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save server public key to file;", err)
+	}
+	err = ioutil.WriteFile(serverCrtFile, serverCrtFileBytes, 0400)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save server certificate to file;", err)
+	}
 }
 
 func main() {
@@ -49,16 +106,20 @@ func main() {
 	}
 	dir := filepath.Dir(ex)
 
-	var serverURL string
-
-	flag.StringVar(&serverURL, "server", "", "server URL")
-	flag.Parse()
-
 	serverURLFile := path.Join(dir, "server")
 	serverPubFile := path.Join(dir, "server.pub")
 	serverCrtFile := path.Join(dir, "server.crt")
 	teamKeyFile := path.Join(dir, "team.key")
 	dataDir := path.Join(dir, "data")
+
+	var serverURL string
+
+	flag.StringVar(&serverURL, "server", "", "server URL")
+	flag.Parse()
+
+	if len(serverURL) > 0 {
+		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
+	}
 
 	// data directory
 	err = os.MkdirAll(dataDir, 0700)
