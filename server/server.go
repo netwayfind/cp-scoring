@@ -67,8 +67,8 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	log.Println("Received audit request")
 	if r.Method != "POST" {
 		msg := "HTTP 405"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
+		log.Println(msg)
+		http.Error(w, msg, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -1299,7 +1299,7 @@ func main() {
 
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		audit(w, r, entities)
-	})
+	}).Methods("POST")
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		authAdmin(w, r, authenticator)
 	}).Methods("POST")
