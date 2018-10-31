@@ -278,8 +278,10 @@ func sendState(dir string, server string, transport *http.Transport, teamKey str
 				log.Println("ERROR: unable to read server body")
 			}
 			log.Println(string(body))
-			log.Println("DELETING", fullPath)
-			os.Remove(fullPath)
+			if resp.StatusCode == 200 {
+				log.Println("DELETING", fullPath)
+				os.Remove(fullPath)
+			}
 		}
 	}
 }
