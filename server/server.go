@@ -65,6 +65,9 @@ func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler 
 
 func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) {
 	log.Println("Received audit request")
+
+	// client will get HTTP 200 unless this isn't a POST, so send HTTP 405 back
+	// don't send client back any information if their payload is not acceptable or server error
 	if r.Method != "POST" {
 		msg := "HTTP 405"
 		log.Println(msg)
@@ -76,7 +79,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 
@@ -85,7 +87,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot unmarshal state submission;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 	stateBytes := stateSubmission.StateBytes
@@ -94,7 +95,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot decode openpgp message;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 	message, err := openpgp.ReadMessage(result.Body, entities, nil, nil)
@@ -105,7 +105,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot unmarshal state;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 
@@ -114,7 +113,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot insert state;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 
@@ -123,7 +121,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot get team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
@@ -131,7 +128,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot get host id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 	log.Println(fmt.Sprintf("Host ID: %d", hostID))
@@ -141,13 +137,11 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot get scenario IDs;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 	if len(scenarioIDs) == 0 {
 		msg := "ERROR: no scenarios found"
 		log.Println(msg)
-		w.Write([]byte(msg))
 		return
 	}
 	for _, scenarioID := range scenarioIDs {
@@ -158,14 +152,12 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		if err != nil {
 			msg := "ERROR: cannot get templates;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
 			return
 		}
 		log.Println(fmt.Sprintf("Found template count: %d", len(templates)))
 		if len(templates) == 0 {
 			msg := "ERROR: no templates found"
 			log.Println(msg)
-			w.Write([]byte(msg))
 			return
 		}
 
@@ -178,7 +170,6 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		if err != nil {
 			msg := "ERROR: cannot insert report;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
 			return
 		}
 
@@ -198,14 +189,12 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		if err != nil {
 			msg := "ERROR: cannot insert scenario score;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
 			return
 		}
 	}
 
 	response := "Received and saved"
 	log.Println(response)
-	w.Write([]byte(response))
 }
 
 func getHosts(w http.ResponseWriter, r *http.Request) {
