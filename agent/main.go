@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
@@ -99,6 +100,24 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 }
 
+func askForTeam(teamKeyFile string) {
+	// don't override existing team key
+	if _, err := os.Stat(teamKeyFile); !os.IsNotExist(err) {
+		log.Fatalln("ERROR: team key already set")
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	log.Print("Enter team key: ")
+	key, _ := reader.ReadString('\n')
+	key = strings.TrimSpace(key)
+
+	err := ioutil.WriteFile(teamKeyFile, []byte(key), 0400)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save team key;", err)
+	}
+	log.Println("Saved team key")
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -113,9 +132,16 @@ func main() {
 	dataDir := path.Join(dir, "data")
 
 	var serverURL string
+	var askTeam bool
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
+	flag.BoolVar(&askTeam, "ask_team", false, "ask for team key")
 	flag.Parse()
+
+	if askTeam {
+		askForTeam(teamKeyFile)
+		os.Exit(0)
+	}
 
 	if len(serverURL) > 0 {
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
