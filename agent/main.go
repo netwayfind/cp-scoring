@@ -50,6 +50,17 @@ func checkValidServerURL(serverURL string) {
 func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFile string, serverCrtFile string) {
 	checkValidServerURL(serverURL)
 
+	// don't override existing files
+	if _, err := os.Stat(serverURLFile); !os.IsNotExist(err) {
+		log.Fatalln("ERROR: server URL already set")
+	}
+	if _, err := os.Stat(serverPubKeyFile); !os.IsNotExist(err) {
+		log.Fatalln("ERROR: server public key already set")
+	}
+	if _, err := os.Stat(serverCrtFile); !os.IsNotExist(err) {
+		log.Fatalln("ERROR: server certificate already set")
+	}
+
 	// expected URLs
 	serverPubKeyFileURL := serverURL + "public/server.pub"
 	serverCrtFileURL := serverURL + "public/server.crt"
@@ -145,6 +156,7 @@ func main() {
 
 	if len(serverURL) > 0 {
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
+		os.Exit(0)
 	}
 
 	// data directory
