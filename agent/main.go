@@ -129,6 +129,26 @@ func askForTeam(teamKeyFile string) {
 	log.Println("Saved team key")
 }
 
+func createLinkScoreboard(serverURL string, linkScoreboard string) {
+	url := serverURL + "/ui/scoreboard"
+	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Scoreboard</a></body></html>"
+	err := ioutil.WriteFile(linkScoreboard, []byte(s), 0600)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save scoreboard link file;", err)
+	}
+	log.Println("Created scoreboard link file")
+}
+
+func createLinkReport(serverURL string, linkReport string, teamKey string) {
+	url := serverURL + "/ui/reports?team_key=" + teamKey
+	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Reports</a></body></html>"
+	err := ioutil.WriteFile(linkReport, []byte(s), 0600)
+	if err != nil {
+		log.Fatalln("ERROR: unable to save report link file;", err)
+	}
+	log.Println("Created report link file")
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -140,6 +160,8 @@ func main() {
 	serverPubFile := path.Join(dir, "server.pub")
 	serverCrtFile := path.Join(dir, "server.crt")
 	teamKeyFile := path.Join(dir, "team.key")
+	linkScoreboard := path.Join(dir, "scoreboard.html")
+	linkReport := path.Join(dir, "report.html")
 	dataDir := path.Join(dir, "data")
 
 	var serverURL string
@@ -156,6 +178,7 @@ func main() {
 
 	if len(serverURL) > 0 {
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
+		createLinkScoreboard(serverURL, linkScoreboard)
 		os.Exit(0)
 	}
 
@@ -218,6 +241,7 @@ func main() {
 				log.Println("Found team key")
 				teamKey = strings.TrimSpace(string(teamKeyBytes))
 			}
+			createLinkReport(serverURL, linkReport, teamKey)
 		}
 		// only send if have team key
 		if len(teamKey) > 0 {
