@@ -790,3 +790,54 @@ func dbInsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry 
 
 	return nil
 }
+
+func dbSelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
+	scenarioHosts := make([]model.ScenarioHosts, 0)
+	rows, err := db.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts WHERE team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_id=hosts.id", teamID)
+	if err != nil {
+		return scenarioHosts, err
+	}
+	defer rows.Close()
+
+	var scenarioName string
+	var scenarioID int64
+	var hostname string
+	var hostID int64
+	var hostOS string
+
+	// need to collect scenario to hosts mapping
+	collectedHosts := make(map[int64][]model.Host)
+	// cache scenario name
+	scenarioNames := make(map[int64]string)
+
+	for rows.Next() {
+		err := rows.Scan(&scenarioName, &scenarioID, &hostname, &hostID, &hostOS)
+		if err != nil {
+			return scenarioHosts, err
+		}
+		hosts, present := collectedHosts[scenarioID]
+		if !present {
+			hosts = make([]model.Host, 0)
+			collectedHosts[scenarioID] = hosts
+		}
+		scenarioNames[scenarioID] = scenarioName
+		var host model.Host
+		host.Hostname = hostname
+		host.ID = hostID
+		host.OS = hostOS
+		collectedHosts[scenarioID] = append(hosts, host)
+	}
+
+	// create model instances
+	for scenarioID, hosts := range collectedHosts {
+		var sh model.ScenarioHosts
+		sh.ScenarioID = scenarioID
+		sh.Hosts = hosts
+
+		sh.ScenarioName = scenarioNames[scenarioID]
+
+		scenarioHosts = append(scenarioHosts, sh)
+	}
+
+	return scenarioHosts, nil
+}

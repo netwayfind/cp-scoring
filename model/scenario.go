@@ -78,3 +78,9 @@ type ScenarioTimeline struct {
 	Timestamps []int64
 	Scores     []int64
 }
+
+type ScenarioHosts struct {
+	ScenarioID   int64
+	ScenarioName string
+	Hosts        []Host
+}

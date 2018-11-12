@@ -959,6 +959,35 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+func getTeamScenarioHosts(w http.ResponseWriter, r *http.Request) {
+	log.Println("get team scenario hosts")
+
+	teamKey := r.FormValue("team_key")
+	teamID, err := dbSelectTeamIDForKey(teamKey)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team id;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+	scenarioHosts, err := dbSelectTeamScenarioHosts(teamID)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team scenario hosts;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	out, err := json.Marshal(scenarioHosts)
+	if err != nil {
+		msg := "ERROR: cannot marshal team scenario hosts;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	w.Write(out)
+}
+
 func createEncryptionKeys(filePGPPub string, filePGPPriv string) {
 	log.Println("Creating openpgp files")
 	entity, err := openpgp.NewEntity("cp-scoring", "test", "test@example.com", nil)
@@ -1336,6 +1365,8 @@ func main() {
 	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScores).Methods("GET")
 	reportRouter := r.PathPrefix("/reports").Subrouter()
 	// using team key as auth
+	reportRouter.HandleFunc("", getTeamScenarioHosts).Methods("GET")
+	reportRouter.HandleFunc("/", getTeamScenarioHosts).Methods("GET")
 	reportRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScoresReport).Methods("GET")
 	reportRouter.HandleFunc("/scenario/{id:[0-9]+}/timeline", getScenarioScoresTimeline).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
