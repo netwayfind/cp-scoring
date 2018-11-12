@@ -177,6 +177,8 @@ func main() {
 	}
 
 	if len(serverURL) > 0 {
+		// remove trailing slash
+		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
 		os.Exit(0)
