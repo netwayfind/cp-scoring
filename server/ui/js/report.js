@@ -33,6 +33,8 @@ class ScoreTimeline extends React.Component {
   constructor() {
     super();
     this.state = {
+      scenarioName: "",
+      hostname: "",
       timestamps: [],
       scores: [],
       report: {},
@@ -63,11 +65,15 @@ class ScoreTimeline extends React.Component {
     }.bind(this));
   }
 
-  populateHostReport(scenarioID, teamKey, hostname) {
+  populateHostReport(scenarioName, scenarioID, teamKey, hostname) {
     if (scenarioID === "" || teamKey === "" || hostname === "") {
       return;
     }
 
+    this.setState({
+      scenarioName: scenarioName,
+      hostname: hostname
+    });
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
     fetch(url).then(function (response) {
       if (response.status >= 400) {
@@ -111,10 +117,19 @@ class ScoreTimeline extends React.Component {
       x: this.state.timestamps,
       y: this.state.scores,
       type: 'scatter',
-      mode: 'lines+markers'
+      mode: 'markers',
+      fill: 'tozeroy'
     }];
     let layout = {
+      height: 200,
+      margin: {
+        t: 25,
+        b: 50,
+        l: 25,
+        r: 25
+      },
       xaxis: {
+        fixedrange: true,
         type: 'date'
       },
       yaxis: {
@@ -122,7 +137,7 @@ class ScoreTimeline extends React.Component {
       }
     };
     let config = {
-      displayModeBar: false
+      staticPlot: true
     };
     let lastUpdated = null;
     let rows = [];
@@ -152,6 +167,7 @@ class ScoreTimeline extends React.Component {
     if (this.state.scenarioHosts) {
       for (let i in this.state.scenarioHosts) {
         let scenarioHosts = this.state.scenarioHosts[i];
+        let scenarioName = scenarioHosts.ScenarioName;
         let scenarioID = scenarioHosts.ScenarioID;
         let hosts = [];
 
@@ -162,7 +178,7 @@ class ScoreTimeline extends React.Component {
             key: i
           }, React.createElement("a", {
             href: "#",
-            onClick: () => this.populateHostReport(scenarioID, teamKey, hostname)
+            onClick: () => this.populateHostReport(scenarioName, scenarioID, teamKey, hostname)
           }, hostname)));
         }
 
@@ -170,6 +186,16 @@ class ScoreTimeline extends React.Component {
           key: i
         }, scenarioHosts.ScenarioName, React.createElement("ul", null, hosts)));
       }
+    }
+
+    let content = null;
+
+    if (this.state.hostname) {
+      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.scenarioName), React.createElement("h3", null, this.state.hostname), React.createElement(Plot, {
+        data: data,
+        layout: layout,
+        config: config
+      }), React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("div", {
@@ -180,11 +206,7 @@ class ScoreTimeline extends React.Component {
     }, React.createElement("b", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
       className: "content",
       id: "content"
-    }, React.createElement("strong", null, "Score Timeline"), React.createElement("p", null), React.createElement(Plot, {
-      data: data,
-      layout: layout,
-      config: config
-    }), React.createElement("p", null), "Hostname: ", this.props.hostname, React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows)));
+    }, content));
   }
 
 }
