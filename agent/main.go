@@ -132,7 +132,7 @@ func askForTeam(teamKeyFile string) {
 func createLinkScoreboard(serverURL string, linkScoreboard string) {
 	url := serverURL + "/ui/scoreboard"
 	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Scoreboard</a></body></html>"
-	err := ioutil.WriteFile(linkScoreboard, []byte(s), 0600)
+	err := ioutil.WriteFile(linkScoreboard, []byte(s), 0644)
 	if err != nil {
 		log.Fatalln("ERROR: unable to save scoreboard link file;", err)
 	}
@@ -140,9 +140,9 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 }
 
 func createLinkReport(serverURL string, linkReport string, teamKey string) {
-	url := serverURL + "/ui/reports?team_key=" + teamKey
+	url := serverURL + "/ui/report?team_key=" + teamKey
 	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Reports</a></body></html>"
-	err := ioutil.WriteFile(linkReport, []byte(s), 0600)
+	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
 		log.Fatalln("ERROR: unable to save report link file;", err)
 	}
