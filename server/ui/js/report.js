@@ -4,9 +4,7 @@ const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
   render() {
-    let scenario = "0";
-    let teamKey = "key";
-    let hostname = "hostname";
+    let teamKey = "";
     let query = window.location.search.substring(1);
     let params = query.split("&");
 
@@ -17,21 +15,15 @@ class App extends React.Component {
         continue;
       }
 
-      if (param[0] === "scenario") {
-        scenario = param[1];
-      } else if (param[0] === "team_key") {
+      if (param[0] === "team_key") {
         teamKey = param[1];
-      } else if (param[0] === "hostname") {
-        hostname = param[1];
       }
     }
 
     return React.createElement("div", {
       className: "App"
     }, React.createElement(ScoreTimeline, {
-      scenarioID: scenario,
-      teamKey: teamKey,
-      hostname: hostname
+      teamKey: teamKey
     }));
   }
 
@@ -43,14 +35,39 @@ class ScoreTimeline extends React.Component {
     this.state = {
       timestamps: [],
       scores: [],
-      report: {}
+      report: {},
+      scenarioHosts: []
     };
   }
 
-  populateScores() {
-    let scenarioID = this.props.scenarioID;
+  populateScenarioHosts() {
     let teamKey = this.props.teamKey;
-    let hostname = this.props.hostname;
+
+    if (teamKey === "") {
+      return;
+    }
+
+    let url = "/reports?team_key=" + teamKey;
+    fetch(url).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      if (data) {
+        this.setState({
+          scenarioHosts: data
+        });
+      }
+    }.bind(this));
+  }
+
+  populateHostReport(scenarioID, teamKey, hostname) {
+    if (scenarioID === "" || teamKey === "" || hostname === "") {
+      return;
+    }
+
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
     fetch(url).then(function (response) {
       if (response.status >= 400) {
@@ -70,13 +87,7 @@ class ScoreTimeline extends React.Component {
         });
       }
     }.bind(this));
-  }
-
-  populateReport() {
-    let scenarioID = this.props.scenarioID;
-    let teamKey = this.props.teamKey;
-    let hostname = this.props.hostname;
-    let url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;
+    url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;
     fetch(url).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -91,11 +102,11 @@ class ScoreTimeline extends React.Component {
   }
 
   componentDidMount() {
-    this.populateScores();
-    this.populateReport();
+    this.populateScenarioHosts();
   }
 
   render() {
+    let teamKey = this.props.teamKey;
     let data = [{
       x: this.state.timestamps,
       y: this.state.scores,
@@ -117,13 +128,9 @@ class ScoreTimeline extends React.Component {
     let rows = [];
 
     if (this.state.report) {
-      console.log(this.state.report);
-
       if (this.state.report.Timestamp) {
         lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
       }
-
-      console.log(lastUpdated);
 
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
@@ -140,11 +147,44 @@ class ScoreTimeline extends React.Component {
       }
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("strong", null, "Score Timeline"), React.createElement("p", null), React.createElement(Plot, {
+    let scenarios = [];
+
+    if (this.state.scenarioHosts) {
+      for (let i in this.state.scenarioHosts) {
+        let scenarioHosts = this.state.scenarioHosts[i];
+        let scenarioID = scenarioHosts.ScenarioID;
+        let hosts = [];
+
+        for (let i in scenarioHosts.Hosts) {
+          let host = scenarioHosts.Hosts[i];
+          let hostname = host.Hostname;
+          hosts.push(React.createElement("li", {
+            key: i
+          }, React.createElement("a", {
+            href: "#",
+            onClick: () => this.populateHostReport(scenarioID, teamKey, hostname)
+          }, hostname)));
+        }
+
+        scenarios.push(React.createElement("li", {
+          key: i
+        }, scenarioHosts.ScenarioName, React.createElement("ul", null, hosts)));
+      }
+    }
+
+    return React.createElement(React.Fragment, null, React.createElement("div", {
+      classname: "heading"
+    }, React.createElement("h1", null, "Team Reports")), React.createElement("hr", null), React.createElement("div", {
+      className: "toc",
+      id: "toc"
+    }, React.createElement("b", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
+      className: "content",
+      id: "content"
+    }, React.createElement("strong", null, "Score Timeline"), React.createElement("p", null), React.createElement(Plot, {
       data: data,
       layout: layout,
       config: config
-    }), React.createElement("p", null), "Hostname: ", this.props.hostname, React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows));
+    }), React.createElement("p", null), "Hostname: ", this.props.hostname, React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows)));
   }
 
 }

@@ -4,9 +4,7 @@ const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
   render() {
-    let scenario = "0";
-    let teamKey = "key";
-    let hostname = "hostname";
+    let teamKey = "";
     let query = window.location.search.substring(1);
     let params = query.split("&");
     for (let i = 0; i < params.length; i++) {
@@ -14,19 +12,13 @@ class App extends React.Component {
       if (param.length != 2) {
         continue;
       }
-      if (param[0] === "scenario") {
-        scenario = param[1];
-      }
-      else if (param[0] === "team_key") {
+      if (param[0] === "team_key") {
         teamKey = param[1];
-      }
-      else if (param[0] === "hostname") {
-        hostname = param[1];
       }
     }
     return (
       <div className="App">
-        <ScoreTimeline scenarioID={scenario} teamKey={teamKey} hostname={hostname}/>
+        <ScoreTimeline teamKey={teamKey}/>
       </div>
     );
   }
@@ -38,16 +30,42 @@ class ScoreTimeline extends React.Component {
     this.state = {
       timestamps: [],
       scores: [],
-      report: {}
+      report: {},
+      scenarioHosts: []
     }
   }
 
-  populateScores() {
-    let scenarioID = this.props.scenarioID;
+  populateScenarioHosts() {
     let teamKey = this.props.teamKey;
-    let hostname = this.props.hostname;
+
+    if (teamKey === "") {
+      return;
+    }
+
+    let url = "/reports?team_key=" + teamKey;
+
+    fetch(url)
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      if (data) {
+        this.setState({
+          scenarioHosts: data
+        })
+      }
+    }.bind(this));
+  }
+
+  populateHostReport(scenarioID, teamKey, hostname) {
+    if (scenarioID === "" || teamKey === "" || hostname === "") {
+      return;
+    }
+
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
-  
     fetch(url)
     .then(function(response) {
       if (response.status >= 400) {
@@ -67,14 +85,8 @@ class ScoreTimeline extends React.Component {
         })
       }
     }.bind(this));
-  }
 
-  populateReport() {
-    let scenarioID = this.props.scenarioID;
-    let teamKey = this.props.teamKey;
-    let hostname = this.props.hostname;
-    let url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;
-  
+    url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;  
     fetch(url)
     .then(function(response) {
       if (response.status >= 400) {
@@ -90,11 +102,12 @@ class ScoreTimeline extends React.Component {
   }
 
   componentDidMount() {
-    this.populateScores();
-    this.populateReport();
+    this.populateScenarioHosts();
   }
 
   render() {
+    let teamKey = this.props.teamKey;
+
     let data = [
       {
         x: this.state.timestamps,
@@ -121,11 +134,9 @@ class ScoreTimeline extends React.Component {
 
     let rows = [];
     if (this.state.report) {
-      console.log(this.state.report)
       if (this.state.report.Timestamp) {
         lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
       }
-      console.log(lastUpdated)
 
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
@@ -146,19 +157,55 @@ class ScoreTimeline extends React.Component {
       }
     }
 
+    let scenarios = [];
+
+    if (this.state.scenarioHosts) {
+      for (let i in this.state.scenarioHosts) {
+        let scenarioHosts = this.state.scenarioHosts[i];
+        let scenarioID = scenarioHosts.ScenarioID;
+        let hosts = [];
+        for (let i in scenarioHosts.Hosts) {
+          let host = scenarioHosts.Hosts[i];
+          let hostname = host.Hostname;
+          hosts.push(
+            <li key={i}><a href="#" onClick={() => this.populateHostReport(scenarioID, teamKey, hostname)}>{hostname}</a></li>
+          );
+        }
+        scenarios.push(
+          <li key={i}>{scenarioHosts.ScenarioName}
+            <ul>
+              {hosts}
+            </ul>
+          </li>
+        );
+      }
+    }
+
     return (
       <React.Fragment>
-        <strong>Score Timeline</strong>
-        <p />
-        <Plot data={data} layout={layout} config={config}/>
-        <p />
-        Hostname: {this.props.hostname}
-        <p />
-        Last Updated: {lastUpdated}
-        <p />
-        Findings:
-        <br />
-        <ul>{rows}</ul>
+        <div classname="heading">
+          <h1>Team Reports</h1>
+        </div>
+        <hr />
+        <div className="toc" id="toc">
+          <b>Scenarios</b>
+          <ul>
+            {scenarios}
+          </ul>
+        </div>
+        <div className="content" id="content">
+          <strong>Score Timeline</strong>
+          <p />
+          <Plot data={data} layout={layout} config={config}/>
+          <p />
+          Hostname: {this.props.hostname}
+          <p />
+          Last Updated: {lastUpdated}
+          <p />
+          Findings:
+          <br />
+          <ul>{rows}</ul>
+        </div>
       </React.Fragment>
     );
   }
