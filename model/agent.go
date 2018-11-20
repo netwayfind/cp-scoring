@@ -70,6 +70,37 @@ const (
 	NetworkConnectionUnknown     NetworkConnectionState = "UNKNOWN"
 )
 
+func GetNetworkConnectionStateLinux(hex string) NetworkConnectionState {
+	switch hex {
+	case "01":
+		return NetworkConnectionEstablished
+	case "02":
+		return NetworkConnectionSynSent
+	case "03":
+		return NetworkConnectionSynReceived
+	case "04":
+		return NetworkConnectionFinWait1
+	case "05":
+		return NetworkConnectionFinWait2
+	case "06":
+		return NetworkConnectionTimeWait
+	case "07":
+		return NetworkConnectionClosed
+	case "08":
+		return NetworkConnectionCloseWait
+	case "09":
+		return NetworkConnectionLastAck
+	case "0A":
+		return NetworkConnectionListen
+	case "0B":
+		return NetworkConnectionClosing
+	case "0C":
+		return NetworkConnectionSynReceived
+	default:
+		return NetworkConnectionUnknown
+	}
+}
+
 func GetNetworkConnectionState(stateStr string) NetworkConnectionState {
 	// narrow down possible state strings
 	stateStr = strings.ToLower(stateStr)

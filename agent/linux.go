@@ -121,67 +121,19 @@ func getSoftware() []model.Software {
 }
 
 func getNetworkConnections() []model.NetworkConnection {
-	conns := make([]model.NetworkConnection, 0)
-
-	out, err := exec.Command("/bin/sh", "-c", "/bin/ss -anptu | column -t").Output()
+	// TCP connections
+	bs, err := ioutil.ReadFile("/proc/net/tcp")
 	if err != nil {
-		log.Fatal("ERROR: cannot get network connections;", err)
+		log.Fatal("ERROR: cannot get tcp connections;", err)
 	}
+	tcpConns := parseProcNet("TCP", bs)
 
-	var posNetid int
-	var posState int
-	var posRecv int
-	var posLocal int
-	var posAddrPort1 int
-	var posPeer int
-	for i, line := range strings.Split(string(out), "\n") {
-		if len(line) == 0 {
-			continue
-		}
-
-		// get position of columns
-		if i == 0 {
-			posNetid = strings.Index(line, "Netid")
-			posState = strings.Index(line, "State")
-			posRecv = strings.Index(line, "Recv-Q")
-			posLocal = strings.Index(line, "Local")
-			posAddrPort1 = strings.Index(line, "Address:Port")
-			posPeer = strings.Index(line, "Peer")
-			continue
-		}
-
-		var conn model.NetworkConnection
-		// some connections may not have an PID (e.g. time wait)
-		if posPeer >= len(line) {
-			posPeer = len(line)
-			conn.PID = -1
-		} else {
-			pidStr := strings.Split(strings.TrimSpace(line[posPeer:]), ",")[1]
-			conn.PID, err = strconv.ParseInt(strings.TrimSpace(pidStr[4:]), 10, 64)
-			if err != nil {
-				log.Fatal("ERROR: unable to parse PID from network connection;", err)
-			}
-		}
-		conn.Protocol = strings.ToUpper(strings.TrimSpace(line[posNetid:posState]))
-		conn.State = model.GetNetworkConnectionState(strings.TrimSpace(line[posState:posRecv]))
-		localAddrStr := strings.TrimSpace(line[posLocal:posAddrPort1])
-		lastColon := strings.LastIndex(localAddrStr, ":")
-		if lastColon == -1 {
-			conn.LocalAddress = localAddrStr
-		} else {
-			conn.LocalAddress = localAddrStr[0:lastColon]
-			conn.LocalPort = localAddrStr[lastColon+1:]
-		}
-		remoteAddrStr := strings.TrimSpace(line[posAddrPort1:posPeer])
-		lastColon = strings.LastIndex(remoteAddrStr, ":")
-		if lastColon == -1 {
-			conn.RemoteAddress = remoteAddrStr
-		} else {
-			conn.RemoteAddress = remoteAddrStr[0:lastColon]
-			conn.RemotePort = remoteAddrStr[lastColon+1:]
-		}
-		conns = append(conns, conn)
+	// UDP connections
+	bs, err = ioutil.ReadFile("/proc/net/udp")
+	if err != nil {
+		log.Fatal("ERROR: cannot get udp connections;", err)
 	}
+	udpConns := parseProcNet("UDP", bs)
 
-	return conns
+	return append(tcpConns, udpConns...)
 }
