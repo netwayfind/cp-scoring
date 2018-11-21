@@ -180,6 +180,24 @@ func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
 	return conns
 }
 
+func parseEtcGroup(bs []byte) map[string][]string {
+	groups := make(map[string][]string)
+	for _, line := range strings.Split(string(bs), "\n") {
+		tokens := strings.Split(line, ":")
+		if len(tokens) != 4 {
+			continue
+		}
+		group, membersStr := tokens[0], tokens[3]
+		if len(membersStr) == 0 {
+			groups[group] = make([]string, 0)
+		} else {
+			groups[group] = strings.Split(membersStr, ",")
+		}
+	}
+
+	return groups
+}
+
 func parseWindowsUsers(bs []byte) []model.User {
 	users := make([]model.User, 0)
 	c := csv.NewReader(bytes.NewReader(bs))

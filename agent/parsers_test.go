@@ -1422,3 +1422,67 @@ func TestParseProcNet(t *testing.T) {
 		t.Fatal("Unexpected PID")
 	}
 }
+
+func TestParseEtcGroup(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	groups := parseEtcGroup(bs)
+	if len(groups) != 0 {
+		t.Fatal("Parsed groups out of empty string")
+	}
+
+	// bad string
+	bs = []byte("bad")
+	groups = parseEtcGroup(bs)
+	if len(groups) != 0 {
+		t.Fatal("Parsed groups out of bad string")
+	}
+
+	// cut off
+	bs = []byte("root:x:")
+	groups = parseEtcGroup(bs)
+	if len(groups) != 0 {
+		t.Fatal("Parsed groups out of cut off string")
+	}
+
+	// one group
+	bs = []byte("root:x:0:")
+	groups = parseEtcGroup(bs)
+	if len(groups) != 1 {
+		t.Fatal("Did not parse expected group")
+	}
+	groupMembers1, present := groups["root"]
+	if !present {
+		t.Fatal("Did not find group root")
+	}
+	if len(groupMembers1) != 0 {
+		t.Fatal("Unexpected group members")
+	}
+
+	// two groups
+	bs = []byte("root:x:0:\nusers:x:100:user1,user2")
+	groups = parseEtcGroup(bs)
+	if len(groups) != 2 {
+		t.Fatal("Did not parse expected group2")
+	}
+	groupMembers1, present = groups["root"]
+	if !present {
+		t.Fatal("Did not find group root")
+	}
+	if len(groupMembers1) != 0 {
+		t.Fatal("Unexpected group members")
+	}
+	groupMembers2, present := groups["users"]
+	if !present {
+		t.Fatal("Did not find group users")
+	}
+	if len(groupMembers2) != 2 {
+		t.Fatal("Unexpected group members")
+	}
+	if groupMembers2[0] != "user1" {
+		t.Fatal("Unexpected user")
+	}
+	if groupMembers2[1] != "user2" {
+		t.Fatal("Unexpected user")
+	}
+}

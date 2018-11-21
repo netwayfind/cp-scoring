@@ -46,15 +46,7 @@ func getGroups() map[string][]string {
 		log.Fatal("ERROR: cannot get groups;", err)
 	}
 
-	groups := make(map[string][]string)
-	for _, line := range strings.Split(string(bs), "\n") {
-		tokens := strings.Split(line, ":")
-		if len(tokens) != 4 {
-			continue
-		}
-		group, membersStr := tokens[0], tokens[3]
-		groups[group] = strings.Split(membersStr, ",")
-	}
+	groups := parseEtcGroup(bs)
 
 	return groups
 }
