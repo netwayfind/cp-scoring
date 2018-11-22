@@ -242,6 +242,30 @@ func parseBinPs(bs []byte) []model.Process {
 	return processes
 }
 
+func parseAptListInstalled(bs []byte) []model.Software {
+	software := make([]model.Software, 0)
+
+	for _, line := range strings.Split(string(bs), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+
+		// split package information tokens
+		tokens := strings.Split(line, " ")
+		if len(tokens) != 4 {
+			continue
+		}
+		pkgStr, version := tokens[0], tokens[1]
+		pkg := strings.Split(pkgStr, "/")[0]
+		var sw model.Software
+		sw.Name = pkg
+		sw.Version = version
+		software = append(software, sw)
+	}
+
+	return software
+}
+
 func parseWindowsUsers(bs []byte) []model.User {
 	users := make([]model.User, 0)
 	c := csv.NewReader(bytes.NewReader(bs))
