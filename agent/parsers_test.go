@@ -1486,3 +1486,105 @@ func TestParseEtcGroup(t *testing.T) {
 		t.Fatal("Unexpected user")
 	}
 }
+
+func TestParseBinPs(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	processes := parseBinPs(bs)
+	if len(processes) != 0 {
+		t.Fatal("Parsed processes out of empty string")
+	}
+
+	// bad string
+	bs = []byte("bad")
+	processes = parseBinPs(bs)
+	if len(processes) != 0 {
+		t.Fatal("Parsed processes out of bad string")
+	}
+
+	// cut off
+	bs = []byte("PID USER COMMAND\n123 us")
+	processes = parseBinPs(bs)
+	if len(processes) != 0 {
+		t.Fatal("Parsed processes out of cut off string")
+	}
+
+	// cut off
+	bs = []byte("PID USER COMMAND\n123 user")
+	processes = parseBinPs(bs)
+	if len(processes) != 0 {
+		t.Fatal("Parsed processes out of cut off string")
+	}
+
+	// empty pid
+	bs = []byte("PID USER COMMAND\n    user cmd")
+	processes = parseBinPs(bs)
+	if len(processes) != 1 {
+		t.Fatal("Did not find expected entry")
+	}
+	if processes[0].PID != -1 {
+		t.Fatal("Unexpected default PID value")
+	}
+
+	// empty user
+	bs = []byte("PID USER COMMAND\n123      cmd")
+	processes = parseBinPs(bs)
+	if len(processes) != 1 {
+		t.Fatal("Did not find expected entry")
+	}
+	if len(processes[0].User) != 0 {
+		t.Fatal("Did not parse empty string for empty user")
+	}
+
+	// empty command
+	bs = []byte("PID USER COMMAND\n123 user ")
+	processes = parseBinPs(bs)
+	if len(processes) != 1 {
+		t.Fatal("Did not find expected entry")
+	}
+	if len(processes[0].CommandLine) != 0 {
+		t.Fatal("Did not parse empty string for empty command")
+	}
+
+	// one entry
+	bs = []byte("PID USER COMMAND\n123 user command")
+	processes = parseBinPs(bs)
+	if len(processes) != 1 {
+		t.Fatal("Did not find expected entry")
+	}
+	if processes[0].PID != 123 {
+		t.Fatal("Did not parse expected PID")
+	}
+	if processes[0].User != "user" {
+		t.Fatal("Did not parse expected user")
+	}
+	if processes[0].CommandLine != "command" {
+		t.Fatal("Did not parse expected command")
+	}
+
+	// two entries
+	// second has larger PID, longer username, longer command
+	bs = []byte(" PID USER                             COMMAND\n 123 user                             command\n5678 abcdefghijklmnopqrstuvwxyz789012 this is a test command with spaces")
+	processes = parseBinPs(bs)
+	if len(processes) != 2 {
+		t.Fatal("Did not find expected entries")
+	}
+	if processes[0].PID != 123 {
+		t.Fatal("Did not parse expected PID")
+	}
+	if processes[0].User != "user" {
+		t.Fatal("Did not parse expected user")
+	}
+	if processes[0].CommandLine != "command" {
+		t.Fatal("Did not parse expected command")
+	}
+	if processes[1].PID != 5678 {
+		t.Fatal("Did not parse expected PID")
+	}
+	if processes[1].User != "abcdefghijklmnopqrstuvwxyz789012" {
+		t.Fatal("Did not parse expected user")
+	}
+	if processes[1].CommandLine != "this is a test command with spaces" {
+		t.Fatal("Did not parse expected command")
+	}
+}

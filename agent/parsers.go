@@ -198,6 +198,50 @@ func parseEtcGroup(bs []byte) map[string][]string {
 	return groups
 }
 
+func parseBinPs(bs []byte) []model.Process {
+	processes := make([]model.Process, 0)
+
+	var posPID int
+	var posUser int
+	var posCommand int
+	for i, line := range strings.Split(string(bs), "\n") {
+		if len(line) == 0 {
+			continue
+		}
+
+		// get positions of columns (PID,user,command)
+		if i == 0 {
+			// PID is kept at 0, column is right justified
+			posUser = strings.Index(line, "USER")
+			posCommand = strings.Index(line, "COMMAND")
+			// can't process without these
+			if posUser == -1 || posCommand == -1 {
+				break
+			}
+			continue
+		}
+
+		// can't continue if line is cut off
+		if len(line) < posCommand {
+			continue
+		}
+
+		var process model.Process
+		pid, err := strconv.ParseInt(strings.TrimSpace(line[posPID:posUser]), 10, 64)
+		if err == nil {
+			process.PID = pid
+		} else {
+			// set PID to -1 if had error parsing
+			process.PID = -1
+		}
+		process.User = strings.TrimSpace(line[posUser:posCommand])
+		process.CommandLine = strings.TrimSpace(line[posCommand:])
+		processes = append(processes, process)
+	}
+
+	return processes
+}
+
 func parseWindowsUsers(bs []byte) []model.User {
 	users := make([]model.User, 0)
 	c := csv.NewReader(bytes.NewReader(bs))
