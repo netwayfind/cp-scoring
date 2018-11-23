@@ -273,15 +273,51 @@ func encryptBytes(theBytes []byte, entities []*openpgp.Entity) ([]byte, error) {
 	return encbuf.Bytes(), nil
 }
 
+func getState(host model.CurrentHost) model.State {
+	state := model.GetNewStateTemplate()
+	errors := make([]model.Error, 0)
+	users, err := host.GetUsers()
+	if err == nil {
+		state.Users = users
+	} else {
+		errors = append(errors, model.Error{Message: "ERROR: unable to get users", Error: err})
+	}
+	groups, err := host.GetGroups()
+	if err == nil {
+		state.Groups = groups
+	} else {
+		errors = append(errors, model.Error{Message: "ERROR: cannot get groups;", Error: err})
+	}
+	processes, err := host.GetProcesses()
+	if err == nil {
+		state.Processes = processes
+	} else {
+		errors = append(errors, model.Error{Message: "ERROR: cannot get processes;", Error: err})
+	}
+	software, err := host.GetSoftware()
+	if err == nil {
+		state.Software = software
+	} else {
+		errors = append(errors, model.Error{Message: "ERROR: cannot get software;", Error: err})
+	}
+	conns, err := host.GetNetworkConnections()
+	if err == nil {
+		state.NetworkConnections = conns
+	} else {
+		errors = append(errors, model.Error{Message: "ERROR: cannot get network connections;", Error: err})
+	}
+	state.Errors = errors
+	return state
+}
+
 func saveState(dir string, entities []*openpgp.Entity) {
 	var state model.State
 
-	// TODO: choose correct function based on OS
 	log.Println("Getting state")
 	if runtime.GOOS == "linux" {
-		state = getState()
+		state = getState(hostLinux{})
 	} else if runtime.GOOS == "windows" {
-		state = getState()
+		state = getState(hostWindows{})
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
 	}

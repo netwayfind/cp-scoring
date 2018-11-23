@@ -1,90 +1,80 @@
-// +build linux
-
 package main
 
 import (
 	"io/ioutil"
-	"log"
 	"os/exec"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func getState() model.State {
-	state := model.GetNewStateTemplate()
-	state.Users = getUsers()
-	state.Groups = getGroups()
-	state.Processes = getProcesses()
-	state.Software = getSoftware()
-	state.NetworkConnections = getNetworkConnections()
-	return state
+type hostLinux struct {
 }
 
-func getUsers() []model.User {
+func (h hostLinux) GetUsers() ([]model.User, error) {
 	// get user and uid
 	bs, err := ioutil.ReadFile("/etc/passwd")
 	if err != nil {
-		log.Fatal("ERROR: cannot get users info;", err)
+		return nil, err
 	}
 	userMapEtcPasswd := parseEtcPasswd(bs)
 
 	// get other user information (sensitive)
 	bs, err = ioutil.ReadFile("/etc/shadow")
 	if err != nil {
-		log.Fatal("ERROR: cannot get users info;", err)
+		return nil, err
 	}
 	userMapEtcShadow := parseEtcShadow(bs)
 
-	return mergeUserMaps(userMapEtcPasswd, userMapEtcShadow)
+	return mergeUserMaps(userMapEtcPasswd, userMapEtcShadow), nil
 }
 
-func getGroups() map[string][]string {
+func (h hostLinux) GetGroups() (map[string][]string, error) {
 	bs, err := ioutil.ReadFile("/etc/group")
 	if err != nil {
-		log.Fatal("ERROR: cannot get groups;", err)
+		return nil, err
 	}
 
 	groups := parseEtcGroup(bs)
 
-	return groups
+	return groups, nil
 }
 
-func getProcesses() []model.Process {
+func (h hostLinux) GetProcesses() ([]model.Process, error) {
 	out, err := exec.Command("/bin/ps", "-eo", "pid,user:32,command", "--sort=pid").Output()
 	if err != nil {
-		log.Fatal("ERROR: cannot get processes;", err)
+		return nil, err
 	}
 
 	processes := parseBinPs(out)
 
-	return processes
+	return processes, nil
 }
 
-func getSoftware() []model.Software {
+func (h hostLinux) GetSoftware() ([]model.Software, error) {
 	out, err := exec.Command("/usr/bin/apt", "list", "--installed").Output()
 	if err != nil {
-		log.Fatal("ERROR: unable to get software list;", err)
+		return nil, err
 	}
 
 	software := parseAptListInstalled(out)
 
-	return software
+	return software, nil
 }
 
-func getNetworkConnections() []model.NetworkConnection {
+func (h hostLinux) GetNetworkConnections() ([]model.NetworkConnection, error) {
 	// TCP connections
 	bs, err := ioutil.ReadFile("/proc/net/tcp")
 	if err != nil {
-		log.Fatal("ERROR: cannot get tcp connections;", err)
+		return nil, err
 	}
 	tcpConns := parseProcNet("TCP", bs)
 
 	// UDP connections
 	bs, err = ioutil.ReadFile("/proc/net/udp")
 	if err != nil {
-		log.Fatal("ERROR: cannot get udp connections;", err)
+		return nil, err
 	}
 	udpConns := parseProcNet("UDP", bs)
 
-	return append(tcpConns, udpConns...)
+	return append(tcpConns, udpConns...), err
 }

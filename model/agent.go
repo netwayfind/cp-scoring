@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type CurrentHost interface {
+	GetUsers() ([]User, error)
+	GetGroups() (map[string][]string, error)
+	GetProcesses() ([]Process, error)
+	GetSoftware() ([]Software, error)
+	GetNetworkConnections() ([]NetworkConnection, error)
+}
+
 type Host struct {
 	ID       int64
 	Hostname string
@@ -23,11 +31,17 @@ type State struct {
 	Timestamp          int64
 	OS                 string
 	Hostname           string
+	Errors             []Error
 	Users              []User
 	Groups             map[string][]string
 	Processes          []Process
 	Software           []Software
 	NetworkConnections []NetworkConnection
+}
+
+type Error struct {
+	Message string
+	Error   error
 }
 
 type User struct {

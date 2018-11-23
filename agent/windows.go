@@ -1,69 +1,76 @@
-// +build windows
-
 package main
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func getState() model.State {
-	state := model.GetNewStateTemplate()
-	state.Users = getUsers()
-	state.Groups = getGroups()
-	state.Processes = getProcesses()
-	state.Software = getSoftware()
-	state.NetworkConnections = getNetworkConnections()
-	return state
+type hostWindows struct {
 }
 
-type userinfo struct {
-	username string
-}
-
-func powershellCsv(command string, columns string) []byte {
+func powershellCsv(command string, columns string) ([]byte, error) {
 	cmdStr := fmt.Sprintf("%s | Select-Object %s | ConvertTo-Csv -NoTypeInformation", command, columns)
 	out, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", cmdStr).Output()
 	if err != nil {
-		log.Println("ERROR: unable to execute powershell command;", err)
+		return nil, err
 	}
-	return out
+	return out, nil
 }
 
-func getUsers() []model.User {
-	out := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
-	return parseWindowsUsers(out)
+func (host hostWindows) GetUsers() ([]model.User, error) {
+	out, err := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsUsers(out), nil
 }
 
-func getGroups() map[string][]string {
-	out := powershellCsv("Get-WmiObject -class Win32_GroupUser", "GroupComponent,PartComponent")
-	return parseWindowsGroups(out)
+func (host hostWindows) GetGroups() (map[string][]string, error) {
+	out, err := powershellCsv("Get-WmiObject -class Win32_GroupUser", "GroupComponent,PartComponent")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsGroups(out), nil
 }
 
-func getProcesses() []model.Process {
-	out := powershellCsv("Get-Process -IncludeUserName", "ID,UserName,Path")
-	return parseWindowsProcesses(out)
+func (host hostWindows) GetProcesses() ([]model.Process, error) {
+	out, err := powershellCsv("Get-Process -IncludeUserName", "ID,UserName,Path")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsProcesses(out), nil
 }
 
-func getSoftware() []model.Software {
+func (host hostWindows) GetSoftware() ([]model.Software, error) {
 	// check two locations for software in registry
-	loc1 := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	loc1, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	if err != nil {
+		return nil, err
+	}
 	sw1 := parseWindowsSoftware(loc1)
-	loc2 := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	loc2, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	if err != nil {
+		return nil, err
+	}
 	sw2 := parseWindowsSoftware(loc2)
 
-	return append(sw1, sw2...)
+	return append(sw1, sw2...), nil
 }
 
-func getNetworkConnections() []model.NetworkConnection {
-	out := powershellCsv("Get-NetTCPConnection", "OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort")
+func (host hostWindows) GetNetworkConnections() ([]model.NetworkConnection, error) {
+	out, err := powershellCsv("Get-NetTCPConnection", "OwningProcess,State,LocalAddress,LocalPort,RemoteAddress,RemotePort")
+	if err != nil {
+		return nil, err
+	}
 	tcpConns := parseWindowsTCPNetConns(out)
 
-	out = powershellCsv("Get-NetUDPEndpoint", "OwningProcess,LocalAddress,LocalPort")
+	out, err = powershellCsv("Get-NetUDPEndpoint", "OwningProcess,LocalAddress,LocalPort")
+	if err != nil {
+		return nil, err
+	}
 	udpConns := parseWindowsUDPNetConns(out)
 
-	return append(tcpConns, udpConns...)
+	return append(tcpConns, udpConns...), nil
 }
