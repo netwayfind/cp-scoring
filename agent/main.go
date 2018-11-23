@@ -310,17 +310,20 @@ func getState(host model.CurrentHost) model.State {
 	return state
 }
 
-func saveState(dir string, entities []*openpgp.Entity) {
-	var state model.State
-
-	log.Println("Getting state")
+func getCurrentHost() model.CurrentHost {
 	if runtime.GOOS == "linux" {
-		state = getState(hostLinux{})
+		return hostLinux{}
 	} else if runtime.GOOS == "windows" {
-		state = getState(hostWindows{})
+		return hostWindows{}
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
+		return nil
 	}
+}
+
+func saveState(dir string, entities []*openpgp.Entity) {
+	log.Println("Getting state")
+	state := getState(getCurrentHost())
 
 	// convert to json bytes
 	b, err := json.Marshal(state)
