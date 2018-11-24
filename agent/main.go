@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/sumwonyuno/cp-scoring/processing"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
 
 	_ "golang.org/x/crypto/ripemd160"
 )
@@ -254,25 +254,6 @@ func main() {
 	}
 }
 
-func encryptBytes(theBytes []byte, entities []*openpgp.Entity) ([]byte, error) {
-	log.Println("Encrypting bytes")
-	encbuf := bytes.NewBuffer(nil)
-	writer, err := armor.Encode(encbuf, openpgp.PublicKeyType, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	plaintext, err := openpgp.Encrypt(writer, entities, nil, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	plaintext.Write(theBytes)
-	plaintext.Close()
-	writer.Close()
-
-	return encbuf.Bytes(), nil
-}
-
 func getState(host model.CurrentHost) model.State {
 	state := model.GetNewStateTemplate()
 	errors := make([]model.Error, 0)
@@ -325,22 +306,16 @@ func saveState(dir string, entities []*openpgp.Entity) {
 	log.Println("Getting state")
 	state := getState(getCurrentHost())
 
-	// convert to json bytes
-	b, err := json.Marshal(state)
+	bs, err := processing.ToBytes(state, entities)
 	if err != nil {
-		log.Println("ERROR: marshalling state;", err)
-		return
-	}
-	encryptedBytes, err := encryptBytes(b, entities)
-	if err != nil {
-		log.Println("ERROR: cannot encrypt state bytes;", err)
+		log.Println("ERROR: unable to convert state to bytes;", err)
 		return
 	}
 
 	log.Println("Saving state")
 	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	filePath := path.Join(dir, timestamp+".enc")
-	err = ioutil.WriteFile(filePath, encryptedBytes, 0600)
+	err = ioutil.WriteFile(filePath, bs, 0600)
 	if err != nil {
 		log.Println("ERROR: saving state;", err)
 		return

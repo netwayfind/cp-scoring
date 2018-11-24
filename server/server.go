@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/sumwonyuno/cp-scoring/processing"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
 	"github.com/sumwonyuno/cp-scoring/auditor"
@@ -89,19 +91,7 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		log.Println(msg, err)
 		return
 	}
-	stateBytes := stateSubmission.StateBytes
-	buf := bytes.NewBuffer(stateBytes)
-	result, err := armor.Decode(buf)
-	if err != nil {
-		msg := "ERROR: cannot decode openpgp message;"
-		log.Println(msg, err)
-		return
-	}
-	message, err := openpgp.ReadMessage(result.Body, entities, nil, nil)
-	messageBytes, err := ioutil.ReadAll(message.UnverifiedBody)
-
-	var state model.State
-	err = json.Unmarshal(messageBytes, &state)
+	state, err := processing.FromBytes(stateSubmission.StateBytes, entities)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal state;"
 		log.Println(msg, err)
