@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"flag"
@@ -22,7 +21,6 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
 )
 
 const cookieName string = "cp-scoring"
@@ -980,51 +978,21 @@ func getTeamScenarioHosts(w http.ResponseWriter, r *http.Request) {
 
 func createEncryptionKeys(filePGPPub string, filePGPPriv string) {
 	log.Println("Creating openpgp files")
-	entity, err := openpgp.NewEntity("cp-scoring", "test", "test@example.com", nil)
+	pubKey, privKey, err := processing.NewPubPrivKeys()
 	if err != nil {
-		log.Fatal("ERROR: could not generate openpgp files;", err)
-	}
-	for _, id := range entity.Identities {
-		err := id.SelfSignature.SignUserId(id.UserId.Id, entity.PrimaryKey, entity.PrivateKey, nil)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		log.Println("ERROR: cannot get openpgp entity;", err)
+		return
 	}
 
-	bufPub := bytes.NewBuffer(nil)
-	writerPub, err := armor.Encode(bufPub, openpgp.PublicKeyType, nil)
-	if err != nil {
-		log.Println("ERROR: cannot encode public key;", err)
-		return
-	}
-	err = entity.Serialize(writerPub)
-	if err != nil {
-		log.Println("ERROR: cannot serialize writer;", err)
-		return
-	}
-	writerPub.Close()
 	log.Println("Writing openpgp public key")
-	err = ioutil.WriteFile(filePGPPub, bufPub.Bytes(), 0600)
+	err = ioutil.WriteFile(filePGPPub, pubKey, 0600)
 	if err != nil {
 		log.Println("ERROR: cannot write public key file;", err)
 		return
 	}
 
-	bufPriv := bytes.NewBuffer(nil)
-	writerPriv, err := armor.Encode(bufPriv, openpgp.PrivateKeyType, nil)
-	if err != nil {
-		log.Println("ERROR: cannot encode private key;", err)
-		return
-	}
-	err = entity.SerializePrivate(writerPriv, nil)
-	if err != nil {
-		log.Println("ERROR: cannot serialize writer;", err)
-		return
-	}
-	writerPriv.Close()
 	log.Println("Writing openpgp private key")
-	err = ioutil.WriteFile(filePGPPriv, bufPriv.Bytes(), 0600)
+	err = ioutil.WriteFile(filePGPPriv, privKey, 0600)
 	if err != nil {
 		log.Println("ERROR: cannot write private key file;", err)
 		return

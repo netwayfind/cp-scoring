@@ -7,7 +7,11 @@ import (
 	"io"
 	"testing"
 
+	"golang.org/x/crypto/openpgp"
+
 	"github.com/sumwonyuno/cp-scoring/model"
+
+	_ "golang.org/x/crypto/ripemd160"
 )
 
 func TestStateToJSON(t *testing.T) {
@@ -164,5 +168,93 @@ func TestBytesDecompress(t *testing.T) {
 	}
 	if bytes.Compare(orig, bs) != 0 {
 		t.Fatal("Decompressed bytes does not match original")
+	}
+}
+
+func TestBytesEncrypt(t *testing.T) {
+	entity, err := newEntity()
+	if err != nil {
+		t.Fatal("Unable to create entity;", err)
+	}
+	entities := make([]*openpgp.Entity, 0)
+	entities = append(entities, entity)
+
+	// nil
+	bs, err := bytesEncrypt(nil, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt nil bytes")
+	}
+	if len(bs) == 0 {
+		t.Fatal("No bytes from encrypting nil bytes")
+	}
+
+	// empty bytes
+	bs = []byte("")
+	bs, err = bytesEncrypt(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt empty string")
+	}
+	if len(bs) == 0 {
+		t.Fatal("No bytes from encrypting empty bytes")
+	}
+
+	// example
+	bs = []byte("example")
+	bs, err = bytesEncrypt(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt bytes;", err)
+	}
+	if len(bs) == 0 {
+		t.Fatal("No bytes from encrypting bytes")
+	}
+}
+
+func TestBytesDecrypt(t *testing.T) {
+	entity, err := newEntity()
+	if err != nil {
+		t.Fatal("Unable to create entity;", err)
+	}
+	entities := make([]*openpgp.Entity, 0)
+	entities = append(entities, entity)
+
+	// nil
+	bs, err := bytesEncrypt(nil, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt;", err)
+	}
+	bs, err = bytesDecrypt(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to decrypt;", err)
+	}
+	if len(bs) != 0 {
+		t.Fatal("Unexpected decrypted bytes;", bs)
+	}
+
+	// empty bytes
+	orig := []byte("")
+	bs, err = bytesEncrypt(orig, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt;", err)
+	}
+	bs, err = bytesDecrypt(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to decrypt;", err)
+	}
+	if bytes.Compare(orig, bs) != 0 {
+		t.Fatal("Unexpected decrypted bytes;", bs)
+	}
+
+	// example
+	orig = []byte("example")
+	bs, err = bytesEncrypt(orig, entities)
+	if err != nil {
+		t.Fatal("Unable to encrypt;", err)
+	}
+	bs, err = bytesDecrypt(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to decrypt;", err)
+	}
+	if bytes.Compare(orig, bs) != 0 {
+		t.Fatal("Unexpected decrypted bytes;", bs)
 	}
 }
