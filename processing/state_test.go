@@ -14,6 +14,45 @@ import (
 	_ "golang.org/x/crypto/ripemd160"
 )
 
+func getTestEntities(t *testing.T) []*openpgp.Entity {
+	entity, err := newEntity()
+	if err != nil {
+		t.Fatal("Unable to create entity;", err)
+	}
+	entities := make([]*openpgp.Entity, 0)
+	return append(entities, entity)
+}
+
+func compareStates(t *testing.T, state1 model.State, state2 model.State) {
+	if state1.OS != state2.OS {
+		t.Fatal("OS does not match")
+	}
+	if state1.Hostname != state2.Hostname {
+		t.Fatal("Hostname does not match")
+	}
+	if state1.Timestamp != state2.Timestamp {
+		t.Fatal("Timestamp does not match")
+	}
+	if len(state1.Users) != len(state2.Users) {
+		t.Fatal("Users does not match")
+	}
+	if len(state1.Groups) != len(state2.Groups) {
+		t.Fatal("Groups does not match")
+	}
+	if len(state1.Processes) != len(state2.Processes) {
+		t.Fatal("Processes does not match")
+	}
+	if len(state1.Software) != len(state2.Software) {
+		t.Fatal("Software does not match")
+	}
+	if len(state1.NetworkConnections) != len(state2.NetworkConnections) {
+		t.Fatal("Network connections does not match")
+	}
+	if len(state1.Errors) != len(state2.Errors) {
+		t.Fatal("Errors does not match")
+	}
+}
+
 func TestStateToJSON(t *testing.T) {
 	// no state
 	var state model.State
@@ -72,34 +111,7 @@ func TestStateFromJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal("Unable to deserialize state from JSON;", err)
 	}
-	// compare states
-	if state.OS != state2.OS {
-		t.Fatal("OS does not match")
-	}
-	if state.Hostname != state2.Hostname {
-		t.Fatal("OS does not match")
-	}
-	if state.Timestamp != state2.Timestamp {
-		t.Fatal("OS does not match")
-	}
-	if len(state.Users) != len(state2.Users) {
-		t.Fatal("OS does not match")
-	}
-	if len(state.Groups) != len(state2.Groups) {
-		t.Fatal("OS does not match")
-	}
-	if len(state.Processes) != len(state2.Processes) {
-		t.Fatal("OS does not match")
-	}
-	if len(state.Software) != len(state2.Software) {
-		t.Fatal("OS does not match")
-	}
-	if len(state.NetworkConnections) != len(state2.NetworkConnections) {
-		t.Fatal("OS does not match")
-	}
-	if len(state.Errors) != len(state2.Errors) {
-		t.Fatal("OS does not match")
-	}
+	compareStates(t, state, state2)
 }
 
 func TestBytesCompress(t *testing.T) {
@@ -172,12 +184,7 @@ func TestBytesDecompress(t *testing.T) {
 }
 
 func TestBytesEncrypt(t *testing.T) {
-	entity, err := newEntity()
-	if err != nil {
-		t.Fatal("Unable to create entity;", err)
-	}
-	entities := make([]*openpgp.Entity, 0)
-	entities = append(entities, entity)
+	entities := getTestEntities(t)
 
 	// nil
 	bs, err := bytesEncrypt(nil, entities)
@@ -210,12 +217,7 @@ func TestBytesEncrypt(t *testing.T) {
 }
 
 func TestBytesDecrypt(t *testing.T) {
-	entity, err := newEntity()
-	if err != nil {
-		t.Fatal("Unable to create entity;", err)
-	}
-	entities := make([]*openpgp.Entity, 0)
-	entities = append(entities, entity)
+	entities := getTestEntities(t)
 
 	// nil
 	bs, err := bytesEncrypt(nil, entities)
@@ -257,4 +259,32 @@ func TestBytesDecrypt(t *testing.T) {
 	if bytes.Compare(orig, bs) != 0 {
 		t.Fatal("Unexpected decrypted bytes;", bs)
 	}
+}
+
+func TestToBytes(t *testing.T) {
+	entities := getTestEntities(t)
+
+	state := model.GetNewStateTemplate()
+	bs, err := ToBytes(state, entities)
+	if err != nil {
+		t.Fatal("Unable to convert state to bytes;", err)
+	}
+	if len(bs) == 0 {
+		t.Fatal("No bytes created")
+	}
+}
+
+func TestFromBytes(t *testing.T) {
+	entities := getTestEntities(t)
+
+	state := model.GetNewStateTemplate()
+	bs, err := ToBytes(state, entities)
+	if err != nil {
+		t.Fatal("Unable to convert state to bytes;", err)
+	}
+	state2, err := FromBytes(bs, entities)
+	if err != nil {
+		t.Fatal("Unable to convert bytes to state;", err)
+	}
+	compareStates(t, state, state2)
 }
