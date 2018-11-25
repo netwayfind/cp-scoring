@@ -36,4 +36,11 @@ GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux $PKG_
 echo "Building windows agent"
 GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe $PKG_BASE/agent
 
+echo "Running unit tests"
+go test github.com/sumwonyuno/cp-scoring/agent
+go test github.com/sumwonyuno/cp-scoring/auditor
+go test github.com/sumwonyuno/cp-scoring/model
+go test github.com/sumwonyuno/cp-scoring/processing
+go test github.com/sumwonyuno/cp-scoring/server
+
 echo "Done"
