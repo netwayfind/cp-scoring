@@ -83,6 +83,31 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		}
 		findings = append(findings, activeFinding)
 
+		// check if user account expires
+		var accountExpiresFinding model.Finding
+		if templateUser.AccountExpires && user.AccountExpires {
+			accountExpiresFinding.Show = true
+			accountExpiresFinding.Value = 1
+			accountExpiresFinding.Message = "User account expires: " + templateUser.Name
+		} else if templateUser.AccountExpires && !user.AccountExpires {
+			accountExpiresFinding.Show = false
+			accountExpiresFinding.Value = 0
+			accountExpiresFinding.Message = "User account does not expire: " + templateUser.Name
+		} else if !templateUser.AccountExpires && user.AccountExpires {
+			accountExpiresFinding.Show = true
+			accountExpiresFinding.Value = -1
+			accountExpiresFinding.Message = "User account expires: " + templateUser.Name
+		} else if !templateUser.AccountExpires && !user.AccountExpires {
+			accountExpiresFinding.Show = true
+			accountExpiresFinding.Value = 1
+			accountExpiresFinding.Message = "User account does not expire: " + templateUser.Name
+		} else {
+			accountExpiresFinding.Show = true
+			accountExpiresFinding.Value = 0
+			accountExpiresFinding.Message = "User account expires unknown: " + templateUser.Name
+		}
+		findings = append(findings, accountExpiresFinding)
+
 		// check if user password expires
 		var passwordExpiresFinding model.Finding
 		if templateUser.PasswordExpires && user.PasswordExpires {
