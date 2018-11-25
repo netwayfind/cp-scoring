@@ -21,6 +21,33 @@ func Audit(state model.State, templates []model.Template) model.Report {
 	return report
 }
 
+func auditUserPresent(templateUser model.User, present bool) model.Finding {
+	var presentFinding model.Finding
+	if templateUser.AccountPresent && !present {
+		presentFinding.Show = true
+		presentFinding.Value = -1
+		presentFinding.Message = "User removed: " + templateUser.Name
+	} else if !templateUser.AccountPresent && !present {
+		presentFinding.Show = true
+		presentFinding.Value = 1
+		presentFinding.Message = "User removed: " + templateUser.Name
+	} else if templateUser.AccountPresent {
+		presentFinding.Show = true
+		presentFinding.Value = 1
+		presentFinding.Message = "User present: " + templateUser.Name
+	} else if !templateUser.AccountActive {
+		presentFinding.Show = false
+		presentFinding.Value = 0
+		presentFinding.Message = "User present: " + templateUser.Name
+	} else {
+		presentFinding.Show = false
+		presentFinding.Value = 0
+		presentFinding.Message = "Unknown user present state: " + templateUser.Name
+	}
+
+	return presentFinding
+}
+
 func auditUsers(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
@@ -33,32 +60,11 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 	for _, templateUser := range template.Users {
 		user, present := foundUsers[templateUser.Name]
 
-		// check for user presence
-		var presentFinding model.Finding
-		if templateUser.AccountPresent && !present {
-			presentFinding.Show = true
-			presentFinding.Value = -1
-			presentFinding.Message = "Required user missing: " + templateUser.Name
-		} else if !templateUser.AccountPresent && !present {
-			presentFinding.Show = true
-			presentFinding.Value = 1
-			presentFinding.Message = "User removed: " + templateUser.Name
-		} else if templateUser.AccountPresent {
-			presentFinding.Show = true
-			presentFinding.Value = 1
-			presentFinding.Message = "Required user present: " + templateUser.Name
-		} else if !templateUser.AccountActive {
-			presentFinding.Show = false
-			presentFinding.Value = 0
-			presentFinding.Message = "User not removed: " + templateUser.Name
-		} else {
-			presentFinding.Show = false
-			presentFinding.Value = 0
-			presentFinding.Message = "Unknown user present state: " + templateUser.Name
-		}
+		// check for user present
+		presentFinding := auditUserPresent(templateUser, present)
 		findings = append(findings, presentFinding)
 
-		// check if user is active/unlocked
+		// check if user is active/not active
 		var activeFinding model.Finding
 		if templateUser.AccountActive && user.AccountActive {
 			activeFinding.Show = true
