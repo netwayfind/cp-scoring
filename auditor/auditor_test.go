@@ -26,27 +26,32 @@ func checkFinding(t *testing.T, finding model.Finding, show bool, value int64, m
 }
 
 func TestAuditUserPresent(t *testing.T) {
-	// template needs account present, account not present
-	templateUser := model.User{Name: "user1", AccountPresent: true}
-	finding := auditUserPresent(templateUser, false)
-	checkFinding(t, finding, true, -1, "User removed: user1")
+	// template account state add
+	templateUser := model.User{Name: "user1", AccountState: model.ObjectStateAdd}
+	// account not present
+	finding := auditUserAccountState(templateUser, false)
+	checkFinding(t, finding, false, 0, "User not added: user1")
+	// account present
+	finding = auditUserAccountState(templateUser, true)
+	checkFinding(t, finding, true, 1, "User added: user1")
 
-	// template needs account present, account present
-	templateUser = model.User{Name: "user1", AccountPresent: true}
-	finding = auditUserPresent(templateUser, true)
-	checkFinding(t, finding, true, 1, "User present: user1")
-
-	// TODO: case where account present has 0 value
-
-	// template needs account not present, account not present
-	templateUser = model.User{Name: "user1", AccountPresent: false}
-	finding = auditUserPresent(templateUser, false)
-	checkFinding(t, finding, true, 1, "User removed: user1")
-
-	// template needs account not present, account present
-	templateUser = model.User{Name: "user1", AccountPresent: false}
-	finding = auditUserPresent(templateUser, true)
+	// template account state keep
+	templateUser = model.User{Name: "user1", AccountState: model.ObjectStateKeep}
+	// account not present
+	finding = auditUserAccountState(templateUser, false)
+	checkFinding(t, finding, true, -1, "User not present: user1")
+	// account present
+	finding = auditUserAccountState(templateUser, true)
 	checkFinding(t, finding, false, 0, "User present: user1")
+
+	// template account state remove
+	templateUser = model.User{Name: "user1", AccountState: model.ObjectStateRemove}
+	// account not present
+	finding = auditUserAccountState(templateUser, false)
+	checkFinding(t, finding, true, 1, "User removed: user1")
+	// account present
+	finding = auditUserAccountState(templateUser, true)
+	checkFinding(t, finding, false, 0, "User not removed: user1")
 }
 
 func TestAuditUsers(t *testing.T) {

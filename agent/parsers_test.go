@@ -46,9 +46,6 @@ func TestEtcPasswd(t *testing.T) {
 	if user.ID != "0" {
 		t.Fatal("Unexpected user ID")
 	}
-	if user.AccountPresent != true {
-		t.Fatal("Account should be present")
-	}
 
 	// two users
 	bs = []byte("root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:user:/home/user:/bin/bash")
@@ -63,18 +60,12 @@ func TestEtcPasswd(t *testing.T) {
 	if user1.ID != "0" {
 		t.Fatal("Unexpected user ID")
 	}
-	if user1.AccountPresent != true {
-		t.Fatal("Account should be present")
-	}
 	user2 := users["user"]
 	if user2.Name != "user" {
 		t.Fatal("Unexpected user name")
 	}
 	if user2.ID != "1000" {
 		t.Fatal("Unexpected user ID")
-	}
-	if user2.AccountPresent != true {
-		t.Fatal("Account should be present")
 	}
 }
 
@@ -201,7 +192,6 @@ func TestMergeUserMaps(t *testing.T) {
 	userPart1 := model.User{}
 	userPart1.Name = "bob"
 	userPart1.ID = "175"
-	userPart1.AccountPresent = true
 	usersPasswd[userPart1.Name] = userPart1
 
 	userPart2 := model.User{}
@@ -222,9 +212,6 @@ func TestMergeUserMaps(t *testing.T) {
 	}
 	if user.ID != "175" {
 		t.Fatal("Expected user ID is 175")
-	}
-	if user.AccountPresent != true {
-		t.Fatal("Expected user is present")
 	}
 	if user.AccountExpires != false {
 		t.Fatal("Expected user account not to expire")
@@ -316,9 +303,6 @@ func TestParseWindowsUsers(t *testing.T) {
 	users = parseWindowsUsers(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
-	}
-	if users[0].AccountPresent != true {
-		t.Fatal("Expected account present to be true")
 	}
 
 	// missing id

@@ -44,10 +44,18 @@ type Error struct {
 	Error   error
 }
 
+type ObjectState string
+
+const (
+	ObjectStateAdd    ObjectState = "Add"
+	ObjectStateKeep   ObjectState = "Keep"
+	ObjectStateRemove ObjectState = "Remove"
+)
+
 type User struct {
 	Name            string
 	ID              string
-	AccountPresent  bool
+	AccountState    ObjectState
 	AccountActive   bool
 	AccountExpires  bool
 	PasswordLastSet int64

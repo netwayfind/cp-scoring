@@ -27,7 +27,6 @@ func parseEtcPasswd(bs []byte) map[string]model.User {
 		var entry model.User
 		entry.Name = username
 		entry.ID = id
-		entry.AccountPresent = true
 		users[username] = entry
 	}
 	return users
@@ -283,7 +282,6 @@ func parseWindowsUsers(bs []byte) []model.User {
 			continue
 		}
 		user := model.User{}
-		user.AccountPresent = true
 		// Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires
 		user.Name = row[0]
 		user.ID = row[1]

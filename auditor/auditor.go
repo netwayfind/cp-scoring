@@ -21,24 +21,32 @@ func Audit(state model.State, templates []model.Template) model.Report {
 	return report
 }
 
-func auditUserPresent(templateUser model.User, present bool) model.Finding {
+func auditUserAccountState(templateUser model.User, present bool) model.Finding {
 	var presentFinding model.Finding
-	if templateUser.AccountPresent && !present {
+	if templateUser.AccountState == model.ObjectStateAdd && !present {
+		presentFinding.Show = false
+		presentFinding.Value = 0
+		presentFinding.Message = "User not added: " + templateUser.Name
+	} else if templateUser.AccountState == model.ObjectStateAdd && present {
+		presentFinding.Show = true
+		presentFinding.Value = 1
+		presentFinding.Message = "User added: " + templateUser.Name
+	} else if templateUser.AccountState == model.ObjectStateKeep && !present {
 		presentFinding.Show = true
 		presentFinding.Value = -1
-		presentFinding.Message = "User removed: " + templateUser.Name
-	} else if !templateUser.AccountPresent && !present {
-		presentFinding.Show = true
-		presentFinding.Value = 1
-		presentFinding.Message = "User removed: " + templateUser.Name
-	} else if templateUser.AccountPresent {
-		presentFinding.Show = true
-		presentFinding.Value = 1
-		presentFinding.Message = "User present: " + templateUser.Name
-	} else if !templateUser.AccountActive {
+		presentFinding.Message = "User not present: " + templateUser.Name
+	} else if templateUser.AccountState == model.ObjectStateKeep && present {
 		presentFinding.Show = false
 		presentFinding.Value = 0
 		presentFinding.Message = "User present: " + templateUser.Name
+	} else if templateUser.AccountState == model.ObjectStateRemove && !present {
+		presentFinding.Show = true
+		presentFinding.Value = 1
+		presentFinding.Message = "User removed: " + templateUser.Name
+	} else if templateUser.AccountState == model.ObjectStateRemove && present {
+		presentFinding.Show = false
+		presentFinding.Value = 0
+		presentFinding.Message = "User not removed: " + templateUser.Name
 	} else {
 		presentFinding.Show = false
 		presentFinding.Value = 0
@@ -53,18 +61,18 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 
 	foundUsers := make(map[string]model.User)
 	for _, user := range state.Users {
-		// all users should have AccountPresent as true
+		// all user accounts should have AccountState as Keep
 		foundUsers[user.Name] = user
 	}
 
 	for _, templateUser := range template.Users {
 		user, present := foundUsers[templateUser.Name]
 
-		// check for user present
-		presentFinding := auditUserPresent(templateUser, present)
+		// check for user account state
+		presentFinding := auditUserAccountState(templateUser, present)
 		findings = append(findings, presentFinding)
 
-		// check if user is active/not active
+		// check if user account active
 		var activeFinding model.Finding
 		if templateUser.AccountActive && user.AccountActive {
 			activeFinding.Show = true
