@@ -915,7 +915,7 @@ class Users extends React.Component {
   addUser() {
     let empty = {
       Name: "",
-      AccountPresent: true,
+      AccountState: "Keep",
       AccountActive: true,
       PasswordExpires: true,
       // unix timestamp in seconds
@@ -978,6 +978,24 @@ class Users extends React.Component {
       passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
       passwordLastSet += "-";
       passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
+      let userOptions = null;
+
+      if (user.AccountState != "Remove") {
+        userOptions = React.createElement(React.Fragment, null, React.createElement("li", null, React.createElement("label", null, "Active"), React.createElement("input", {
+          type: "checkbox",
+          checked: user.AccountActive,
+          onChange: event => this.updateUser(i, "AccountActive", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Password Expires"), React.createElement("input", {
+          type: "checkbox",
+          checked: user.PasswordExpires,
+          onChange: event => this.updateUser(i, "PasswordExpires", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Password Last Set"), React.createElement("input", {
+          type: "date",
+          value: passwordLastSet,
+          onChange: event => this.updateUser(i, "PasswordLastSet", event)
+        })));
+      }
+
       users.push(React.createElement("details", {
         key: i
       }, React.createElement("summary", null, user.Name), React.createElement("button", {
@@ -987,23 +1005,10 @@ class Users extends React.Component {
         type: "text",
         value: user.Name,
         onChange: event => this.updateUser(i, "Name", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Present"), React.createElement("input", {
-        type: "checkbox",
-        checked: user.AccountPresent,
-        onChange: event => this.updateUser(i, "AccountPresent", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Active"), React.createElement("input", {
-        type: "checkbox",
-        checked: user.AccountActive,
-        onChange: event => this.updateUser(i, "AccountActive", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Password Expires"), React.createElement("input", {
-        type: "checkbox",
-        checked: user.PasswordExpires,
-        onChange: event => this.updateUser(i, "PasswordExpires", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Password Last Set"), React.createElement("input", {
-        type: "date",
-        value: passwordLastSet,
-        onChange: event => this.updateUser(i, "PasswordLastSet", event)
-      })))));
+      })), React.createElement("li", null, React.createElement("label", null, "State"), React.createElement("select", {
+        value: user.AccountState,
+        onChange: event => this.updateUser(i, "AccountState", event)
+      }, React.createElement("option", null, "Add"), React.createElement("option", null, "Keep"), React.createElement("option", null, "Remove"))), userOptions)));
     }
 
     return React.createElement("details", null, React.createElement("summary", null, "Users"), React.createElement("button", {

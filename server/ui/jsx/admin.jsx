@@ -828,7 +828,7 @@ class Users extends React.Component {
   addUser() {
     let empty = {
       Name: "",
-      AccountPresent: true,
+      AccountState: "Keep",
       AccountActive: true,
       PasswordExpires: true,
       // unix timestamp in seconds
@@ -891,19 +891,10 @@ class Users extends React.Component {
       passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
       passwordLastSet += "-";
       passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
-      users.push(
-        <details key={i}>
-          <summary>{user.Name}</summary>
-          <button type="button" onClick={this.removeUser.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Name</label>
-              <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
-            </li>
-            <li>
-              <label>Present</label>
-              <input type="checkbox" checked={user.AccountPresent} onChange={event=> this.updateUser(i, "AccountPresent", event)}/>
-            </li>
+      let userOptions = null;
+      if (user.AccountState != "Remove") {
+        userOptions = (
+          <React.Fragment>
             <li>
               <label>Active</label>
               <input type="checkbox" checked={user.AccountActive} onChange={event=> this.updateUser(i, "AccountActive", event)}/>
@@ -916,6 +907,27 @@ class Users extends React.Component {
               <label>Password Last Set</label>
               <input type="date" value={passwordLastSet} onChange={event=> this.updateUser(i, "PasswordLastSet", event)}/>
             </li>
+          </React.Fragment>
+        );
+      }
+      users.push(
+        <details key={i}>
+          <summary>{user.Name}</summary>
+          <button type="button" onClick={this.removeUser.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Name</label>
+              <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
+            </li>
+            <li>
+              <label>State</label>
+              <select value={user.AccountState} onChange={event=> this.updateUser(i, "AccountState", event)}>
+                <option>Add</option>
+                <option>Keep</option>
+                <option>Remove</option>
+              </select>
+            </li>
+            {userOptions}
           </ul>
         </details>
       );
