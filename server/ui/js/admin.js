@@ -895,6 +895,20 @@ class Templates extends React.Component {
 
 }
 
+class ObjectState extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return React.createElement(React.Fragment, null, React.createElement("label", null, "State"), React.createElement("select", {
+      value: this.props.value,
+      onChange: this.props.onChange
+    }, React.createElement("option", null, "Add"), React.createElement("option", null, "Keep"), React.createElement("option", null, "Remove")));
+  }
+
+}
+
 class Users extends React.Component {
   constructor(props) {
     super(props);
@@ -1005,10 +1019,10 @@ class Users extends React.Component {
         type: "text",
         value: user.Name,
         onChange: event => this.updateUser(i, "Name", event)
-      })), React.createElement("li", null, React.createElement("label", null, "State"), React.createElement("select", {
+      })), React.createElement("li", null, React.createElement(ObjectState, {
         value: user.AccountState,
         onChange: event => this.updateUser(i, "AccountState", event)
-      }, React.createElement("option", null, "Add"), React.createElement("option", null, "Keep"), React.createElement("option", null, "Remove"))), userOptions)));
+      })), userOptions)));
     }
 
     return React.createElement("details", null, React.createElement("summary", null, "Users"), React.createElement("button", {

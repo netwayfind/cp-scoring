@@ -808,6 +808,25 @@ class Templates extends React.Component {
   }
 }
 
+class ObjectState extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+      <React.Fragment>
+        <label>State</label>
+        <select value={this.props.value} onChange={this.props.onChange}>
+          <option>Add</option>
+          <option>Keep</option>
+          <option>Remove</option>
+        </select>
+      </React.Fragment>
+    )
+  }
+}
+
 class Users extends React.Component {
   constructor(props) {
     super(props);
@@ -920,12 +939,7 @@ class Users extends React.Component {
               <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
             </li>
             <li>
-              <label>State</label>
-              <select value={user.AccountState} onChange={event=> this.updateUser(i, "AccountState", event)}>
-                <option>Add</option>
-                <option>Keep</option>
-                <option>Remove</option>
-              </select>
+              <ObjectState value={user.AccountState} onChange={event=> this.updateUser(i, "AccountState", event)} />
             </li>
             {userOptions}
           </ul>
