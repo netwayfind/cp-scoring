@@ -326,64 +326,62 @@ func auditProcesses(state model.State, template model.Template) []model.Finding 
 	return findings
 }
 
-func auditSoftware(state model.State, template model.Template) []model.Finding {
-	findings := make([]model.Finding, 0)
+func auditSoftwareState(templateSoftware model.Software, state model.State) model.Finding {
+	var finding model.Finding
 
-	// keep track of software and version from state
-	software := make(map[string]string)
-	for _, sw := range state.Software {
-		software[sw.Name] = sw.Version
-	}
-
-	for _, templateSoftware := range template.SoftwareAdd {
-		version, present := software[templateSoftware.Name]
-		if present {
-			if templateSoftware.Version == version {
-				var finding model.Finding
-				finding.Show = true
-				finding.Value = 1
-				finding.Message = "Software added: " + templateSoftware.Name + ", " + templateSoftware.Version
-				findings = append(findings, finding)
-			}
+	found := false
+	for _, software := range state.Software {
+		if software.Name == templateSoftware.Name && software.Version == templateSoftware.Version {
+			found = true
+			break
 		}
 	}
 
-	for _, templateSoftware := range template.SoftwareKeep {
-		version, present := software[templateSoftware.Name]
-		if present {
-			if templateSoftware.Version != version {
-				var finding model.Finding
-				finding.Show = true
-				finding.Value = -1
-				finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
-				findings = append(findings, finding)
-			}
+	if templateSoftware.SoftwareState == model.ObjectStateAdd {
+		if found {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Software added: " + templateSoftware.Name + ", " + templateSoftware.Version
 		} else {
-			var finding model.Finding
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Software not added: " + templateSoftware.Name + ", " + templateSoftware.Version
+		}
+	} else if templateSoftware.SoftwareState == model.ObjectStateKeep {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Software found: " + templateSoftware.Name + ", " + templateSoftware.Version
+		} else {
 			finding.Show = true
 			finding.Value = -1
-			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
-			findings = append(findings, finding)
+			finding.Message = "Software not found: " + templateSoftware.Name + ", " + templateSoftware.Version
 		}
-	}
-
-	for _, templateSoftware := range template.SoftwareRemove {
-		version, present := software[templateSoftware.Name]
-		if present {
-			if templateSoftware.Version != version {
-				var finding model.Finding
-				finding.Show = true
-				finding.Value = 1
-				finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
-				findings = append(findings, finding)
-			}
+	} else if templateSoftware.SoftwareState == model.ObjectStateRemove {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Software not removed: " + templateSoftware.Name + ", " + templateSoftware.Version
 		} else {
-			var finding model.Finding
 			finding.Show = true
 			finding.Value = 1
 			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
-			findings = append(findings, finding)
 		}
+	} else {
+		finding.Show = false
+		finding.Value = 0
+		finding.Message = "Unknown software state: " + templateSoftware.Name + ", " + templateSoftware.Version
+	}
+
+	return finding
+}
+
+func auditSoftware(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for _, templateSoftware := range template.Software {
+		finding := auditSoftwareState(templateSoftware, state)
+		findings = append(findings, finding)
 	}
 
 	return findings

@@ -264,3 +264,158 @@ func TestAuditUsers(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "User not removed: user1")
 }
+
+func TestAuditSoftwareState(t *testing.T) {
+	state := model.State{}
+	empty := make([]model.Software, 0)
+	notEmpty := append(empty, model.Software{Name: "sw", Version: "1.0.0"})
+
+	// unknown software state, software not in state
+	templateSoftware := model.Software{Name: "sw", Version: "1.0.0"}
+	state.Software = empty
+	finding := auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Unknown software state: sw, 1.0.0")
+	// unknown software state, software in state
+	state.Software = notEmpty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Unknown software state: sw, 1.0.0")
+	// unknown software state, software different name
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0"}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Unknown software state: ws, 1.0.0")
+	// unknown software state, software different version
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1"}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Unknown software state: sw, 1.0.1")
+
+	// template software to add, software not in state
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	state.Software = empty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Software not added: sw, 1.0.0")
+	// template software to add, software in state
+	state.Software = notEmpty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, 1, "Software added: sw, 1.0.0")
+	// template software to add, software different name
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Software not added: ws, 1.0.0")
+	// template software to add, software different version
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateAdd}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Software not added: sw, 1.0.1")
+
+	// template software to keep, software not in state
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	state.Software = empty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, -1, "Software not found: sw, 1.0.0")
+	// template software to keep, software in state
+	state.Software = notEmpty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Software found: sw, 1.0.0")
+	// template software to keep, software different name
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, -1, "Software not found: ws, 1.0.0")
+	// template software to keep, software different version
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateKeep}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, -1, "Software not found: sw, 1.0.1")
+
+	// template software to remove, software not in state
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	state.Software = empty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, 1, "Software removed: sw, 1.0.0")
+	// template software to remove, software in state
+	state.Software = notEmpty
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, false, 0, "Software not removed: sw, 1.0.0")
+	// template software to remove, software different name
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, 1, "Software removed: ws, 1.0.0")
+	// template software to remove, software different version
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateRemove}
+	finding = auditSoftwareState(templateSoftware, state)
+	checkFinding(t, finding, true, 1, "Software removed: sw, 1.0.1")
+}
+
+func TestAuditSoftware(t *testing.T) {
+	state := model.State{}
+	sw := model.Software{Name: "sw", Version: "1.0.0"}
+
+	// no software in template
+	template := model.Template{}
+	// software not in state
+	state.Software = make([]model.Software, 0)
+	findings := auditSoftware(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// software in state
+	state.Software = append(make([]model.Software, 0), sw)
+	findings = auditSoftware(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// template software to add
+	template = model.Template{}
+	templateSw := model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	template.Software = append(make([]model.Software, 0), templateSw)
+	// software not in state
+	state.Software = make([]model.Software, 0)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Software not added: sw, 1.0.0")
+	// template software to add, software in state
+	state.Software = append(make([]model.Software, 0), sw)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Software added: sw, 1.0.0")
+
+	// template software to keep
+	template = model.Template{}
+	templateSw = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	template.Software = append(make([]model.Software, 0), templateSw)
+	// software not in state
+	state.Software = make([]model.Software, 0)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Software not found: sw, 1.0.0")
+	// software in state
+	state.Software = append(make([]model.Software, 0), sw)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Software found: sw, 1.0.0")
+
+	// template software to remove
+	template = model.Template{}
+	templateSw = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	template.Software = append(make([]model.Software, 0), templateSw)
+	// software not in state
+	state.Software = make([]model.Software, 0)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Software removed: sw, 1.0.0")
+	// software in state
+	state.Software = append(make([]model.Software, 0), sw)
+	findings = auditSoftware(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Software not removed: sw, 1.0.0")
+}

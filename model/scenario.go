@@ -14,9 +14,7 @@ type Template struct {
 	ProcessesAdd       []string
 	ProcessesKeep      []string
 	ProcessesRemove    []string
-	SoftwareAdd        []Software
-	SoftwareKeep       []Software
-	SoftwareRemove     []Software
+	Software           []Software
 	NetworkConnsAdd    []NetworkConnection
 	NetworkConnsKeep   []NetworkConnection
 	NetworkConnsRemove []NetworkConnection

@@ -69,8 +69,9 @@ type Process struct {
 }
 
 type Software struct {
-	Name    string
-	Version string
+	Name          string
+	Version       string
+	SoftwareState ObjectState
 }
 
 type NetworkConnectionState string
