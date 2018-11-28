@@ -795,9 +795,7 @@ class Templates extends React.Component {
           <ItemList name="ProcessesAdd" label="Processes to add" defaultValue={this.state.selectedTemplate.Template.ProcessesAdd} callback={this.handleCallback}/>
           <ItemList name="ProcessesKeep" label="Processes to keep" defaultValue={this.state.selectedTemplate.Template.ProcessesKeep} callback={this.handleCallback}/>
           <ItemList name="ProcessesRemove" label="Processes to remove" defaultValue={this.state.selectedTemplate.Template.ProcessesRemove} callback={this.handleCallback}/>
-          <Software name="SoftwareAdd" label="Software to add" software={this.state.selectedTemplate.Template.SoftwareAdd} callback={this.handleCallback}/>
-          <Software name="SoftwareKeep" label="Software to keep" software={this.state.selectedTemplate.Template.SoftwareKeep} callback={this.handleCallback}/>
-          <Software name="SoftwareRemove" label="Software to remove" software={this.state.selectedTemplate.Template.SoftwareRemove} callback={this.handleCallback}/>
+          <Software software={this.state.selectedTemplate.Template.Software} callback={this.handleCallback}/>
           <NetworkConns name="NetworkConnsAdd" label="Network connections to add" conns={this.state.selectedTemplate.Template.NetworkConnsAdd} callback={this.handleCallback}/>
           <NetworkConns name="NetworkConnsKeep" label="Network connections to keep" conns={this.state.selectedTemplate.Template.NetworkConnsKeep} callback={this.handleCallback}/>
           <NetworkConns name="NetworkConnsRemove" label="Network connections to remove" conns={this.state.selectedTemplate.Template.NetworkConnsRemove} callback={this.handleCallback}/>
@@ -1058,7 +1056,8 @@ class Software extends React.Component {
   addSoftware() {
     let empty = {
       Name: "",
-      Version: ""
+      Version: "",
+      SoftwareState: "Keep"
     };
     let software = [
       ...this.state.software,
@@ -1067,7 +1066,7 @@ class Software extends React.Component {
     this.setState({
       software: software
     });
-    this.props.callback(this.props.name, software)
+    this.props.callback("Software", software)
   }
 
   removeSoftware(id) {
@@ -1077,7 +1076,7 @@ class Software extends React.Component {
     this.setState({
       software: software
     });
-    this.props.callback(this.props.name, software);
+    this.props.callback("Software", software);
   }
 
   updateSoftware(id, field, event) {
@@ -1090,7 +1089,7 @@ class Software extends React.Component {
     this.setState({
       software: updated
     })
-    this.props.callback(this.props.name, updated);
+    this.props.callback("Software", updated);
   }
 
   render() {
@@ -1110,6 +1109,9 @@ class Software extends React.Component {
               <label>Version</label>
               <input type="text" value={entry.Version} onChange={event=> this.updateSoftware(i, "Version", event)}></input>
             </li>
+            <li>
+              <ObjectState value={entry.SoftwareState} onChange={event=> this.updateSoftware(i, "SoftwareState", event)} />
+            </li>
           </ul>
         </details>
       );
@@ -1117,7 +1119,7 @@ class Software extends React.Component {
 
     return (
       <details>
-        <summary>{this.props.label}</summary>
+        <summary>Software</summary>
         <button type="button" onClick={this.addSoftware.bind(this)}>Add Software</button>
         <ul>
           {software}

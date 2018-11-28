@@ -861,19 +861,7 @@ class Templates extends React.Component {
       defaultValue: this.state.selectedTemplate.Template.ProcessesRemove,
       callback: this.handleCallback
     }), React.createElement(Software, {
-      name: "SoftwareAdd",
-      label: "Software to add",
-      software: this.state.selectedTemplate.Template.SoftwareAdd,
-      callback: this.handleCallback
-    }), React.createElement(Software, {
-      name: "SoftwareKeep",
-      label: "Software to keep",
-      software: this.state.selectedTemplate.Template.SoftwareKeep,
-      callback: this.handleCallback
-    }), React.createElement(Software, {
-      name: "SoftwareRemove",
-      label: "Software to remove",
-      software: this.state.selectedTemplate.Template.SoftwareRemove,
+      software: this.state.selectedTemplate.Template.Software,
       callback: this.handleCallback
     }), React.createElement(NetworkConns, {
       name: "NetworkConnsAdd",
@@ -1133,13 +1121,14 @@ class Software extends React.Component {
   addSoftware() {
     let empty = {
       Name: "",
-      Version: ""
+      Version: "",
+      SoftwareState: "Keep"
     };
     let software = [...this.state.software, empty];
     this.setState({
       software: software
     });
-    this.props.callback(this.props.name, software);
+    this.props.callback("Software", software);
   }
 
   removeSoftware(id) {
@@ -1149,7 +1138,7 @@ class Software extends React.Component {
     this.setState({
       software: software
     });
-    this.props.callback(this.props.name, software);
+    this.props.callback("Software", software);
   }
 
   updateSoftware(id, field, event) {
@@ -1161,7 +1150,7 @@ class Software extends React.Component {
     this.setState({
       software: updated
     });
-    this.props.callback(this.props.name, updated);
+    this.props.callback("Software", updated);
   }
 
   render() {
@@ -1182,10 +1171,13 @@ class Software extends React.Component {
         type: "text",
         value: entry.Version,
         onChange: event => this.updateSoftware(i, "Version", event)
+      })), React.createElement("li", null, React.createElement(ObjectState, {
+        value: entry.SoftwareState,
+        onChange: event => this.updateSoftware(i, "SoftwareState", event)
       })))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("button", {
+    return React.createElement("details", null, React.createElement("summary", null, "Software"), React.createElement("button", {
       type: "button",
       onClick: this.addSoftware.bind(this)
     }, "Add Software"), React.createElement("ul", null, software));
