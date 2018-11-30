@@ -15,9 +15,7 @@ type Template struct {
 	ProcessesKeep      []string
 	ProcessesRemove    []string
 	Software           []Software
-	NetworkConnsAdd    []NetworkConnection
-	NetworkConnsKeep   []NetworkConnection
-	NetworkConnsRemove []NetworkConnection
+	NetworkConns       []NetworkConnection
 }
 
 type Finding struct {

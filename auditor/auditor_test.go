@@ -419,3 +419,197 @@ func TestAuditSoftware(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "Software not removed: sw, 1.0.0")
 }
+
+func TestCompareNetworkConnection(t *testing.T) {
+	templateConn := model.NetworkConnection{}
+	conn := model.NetworkConnection{}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP"}
+	conn = model.NetworkConnection{}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP"}
+	conn = model.NetworkConnection{Protocol: "TCP"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1"}
+	conn = model.NetworkConnection{Protocol: "TCP"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443"}
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+}
+func TestAuditNetworkConnectionObjectState(t *testing.T) {
+	state := model.State{}
+	empty := make([]model.NetworkConnection, 0)
+	notEmpty := append(empty, model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443"})
+
+	// unknown conn
+	templateConn := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443"}
+	// conn not in state
+	state.NetworkConnections = empty
+	finding := auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, false, 0, "Unknown network connection state: TCP 127.0.0.1:52525 192.168.1.1:443")
+	// conn in state
+	state.NetworkConnections = notEmpty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, false, 0, "Unknown network connection state: TCP 127.0.0.1:52525 192.168.1.1:443")
+
+	// template conn add
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443", ObjectState: model.ObjectStateAdd}
+	// conn not in state
+	state.NetworkConnections = empty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, false, 0, "Network connection not added: TCP 127.0.0.1:52525 192.168.1.1:443")
+	// conn in state
+	state.NetworkConnections = notEmpty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, true, 1, "Network connection added: TCP 127.0.0.1:52525 192.168.1.1:443")
+
+	// template conn keep
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443", ObjectState: model.ObjectStateKeep}
+	// conn not in state
+	state.NetworkConnections = empty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, true, -1, "Network connection not found: TCP 127.0.0.1:52525 192.168.1.1:443")
+	// conn in state
+	state.NetworkConnections = notEmpty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, false, 0, "Network connection found: TCP 127.0.0.1:52525 192.168.1.1:443")
+
+	// template conn remove
+	templateConn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "52525", RemoteAddress: "192.168.1.1", RemotePort: "443", ObjectState: model.ObjectStateRemove}
+	// conn not in state
+	state.NetworkConnections = empty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, true, 1, "Network connection removed: TCP 127.0.0.1:52525 192.168.1.1:443")
+	// conn in state
+	state.NetworkConnections = notEmpty
+	finding = auditNetworkConnectionObjectState(templateConn, state)
+	checkFinding(t, finding, false, 0, "Network connection not removed: TCP 127.0.0.1:52525 192.168.1.1:443")
+}
+
+func TestAuditNetworkConnection(t *testing.T) {
+	state := model.State{}
+	nc := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443"}
+
+	// no network connection in template
+	template := model.Template{}
+	// network connection not in state
+	state.NetworkConnections = make([]model.NetworkConnection, 0)
+	findings := auditNetworkConnections(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// network connection in state
+	state.NetworkConnections = append(make([]model.NetworkConnection, 0), nc)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// network connection to add in template
+	template = model.Template{}
+	templateNC := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateAdd}
+	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	// network connection not in state
+	state.NetworkConnections = make([]model.NetworkConnection, 0)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Network connection not added: TCP 127.0.0.1:8443 :")
+	// network connection in state
+	state.NetworkConnections = append(make([]model.NetworkConnection, 0), nc)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Network connection added: TCP 127.0.0.1:8443 :")
+
+	// network connection to keep in template
+	template = model.Template{}
+	templateNC = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateKeep}
+	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	// network connection not in state
+	state.NetworkConnections = make([]model.NetworkConnection, 0)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Network connection not found: TCP 127.0.0.1:8443 :")
+	// network connection in state
+	state.NetworkConnections = append(make([]model.NetworkConnection, 0), nc)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Network connection found: TCP 127.0.0.1:8443 :")
+
+	// network connection to remove in template
+	template = model.Template{}
+	templateNC = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateRemove}
+	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	// network connection not in state
+	state.NetworkConnections = make([]model.NetworkConnection, 0)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Network connection removed: TCP 127.0.0.1:8443 :")
+	// network connection in state
+	state.NetworkConnections = append(make([]model.NetworkConnection, 0), nc)
+	findings = auditNetworkConnections(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Network connection not removed: TCP 127.0.0.1:8443 :")
+}

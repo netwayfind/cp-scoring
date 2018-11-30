@@ -177,6 +177,7 @@ type NetworkConnection struct {
 	RemoteAddress string
 	RemotePort    string
 	State         NetworkConnectionState
+	ObjectState   ObjectState
 }
 
 func GetNewStateTemplate() State {
