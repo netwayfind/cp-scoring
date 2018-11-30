@@ -864,19 +864,7 @@ class Templates extends React.Component {
       software: this.state.selectedTemplate.Template.Software,
       callback: this.handleCallback
     }), React.createElement(NetworkConns, {
-      name: "NetworkConnsAdd",
-      label: "Network connections to add",
-      conns: this.state.selectedTemplate.Template.NetworkConnsAdd,
-      callback: this.handleCallback
-    }), React.createElement(NetworkConns, {
-      name: "NetworkConnsKeep",
-      label: "Network connections to keep",
-      conns: this.state.selectedTemplate.Template.NetworkConnsKeep,
-      callback: this.handleCallback
-    }), React.createElement(NetworkConns, {
-      name: "NetworkConnsRemove",
-      label: "Network connections to remove",
-      conns: this.state.selectedTemplate.Template.NetworkConnsRemove,
+      conns: this.state.selectedTemplate.Template.NetworkConns,
       callback: this.handleCallback
     })), React.createElement("ul", null, rows));
   }
@@ -1208,13 +1196,14 @@ class NetworkConns extends React.Component {
       LocalAddress: "",
       LocalPort: "",
       RemoteAddress: "",
-      RemotePort: ""
+      RemotePort: "",
+      ObjectState: "Keep"
     };
     let conns = [...this.state.conns, empty];
     this.setState({
       conns: conns
     });
-    this.props.callback(this.props.name, conns);
+    this.props.callback("NetworkConns", conns);
   }
 
   remove(id) {
@@ -1224,7 +1213,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: conns
     });
-    this.props.callback(this.props.name, conns);
+    this.props.callback("NetworkConns", conns);
   }
 
   update(id, field, event) {
@@ -1236,7 +1225,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: updated
     });
-    this.props.callback(this.props.name, updated);
+    this.props.callback("NetworkConns", updated);
   }
 
   render() {
@@ -1274,10 +1263,13 @@ class NetworkConns extends React.Component {
         type: "text",
         value: entry.RemotePort,
         onChange: event => this.update(i, "RemotePort", event)
+      })), React.createElement("li", null, React.createElement(ObjectState, {
+        value: entry.ObjectState,
+        onChange: event => this.update(i, "ObjectState", event)
       })))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("button", {
+    return React.createElement("details", null, React.createElement("summary", null, "Network Connections"), React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
     }, "Add Network Connection"), React.createElement("ul", null, conns));
