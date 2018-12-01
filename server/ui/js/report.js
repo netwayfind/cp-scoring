@@ -140,22 +140,40 @@ class ScoreTimeline extends React.Component {
       staticPlot: true
     };
     let lastUpdated = null;
-    let rows = [];
+    let score = 0;
+    let pointsEarned = 0;
+    let pointsLost = 0;
+    let findings = [];
 
     if (this.state.report) {
       if (this.state.report.Timestamp) {
         lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
       }
 
+      let fontWeight = null;
+
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
+        score += finding.Value;
+
+        if (finding.Value >= 0) {
+          fontWeight = "normal";
+          pointsEarned += finding.Value;
+        } else {
+          fontWeight = "bold";
+          pointsLost += finding.Value;
+        }
 
         if (!finding.Hidden) {
-          rows.push(React.createElement("li", {
+          findings.push(React.createElement("li", {
             key: i
-          }, finding.Value, " - ", finding.Message));
+          }, React.createElement("span", {
+            style: {
+              fontWeight: fontWeight
+            }
+          }, finding.Value, " - ", finding.Message)));
         } else {
-          rows.push(React.createElement("li", {
+          findings.push(React.createElement("li", {
             key: i
           }, "?"));
         }
@@ -195,7 +213,7 @@ class ScoreTimeline extends React.Component {
         data: data,
         layout: layout,
         config: config
-      }), React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, rows));
+      }), React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Score: ", score, React.createElement("ul", null, React.createElement("li", null, "Points earned: ", pointsEarned), React.createElement("li", null, "Points lost: ", pointsLost)), React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, findings));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("div", {

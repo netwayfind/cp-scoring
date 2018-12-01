@@ -148,23 +148,38 @@ class ScoreTimeline extends React.Component {
 
     let lastUpdated = null;
 
-    let rows = [];
+    let score = 0;
+    let pointsEarned = 0;
+    let pointsLost = 0;
+
+    let findings = [];
     if (this.state.report) {
       if (this.state.report.Timestamp) {
         lastUpdated = new Date(this.state.report.Timestamp * 1000).toLocaleString();
       }
 
+      let fontWeight = null;
       for (let i in this.state.report.Findings) {
         let finding = this.state.report.Findings[i];
+        
+        score += finding.Value;
+        if (finding.Value >= 0) {
+          fontWeight = "normal";
+          pointsEarned += finding.Value;
+        }
+        else {
+          fontWeight = "bold";
+          pointsLost += finding.Value;
+        }
         if (!finding.Hidden) {
-          rows.push(
+          findings.push(
             <li key={i}>
-              {finding.Value} - {finding.Message}
+              <span style={{fontWeight: fontWeight}}>{finding.Value} - {finding.Message}</span>
             </li>
           );
         }
         else {
-          rows.push(
+          findings.push(
             <li key={i}>
               ?
             </li>
@@ -208,10 +223,16 @@ class ScoreTimeline extends React.Component {
           <p />
           Last Updated: {lastUpdated}
           <p />
+          Score: {score}
+          <ul>
+            <li>Points earned: {pointsEarned}</li>
+            <li>Points lost: {pointsLost}</li>
+          </ul>
+          <p />
           Findings:
           <br />
           <ul>
-            {rows}
+            {findings}
           </ul>
         </React.Fragment>
       );
