@@ -77,10 +77,12 @@ class Scoreboard extends React.Component {
     let body = [];
     for (let i in this.state.scores) {
       let entry = this.state.scores[i];
+      let lastUpdated = new Date(entry.Timestamp * 1000).toLocaleString();
       body.push(
         <tr key={i}>
-          <td>{entry.TeamName}</td>
-          <td>{entry.Score}</td>
+          <td class="table-cell">{entry.TeamName}</td>
+          <td class="table-cell">{entry.Score}</td>
+          <td class="table-cell">{lastUpdated}</td>
         </tr>
       )
     }
@@ -100,12 +102,14 @@ class Scoreboard extends React.Component {
     if (this.state.selectedScenarioName != null) {
       content = (
         <React.Fragment>
-        <b>Scenario: </b>{this.state.selectedScenarioName}
+        <h2>{this.state.selectedScenarioName}</h2>
+        <p />
         <table>
           <thead>
             <tr>
-              <th>Team</th>
-              <th>Score</th>
+              <th class="table-cell">Team Name</th>
+              <th class="table-cell">Score</th>
+              <th class="table-cell">Last Updated</th>
             </tr>
           </thead>
           <tbody>

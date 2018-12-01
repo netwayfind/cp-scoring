@@ -77,9 +77,16 @@ class Scoreboard extends React.Component {
 
     for (let i in this.state.scores) {
       let entry = this.state.scores[i];
+      let lastUpdated = new Date(entry.Timestamp * 1000).toLocaleString();
       body.push(React.createElement("tr", {
         key: i
-      }, React.createElement("td", null, entry.TeamName), React.createElement("td", null, entry.Score)));
+      }, React.createElement("td", {
+        class: "table-cell"
+      }, entry.TeamName), React.createElement("td", {
+        class: "table-cell"
+      }, entry.Score), React.createElement("td", {
+        class: "table-cell"
+      }, lastUpdated)));
     }
 
     let scenarios = [];
@@ -99,7 +106,13 @@ class Scoreboard extends React.Component {
     let content = null;
 
     if (this.state.selectedScenarioName != null) {
-      content = React.createElement(React.Fragment, null, React.createElement("b", null, "Scenario: "), this.state.selectedScenarioName, React.createElement("table", null, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", null, "Team"), React.createElement("th", null, "Score"))), React.createElement("tbody", null, body)));
+      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("p", null), React.createElement("table", null, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", {
+        class: "table-cell"
+      }, "Team Name"), React.createElement("th", {
+        class: "table-cell"
+      }, "Score"), React.createElement("th", {
+        class: "table-cell"
+      }, "Last Updated"))), React.createElement("tbody", null, body)));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("div", {
