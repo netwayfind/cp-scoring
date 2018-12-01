@@ -103,7 +103,7 @@ class Scoreboard extends React.Component {
     }
 
     return React.createElement(React.Fragment, null, React.createElement("div", {
-      classname: "heading"
+      className: "heading"
     }, React.createElement("h1", null, "Scoreboard")), React.createElement("hr", null), React.createElement("div", {
       className: "toc",
       id: "toc"

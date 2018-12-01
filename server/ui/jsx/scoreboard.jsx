@@ -118,7 +118,7 @@ class Scoreboard extends React.Component {
 
     return (
       <React.Fragment>
-        <div classname="heading">
+        <div className="heading">
           <h1>Scoreboard</h1>
         </div>
         <hr />
