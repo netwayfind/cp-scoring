@@ -243,9 +243,8 @@ class ScoreTimeline extends React.Component {
         <div className="heading">
           <h1>Team Reports</h1>
         </div>
-        <hr />
         <div className="toc" id="toc">
-          <b>Scenarios</b>
+          <h4>Scenarios</h4>
           <ul>
             {scenarios}
           </ul>
