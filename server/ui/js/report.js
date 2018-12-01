@@ -164,7 +164,7 @@ class ScoreTimeline extends React.Component {
           pointsLost += finding.Value;
         }
 
-        if (!finding.Hidden) {
+        if (finding.Show) {
           findings.push(React.createElement("li", {
             key: i
           }, React.createElement("span", {

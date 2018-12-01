@@ -171,7 +171,7 @@ class ScoreTimeline extends React.Component {
           fontWeight = "bold";
           pointsLost += finding.Value;
         }
-        if (!finding.Hidden) {
+        if (finding.Show) {
           findings.push(
             <li key={i}>
               <span style={{fontWeight: fontWeight}}>{finding.Value} - {finding.Message}</span>
