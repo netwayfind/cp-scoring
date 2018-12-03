@@ -62,8 +62,8 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 
 	// expected URLs
-	serverPubKeyFileURL := serverURL + "public/server.pub"
-	serverCrtFileURL := serverURL + "public/server.crt"
+	serverPubKeyFileURL := serverURL + "/public/server.pub"
+	serverCrtFileURL := serverURL + "/public/server.crt"
 
 	// do insecure fetch, as need to get cert to check later...
 	tr := &http.Transport{
