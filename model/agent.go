@@ -31,17 +31,12 @@ type State struct {
 	Timestamp          int64
 	OS                 string
 	Hostname           string
-	Errors             []Error
+	Errors             []string
 	Users              []User
 	Groups             map[string][]string
 	Processes          []Process
 	Software           []Software
 	NetworkConnections []NetworkConnection
-}
-
-type Error struct {
-	Message string
-	Error   error
 }
 
 type ObjectState string
