@@ -2,17 +2,19 @@ package main
 
 import (
 	"testing"
+
+	"github.com/sumwonyuno/cp-scoring/agent"
 )
 
 func TestGetCurrentHost(t *testing.T) {
-	host := getCurrentHost()
+	host := agent.GetCurrentHost()
 	if host == nil {
 		t.Fatal("Could not get current host")
 	}
 }
 
 func TestCollectState(t *testing.T) {
-	state := getState(getCurrentHost())
+	state := agent.GetState(agent.GetCurrentHost())
 	if len(state.Hostname) == 0 {
 		t.Fatal("hostname not set")
 	}

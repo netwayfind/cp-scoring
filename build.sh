@@ -32,9 +32,9 @@ cp $(dirname $0)/server/ui/admin/index.html $BASEDIR/ui/admin
 cp $(dirname $0)/server/ui/scoreboard/index.html $BASEDIR/ui/scoreboard
 cp $(dirname $0)/server/ui/report/index.html $BASEDIR/ui/report
 echo "Building linux agent"
-GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux $PKG_BASE/agent
+GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux $PKG_BASE/agent/main
 echo "Building windows agent"
-GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe $PKG_BASE/agent
+GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe $PKG_BASE/agent/main
 
 echo "Running unit tests"
 go test github.com/sumwonyuno/cp-scoring/agent
