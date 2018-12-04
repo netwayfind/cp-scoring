@@ -337,9 +337,16 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 
 	found := false
 	for _, software := range state.Software {
-		if software.Name == templateSoftware.Name && software.Version == templateSoftware.Version {
-			found = true
-			break
+		if len(templateSoftware.Version) == 0 {
+			if software.Name == templateSoftware.Name {
+				found = true
+				break
+			}
+		} else {
+			if software.Name == templateSoftware.Name && software.Version == templateSoftware.Version {
+				found = true
+				break
+			}
 		}
 	}
 
@@ -347,37 +354,43 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 		if found {
 			finding.Show = true
 			finding.Value = 1
-			finding.Message = "Software added: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software added: "
 		} else {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Software not added: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software not added: "
 		}
 	} else if templateSoftware.SoftwareState == model.ObjectStateKeep {
 		if found {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Software found: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software found: "
 		} else {
 			finding.Show = true
 			finding.Value = -1
-			finding.Message = "Software not found: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software not found: "
 		}
 	} else if templateSoftware.SoftwareState == model.ObjectStateRemove {
 		if found {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Software not removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software not removed: "
 		} else {
 			finding.Show = true
 			finding.Value = 1
-			finding.Message = "Software removed: " + templateSoftware.Name + ", " + templateSoftware.Version
+			finding.Message = "Software removed: "
 		}
 	} else {
 		finding.Show = false
 		finding.Value = 0
-		finding.Message = "Unknown software state: " + templateSoftware.Name + ", " + templateSoftware.Version
+		finding.Message = "Unknown software state: "
 	}
+
+	softwareText := templateSoftware.Name
+	if len(templateSoftware.Version) > 0 {
+		softwareText += ", " + templateSoftware.Version
+	}
+	finding.Message += softwareText
 
 	return finding
 }
