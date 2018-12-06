@@ -7,7 +7,9 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func GetState(host model.CurrentHost) model.State {
+func GetState() model.State {
+	host := GetCurrentHost()
+
 	state := model.GetNewStateTemplate()
 	errors := make([]string, 0)
 	users, err := host.GetUsers()

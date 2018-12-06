@@ -256,7 +256,7 @@ func main() {
 
 func saveState(dir string, entities []*openpgp.Entity) {
 	log.Println("Getting state")
-	state := agent.GetState(agent.GetCurrentHost())
+	state := agent.GetState()
 
 	bs, err := processing.ToBytes(state, entities)
 	if err != nil {

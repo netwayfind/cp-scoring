@@ -14,7 +14,7 @@ func TestGetCurrentHost(t *testing.T) {
 }
 
 func TestCollectState(t *testing.T) {
-	state := agent.GetState(agent.GetCurrentHost())
+	state := agent.GetState()
 	if len(state.Hostname) == 0 {
 		t.Fatal("hostname not set")
 	}
