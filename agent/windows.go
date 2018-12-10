@@ -8,6 +8,7 @@ import (
 )
 
 type hostWindows struct {
+	PowerShellVersion string
 }
 
 func powershellCsv(command string, columns string) ([]byte, error) {
@@ -25,6 +26,13 @@ func (host hostWindows) GetUsers() ([]model.User, error) {
 		return nil, err
 	}
 	return parseWindowsUsers(out), nil
+
+func getPowerShellVersion() (string, error) {
+	out, err := powershellCsv("Get-Host", "Version")
+	if err != nil {
+		return "", err
+	}
+	return parsePowerShellVersion(out), nil
 }
 
 func (host hostWindows) GetGroups() (map[string][]string, error) {

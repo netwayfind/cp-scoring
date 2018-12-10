@@ -50,7 +50,13 @@ func GetCurrentHost() model.CurrentHost {
 	if runtime.GOOS == "linux" {
 		return hostLinux{}
 	} else if runtime.GOOS == "windows" {
-		return hostWindows{}
+		version, err := getPowerShellVersion()
+		if err != nil {
+			// can't set it for some reason
+			return hostWindows{}
+		} else {
+			return hostWindows{PowerShellVersion: version}
+		}
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
 		return nil

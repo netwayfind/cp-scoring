@@ -1628,3 +1628,26 @@ func TestParseAptListInstalled(t *testing.T) {
 		log.Fatal("Did not parse expected software version")
 	}
 }
+
+func TestParsePowerShellVersion(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	version := parsePowerShellVersion(bs)
+	if len(version) != 0 {
+		t.Fatal("Parsed version from empty string")
+	}
+
+	// only header
+	bs = []byte("VERSION")
+	version = parsePowerShellVersion(bs)
+	if len(version) != 0 {
+		t.Fatal("Parsed version from only header")
+	}
+
+	// example version
+	bs = []byte("VERSION\n5.1")
+	version = parsePowerShellVersion(bs)
+	if version != "5.1" {
+		t.Fatal("Incorrectly parsed version")
+	}
+}

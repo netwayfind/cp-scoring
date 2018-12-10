@@ -527,3 +527,28 @@ func parseWindowsSoftware(bs []byte) []model.Software {
 
 	return software
 }
+
+func parsePowerShellVersion(bs []byte) string {
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return ""
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 1 columns, or else ignore line
+		if len(row) != 1 {
+			continue
+		}
+
+		// should just be one row left
+		return row[0]
+	}
+
+	// no rows
+	return ""
+}
