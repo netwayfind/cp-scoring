@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"log"
 	"math"
 	"os"
 	"testing"
@@ -1579,53 +1578,53 @@ func TestParseAptListInstalled(t *testing.T) {
 	bs := []byte("")
 	software := parseAptListInstalled(bs)
 	if len(software) != 0 {
-		log.Fatal("Parsed software from empty string")
+		t.Fatal("Parsed software from empty string")
 	}
 
 	// bad string
 	bs = []byte("bad")
 	software = parseAptListInstalled(bs)
 	if len(software) != 0 {
-		log.Fatal("Parsed software from bad string")
+		t.Fatal("Parsed software from bad string")
 	}
 
 	// cut off
 	bs = []byte("testpackage/stable,now 1.0.0")
 	software = parseAptListInstalled(bs)
 	if len(software) != 0 {
-		log.Fatal("Parsed software from cut off string")
+		t.Fatal("Parsed software from cut off string")
 	}
 
 	// one package
 	bs = []byte("testpackage/stable,now 1.0.0 amd64 [installed,automatic]")
 	software = parseAptListInstalled(bs)
 	if len(software) != 1 {
-		log.Fatal("Did not parse expected entry")
+		t.Fatal("Did not parse expected entry")
 	}
 	if software[0].Name != "testpackage" {
-		log.Fatal("Did not parse expected software name")
+		t.Fatal("Did not parse expected software name")
 	}
 	if software[0].Version != "1.0.0" {
-		log.Fatal("Did not parse expected software version")
+		t.Fatal("Did not parse expected software version")
 	}
 
 	// two packages
 	bs = []byte("testpackage/stable,now 1.0.0 amd64 [installed,automatic]\nsecond/stable,now 0.1.0 amd64 [installed]")
 	software = parseAptListInstalled(bs)
 	if len(software) != 2 {
-		log.Fatal("Did not parse expected entries")
+		t.Fatal("Did not parse expected entries")
 	}
 	if software[0].Name != "testpackage" {
-		log.Fatal("Did not parse expected software name")
+		t.Fatal("Did not parse expected software name")
 	}
 	if software[0].Version != "1.0.0" {
-		log.Fatal("Did not parse expected software version")
+		t.Fatal("Did not parse expected software version")
 	}
 	if software[1].Name != "second" {
-		log.Fatal("Did not parse expected software name")
+		t.Fatal("Did not parse expected software name")
 	}
 	if software[1].Version != "0.1.0" {
-		log.Fatal("Did not parse expected software version")
+		t.Fatal("Did not parse expected software version")
 	}
 }
 
