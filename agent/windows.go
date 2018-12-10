@@ -21,11 +21,40 @@ func powershellCsv(command string, columns string) ([]byte, error) {
 }
 
 func (host hostWindows) GetUsers() ([]model.User, error) {
-	out, err := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
+	// powershell 5.1 required
+	if host.PowerShellVersion == "5.1" {
+		out, err := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
+		if err != nil {
+			return nil, err
+		}
+		return parseWindowsUsersGetLocalUser(out), nil
+	}
+	// otherwise, use older command
+	out, err := powershellCsv("Get-WmiObject -class Win32_UserAccount", "Name,SID")
 	if err != nil {
 		return nil, err
 	}
-	return parseWindowsUsers(out), nil
+	parsedUsers := parseWindowsUsersWin32UserAccount(out)
+	users := make([]model.User, 0)
+	// need to get further info
+	for _, user := range parsedUsers {
+		out, err := exec.Command("C:\\Windows\\System32\\net.exe", "user", user.Name).Output()
+		if err != nil {
+			return users, err
+		}
+		// merge user info
+		users = append(users, mergeNetUser(user, parseWindowsNetUser(out)))
+	}
+	return users, nil
+}
+
+func mergeNetUser(original model.User, new model.User) model.User {
+	original.AccountActive = new.AccountActive
+	original.AccountExpires = new.AccountExpires
+	original.PasswordExpires = new.PasswordExpires
+	original.PasswordLastSet = new.PasswordLastSet
+	return original
+}
 
 func getPowerShellVersion() (string, error) {
 	out, err := powershellCsv("Get-Host", "Version")

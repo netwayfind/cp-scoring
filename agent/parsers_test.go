@@ -226,61 +226,61 @@ func TestMergeUserMaps(t *testing.T) {
 	}
 }
 
-func TestParseWindowsUsersBad(t *testing.T) {
+func TestParseWindowsUsersGetLocalUserBad(t *testing.T) {
 	// empty string
 	bs := []byte("")
-	users := parseWindowsUsers(bs)
+	users := parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// bad string
 	bs = []byte("csv")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// incorrect number
 	bs = []byte("1,2,3,4,5,6,7\r\n1,2,3,4,5,6,7")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// just header
 	bs = []byte("1,2,3,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// mismatch between header and row
 	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 
 	// mismatch between header and later row
 	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6\r\n1,2,3,4,5")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 0 {
 		t.Fatal("Expected 0 users")
 	}
 }
 
-func TestParseWindowsUsers(t *testing.T) {
+func TestParseWindowsUsersGetLocalUser(t *testing.T) {
 	// missing name
 	bs := []byte("1,2,3,4,5,6\r\n,2,3,4,5,6")
-	users := parseWindowsUsers(bs)
+	users := parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -289,7 +289,7 @@ func TestParseWindowsUsers(t *testing.T) {
 	}
 	// given name
 	bs = []byte("1,2,3,4,5,6\r\nname,2,3,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -299,14 +299,14 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// present should always be true
 	bs = []byte("1,2,3,4,5,6\r\n1,2,3,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
 
 	// missing id
 	bs = []byte("1,2,3,4,5,6\r\nname,,3,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -316,7 +316,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// given id
 	bs = []byte("1,2,3,4,5,6\r\nname,id,3,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -326,7 +326,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// missing account active
 	bs = []byte("1,2,3,4,5,6\r\nname,id,,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -336,7 +336,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// account active true
 	bs = []byte("1,2,3,4,5,6\r\nname,id,True,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -346,7 +346,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// account active false
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,4,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -356,7 +356,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// account doesn't expire
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -366,7 +366,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// account doesn't expire
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,5,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -376,7 +376,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// missing password last set
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -386,7 +386,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// cannot parse password last set
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,today,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -396,7 +396,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// password last set
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,6")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -409,7 +409,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// missing password expires
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -419,7 +419,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// password expires
 	bs = []byte("1,2,3,4,5,6\r\nname,id,False,expire,1/1/2000 12:34:56 AM,tomorrow")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 1 {
 		t.Fatal("Expected 1 users")
 	}
@@ -429,7 +429,7 @@ func TestParseWindowsUsers(t *testing.T) {
 
 	// multiple users
 	bs = []byte("1,2,3,4,5,6\r\nname1,id,False,expire,1/1/2000 12:34:56 AM,tomorrow\r\nname2,id,False,expire,1/1/2000 12:34:56 AM,tomorrow")
-	users = parseWindowsUsers(bs)
+	users = parseWindowsUsersGetLocalUser(bs)
 	if len(users) != 2 {
 		t.Fatal("Expected 2 users")
 	}
@@ -438,6 +438,152 @@ func TestParseWindowsUsers(t *testing.T) {
 	}
 	if users[1].Name != "name2" {
 		t.Fatal("Expected user name does not match")
+	}
+}
+
+func TestParseWindowsUsersWin32UserAccountBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	users := parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Parsed users from empty string")
+	}
+
+	// bad string
+	bs = []byte("bad")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Parsed users from bad string")
+	}
+
+	// incorrect number
+	bs = []byte("Name\r\nuser")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Expected 0 users")
+	}
+
+	// incorrect number
+	bs = []byte("Name,SID,other\r\nuser,5,other")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Expected 0 users")
+	}
+
+	// just header
+	bs = []byte("Name,SID")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Expected 0 users")
+	}
+
+	// mismatch between header and row
+	bs = []byte("Name,SID\r\nuser")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Expected 0 users")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("Name,SID\r\nuser1,5\r\nuser2")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 0 {
+		t.Fatal("Expected 0 users")
+	}
+}
+
+func TestParseWindowsUsersWin32UserAccount(t *testing.T) {
+	// empty name
+	bs := []byte("Name,SID\r\n,5")
+	users := parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 1 {
+		t.Fatal("Expected 1 user")
+	}
+	if users[0].Name != "" {
+		t.Fatal("Expected empty name")
+	}
+
+	// given name
+	bs = []byte("Name,SID\r\nuser,5")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 1 {
+		t.Fatal("Expected 1 user")
+	}
+	if users[0].Name != "user" {
+		t.Fatal("Unexpected name")
+	}
+
+	// empty SID
+	bs = []byte("Name,SID\r\nuser,")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 1 {
+		t.Fatal("Expected 1 user")
+	}
+	if users[0].ID != "" {
+		t.Fatal("Expected empty ID")
+	}
+
+	// given SID
+	bs = []byte("Name,SID\r\nuser,5")
+	users = parseWindowsUsersWin32UserAccount(bs)
+	if len(users) != 1 {
+		t.Fatal("Expected 1 user")
+	}
+	if users[0].ID != "5" {
+		t.Fatal("Unexpected ID")
+	}
+}
+
+func TestParseWindowsNetUser(t *testing.T) {
+	// account active
+	bs := []byte("Account active               Yes")
+	user := parseWindowsNetUser(bs)
+	if !user.AccountActive {
+		t.Fatal("Expected account active")
+	}
+
+	// account not active
+	bs = []byte("Account active                No")
+	user = parseWindowsNetUser(bs)
+	if user.AccountActive {
+		t.Fatal("Expected account not active")
+	}
+
+	// account expires
+	bs = []byte("Account expires               Yes")
+	user = parseWindowsNetUser(bs)
+	if !user.AccountExpires {
+		t.Fatal("Expected account to expire")
+	}
+
+	// account not expires
+	bs = []byte("Account expires               Never")
+	user = parseWindowsNetUser(bs)
+	if user.AccountExpires {
+		t.Fatal("Expected account to not expire")
+	}
+
+	// password expires
+	bs = []byte("Password expires              Yes")
+	user = parseWindowsNetUser(bs)
+	if !user.PasswordExpires {
+		t.Fatal("Expected password to expire")
+	}
+
+	// password not expires
+	bs = []byte("Password expires              Never")
+	user = parseWindowsNetUser(bs)
+	if user.PasswordExpires {
+		t.Fatal("Expected password to not expire")
+	}
+
+	// password last set
+	bs = []byte("Password last set             1/1/2018 09:34:56 PM")
+	user = parseWindowsNetUser(bs)
+	// using local timezone, so need to test that password last set is expected
+	expected := time.Unix(user.PasswordLastSet, 0).String()
+	if expected[0:19] != "2018-01-01 21:34:56" {
+		t.Fatal("Unexpected password set value")
 	}
 }
 

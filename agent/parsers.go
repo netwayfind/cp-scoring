@@ -265,7 +265,7 @@ func parseAptListInstalled(bs []byte) []model.Software {
 	return software
 }
 
-func parseWindowsUsers(bs []byte) []model.User {
+func parseWindowsUsersGetLocalUser(bs []byte) []model.User {
 	users := make([]model.User, 0)
 	c := csv.NewReader(bytes.NewReader(bs))
 	records, err := c.ReadAll()
@@ -318,6 +318,73 @@ func parseWindowsUsers(bs []byte) []model.User {
 	}
 
 	return users
+}
+
+func parseWindowsUsersWin32UserAccount(bs []byte) []model.User {
+	users := make([]model.User, 0)
+	c := csv.NewReader(bytes.NewReader(bs))
+	records, err := c.ReadAll()
+	if err != nil {
+		return users
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+		// must have exactly 2 columns, or else ignore line
+		if len(row) != 2 {
+			continue
+		}
+		user := model.User{}
+		// Name,SID
+		user.Name = row[0]
+		user.ID = row[1]
+		users = append(users, user)
+	}
+
+	return users
+}
+
+func parseWindowsNetUser(bs []byte) model.User {
+	var user model.User
+
+	for _, line := range strings.Split(string(bs), "\r\n") {
+		tokens := strings.Fields(line)
+		if len(tokens) == 3 {
+			if tokens[0] == "Account" && tokens[1] == "active" {
+				if tokens[2] == "Yes" {
+					user.AccountActive = true
+				} else {
+					user.AccountActive = false
+				}
+			} else if tokens[0] == "Account" && tokens[1] == "expires" {
+				if tokens[2] == "Never" {
+					user.AccountExpires = false
+				} else {
+					user.AccountExpires = true
+				}
+			} else if tokens[0] == "Password" && tokens[1] == "expires" {
+				if tokens[2] == "Never" {
+					user.PasswordExpires = false
+				} else {
+					user.PasswordExpires = true
+				}
+			}
+		} else if len(tokens) == 6 {
+			if tokens[0] == "Password" && tokens[1] == "last" && tokens[2] == "set" {
+				timezone, _ := time.Now().Zone()
+				value := tokens[3] + " " + tokens[4] + " " + tokens[5] + " " + timezone
+				layout := "1/2/2006 3:04:05 PM MST"
+				t, err := time.Parse(layout, value)
+				if err == nil {
+					user.PasswordLastSet = t.Unix()
+				}
+			}
+		}
+	}
+
+	return user
 }
 
 func parseWindowsTCPNetConns(bs []byte) []model.NetworkConnection {
