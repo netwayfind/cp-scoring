@@ -2,7 +2,12 @@ package agent
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -112,8 +117,8 @@ func (host hostWindows) GetNetworkConnections() ([]model.NetworkConnection, erro
 	return append(tcpConns, udpConns...), nil
 }
 
-func getScheduledTaskXML() string {
-	return `<?xml version="1.0" encoding="UTF-16"?>
+func getScheduledTaskXML() []byte {
+	return []byte(`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Date>2018-12-12T00:00:00.000</Date>
@@ -155,9 +160,59 @@ func getScheduledTaskXML() string {
       <Command>C:\cp-scoring\cp-scoring-agent-windows.exe</Command>
     </Exec>
   </Actions>
-</Task>`
+</Task>`)
+}
+
+func copyAgent(installPath string) {
+	log.Println("Copying this executable to installation folder")
+	ex, err := os.Executable()
+	if err != nil {
+		log.Println("Unable to get this executable path;", err)
+	}
+	fileIn, err := os.Open(ex)
+	if err != nil {
+		log.Fatalln("Unable to open self file;", err)
+	}
+	defer fileIn.Close()
+	fileExe := filepath.Join(installPath, "cp-scoring-agent-windows.exe")
+	fileOut, err := os.Create(fileExe)
+	if err != nil {
+		log.Fatalln("Unable to open destination file;", err)
+	}
+	defer fileOut.Close()
+	_, err = io.Copy(fileOut, fileIn)
+	if err != nil {
+		log.Fatalln("Unable to copy file;", err)
+	}
+}
+
+func createScheduledTask(installPath string) {
+	log.Println("Creating Task Scheduler task")
+	fileTaskSched := filepath.Join(installPath, "task.xml")
+	err := ioutil.WriteFile(fileTaskSched, getScheduledTaskXML(), 0600)
+	if err != nil {
+		log.Fatalln("Could not write Task Scheduler file")
+	}
+	// delete existing task and recreate
+	exec.Command("C:\\Windows\\system32\\schtasks.exe", "/delete", "/F", "/tn", "cp-scoring").Run()
+	err = exec.Command("C:\\Windows\\system32\\schtasks.exe", "/create", "/xml", fileTaskSched, "/tn", "cp-scoring").Run()
+	if err != nil {
+		log.Fatalln("Unable to load task;", err)
+	}
 }
 
 func (host hostWindows) Install() {
+	installPath := "C:\\cp-scoring"
 
+	// create installation folder
+	os.MkdirAll(installPath, os.ModeDir)
+	log.Println("Created installation folder: " + installPath)
+
+	// copy agent
+	copyAgent(installPath)
+
+	// create Task Scheduler file
+	createScheduledTask(installPath)
+
+	log.Println("Finished installing to " + installPath)
 }
