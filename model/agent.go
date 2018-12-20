@@ -14,6 +14,7 @@ type CurrentHost interface {
 	GetProcesses() ([]Process, error)
 	GetSoftware() ([]Software, error)
 	GetNetworkConnections() ([]NetworkConnection, error)
+	Install()
 }
 
 type Host struct {

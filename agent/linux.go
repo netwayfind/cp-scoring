@@ -78,3 +78,7 @@ func (h hostLinux) GetNetworkConnections() ([]model.NetworkConnection, error) {
 
 	return append(tcpConns, udpConns...), err
 }
+
+func (h hostLinux) Install() {
+
+}

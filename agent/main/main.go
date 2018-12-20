@@ -149,6 +149,11 @@ func createLinkReport(serverURL string, linkReport string, teamKey string) {
 	log.Println("Created report link file")
 }
 
+func installThis() {
+	host := agent.GetCurrentHost()
+	host.Install()
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -166,10 +171,17 @@ func main() {
 
 	var serverURL string
 	var askTeam bool
+	var install bool
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.BoolVar(&askTeam, "ask_team", false, "ask for team key")
+	flag.BoolVar(&install, "install", false, "install to this computer")
 	flag.Parse()
+
+	if install {
+		installThis()
+		os.Exit(0)
+	}
 
 	if askTeam {
 		askForTeam(teamKeyFile)
