@@ -201,6 +201,15 @@ func createScheduledTask(installPath string) {
 	}
 }
 
+func createAskTeamScript(installPath string) {
+	log.Println("Creating ask team script")
+	fileScript := filepath.Join(installPath, "askteam.bat")
+	err := ioutil.WriteFile(fileScript, []byte("C:\\cp-scoring\\cp-scoring-agent-windows.exe -ask_team"), 0755)
+	if err != nil {
+		log.Fatalln("Could not write askteam.bat;", err)
+	}
+}
+
 func (host hostWindows) Install() {
 	installPath := "C:\\cp-scoring"
 
@@ -213,6 +222,9 @@ func (host hostWindows) Install() {
 
 	// create Task Scheduler file
 	createScheduledTask(installPath)
+
+	// create ask team script
+	createAskTeamScript(installPath)
 
 	log.Println("Finished installing to " + installPath)
 }
