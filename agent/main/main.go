@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -111,22 +111,41 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 }
 
-func askForTeam(teamKeyFile string) {
-	// don't override existing team key
-	if _, err := os.Stat(teamKeyFile); !os.IsNotExist(err) {
-		log.Fatalln("ERROR: team key already set")
+func getHostToken(hostTokenURL string, hostTokenFile string, transport *http.Transport) (string, error) {
+	// if host token file doesn't exist, get new host token and save it
+	if _, err := os.Stat(hostTokenFile); os.IsNotExist(err) {
+		log.Println("Host token not found")
+		c := http.Client{Transport: transport}
+		hostname, _ := os.Hostname()
+		url := hostTokenURL + "?hostname=" + hostname
+		r, err := c.Get(url)
+		if err != nil {
+			return "", err
+		}
+		if r.StatusCode != 200 {
+			return "", errors.New("Unexpected status code from server: " + r.Status)
+		}
+		defer r.Body.Close()
+		tokenBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			return "", err
+		}
+		if len(tokenBytes) == 0 {
+			return "", errors.New("Empty host token")
+		}
+		err = ioutil.WriteFile(hostTokenFile, tokenBytes, 0400)
+		if err != nil {
+			log.Fatalln("ERROR: unable to save team key;", err)
+		}
+		log.Println("Saved host token")
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	log.Print("Enter team key: ")
-	key, _ := reader.ReadString('\n')
-	key = strings.TrimSpace(key)
-
-	err := ioutil.WriteFile(teamKeyFile, []byte(key), 0400)
+	// get host token file from file
+	tokenBytes, err := ioutil.ReadFile(hostTokenFile)
 	if err != nil {
-		log.Fatalln("ERROR: unable to save team key;", err)
+		return "", err
 	}
-	log.Println("Saved team key")
+	return string(tokenBytes), nil
 }
 
 func createLinkScoreboard(serverURL string, linkScoreboard string) {
@@ -139,9 +158,8 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 	log.Println("Created scoreboard link file")
 }
 
-func createLinkReport(serverURL string, linkReport string, teamKey string) {
-	url := serverURL + "/ui/report?team_key=" + teamKey
-	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Reports</a></body></html>"
+func createLinkReport(serverURL string, linkReport string) {
+	s := "<html><head><body></body></html>"
 	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
 		log.Fatalln("ERROR: unable to save report link file;", err)
@@ -164,17 +182,15 @@ func main() {
 	serverURLFile := path.Join(dir, "server")
 	serverPubFile := path.Join(dir, "server.pub")
 	serverCrtFile := path.Join(dir, "server.crt")
-	teamKeyFile := path.Join(dir, "team.key")
+	hostTokenFile := path.Join(dir, "host_token")
 	linkScoreboard := path.Join(dir, "scoreboard.html")
 	linkReport := path.Join(dir, "report.html")
 	dataDir := path.Join(dir, "data")
 
 	var serverURL string
-	var askTeam bool
 	var install bool
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
-	flag.BoolVar(&askTeam, "ask_team", false, "ask for team key")
 	flag.BoolVar(&install, "install", false, "install to this computer")
 	flag.Parse()
 
@@ -183,16 +199,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	if askTeam {
-		askForTeam(teamKeyFile)
-		os.Exit(0)
-	}
-
 	if len(serverURL) > 0 {
 		// remove trailing slash
 		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
+		createLinkReport(serverURL, linkReport)
 		os.Exit(0)
 	}
 
@@ -240,27 +252,19 @@ func main() {
 	}
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
-	teamKey := ""
+	// host token
+	hostTokenURL := serverURL + "/token/host"
+	hostToken, err := getHostToken(hostTokenURL, hostTokenFile, transport)
+	if err != nil {
+		log.Println("ERROR: getting host token;", err)
+	}
 
 	// main loop
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
 		saveState(dataDir, entities)
-		// if team key not set, check for it
-		if len(teamKey) == 0 {
-			log.Println("Looking for team key")
-			teamKeyBytes, err := ioutil.ReadFile(teamKeyFile)
-			if err == nil && len(teamKeyBytes) > 0 {
-				log.Println("Found team key")
-				teamKey = strings.TrimSpace(string(teamKeyBytes))
-			}
-			createLinkReport(serverURL, linkReport, teamKey)
-		}
-		// only send if have team key
-		if len(teamKey) > 0 {
-			go sendState(dataDir, serverURL, transport, teamKey)
-		}
+		go sendState(dataDir, serverURL, transport, hostToken)
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
@@ -286,7 +290,7 @@ func saveState(dir string, entities []*openpgp.Entity) {
 	}
 }
 
-func sendState(dir string, server string, transport *http.Transport, teamKey string) {
+func sendState(dir string, server string, transport *http.Transport, hostToken string) {
 	url := server + "/audit"
 	c := &http.Client{Transport: transport}
 
@@ -306,7 +310,7 @@ func sendState(dir string, server string, transport *http.Transport, teamKey str
 		} else {
 			log.Println("Sending state to server", server)
 			var submission model.StateSubmission
-			submission.TeamKey = teamKey
+			submission.HostToken = hostToken
 			submission.StateBytes = stateBytes
 			b, err := json.Marshal(submission)
 			resp, err := c.Post(url, "application/json", bytes.NewBuffer(b))

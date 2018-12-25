@@ -24,7 +24,7 @@ type Host struct {
 }
 
 type StateSubmission struct {
-	TeamKey    string
+	HostToken  string
 	StateBytes []byte
 }
 

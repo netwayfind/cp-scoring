@@ -107,7 +107,8 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	}
 
 	log.Println("Getting information")
-	teamID, err := dbSelectTeamIDForKey(stateSubmission.TeamKey)
+	hostToken := stateSubmission.HostToken
+	teamID, err := dbSelectTeamIDFromHostToken(hostToken)
 	if err != nil {
 		msg := "ERROR: cannot get team id;"
 		log.Println(msg, err)
@@ -1216,9 +1217,7 @@ func getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	hostname := r.Form.Get("hostname")
 	hostname = strings.TrimSpace(hostname)
 	if len(hostname) == 0 {
-		msg := "Empty hostname"
-		log.Println(msg)
-		w.Write([]byte(msg))
+		log.Println("Empty hostname")
 		return
 	}
 
@@ -1230,7 +1229,6 @@ func getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: unable to get host token;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		return
 	}
 
