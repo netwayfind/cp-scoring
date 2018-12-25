@@ -158,8 +158,15 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 	log.Println("Created scoreboard link file")
 }
 
-func createLinkReport(serverURL string, linkReport string) {
-	s := "<html><head><body></body></html>"
+func createLinkReport(serverURL string, linkReport string, hostToken string) {
+	url := serverURL + "/token/team"
+	s := "<html><head><body>" +
+		"<form method=\"POST\" action=" + url + ">" +
+		"<input name=\"host_token\" hidden value=\"" + hostToken + "\"/>" +
+		"<label id=\"team_key\">Enter team key:</label>" +
+		"<input name=\"team_key\" />" +
+		"<button type=\"submit\">Submit</button>" +
+		"</form></body></html>"
 	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
 		log.Fatalln("ERROR: unable to save report link file;", err)
@@ -204,7 +211,7 @@ func main() {
 		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
-		createLinkReport(serverURL, linkReport)
+		createLinkReport(serverURL, linkReport, "")
 		os.Exit(0)
 	}
 
@@ -258,6 +265,7 @@ func main() {
 	if err != nil {
 		log.Println("ERROR: getting host token;", err)
 	}
+	createLinkReport(serverURL, linkReport, hostToken)
 
 	// main loop
 	nextTime := time.Now()

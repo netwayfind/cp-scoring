@@ -1241,14 +1241,36 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 	timestamp := time.Now().Unix()
 	r.ParseForm()
 	hostToken := r.Form.Get("host_token")
+	if len(hostToken) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Host token missing"))
+		return
+	}
 	teamKey := r.Form.Get("team_key")
+	if len(teamKey) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Team key missing"))
+		return
+	}
 	teamID, err := dbSelectTeamIDForKey(teamKey)
 	if err != nil {
 		log.Println("Could not get team id;", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Team not found"))
 		return
 	}
 
-	dbInsertTeamHostToken(teamID, hostToken, timestamp)
+	err = dbInsertTeamHostToken(teamID, hostToken, timestamp)
+	if err != nil {
+		log.Println("ERROR: unable to insert team host token;", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Internal server error. Try again later."))
+		return
+	}
+
+	// redirect to team's score page
+	url := "https://" + r.Host + "/ui/report?team_key=" + teamKey
+	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func main() {
