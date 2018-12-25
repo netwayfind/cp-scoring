@@ -1235,6 +1235,22 @@ func getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token))
 }
 
+func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
+	log.Println("team host token")
+
+	timestamp := time.Now().Unix()
+	r.ParseForm()
+	hostToken := r.Form.Get("host_token")
+	teamKey := r.Form.Get("team_key")
+	teamID, err := dbSelectTeamIDForKey(teamKey)
+	if err != nil {
+		log.Println("Could not get team id;", err)
+		return
+	}
+
+	dbInsertTeamHostToken(teamID, hostToken, timestamp)
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -1371,6 +1387,7 @@ func main() {
 	// no auth
 	tokenRouter := r.PathPrefix("/token").Subrouter()
 	tokenRouter.HandleFunc("/host", getNewHostToken).Methods("GET")
+	tokenRouter.HandleFunc("/team", postTeamHostToken).Methods("POST")
 
 	log.Println("Ready to serve requests")
 	addr := ":" + strconv.Itoa(port)
