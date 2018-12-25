@@ -12,6 +12,8 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/sumwonyuno/cp-scoring/processing"
 
@@ -1036,6 +1038,11 @@ func getAdmins(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
+func getRandStr() string {
+	randKey := securecookie.GenerateRandomKey(32)
+	return base64.StdEncoding.EncodeToString(randKey)
+}
+
 func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
 	log.Println("Authenticating admin")
 
@@ -1054,8 +1061,7 @@ func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddlew
 	if checkPasswordHash(password, storedPasswordHash) {
 		log.Println("User authentication successful")
 
-		randKey := securecookie.GenerateRandomKey(32)
-		value := base64.StdEncoding.EncodeToString(randKey)
+		value := getRandStr()
 		amw.tokenUsers[value] = username
 
 		cookie := &http.Cookie{
@@ -1203,6 +1209,34 @@ func logoutAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddl
 	}
 }
 
+func getNewHostToken(w http.ResponseWriter, r *http.Request) {
+	log.Println("new host token")
+
+	r.ParseForm()
+	hostname := r.Form.Get("hostname")
+	hostname = strings.TrimSpace(hostname)
+	if len(hostname) == 0 {
+		msg := "Empty hostname"
+		log.Println(msg)
+		w.Write([]byte(msg))
+		return
+	}
+
+	// record request
+	timestamp := time.Now().Unix()
+	source := r.RemoteAddr
+	token := getRandStr()
+	err := dbInsertHostToken(token, timestamp, hostname, source)
+	if err != nil {
+		msg := "ERROR: unable to get host token;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+
+	w.Write([]byte(token))
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -1336,6 +1370,9 @@ func main() {
 	teamsRouter.HandleFunc("/{id:[0-9]+}", getTeam).Methods("GET")
 	teamsRouter.HandleFunc("/{id:[0-9]+}", editTeam).Methods("POST")
 	teamsRouter.HandleFunc("/{id:[0-9]+}", deleteTeam).Methods("DELETE")
+	// no auth
+	tokenRouter := r.PathPrefix("/token").Subrouter()
+	tokenRouter.HandleFunc("/host", getNewHostToken).Methods("GET")
 
 	log.Println("Ready to serve requests")
 	addr := ":" + strconv.Itoa(port)
