@@ -1246,6 +1246,19 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Host token missing"))
 		return
 	}
+	hostname := r.Form.Get("hostname")
+	if len(hostname) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Hostname missing"))
+		return
+	}
+	hostID, err := dbSelectHostIDForHostname(hostname)
+	if err != nil {
+		log.Println("Could not get host id;", err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Host not found"))
+		return
+	}
 	teamKey := r.Form.Get("team_key")
 	if len(teamKey) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1260,7 +1273,7 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertTeamHostToken(teamID, hostToken, timestamp)
+	err = dbInsertTeamHostToken(teamID, hostID, hostToken, timestamp)
 	if err != nil {
 		log.Println("ERROR: unable to insert team host token;", err)
 		w.WriteHeader(http.StatusInternalServerError)

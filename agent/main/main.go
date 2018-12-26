@@ -111,12 +111,11 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 }
 
-func getHostToken(hostTokenURL string, hostTokenFile string, transport *http.Transport) (string, error) {
+func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, transport *http.Transport) (string, error) {
 	// if host token file doesn't exist, get new host token and save it
 	if _, err := os.Stat(hostTokenFile); os.IsNotExist(err) {
 		log.Println("Host token not found")
 		c := http.Client{Transport: transport}
-		hostname, _ := os.Hostname()
 		url := hostTokenURL + "?hostname=" + hostname
 		r, err := c.Get(url)
 		if err != nil {
@@ -158,11 +157,12 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 	log.Println("Created scoreboard link file")
 }
 
-func createLinkReport(serverURL string, linkReport string, hostToken string) {
+func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) {
 	url := serverURL + "/token/team"
 	s := "<html><head><body>" +
 		"<form method=\"POST\" action=" + url + ">" +
 		"<input name=\"host_token\" hidden value=\"" + hostToken + "\"/>" +
+		"<input name=\"hostname\" hidden value=\"" + hostname + "\"/>" +
 		"<label id=\"team_key\">Enter team key:</label>" +
 		"<input name=\"team_key\" />" +
 		"<button type=\"submit\">Submit</button>" +
@@ -206,12 +206,14 @@ func main() {
 		os.Exit(0)
 	}
 
+	hostname, _ := os.Hostname()
+
 	if len(serverURL) > 0 {
 		// remove trailing slash
 		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
-		createLinkReport(serverURL, linkReport, "")
+		createLinkReport(serverURL, linkReport, hostname, "")
 		os.Exit(0)
 	}
 
@@ -261,11 +263,11 @@ func main() {
 
 	// host token
 	hostTokenURL := serverURL + "/token/host"
-	hostToken, err := getHostToken(hostTokenURL, hostTokenFile, transport)
+	hostToken, err := getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
 	if err != nil {
 		log.Println("ERROR: getting host token;", err)
 	}
-	createLinkReport(serverURL, linkReport, hostToken)
+	createLinkReport(serverURL, linkReport, hostname, hostToken)
 
 	// main loop
 	nextTime := time.Now()
