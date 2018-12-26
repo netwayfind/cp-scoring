@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -111,7 +110,7 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 }
 
-func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, transport *http.Transport) (string, error) {
+func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, transport *http.Transport) string {
 	// if host token file doesn't exist, get new host token and save it
 	if _, err := os.Stat(hostTokenFile); os.IsNotExist(err) {
 		log.Println("Host token not found")
@@ -119,18 +118,22 @@ func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, tr
 		url := hostTokenURL + "?hostname=" + hostname
 		r, err := c.Get(url)
 		if err != nil {
-			return "", err
+			log.Println("ERROR: unable to GET host token;", err)
+			return ""
 		}
 		if r.StatusCode != 200 {
-			return "", errors.New("Unexpected status code from server: " + r.Status)
+			log.Println("ERROR: Unexpected status code from server: " + r.Status)
+			return ""
 		}
 		defer r.Body.Close()
 		tokenBytes, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			return "", err
+			log.Println("ERROR: unable to read host token response body;", err)
+			return ""
 		}
 		if len(tokenBytes) == 0 {
-			return "", errors.New("Empty host token")
+			log.Println("ERROR: Empty host token from server")
+			return ""
 		}
 		err = ioutil.WriteFile(hostTokenFile, tokenBytes, 0400)
 		if err != nil {
@@ -142,9 +145,10 @@ func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, tr
 	// get host token file from file
 	tokenBytes, err := ioutil.ReadFile(hostTokenFile)
 	if err != nil {
-		return "", err
+		log.Println("ERROR: unable to read host token file;", err)
+		return ""
 	}
-	return string(tokenBytes), nil
+	return string(tokenBytes)
 }
 
 func createLinkScoreboard(serverURL string, linkScoreboard string) {
@@ -154,7 +158,7 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 	if err != nil {
 		log.Fatalln("ERROR: unable to save scoreboard link file;", err)
 	}
-	log.Println("Created scoreboard link file")
+	log.Println("Wrote to scoreboard link file")
 }
 
 func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) {
@@ -182,7 +186,7 @@ func createLinkReport(serverURL string, linkReport string, hostname string, host
 	if err != nil {
 		log.Fatalln("ERROR: unable to save report link file;", err)
 	}
-	log.Println("Created report link file")
+	log.Println("Wrote to report link file")
 }
 
 func installThis() {
@@ -274,18 +278,22 @@ func main() {
 
 	// host token
 	hostTokenURL := serverURL + "/token/host"
-	hostToken, err := getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
-	if err != nil {
-		log.Println("ERROR: getting host token;", err)
-	}
-	createLinkReport(serverURL, linkReport, hostname, hostToken)
+	hostToken := ""
 
 	// main loop
 	nextTime := time.Now()
 	for {
 		nextTime = nextTime.Add(time.Minute)
 		saveState(dataDir, entities)
-		go sendState(dataDir, serverURL, transport, hostToken)
+		// get host token and send state asynchronously
+		go func() {
+			// get host token if not set yet
+			if len(hostToken) == 0 {
+				hostToken = getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
+				createLinkReport(serverURL, linkReport, hostname, hostToken)
+			}
+			sendState(dataDir, serverURL, transport, hostToken)
+		}()
 		wait := time.Since(nextTime) * -1
 		time.Sleep(wait)
 	}
@@ -309,10 +317,17 @@ func saveState(dir string, entities []*openpgp.Entity) {
 		log.Println("ERROR: saving state;", err)
 		return
 	}
+	log.Println("Saved state")
 }
 
-func sendState(dir string, server string, transport *http.Transport, hostToken string) {
-	url := server + "/audit"
+func sendState(dir string, serverURL string, transport *http.Transport, hostToken string) {
+	// need host token
+	if len(hostToken) == 0 {
+		return
+	}
+	log.Println("Sending state")
+
+	url := serverURL + "/audit"
 	c := &http.Client{Transport: transport}
 
 	files, err := ioutil.ReadDir(dir)
@@ -329,7 +344,7 @@ func sendState(dir string, server string, transport *http.Transport, hostToken s
 			log.Println("DELETING", fullPath)
 			os.Remove(fullPath)
 		} else {
-			log.Println("Sending state to server", server)
+			log.Println("Sending state to server", serverURL)
 			var submission model.StateSubmission
 			submission.HostToken = hostToken
 			submission.StateBytes = stateBytes
