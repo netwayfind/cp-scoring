@@ -1242,42 +1242,36 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	hostToken := r.Form.Get("host_token")
 	if len(hostToken) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Host token missing"))
+		http.Error(w, "Host token missing", http.StatusBadRequest)
 		return
 	}
 	hostname := r.Form.Get("hostname")
 	if len(hostname) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Hostname missing"))
+		http.Error(w, "Hostname missing", http.StatusBadRequest)
 		return
 	}
 	hostID, err := dbSelectHostIDForHostname(hostname)
 	if err != nil {
 		log.Println("Could not get host id;", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Host not found"))
+		http.Error(w, "Host not found", http.StatusBadRequest)
 		return
 	}
 	teamKey := r.Form.Get("team_key")
 	if len(teamKey) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Team key missing"))
+		http.Error(w, "Team key missing", http.StatusBadRequest)
 		return
 	}
 	teamID, err := dbSelectTeamIDForKey(teamKey)
 	if err != nil {
 		log.Println("Could not get team id;", err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Team not found"))
+		http.Error(w, "Team not found", http.StatusBadRequest)
 		return
 	}
 
 	err = dbInsertTeamHostToken(teamID, hostID, hostToken, timestamp)
 	if err != nil {
 		log.Println("ERROR: unable to insert team host token;", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal server error. Try again later."))
+		http.Error(w, "Internal server error. Try again later", http.StatusInternalServerError)
 		return
 	}
 
