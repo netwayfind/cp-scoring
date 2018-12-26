@@ -159,14 +159,25 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) {
 
 func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) {
 	url := serverURL + "/token/team"
-	s := "<html><head><body>" +
-		"<form method=\"POST\" action=" + url + ">" +
-		"<input name=\"host_token\" hidden value=\"" + hostToken + "\"/>" +
-		"<input name=\"hostname\" hidden value=\"" + hostname + "\"/>" +
-		"<label id=\"team_key\">Enter team key:</label>" +
-		"<input name=\"team_key\" />" +
-		"<button type=\"submit\">Submit</button>" +
-		"</form></body></html>"
+	var s string
+	// if have host token, then connected
+	if len(hostToken) > 0 {
+		s = "<html><head><body>" +
+			"<form method=\"POST\" action=" + url + ">" +
+			"<input name=\"host_token\" hidden value=\"" + hostToken + "\"/>" +
+			"<input name=\"hostname\" hidden value=\"" + hostname + "\"/>" +
+			"<label id=\"team_key\">Enter team key:</label>" +
+			"<input name=\"team_key\" />" +
+			"<button type=\"submit\">Submit</button>" +
+			"</form></body></html>"
+	} else {
+		// refresh page every 30 seconds
+		s = "<html><head><meta http-equiv=\"refresh\" content=\"30\"/></head><body>" +
+			"Cannot connect to server. Check Internet connection and try again later." +
+			"<p />" +
+			"Last check: " + time.Now().Format("Jan 2 2006 15:04:05 MST") +
+			"</body></html>"
+	}
 	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
 		log.Fatalln("ERROR: unable to save report link file;", err)
