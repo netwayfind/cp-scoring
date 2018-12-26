@@ -877,8 +877,8 @@ func dbSelectTeamIDFromHostToken(hostToken string) (int64, error) {
 	return teamID, nil
 }
 
-func dbInsertTeamHostToken(teamID int64, host_id int64, hostToken string, timestamp int64) error {
-	_, err := dbInsert("INSERT INTO team_host_tokens(team_id, host_id, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, host_id, hostToken, timestamp)
+func dbInsertTeamHostToken(teamID int64, hostID int64, hostToken string, timestamp int64) error {
+	_, err := dbInsert("INSERT INTO team_host_tokens(team_id, host_id, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, hostID, hostToken, timestamp)
 	if err != nil {
 		return err
 	}
