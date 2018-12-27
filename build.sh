@@ -38,6 +38,7 @@ GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.e
 
 echo "Running unit tests"
 go test github.com/sumwonyuno/cp-scoring/agent
+go test github.com/sumwonyuno/cp-scoring/agent/main
 go test github.com/sumwonyuno/cp-scoring/auditor
 go test github.com/sumwonyuno/cp-scoring/model
 go test github.com/sumwonyuno/cp-scoring/processing

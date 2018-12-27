@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -25,29 +26,37 @@ import (
 	_ "golang.org/x/crypto/ripemd160"
 )
 
-func getServerURL(path string) string {
+func getServerURL(path string) (string, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatalln("ERROR: cannot read from server URL file")
+		return "", err
 	}
 	serverURL := strings.TrimSpace(string(b))
-	checkValidServerURL(serverURL)
-	return serverURL
+	err = checkValidServerURL(serverURL)
+	if err != nil {
+		return "", err
+	}
+	return serverURL, nil
 }
 
-func checkValidServerURL(serverURL string) {
+func checkValidServerURL(serverURL string) error {
 	_, err := url.ParseRequestURI(serverURL)
 	if err != nil {
-		log.Fatalln("ERROR: could not parse server URL;", err)
+		return err
 	}
 	// probably not a https:// URL
 	if len(serverURL) <= 8 || serverURL[0:8] != "https://" {
-		log.Fatalln("ERROR: not a HTTPS URL: " + serverURL)
+		return errors.New("not a HTTPS URL: " + serverURL)
 	}
+	// should be OK
+	return nil
 }
 
 func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFile string, serverCrtFile string) {
-	checkValidServerURL(serverURL)
+	err := checkValidServerURL(serverURL)
+	if err != nil {
+		log.Fatalln("ERROR: URL not valid;", err)
+	}
 
 	// don't override existing files
 	if _, err := os.Stat(serverURLFile); !os.IsNotExist(err) {
@@ -151,17 +160,19 @@ func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, tr
 	return string(tokenBytes)
 }
 
-func createLinkScoreboard(serverURL string, linkScoreboard string) {
+func createLinkScoreboard(serverURL string, linkScoreboard string) error {
 	url := serverURL + "/ui/scoreboard"
 	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Scoreboard</a></body></html>"
 	err := ioutil.WriteFile(linkScoreboard, []byte(s), 0644)
 	if err != nil {
-		log.Fatalln("ERROR: unable to save scoreboard link file;", err)
+		log.Println("ERROR: unable to save scoreboard link file")
+		return err
 	}
 	log.Println("Wrote to scoreboard link file")
+	return nil
 }
 
-func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) {
+func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) error {
 	url := serverURL + "/token/team"
 	var s string
 	// if have host token, then connected
@@ -184,9 +195,11 @@ func createLinkReport(serverURL string, linkReport string, hostname string, host
 	}
 	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
-		log.Fatalln("ERROR: unable to save report link file;", err)
+		log.Println("ERROR: unable to save report link file")
+		return err
 	}
 	log.Println("Wrote to report link file")
+	return nil
 }
 
 func installThis() {
@@ -251,7 +264,10 @@ func main() {
 
 	// get values from files
 	// server URL
-	serverURL = getServerURL(serverURLFile)
+	serverURL, err = getServerURL(serverURLFile)
+	if err != nil {
+		log.Fatalln("ERROR: could not get server URL;", err)
+	}
 
 	// server public key
 	pubKeyFile, err := os.Open(serverPubFile)
