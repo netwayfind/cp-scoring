@@ -65,11 +65,10 @@ func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler 
 	})
 }
 
-func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) {
+func saveAuditRequest(w http.ResponseWriter, r *http.Request, dataDir string) {
 	log.Println("Received audit request")
 
-	// client will get HTTP 200 unless this isn't a POST, so send HTTP 405 back
-	// don't send client back any information if their payload is not acceptable or server error
+	// expecting HTTP POST
 	if r.Method != "POST" {
 		msg := "HTTP 405"
 		log.Println(msg)
@@ -81,59 +80,95 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
+		// don't send error back to client
 		return
+	}
+
+	// save request to temp file
+	// temp file is dataDir/<timestamp>_<tempname>
+	timestampStr := strconv.FormatInt(time.Now().Unix(), 10)
+	outFile, err := ioutil.TempFile(dataDir, timestampStr+"_")
+	outFile.Chmod(0600)
+	defer outFile.Close()
+	outFile.Write(body)
+}
+
+func audit(dataDir string, entities openpgp.EntityList) {
+	for {
+		err := filepath.Walk(dataDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+			log.Println("Auditing file " + path)
+			auditErr := auditFile(path, entities)
+			if auditErr != nil {
+				return auditErr
+			}
+			log.Println("DELETING " + path)
+			return os.Remove(path)
+		})
+		if err != nil {
+			log.Println("ERROR: unable to walk data directory;", err)
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func auditFile(fileStr string, entities openpgp.EntityList) error {
+	fileBytes, err := ioutil.ReadFile(fileStr)
+	if err != nil {
+		log.Println("ERROR: unable to read file")
+		return err
 	}
 
 	var stateSubmission model.StateSubmission
-	err = json.Unmarshal(body, &stateSubmission)
+	err = json.Unmarshal(fileBytes, &stateSubmission)
 	if err != nil {
-		msg := "ERROR: cannot unmarshal state submission;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot unmarshal state submission;")
+		// allow file to be deleted
+		return nil
 	}
 	state, err := processing.FromBytes(stateSubmission.StateBytes, entities)
 	if err != nil {
-		msg := "ERROR: cannot unmarshal state;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot unmarshal state;")
+		// allow file to be deleted
+		return nil
 	}
 
 	log.Println("Saving state")
-	err = dbInsertState(string(body))
+	err = dbInsertState(string(fileBytes))
 	if err != nil {
-		msg := "ERROR: cannot insert state;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot insert state;")
+		return err
 	}
 
 	log.Println("Getting information")
 	hostToken := stateSubmission.HostToken
 	teamID, err := dbSelectTeamIDFromHostToken(hostToken)
 	if err != nil {
-		msg := "ERROR: cannot get team id;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot get team id;")
+		return err
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostID, err := dbSelectHostIDForHostname(state.Hostname)
 	if err != nil {
-		msg := "ERROR: cannot get host id;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot get host id;")
+		return err
 	}
 	log.Println(fmt.Sprintf("Host ID: %d", hostID))
 
 	log.Println("Getting scenarios")
 	scenarioIDs, err := dbSelectScenariosForHostname(state.Hostname)
 	if err != nil {
-		msg := "ERROR: cannot get scenario IDs;"
-		log.Println(msg, err)
-		return
+		log.Println("ERROR: cannot get scenario IDs;")
+		return err
 	}
 	if len(scenarioIDs) == 0 {
-		msg := "ERROR: no scenarios found"
-		log.Println(msg)
-		return
+		log.Println("ERROR: no scenarios found")
+		return nil
 	}
 	for _, scenarioID := range scenarioIDs {
 		log.Println(fmt.Sprintf("Processing scenario ID: %d", scenarioID))
@@ -141,15 +176,13 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		log.Println("Getting scenario templates")
 		templates, err := dbSelectTemplatesForHostname(scenarioID, state.Hostname)
 		if err != nil {
-			msg := "ERROR: cannot get templates;"
-			log.Println(msg, err)
-			return
+			log.Println("ERROR: cannot get templates;")
+			return err
 		}
 		log.Println(fmt.Sprintf("Found template count: %d", len(templates)))
 		if len(templates) == 0 {
-			msg := "ERROR: no templates found"
-			log.Println(msg)
-			return
+			log.Println("ERROR: no templates found")
+			return nil
 		}
 
 		log.Println("Auditing state")
@@ -159,9 +192,8 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		report.Timestamp = state.Timestamp
 		err = dbInsertScenarioReport(scenarioID, teamID, hostID, report)
 		if err != nil {
-			msg := "ERROR: cannot insert report;"
-			log.Println(msg, err)
-			return
+			log.Println("ERROR: cannot insert report;")
+			return err
 		}
 
 		log.Println("Saving score")
@@ -178,14 +210,13 @@ func audit(w http.ResponseWriter, r *http.Request, entities openpgp.EntityList) 
 		scoreEntry.Score = score
 		err = dbInsertScenarioScore(scoreEntry)
 		if err != nil {
-			msg := "ERROR: cannot insert scenario score;"
-			log.Println(msg, err)
-			return
+			log.Println("ERROR: cannot insert scenario score;")
+			return err
 		}
 	}
 
-	response := "Received and saved"
-	log.Println(response)
+	log.Println("Received and saved")
+	return nil
 }
 
 func getHosts(w http.ResponseWriter, r *http.Request) {
@@ -1306,8 +1337,10 @@ func main() {
 
 	publicDir := path.Join(dir, "public")
 	privateDir := path.Join(dir, "private")
+	dataDir := path.Join(dir, "data")
 	err = os.MkdirAll(publicDir, 0700)
 	err = os.MkdirAll(privateDir, 0700)
+	err = os.MkdirAll(dataDir, 0700)
 
 	var fileKey string
 	var fileCert string
@@ -1339,6 +1372,8 @@ func main() {
 		log.Println("ERROR: cannot read entity;", err)
 		return
 	}
+	// process audit requests asynchronously
+	go audit(dataDir, entities)
 
 	authenticator := authenticationMiddleware{}
 	authenticator.tokenUsers = make(map[string]string)
@@ -1351,7 +1386,7 @@ func main() {
 	r.PathPrefix("/public").Handler(http.FileServer(http.Dir(dir)))
 
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
-		audit(w, r, entities)
+		saveAuditRequest(w, r, dataDir)
 	}).Methods("POST")
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		authAdmin(w, r, authenticator)
