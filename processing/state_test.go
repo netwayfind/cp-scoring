@@ -274,6 +274,15 @@ func TestToBytes(t *testing.T) {
 	}
 }
 
+func TestFromBytesBad(t *testing.T) {
+	entities := getTestEntities(t)
+	bs := make([]byte, 0)
+	_, err := FromBytes(bs, entities)
+	if err == nil {
+		t.Fatal("Expected error for empty bytes")
+	}
+}
+
 func TestFromBytes(t *testing.T) {
 	entities := getTestEntities(t)
 

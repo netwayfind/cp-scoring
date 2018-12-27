@@ -36,10 +36,14 @@ func ToBytes(state model.State, entities []*openpgp.Entity) ([]byte, error) {
 func FromBytes(bs []byte, entities openpgp.EntityList) (model.State, error) {
 	var state model.State
 
+	if len(bs) == 0 {
+		return state, errors.New("Empty bytes given")
+	}
+
 	// decrypt bytes
 	bs, err := bytesDecrypt(bs, entities)
 	if err != nil {
-		return state, nil
+		return state, err
 	}
 
 	// decompress bytes
