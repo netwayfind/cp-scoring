@@ -1218,7 +1218,7 @@ func deleteAdmin(w http.ResponseWriter, r *http.Request) {
 
 	username := vars["username"]
 	log.Println("username: " + username)
-	err = dbDeleteAdmin(username)
+	err := dbDeleteAdmin(username)
 	if err != nil {
 		msg := "ERROR: cannot delete admin;"
 		log.Println(msg, err)

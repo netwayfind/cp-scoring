@@ -13,9 +13,9 @@ import (
 )
 
 var db *sql.DB
-var err error
 
 func dbInit(dir string) {
+	var err error
 	db, err = sql.Open("sqlite3", path.Join(dir, "cp-scoring.db"))
 	if err != nil {
 		log.Fatal("ERROR: cannot open db file;", err)
@@ -615,7 +615,7 @@ func dbDeleteScenario(id int64) error {
 func dbInsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
 	for hostID, templateIDs := range scenario.HostTemplates {
 		for _, templateID := range templateIDs {
-			_, err = dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES(?, ?, ?)", id, hostID, templateID)
+			_, err := dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES(?, ?, ?)", id, hostID, templateID)
 			if err != nil {
 				return err
 			}
