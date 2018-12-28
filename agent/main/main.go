@@ -146,7 +146,8 @@ func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, tr
 		}
 		err = ioutil.WriteFile(hostTokenFile, tokenBytes, 0400)
 		if err != nil {
-			log.Fatalln("ERROR: unable to save team key;", err)
+			log.Println("ERROR: unable to save team key;", err)
+			return ""
 		}
 		log.Println("Saved host token")
 	}
@@ -200,6 +201,39 @@ func createLinkReport(serverURL string, linkReport string, hostname string, host
 	}
 	log.Println("Wrote to report link file")
 	return nil
+}
+
+func readServerPubKey(path string) (openpgp.EntityList, error) {
+	pubKeyFile, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer pubKeyFile.Close()
+	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
+}
+
+func readServerCert(path string) (*http.Transport, error) {
+	certs := x509.NewCertPool()
+	certBytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	if len(certBytes) == 0 {
+		return nil, errors.New("Empty cert bytes found")
+	}
+	ok := certs.AppendCertsFromPEM(certBytes)
+	if !ok {
+		return nil, errors.New("Invalid cert bytes found")
+	}
+	tlsConfig := &tls.Config{
+		RootCAs: certs,
+	}
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+	return transport, nil
 }
 
 func installThis() {
@@ -270,27 +304,16 @@ func main() {
 	}
 
 	// server public key
-	pubKeyFile, err := os.Open(serverPubFile)
+	entities, err := readServerPubKey(serverPubFile)
 	if err != nil {
 		log.Fatalln("ERROR: cannot read server openpgp public key file;", err)
 	}
-	defer pubKeyFile.Close()
-	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
-	if err != nil {
-		log.Fatalln("ERROR: cannot read entity;", err)
-	}
 
 	// server certificate
-	certs := x509.NewCertPool()
-	certBytes, err := ioutil.ReadFile(serverCrtFile)
+	transport, err := readServerCert(serverCrtFile)
 	if err != nil {
 		log.Fatalln("ERROR: cannot read server cert file;", err)
 	}
-	certs.AppendCertsFromPEM(certBytes)
-	tlsConfig := &tls.Config{
-		RootCAs: certs,
-	}
-	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
 	// host token
 	hostTokenURL := serverURL + "/token/host"
