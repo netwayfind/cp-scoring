@@ -12,37 +12,46 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-var db *sql.DB
+type dbObj struct {
+	dbConn *sql.DB
+}
 
-func dbInit(dir string) {
-	var err error
-	db, err = sql.Open("sqlite3", path.Join(dir, "cp-scoring.db"))
+func newSQLiteDBConn(args []string) (*sql.DB, error) {
+	// must have first argument as work directory
+	if len(args) < 1 {
+		return nil, errors.New("ERROR: work directory required")
+	}
+	workDir := args[0]
+	dbConn, err := sql.Open("sqlite3", path.Join(workDir, "cp-scoring.db"))
 	if err != nil {
-		log.Fatal("ERROR: cannot open db file;", err)
+		return nil, err
 	}
 	log.Println("Connected to database")
+	return dbConn, nil
+}
 
-	createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
-	createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
-	createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
-	createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
-	createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
-	createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
-	createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
-	createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
-	createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
-	createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
-	createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+func (db dbObj) dbInit() {
+	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
+	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
+	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
+	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
+	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
+	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
+	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
+	db.createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 
 	log.Println("Finished setting up database")
 }
 
-func dbClose() {
-	db.Close()
+func (db dbObj) dbClose() {
+	db.dbConn.Close()
 }
 
-func createTable(name string, stmtStr string) {
-	stmt, err := db.Prepare(stmtStr)
+func (db dbObj) createTable(name string, stmtStr string) {
+	stmt, err := db.dbConn.Prepare(stmtStr)
 	if err != nil {
 		log.Fatal("ERROR: cannot create table "+name+";", err)
 	}
@@ -52,8 +61,8 @@ func createTable(name string, stmtStr string) {
 	}
 }
 
-func dbInsert(stmtStr string, args ...interface{}) (int64, error) {
-	stmt, err := db.Prepare(stmtStr)
+func (db dbObj) dbInsert(stmtStr string, args ...interface{}) (int64, error) {
+	stmt, err := db.dbConn.Prepare(stmtStr)
 	if err != nil {
 		return -1, err
 	}
@@ -69,8 +78,8 @@ func dbInsert(stmtStr string, args ...interface{}) (int64, error) {
 	return id, nil
 }
 
-func dbDelete(stmtStr string, args ...interface{}) error {
-	stmt, err := db.Prepare(stmtStr)
+func (db dbObj) dbDelete(stmtStr string, args ...interface{}) error {
+	stmt, err := db.dbConn.Prepare(stmtStr)
 	if err != nil {
 		return err
 	}
@@ -82,8 +91,8 @@ func dbDelete(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
-func dbUpdate(stmtStr string, args ...interface{}) error {
-	stmt, err := db.Prepare(stmtStr)
+func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
+	stmt, err := db.dbConn.Prepare(stmtStr)
 	if err != nil {
 		return err
 	}
@@ -95,14 +104,14 @@ func dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
-func dbInsertState(state string) error {
-	_, err := dbInsert("INSERT INTO states(state) VALUES(?)", state)
+func (db dbObj) InsertState(state string) error {
+	_, err := db.dbInsert("INSERT INTO states(state) VALUES(?)", state)
 	return err
 }
 
-func dbSelectAdmins() ([]string, error) {
+func (db dbObj) SelectAdmins() ([]string, error) {
 	var admins []string
-	rows, err := db.Query("SELECT DISTINCT username FROM admins")
+	rows, err := db.dbConn.Query("SELECT DISTINCT username FROM admins")
 	if err != nil {
 		return admins, err
 	}
@@ -121,8 +130,8 @@ func dbSelectAdmins() ([]string, error) {
 	return admins, nil
 }
 
-func dbIsAdmin(username string) (bool, error) {
-	rows, err := db.Query("SELECT username FROM admins WHERE username=(?)", username)
+func (db dbObj) IsAdmin(username string) (bool, error) {
+	rows, err := db.dbConn.Query("SELECT username FROM admins WHERE username=(?)", username)
 	if err != nil {
 		return false, err
 	}
@@ -144,8 +153,8 @@ func dbIsAdmin(username string) (bool, error) {
 	return true, nil
 }
 
-func dbSelectAdminPasswordHash(username string) (string, error) {
-	rows, err := db.Query("SELECT password_hash FROM admins WHERE username=(?)", username)
+func (db dbObj) SelectAdminPasswordHash(username string) (string, error) {
+	rows, err := db.dbConn.Query("SELECT password_hash FROM admins WHERE username=(?)", username)
 	if err != nil {
 		return "", err
 	}
@@ -162,21 +171,21 @@ func dbSelectAdminPasswordHash(username string) (string, error) {
 	return passwordHash, nil
 }
 
-func dbDeleteAdmin(username string) error {
-	return dbDelete("DELETE FROM admins where username=(?)", username)
+func (db dbObj) DeleteAdmin(username string) error {
+	return db.dbDelete("DELETE FROM admins where username=(?)", username)
 }
 
-func dbUpdateAdmin(username string, passwordHash string) error {
-	return dbUpdate("UPDATE admins SET password_hash=(?) WHERE username=(?)", passwordHash, username)
+func (db dbObj) UpdateAdmin(username string, passwordHash string) error {
+	return db.dbUpdate("UPDATE admins SET password_hash=(?) WHERE username=(?)", passwordHash, username)
 }
 
-func dbInsertAdmin(username string, passwordHash string) error {
-	_, err := dbInsert("INSERT INTO admins(username, password_hash) VALUES(?, ?)", username, passwordHash)
+func (db dbObj) InsertAdmin(username string, passwordHash string) error {
+	_, err := db.dbInsert("INSERT INTO admins(username, password_hash) VALUES(?, ?)", username, passwordHash)
 	return err
 }
 
-func dbSelectTeams() ([]model.TeamSummary, error) {
-	rows, err := db.Query("SELECT id, name FROM teams ORDER BY name ASC")
+func (db dbObj) SelectTeams() ([]model.TeamSummary, error) {
+	rows, err := db.dbConn.Query("SELECT id, name FROM teams ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -200,10 +209,10 @@ func dbSelectTeams() ([]model.TeamSummary, error) {
 	return teams, nil
 }
 
-func dbSelectHostIDForHostname(hostname string) (int64, error) {
+func (db dbObj) SelectHostIDForHostname(hostname string) (int64, error) {
 	var id int64 = -1
 
-	rows, err := db.Query("SELECT id FROM hosts WHERE hostname=(?)", hostname)
+	rows, err := db.dbConn.Query("SELECT id FROM hosts WHERE hostname=(?)", hostname)
 	if err != nil {
 		return id, err
 	}
@@ -234,11 +243,11 @@ func (e *errorStr) Error() string {
 	return e.error
 }
 
-func dbSelectTeamIDForKey(key string) (int64, error) {
+func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
 	var id int64 = -1
 	key = strings.TrimSpace(key)
 
-	rows, err := db.Query("SELECT id FROM teams WHERE key=(?) AND enabled=1", key)
+	rows, err := db.dbConn.Query("SELECT id FROM teams WHERE key=(?) AND enabled=1", key)
 	if err != nil {
 		return id, err
 	}
@@ -261,10 +270,10 @@ func dbSelectTeamIDForKey(key string) (int64, error) {
 	return id, err
 }
 
-func dbSelectTeam(id int64) (model.Team, error) {
+func (db dbObj) SelectTeam(id int64) (model.Team, error) {
 	var team model.Team
 
-	rows, err := db.Query("SELECT name, poc, email, enabled, key FROM teams where id=(?)", id)
+	rows, err := db.dbConn.Query("SELECT name, poc, email, enabled, key FROM teams where id=(?)", id)
 	if err != nil {
 		return team, err
 	}
@@ -293,21 +302,21 @@ func dbSelectTeam(id int64) (model.Team, error) {
 	return team, nil
 }
 
-func dbDeleteTeam(id int64) error {
-	return dbDelete("DELETE FROM teams where id=(?)", id)
+func (db dbObj) DeleteTeam(id int64) error {
+	return db.dbDelete("DELETE FROM teams where id=(?)", id)
 }
 
-func dbInsertTeam(team model.Team) error {
-	_, err := dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES(?, ?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled, team.Key)
+func (db dbObj) InsertTeam(team model.Team) error {
+	_, err := db.dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES(?, ?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled, team.Key)
 	return err
 }
 
-func dbUpdateTeam(id int64, team model.Team) error {
-	return dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?), key=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, team.Key, id)
+func (db dbObj) UpdateTeam(id int64, team model.Team) error {
+	return db.dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?), key=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, team.Key, id)
 }
 
-func dbSelectTemplates() ([]model.TemplateEntry, error) {
-	rows, err := db.Query("SELECT id, name, template FROM templates ORDER BY name ASC")
+func (db dbObj) SelectTemplates() ([]model.TemplateEntry, error) {
+	rows, err := db.dbConn.Query("SELECT id, name, template FROM templates ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -338,13 +347,13 @@ func dbSelectTemplates() ([]model.TemplateEntry, error) {
 	return templateEntries, nil
 }
 
-func dbSelectTemplate(id int64) (model.TemplateEntry, error) {
+func (db dbObj) SelectTemplate(id int64) (model.TemplateEntry, error) {
 	var templateEntry model.TemplateEntry
 	var template model.Template
 	var name string
 	var templateBytes []byte
 
-	rows, err := db.Query("SELECT name, template FROM templates where id=(?)", id)
+	rows, err := db.dbConn.Query("SELECT name, template FROM templates where id=(?)", id)
 	if err != nil {
 		return templateEntry, err
 	}
@@ -369,12 +378,12 @@ func dbSelectTemplate(id int64) (model.TemplateEntry, error) {
 	return templateEntry, nil
 }
 
-func dbDeleteTemplate(id int64) error {
-	return dbDelete("DELETE FROM templates where id=(?)", id)
+func (db dbObj) DeleteTemplate(id int64) error {
+	return db.dbDelete("DELETE FROM templates where id=(?)", id)
 }
 
-func dbSelectScenariosForHostname(hostname string) ([]int64, error) {
-	rows, err := db.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=1", hostname)
+func (db dbObj) SelectScenariosForHostname(hostname string) ([]int64, error) {
+	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=1", hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -392,8 +401,8 @@ func dbSelectScenariosForHostname(hostname string) ([]int64, error) {
 	return scenarioIDs, nil
 }
 
-func dbSelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error) {
-	rows, err := db.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.scenario_id=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
+func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error) {
+	rows, err := db.dbConn.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.scenario_id=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -416,25 +425,25 @@ func dbSelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Te
 	return templates, nil
 }
 
-func dbInsertTemplate(templateEntry model.TemplateEntry) error {
+func (db dbObj) InsertTemplate(templateEntry model.TemplateEntry) error {
 	b, err := json.Marshal(templateEntry.Template)
 	if err != nil {
 		return err
 	}
-	_, err = dbInsert("INSERT INTO templates(name, template) VALUES(?,?)", templateEntry.Name, b)
+	_, err = db.dbInsert("INSERT INTO templates(name, template) VALUES(?,?)", templateEntry.Name, b)
 	return err
 }
 
-func dbUpdateTemplate(id int64, templateEntry model.TemplateEntry) error {
+func (db dbObj) UpdateTemplate(id int64, templateEntry model.TemplateEntry) error {
 	b, err := json.Marshal(templateEntry.Template)
 	if err != nil {
 		return err
 	}
-	return dbUpdate("UPDATE templates SET name=(?), template=(?) WHERE id=(?)", templateEntry.Name, b, id)
+	return db.dbUpdate("UPDATE templates SET name=(?), template=(?) WHERE id=(?)", templateEntry.Name, b, id)
 }
 
-func dbSelectHosts() ([]model.Host, error) {
-	rows, err := db.Query("SELECT id, hostname, os FROM hosts ORDER BY hostname ASC")
+func (db dbObj) SelectHosts() ([]model.Host, error) {
+	rows, err := db.dbConn.Query("SELECT id, hostname, os FROM hosts ORDER BY hostname ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -460,10 +469,10 @@ func dbSelectHosts() ([]model.Host, error) {
 	return hosts, nil
 }
 
-func dbSelectHost(id int64) (model.Host, error) {
+func (db dbObj) SelectHost(id int64) (model.Host, error) {
 	var host model.Host
 
-	rows, err := db.Query("SELECT hostname, os FROM hosts where id=(?)", id)
+	rows, err := db.dbConn.Query("SELECT hostname, os FROM hosts where id=(?)", id)
 	if err != nil {
 		return host, err
 	}
@@ -488,21 +497,21 @@ func dbSelectHost(id int64) (model.Host, error) {
 	return host, nil
 }
 
-func dbDeleteHost(id int64) error {
-	return dbDelete("DELETE FROM hosts where id=(?)", id)
+func (db dbObj) DeleteHost(id int64) error {
+	return db.dbDelete("DELETE FROM hosts where id=(?)", id)
 }
 
-func dbInsertHost(host model.Host) error {
-	_, err := dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
+func (db dbObj) InsertHost(host model.Host) error {
+	_, err := db.dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
 	return err
 }
 
-func dbUpdateHost(id int64, host model.Host) error {
-	return dbUpdate("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)", host.Hostname, host.OS, id)
+func (db dbObj) UpdateHost(id int64, host model.Host) error {
+	return db.dbUpdate("UPDATE hosts SET hostname=(?),os=(?) WHERE id=(?)", host.Hostname, host.OS, id)
 }
 
-func dbSelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) {
-	rows, err := db.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
+func (db dbObj) SelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) {
+	rows, err := db.dbConn.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -530,7 +539,7 @@ func dbSelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) 
 	return hostTemplates, nil
 }
 
-func dbSelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error) {
+func (db dbObj) SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error) {
 	var q strings.Builder
 
 	q.WriteString("SELECT id, name FROM scenarios")
@@ -539,7 +548,7 @@ func dbSelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error) {
 		q.WriteString(" WHERE enabled=1")
 	}
 	q.WriteString(" ORDER BY name ASC")
-	rows, err := db.Query(q.String())
+	rows, err := db.dbConn.Query(q.String())
 	if err != nil {
 		return nil, err
 	}
@@ -563,10 +572,10 @@ func dbSelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error) {
 	return scenarios, nil
 }
 
-func dbSelectScenario(id int64) (model.Scenario, error) {
+func (db dbObj) SelectScenario(id int64) (model.Scenario, error) {
 	var scenario model.Scenario
 
-	stmt, err := db.Prepare("SELECT name, description, enabled FROM scenarios where id=(?)")
+	stmt, err := db.dbConn.Prepare("SELECT name, description, enabled FROM scenarios where id=(?)")
 	if err != nil {
 		return scenario, err
 	}
@@ -584,7 +593,7 @@ func dbSelectScenario(id int64) (model.Scenario, error) {
 		if err != nil {
 			return scenario, err
 		}
-		hostTemplates, err := dbSelectScenarioHostTemplates(id)
+		hostTemplates, err := db.SelectScenarioHostTemplates(id)
 		if err != nil {
 			return scenario, err
 		}
@@ -600,22 +609,22 @@ func dbSelectScenario(id int64) (model.Scenario, error) {
 	return scenario, nil
 }
 
-func dbDeleteScenarioHostTemplates(scenarioID int64) error {
-	return dbDelete("DELETE FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
+func (db dbObj) DeleteScenarioHostTemplates(scenarioID int64) error {
+	return db.dbDelete("DELETE FROM hosts_templates WHERE scenario_id=(?)", scenarioID)
 }
 
-func dbDeleteScenario(id int64) error {
-	err := dbDelete("DELETE FROM scenarios WHERE id=(?)", id)
+func (db dbObj) DeleteScenario(id int64) error {
+	err := db.dbDelete("DELETE FROM scenarios WHERE id=(?)", id)
 	if err != nil {
 		return err
 	}
-	return dbDeleteScenarioHostTemplates(id)
+	return db.DeleteScenarioHostTemplates(id)
 }
 
-func dbInsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
+func (db dbObj) InsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
 	for hostID, templateIDs := range scenario.HostTemplates {
 		for _, templateID := range templateIDs {
-			_, err := dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES(?, ?, ?)", id, hostID, templateID)
+			_, err := db.dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES(?, ?, ?)", id, hostID, templateID)
 			if err != nil {
 				return err
 			}
@@ -624,29 +633,29 @@ func dbInsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
 	return nil
 }
 
-func dbInsertScenario(scenario model.Scenario) error {
-	id, err := dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
+func (db dbObj) InsertScenario(scenario model.Scenario) error {
+	id, err := db.dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
 	if err != nil {
 		return err
 	}
 
-	return dbInsertScenarioHostTemplates(id, scenario)
+	return db.InsertScenarioHostTemplates(id, scenario)
 }
 
-func dbUpdateScenario(id int64, scenario model.Scenario) error {
-	err := dbUpdate("UPDATE scenarios SET name=(?), description=(?), enabled=(?) WHERE id=(?)", scenario.Name, scenario.Description, scenario.Enabled, id)
+func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
+	err := db.dbUpdate("UPDATE scenarios SET name=(?), description=(?), enabled=(?) WHERE id=(?)", scenario.Name, scenario.Description, scenario.Enabled, id)
 	if err != nil {
 		return err
 	}
-	err = dbDeleteScenarioHostTemplates(id)
+	err = db.DeleteScenarioHostTemplates(id)
 	if err != nil {
 		return err
 	}
-	return dbInsertScenarioHostTemplates(id, scenario)
+	return db.InsertScenarioHostTemplates(id, scenario)
 }
 
-func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
-	rows, err := db.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY scores.team_id,scores.host_id ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
+func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
+	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY scores.team_id,scores.host_id ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -695,8 +704,8 @@ func dbSelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore
 	return totalScores, nil
 }
 
-func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioScore, error) {
-	rows, err := db.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp DESC", scenarioID, teamID)
+func (db dbObj) SelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioScore, error) {
+	rows, err := db.dbConn.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp DESC", scenarioID, teamID)
 	if err != nil {
 		return nil, err
 	}
@@ -724,12 +733,12 @@ func dbSelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioSco
 	return scores, nil
 }
 
-func dbSelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error) {
+func (db dbObj) SelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error) {
 	var timeline model.ScenarioTimeline
 	timeline.Timestamps = make([]int64, 0)
 	timeline.Scores = make([]int64, 0)
 
-	rows, err := db.Query("SELECT timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) AND host_id=(?) ORDER BY timestamp ASC", scenarioID, teamID, hostID)
+	rows, err := db.dbConn.Query("SELECT timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) AND host_id=(?) ORDER BY timestamp ASC", scenarioID, teamID, hostID)
 	if err != nil {
 		return timeline, err
 	}
@@ -750,8 +759,8 @@ func dbSelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (mod
 	return timeline, nil
 }
 
-func dbInsertScenarioScore(entry model.ScenarioScore) error {
-	_, err := dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
+func (db dbObj) InsertScenarioScore(entry model.ScenarioScore) error {
+	_, err := db.dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
 	if err != nil {
 		return err
 	}
@@ -759,9 +768,9 @@ func dbInsertScenarioScore(entry model.ScenarioScore) error {
 	return nil
 }
 
-func dbSelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) (model.Report, error) {
+func (db dbObj) SelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) (model.Report, error) {
 	var report model.Report
-	rows, err := db.Query("SELECT report FROM reports WHERE scenario_id=(?) AND team_id=(?) and host_id=(?) GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, teamID, hostID)
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=(?) AND team_id=(?) and host_id=(?) GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, teamID, hostID)
 	if err != nil {
 		return report, err
 	}
@@ -781,12 +790,12 @@ func dbSelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) 
 	return report, nil
 }
 
-func dbInsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry model.Report) error {
+func (db dbObj) InsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry model.Report) error {
 	b, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	_, err = dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, teamID, hostID, entry.Timestamp, b)
+	_, err = db.dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, teamID, hostID, entry.Timestamp, b)
 	if err != nil {
 		return err
 	}
@@ -794,9 +803,9 @@ func dbInsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry 
 	return nil
 }
 
-func dbSelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
+func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
-	rows, err := db.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts WHERE team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_id=hosts.id", teamID)
+	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts WHERE team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_id=hosts.id", teamID)
 	if err != nil {
 		return scenarioHosts, err
 	}
@@ -845,8 +854,8 @@ func dbSelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
 	return scenarioHosts, nil
 }
 
-func dbInsertHostToken(token string, timestamp int64, hostname string, source string) error {
-	_, err := dbInsert("INSERT INTO host_tokens(host_token, timestamp, hostname, source) VALUES(?, ?, ?, ?)", token, timestamp, hostname, source)
+func (db dbObj) InsertHostToken(token string, timestamp int64, hostname string, source string) error {
+	_, err := db.dbInsert("INSERT INTO host_tokens(host_token, timestamp, hostname, source) VALUES(?, ?, ?, ?)", token, timestamp, hostname, source)
 	if err != nil {
 		return err
 	}
@@ -854,8 +863,8 @@ func dbInsertHostToken(token string, timestamp int64, hostname string, source st
 	return nil
 }
 
-func dbSelectTeamIDFromHostToken(hostToken string) (int64, error) {
-	rows, err := db.Query("SELECT team_id from team_host_tokens WHERE host_token=(?)", hostToken)
+func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (int64, error) {
+	rows, err := db.dbConn.Query("SELECT team_id from team_host_tokens WHERE host_token=(?)", hostToken)
 	if err != nil {
 		return -1, err
 	}
@@ -877,8 +886,8 @@ func dbSelectTeamIDFromHostToken(hostToken string) (int64, error) {
 	return teamID, nil
 }
 
-func dbInsertTeamHostToken(teamID int64, hostID int64, hostToken string, timestamp int64) error {
-	_, err := dbInsert("INSERT INTO team_host_tokens(team_id, host_id, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, hostID, hostToken, timestamp)
+func (db dbObj) InsertTeamHostToken(teamID int64, hostID int64, hostToken string, timestamp int64) error {
+	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, host_id, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, hostID, hostToken, timestamp)
 	if err != nil {
 		return err
 	}

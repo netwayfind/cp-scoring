@@ -27,11 +27,12 @@ import (
 
 const cookieName string = "cp-scoring"
 
-type authenticationMiddleware struct {
-	tokenUsers map[string]string
+type theServer struct {
+	userTokens   map[string]string
+	backingStore backingStore
 }
 
-func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler {
+func (theServer theServer) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(cookieName)
 		if err != nil {
@@ -40,8 +41,8 @@ func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler 
 			return
 		}
 
-		if username, found := amw.tokenUsers[cookie.Value]; found {
-			isAdmin, err := dbIsAdmin(username)
+		if username, found := theServer.userTokens[cookie.Value]; found {
+			isAdmin, err := theServer.backingStore.IsAdmin(username)
 			if err != nil {
 				msg := "ERROR: unable to check if user is admin"
 				log.Println(msg, err)
@@ -50,7 +51,7 @@ func (amw *authenticationMiddleware) Middleware(next http.Handler) http.Handler 
 			}
 			if !isAdmin {
 				// delete any existing sessions
-				delete(amw.tokenUsers, cookie.Value)
+				delete(theServer.userTokens, cookie.Value)
 				msg := "Unauthorized request"
 				http.Error(w, msg, http.StatusUnauthorized)
 				log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
@@ -93,7 +94,7 @@ func saveAuditRequest(w http.ResponseWriter, r *http.Request, dataDir string) {
 	outFile.Write(body)
 }
 
-func audit(dataDir string, entities openpgp.EntityList) {
+func (theServer theServer) audit(dataDir string, entities openpgp.EntityList) {
 	for {
 		err := filepath.Walk(dataDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -103,7 +104,7 @@ func audit(dataDir string, entities openpgp.EntityList) {
 				return nil
 			}
 			log.Println("Auditing file " + path)
-			auditErr := auditFile(path, entities)
+			auditErr := theServer.auditFile(path, entities)
 			if auditErr != nil {
 				return auditErr
 			}
@@ -117,7 +118,7 @@ func audit(dataDir string, entities openpgp.EntityList) {
 	}
 }
 
-func auditFile(fileStr string, entities openpgp.EntityList) error {
+func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList) error {
 	fileBytes, err := ioutil.ReadFile(fileStr)
 	if err != nil {
 		log.Println("ERROR: unable to read file")
@@ -139,7 +140,7 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 	}
 
 	log.Println("Saving state")
-	err = dbInsertState(string(fileBytes))
+	err = theServer.backingStore.InsertState(string(fileBytes))
 	if err != nil {
 		log.Println("ERROR: cannot insert state;")
 		return err
@@ -147,13 +148,13 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 
 	log.Println("Getting information")
 	hostToken := stateSubmission.HostToken
-	teamID, err := dbSelectTeamIDFromHostToken(hostToken)
+	teamID, err := theServer.backingStore.SelectTeamIDFromHostToken(hostToken)
 	if err != nil {
 		log.Println("ERROR: cannot get team id;")
 		return err
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
-	hostID, err := dbSelectHostIDForHostname(state.Hostname)
+	hostID, err := theServer.backingStore.SelectHostIDForHostname(state.Hostname)
 	if err != nil {
 		log.Println("ERROR: cannot get host id;")
 		return err
@@ -161,7 +162,7 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 	log.Println(fmt.Sprintf("Host ID: %d", hostID))
 
 	log.Println("Getting scenarios")
-	scenarioIDs, err := dbSelectScenariosForHostname(state.Hostname)
+	scenarioIDs, err := theServer.backingStore.SelectScenariosForHostname(state.Hostname)
 	if err != nil {
 		log.Println("ERROR: cannot get scenario IDs;")
 		return err
@@ -174,7 +175,7 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 		log.Println(fmt.Sprintf("Processing scenario ID: %d", scenarioID))
 
 		log.Println("Getting scenario templates")
-		templates, err := dbSelectTemplatesForHostname(scenarioID, state.Hostname)
+		templates, err := theServer.backingStore.SelectTemplatesForHostname(scenarioID, state.Hostname)
 		if err != nil {
 			log.Println("ERROR: cannot get templates;")
 			return err
@@ -190,7 +191,7 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 
 		log.Println("Saving report")
 		report.Timestamp = state.Timestamp
-		err = dbInsertScenarioReport(scenarioID, teamID, hostID, report)
+		err = theServer.backingStore.InsertScenarioReport(scenarioID, teamID, hostID, report)
 		if err != nil {
 			log.Println("ERROR: cannot insert report;")
 			return err
@@ -208,7 +209,7 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 		scoreEntry.HostID = hostID
 		scoreEntry.Timestamp = state.Timestamp
 		scoreEntry.Score = score
-		err = dbInsertScenarioScore(scoreEntry)
+		err = theServer.backingStore.InsertScenarioScore(scoreEntry)
 		if err != nil {
 			log.Println("ERROR: cannot insert scenario score;")
 			return err
@@ -219,11 +220,11 @@ func auditFile(fileStr string, entities openpgp.EntityList) error {
 	return nil
 }
 
-func getHosts(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getHosts(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all hosts")
 
 	// get all hosts
-	hosts, err := dbSelectHosts()
+	hosts, err := theServer.backingStore.SelectHosts()
 	if err != nil {
 		msg := "ERROR: cannot retrieve hosts;"
 		log.Println(msg, err)
@@ -240,7 +241,7 @@ func getHosts(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func getHost(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a host")
 
 	// parse out int64 id
@@ -253,7 +254,7 @@ func getHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	host, err := dbSelectHost(id)
+	host, err := theServer.backingStore.SelectHost(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve host;"
 		log.Println(msg, err)
@@ -270,7 +271,7 @@ func getHost(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func newHost(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("new host")
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -290,7 +291,7 @@ func newHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertHost(host)
+	err = theServer.backingStore.InsertHost(host)
 	if err != nil {
 		msg := "ERROR: cannot insert host;"
 		log.Println(msg, err)
@@ -304,7 +305,7 @@ func newHost(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func editHost(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit host")
 
 	// parse out int64 id
@@ -335,7 +336,7 @@ func editHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateHost(id, host)
+	err = theServer.backingStore.UpdateHost(id, host)
 	if err != nil {
 		msg := "ERROR: cannot update host;"
 		log.Println(msg, err)
@@ -348,7 +349,7 @@ func editHost(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func deleteHost(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) deleteHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete host")
 
 	// parse out int64 id
@@ -361,7 +362,7 @@ func deleteHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	err = dbDeleteHost(id)
+	err = theServer.backingStore.DeleteHost(id)
 	if err != nil {
 		msg := "ERROR: cannot delete host;"
 		log.Println(msg, err)
@@ -370,11 +371,11 @@ func deleteHost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getTeams(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getTeams(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all teams")
 
 	// get all teams
-	teams, err := dbSelectTeams()
+	teams, err := theServer.backingStore.SelectTeams()
 	if err != nil {
 		msg := "ERROR: cannot retrieve teams;"
 		log.Println(msg, err)
@@ -391,7 +392,7 @@ func getTeams(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func getTeam(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a team")
 
 	// parse out int64 id
@@ -404,7 +405,7 @@ func getTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	team, err := dbSelectTeam(id)
+	team, err := theServer.backingStore.SelectTeam(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve team;"
 		log.Println(msg, err)
@@ -421,7 +422,7 @@ func getTeam(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func newTeam(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("new team")
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -441,7 +442,7 @@ func newTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertTeam(team)
+	err = theServer.backingStore.InsertTeam(team)
 	if err != nil {
 		msg := "ERROR: cannot insert team;"
 		log.Println(msg, err)
@@ -455,7 +456,7 @@ func newTeam(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func editTeam(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit team")
 
 	// parse out int64 id
@@ -486,7 +487,7 @@ func editTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateTeam(id, team)
+	err = theServer.backingStore.UpdateTeam(id, team)
 	if err != nil {
 		msg := "ERROR: cannot update team;"
 		log.Println(msg, err)
@@ -499,7 +500,7 @@ func editTeam(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func deleteTeam(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) deleteTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete team")
 
 	// parse out int64 id
@@ -512,7 +513,7 @@ func deleteTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	err = dbDeleteTeam(id)
+	err = theServer.backingStore.DeleteTeam(id)
 	if err != nil {
 		msg := "ERROR: cannot delete team;"
 		log.Println(msg, err)
@@ -521,11 +522,11 @@ func deleteTeam(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getTemplates(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getTemplates(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all templates")
 
 	// get all templates
-	templates, err := dbSelectTemplates()
+	templates, err := theServer.backingStore.SelectTemplates()
 	if err != nil {
 		msg := "ERROR: cannot retrieve templates;"
 		log.Println(msg, err)
@@ -542,7 +543,7 @@ func getTemplates(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func getTemplate(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a template")
 
 	// parse out int64 id
@@ -555,7 +556,7 @@ func getTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	template, err := dbSelectTemplate(id)
+	template, err := theServer.backingStore.SelectTemplate(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve template;"
 		log.Println(msg, err)
@@ -572,7 +573,7 @@ func getTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func newTemplate(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("new template")
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -592,7 +593,7 @@ func newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertTemplate(templateEntry)
+	err = theServer.backingStore.InsertTemplate(templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot insert template;"
 		log.Println(msg, err)
@@ -606,7 +607,7 @@ func newTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func editTemplate(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit template")
 
 	// parse out int64 id
@@ -637,7 +638,7 @@ func editTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateTemplate(id, templateEntry)
+	err = theServer.backingStore.UpdateTemplate(id, templateEntry)
 	if err != nil {
 		msg := "ERROR: cannot update template;"
 		log.Println(msg, err)
@@ -650,7 +651,7 @@ func editTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func deleteTemplate(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete template")
 
 	// parse out int64 id
@@ -663,7 +664,7 @@ func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	err = dbDeleteTemplate(id)
+	err = theServer.backingStore.DeleteTemplate(id)
 	if err != nil {
 		msg := "ERROR: cannot delete template;"
 		log.Println(msg, err)
@@ -672,11 +673,11 @@ func deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getScenarios(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenarios(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all scenarios")
 
 	// get all scenarios, even not enabled
-	scenarios, err := dbSelectScenarios(false)
+	scenarios, err := theServer.backingStore.SelectScenarios(false)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenarios;"
 		log.Println(msg, err)
@@ -693,7 +694,7 @@ func getScenarios(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func getScenario(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a scenario")
 
 	// parse out int64 id
@@ -706,7 +707,7 @@ func getScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	scenario, err := dbSelectScenario(id)
+	scenario, err := theServer.backingStore.SelectScenario(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario;"
 		log.Println(msg, err)
@@ -723,7 +724,7 @@ func getScenario(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func newScenario(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("new scenario")
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -743,7 +744,7 @@ func newScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbInsertScenario(scenario)
+	err = theServer.backingStore.InsertScenario(scenario)
 	if err != nil {
 		msg := "ERROR: cannot insert scenario;"
 		log.Println(msg, err)
@@ -757,7 +758,7 @@ func newScenario(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func editScenario(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit scenario")
 
 	// parse out int64 id
@@ -788,7 +789,7 @@ func editScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateScenario(id, scenario)
+	err = theServer.backingStore.UpdateScenario(id, scenario)
 	if err != nil {
 		msg := "ERROR: cannot update scenario;"
 		log.Println(msg, err)
@@ -801,7 +802,7 @@ func editScenario(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(msg))
 }
 
-func deleteScenario(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) deleteScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete scenario")
 
 	// parse out int64 id
@@ -814,7 +815,7 @@ func deleteScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	err = dbDeleteScenario(id)
+	err = theServer.backingStore.DeleteScenario(id)
 	if err != nil {
 		msg := "ERROR: cannot delete scenario;"
 		log.Println(msg, err)
@@ -823,11 +824,11 @@ func deleteScenario(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getScenariosForScoreboard(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenariosForScoreboard(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenarios for scoreboard")
 
 	// get scenarios, only enabled
-	scenarios, err := dbSelectScenarios(true)
+	scenarios, err := theServer.backingStore.SelectScenarios(true)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenarios;"
 		log.Println(msg, err)
@@ -844,7 +845,7 @@ func getScenariosForScoreboard(w http.ResponseWriter, r *http.Request) {
 	w.Write(b)
 }
 
-func getScenarioScores(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario scores")
 
 	// parse out int64 id
@@ -858,7 +859,7 @@ func getScenarioScores(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(id)
-	scores, err := dbSelectScenarioLatestScores(id)
+	scores, err := theServer.backingStore.SelectScenarioLatestScores(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario scores;"
 		log.Println(msg, err)
@@ -875,7 +876,7 @@ func getScenarioScores(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario timeline for team")
 
 	// parse out int64 id
@@ -890,7 +891,7 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
 	teamKey := r.FormValue("team_key")
-	teamID, err := dbSelectTeamIDForKey(teamKey)
+	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
 	if err != nil {
 		msg := "ERROR: cannot retrieve team id;"
 		log.Println(msg, err)
@@ -899,7 +900,7 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostname := r.FormValue("hostname")
-	hostID, err := dbSelectHostIDForHostname(hostname)
+	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
 	if err != nil {
 		msg := "ERROR: cannot retrieve host id;"
 		log.Println(msg, err)
@@ -907,7 +908,7 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(fmt.Sprintf("Host ID: %d", hostID))
-	timeline, err := dbSelectScenarioTimeline(scenarioID, teamID, hostID)
+	timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, teamID, hostID)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario timeline for team;"
 		log.Println(msg, err)
@@ -924,7 +925,7 @@ func getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario report for team")
 
 	// parse out int64 id
@@ -939,7 +940,7 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
 	teamKey := r.FormValue("team_key")
-	teamID, err := dbSelectTeamIDForKey(teamKey)
+	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
 	if err != nil {
 		msg := "ERROR: cannot retrieve team id;"
 		log.Println(msg, err)
@@ -948,7 +949,7 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostname := r.FormValue("hostname")
-	hostID, err := dbSelectHostIDForHostname(hostname)
+	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
 	if err != nil {
 		msg := "ERROR: cannot retrieve host id;"
 		log.Println(msg, err)
@@ -956,7 +957,7 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(fmt.Sprintf("Host ID: %d", hostID))
-	report, err := dbSelectLatestScenarioReport(scenarioID, teamID, hostID)
+	report, err := theServer.backingStore.SelectLatestScenarioReport(scenarioID, teamID, hostID)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario report for team;"
 		log.Println(msg, err)
@@ -981,11 +982,11 @@ func getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
-func getTeamScenarioHosts(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getTeamScenarioHosts(w http.ResponseWriter, r *http.Request) {
 	log.Println("get team scenario hosts")
 
 	teamKey := r.FormValue("team_key")
-	teamID, err := dbSelectTeamIDForKey(teamKey)
+	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
 	if err != nil {
 		msg := "ERROR: cannot retrieve team id;"
 		log.Println(msg, err)
@@ -993,7 +994,7 @@ func getTeamScenarioHosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
-	scenarioHosts, err := dbSelectTeamScenarioHosts(teamID)
+	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
 	if err != nil {
 		msg := "ERROR: cannot retrieve team scenario hosts;"
 		log.Println(msg, err)
@@ -1049,11 +1050,11 @@ func checkPasswordHash(cleartext string, hash string) bool {
 	return true
 }
 
-func getAdmins(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getAdmins(w http.ResponseWriter, r *http.Request) {
 	log.Println("get all admins")
 
 	// get all admins
-	admins, err := dbSelectAdmins()
+	admins, err := theServer.backingStore.SelectAdmins()
 	if err != nil {
 		msg := "ERROR: cannot retrieve admins;"
 		log.Println(msg, err)
@@ -1075,7 +1076,7 @@ func getRandStr() string {
 	return base64.StdEncoding.EncodeToString(randKey)
 }
 
-func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
+func (theServer theServer) authAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("Authenticating admin")
 
 	r.ParseForm()
@@ -1083,7 +1084,7 @@ func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddlew
 	log.Println("username: " + username)
 	password := r.Form.Get("password")
 
-	storedPasswordHash, err := dbSelectAdminPasswordHash(username)
+	storedPasswordHash, err := theServer.backingStore.SelectAdminPasswordHash(username)
 	if err != nil {
 		msg := "ERROR: cannot authenticate admin;"
 		log.Println(msg, err)
@@ -1094,7 +1095,7 @@ func authAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddlew
 		log.Println("User authentication successful")
 
 		value := getRandStr()
-		amw.tokenUsers[value] = username
+		theServer.userTokens[value] = username
 
 		cookie := &http.Cookie{
 			Name:     cookieName,
@@ -1115,7 +1116,7 @@ type credentials struct {
 	Password string
 }
 
-func newAdmin(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) newAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("new admin")
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -1149,7 +1150,7 @@ func newAdmin(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(msg))
 		return
 	}
-	err = dbInsertAdmin(creds.Username, passwordHash)
+	err = theServer.backingStore.InsertAdmin(creds.Username, passwordHash)
 	if err != nil {
 		msg := "ERROR: cannot insert admin;"
 		log.Println(msg, err)
@@ -1160,7 +1161,7 @@ func newAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("Admin added")
 }
 
-func editAdmin(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("editing admin")
 
 	// parse out int64 id
@@ -1200,7 +1201,7 @@ func editAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = dbUpdateAdmin(username, passwordHash)
+	err = theServer.backingStore.UpdateAdmin(username, passwordHash)
 	if err != nil {
 		msg := "ERROR: cannot update admin;"
 		log.Println(msg, err)
@@ -1211,14 +1212,14 @@ func editAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("Admin edited")
 }
 
-func deleteAdmin(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) deleteAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("deleting admin")
 
 	vars := mux.Vars(r)
 
 	username := vars["username"]
 	log.Println("username: " + username)
-	err := dbDeleteAdmin(username)
+	err := theServer.backingStore.DeleteAdmin(username)
 	if err != nil {
 		msg := "ERROR: cannot delete admin;"
 		log.Println(msg, err)
@@ -1229,19 +1230,19 @@ func deleteAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("Admin deleted")
 }
 
-func logoutAdmin(w http.ResponseWriter, r *http.Request, amw authenticationMiddleware) {
+func (theServer theServer) logoutAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout request")
 	cookie, err := r.Cookie(cookieName)
 	if err != nil {
 		return
 	}
-	if user, found := amw.tokenUsers[cookie.Value]; found {
+	if user, found := theServer.userTokens[cookie.Value]; found {
 		log.Println("Logging out user " + user)
-		delete(amw.tokenUsers, cookie.Value)
+		delete(theServer.userTokens, cookie.Value)
 	}
 }
 
-func getNewHostToken(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	log.Println("new host token")
 
 	r.ParseForm()
@@ -1256,7 +1257,7 @@ func getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	timestamp := time.Now().Unix()
 	source := r.RemoteAddr
 	token := getRandStr()
-	err := dbInsertHostToken(token, timestamp, hostname, source)
+	err := theServer.backingStore.InsertHostToken(token, timestamp, hostname, source)
 	if err != nil {
 		msg := "ERROR: unable to get host token;"
 		log.Println(msg, err)
@@ -1266,7 +1267,7 @@ func getNewHostToken(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token))
 }
 
-func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 	log.Println("team host token")
 
 	timestamp := time.Now().Unix()
@@ -1281,7 +1282,7 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Hostname missing", http.StatusBadRequest)
 		return
 	}
-	hostID, err := dbSelectHostIDForHostname(hostname)
+	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
 	if err != nil {
 		log.Println("Could not get host id;", err)
 		http.Error(w, "Host not found", http.StatusBadRequest)
@@ -1292,14 +1293,14 @@ func postTeamHostToken(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Team key missing", http.StatusBadRequest)
 		return
 	}
-	teamID, err := dbSelectTeamIDForKey(teamKey)
+	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
 	if err != nil {
 		log.Println("Could not get team id;", err)
 		http.Error(w, "Team not found", http.StatusBadRequest)
 		return
 	}
 
-	err = dbInsertTeamHostToken(teamID, hostID, hostToken, timestamp)
+	err = theServer.backingStore.InsertTeamHostToken(teamID, hostID, hostToken, timestamp)
 	if err != nil {
 		log.Println("ERROR: unable to insert team host token;", err)
 		http.Error(w, "Internal server error. Try again later", http.StatusInternalServerError)
@@ -1316,12 +1317,17 @@ func main() {
 	if err != nil {
 		log.Fatal("ERROR: unable to get executable", err)
 	}
-	dir := filepath.Dir(ex)
+	workDir := filepath.Dir(ex)
 
-	dbInit(dir)
+	theServer := theServer{}
+	theServer.userTokens = make(map[string]string)
+	theServer.backingStore, err = getBackingStore("sqlite", workDir)
+	if err != nil {
+		log.Fatal("ERROR: Unable to get backing store;", err)
+	}
 
 	// generate default admin if no admins
-	admins, err := dbSelectAdmins()
+	admins, err := theServer.backingStore.SelectAdmins()
 	if err != nil {
 		log.Fatal("Could not get admin list;", err)
 	}
@@ -1332,12 +1338,12 @@ func main() {
 		if err != nil {
 			log.Fatal("ERROR: cannot generate password hash;", err)
 		}
-		dbInsertAdmin("admin", passwordHash)
+		theServer.backingStore.InsertAdmin("admin", passwordHash)
 	}
 
-	publicDir := path.Join(dir, "public")
-	privateDir := path.Join(dir, "private")
-	dataDir := path.Join(dir, "data")
+	publicDir := path.Join(workDir, "public")
+	privateDir := path.Join(workDir, "private")
+	dataDir := path.Join(workDir, "data")
 	err = os.MkdirAll(publicDir, 0700)
 	err = os.MkdirAll(privateDir, 0700)
 	err = os.MkdirAll(dataDir, 0700)
@@ -1373,85 +1379,78 @@ func main() {
 		return
 	}
 	// process audit requests asynchronously
-	go audit(dataDir, entities)
-
-	authenticator := authenticationMiddleware{}
-	authenticator.tokenUsers = make(map[string]string)
+	go theServer.audit(dataDir, entities)
 
 	r := mux.NewRouter()
 	r.Handle("", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
 	r.Handle("/", http.RedirectHandler("/ui/", http.StatusMovedPermanently))
-	r.PathPrefix("/ui").Handler(http.FileServer(http.Dir(dir)))
+	r.PathPrefix("/ui").Handler(http.FileServer(http.Dir(workDir)))
 
-	r.PathPrefix("/public").Handler(http.FileServer(http.Dir(dir)))
+	r.PathPrefix("/public").Handler(http.FileServer(http.Dir(workDir)))
 
 	r.HandleFunc("/audit", func(w http.ResponseWriter, r *http.Request) {
 		saveAuditRequest(w, r, dataDir)
 	}).Methods("POST")
-	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		authAdmin(w, r, authenticator)
-	}).Methods("POST")
-	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
-		logoutAdmin(w, r, authenticator)
-	}).Methods("DELETE")
+	r.HandleFunc("/login", theServer.authAdmin).Methods("POST")
+	r.HandleFunc("/logout", theServer.logoutAdmin).Methods("DELETE")
 	adminRouter := r.PathPrefix("/admins").Subrouter()
-	adminRouter.Use(authenticator.Middleware)
-	adminRouter.HandleFunc("", getAdmins).Methods("GET")
-	adminRouter.HandleFunc("/", getAdmins).Methods("GET")
-	adminRouter.HandleFunc("", newAdmin).Methods("POST")
-	adminRouter.HandleFunc("/", newAdmin).Methods("POST")
-	adminRouter.HandleFunc("/{username}", editAdmin).Methods("POST")
-	adminRouter.HandleFunc("/{username}", deleteAdmin).Methods("DELETE")
+	adminRouter.Use(theServer.middleware)
+	adminRouter.HandleFunc("", theServer.getAdmins).Methods("GET")
+	adminRouter.HandleFunc("/", theServer.getAdmins).Methods("GET")
+	adminRouter.HandleFunc("", theServer.newAdmin).Methods("POST")
+	adminRouter.HandleFunc("/", theServer.newAdmin).Methods("POST")
+	adminRouter.HandleFunc("/{username}", theServer.editAdmin).Methods("POST")
+	adminRouter.HandleFunc("/{username}", theServer.deleteAdmin).Methods("DELETE")
 	templatesRouter := r.PathPrefix("/templates").Subrouter()
-	templatesRouter.Use(authenticator.Middleware)
-	templatesRouter.HandleFunc("", getTemplates).Methods("GET")
-	templatesRouter.HandleFunc("/", getTemplates).Methods("GET")
-	templatesRouter.HandleFunc("", newTemplate).Methods("POST")
-	templatesRouter.HandleFunc("/", newTemplate).Methods("POST")
-	templatesRouter.HandleFunc("/{id:[0-9]+}", getTemplate).Methods("GET")
-	templatesRouter.HandleFunc("/{id:[0-9]+}", editTemplate).Methods("POST")
-	templatesRouter.HandleFunc("/{id:[0-9]+}", deleteTemplate).Methods("DELETE")
+	templatesRouter.Use(theServer.middleware)
+	templatesRouter.HandleFunc("", theServer.getTemplates).Methods("GET")
+	templatesRouter.HandleFunc("/", theServer.getTemplates).Methods("GET")
+	templatesRouter.HandleFunc("", theServer.newTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/", theServer.newTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.getTemplate).Methods("GET")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.editTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteTemplate).Methods("DELETE")
 	hostsRouter := r.PathPrefix("/hosts").Subrouter()
-	hostsRouter.Use(authenticator.Middleware)
-	hostsRouter.HandleFunc("", getHosts).Methods("GET")
-	hostsRouter.HandleFunc("/", getHosts).Methods("GET")
-	hostsRouter.HandleFunc("", newHost).Methods("POST")
-	hostsRouter.HandleFunc("/", newHost).Methods("POST")
-	hostsRouter.HandleFunc("/{id:[0-9]+}", getHost).Methods("GET")
-	hostsRouter.HandleFunc("/{id:[0-9]+}", editHost).Methods("POST")
-	hostsRouter.HandleFunc("/{id:[0-9]+}", deleteHost).Methods("DELETE")
+	hostsRouter.Use(theServer.middleware)
+	hostsRouter.HandleFunc("", theServer.getHosts).Methods("GET")
+	hostsRouter.HandleFunc("/", theServer.getHosts).Methods("GET")
+	hostsRouter.HandleFunc("", theServer.newHost).Methods("POST")
+	hostsRouter.HandleFunc("/", theServer.newHost).Methods("POST")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", theServer.getHost).Methods("GET")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", theServer.editHost).Methods("POST")
+	hostsRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteHost).Methods("DELETE")
 	scenariosRouter := r.PathPrefix("/scenarios").Subrouter()
-	scenariosRouter.Use(authenticator.Middleware)
-	scenariosRouter.HandleFunc("", getScenarios).Methods("GET")
-	scenariosRouter.HandleFunc("/", getScenarios).Methods("GET")
-	scenariosRouter.HandleFunc("", newScenario).Methods("POST")
-	scenariosRouter.HandleFunc("/", newScenario).Methods("POST")
-	scenariosRouter.HandleFunc("/{id:[0-9]+}", getScenario).Methods("GET")
-	scenariosRouter.HandleFunc("/{id:[0-9]+}", editScenario).Methods("POST")
-	scenariosRouter.HandleFunc("/{id:[0-9]+}", deleteScenario).Methods("DELETE")
+	scenariosRouter.Use(theServer.middleware)
+	scenariosRouter.HandleFunc("", theServer.getScenarios).Methods("GET")
+	scenariosRouter.HandleFunc("/", theServer.getScenarios).Methods("GET")
+	scenariosRouter.HandleFunc("", theServer.newScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/", theServer.newScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.getScenario).Methods("GET")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.editScenario).Methods("POST")
+	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteScenario).Methods("DELETE")
 	scoresRouter := r.PathPrefix("/scores").Subrouter()
 	// no auth
-	scoresRouter.HandleFunc("/scenarios", getScenariosForScoreboard).Methods("GET")
-	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScores).Methods("GET")
+	scoresRouter.HandleFunc("/scenarios", theServer.getScenariosForScoreboard).Methods("GET")
+	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", theServer.getScenarioScores).Methods("GET")
 	reportRouter := r.PathPrefix("/reports").Subrouter()
 	// using team key as auth
-	reportRouter.HandleFunc("", getTeamScenarioHosts).Methods("GET")
-	reportRouter.HandleFunc("/", getTeamScenarioHosts).Methods("GET")
-	reportRouter.HandleFunc("/scenario/{id:[0-9]+}", getScenarioScoresReport).Methods("GET")
-	reportRouter.HandleFunc("/scenario/{id:[0-9]+}/timeline", getScenarioScoresTimeline).Methods("GET")
+	reportRouter.HandleFunc("", theServer.getTeamScenarioHosts).Methods("GET")
+	reportRouter.HandleFunc("/", theServer.getTeamScenarioHosts).Methods("GET")
+	reportRouter.HandleFunc("/scenario/{id:[0-9]+}", theServer.getScenarioScoresReport).Methods("GET")
+	reportRouter.HandleFunc("/scenario/{id:[0-9]+}/timeline", theServer.getScenarioScoresTimeline).Methods("GET")
 	teamsRouter := r.PathPrefix("/teams").Subrouter()
-	teamsRouter.Use(authenticator.Middleware)
-	teamsRouter.HandleFunc("", getTeams).Methods("GET")
-	teamsRouter.HandleFunc("/", getTeams).Methods("GET")
-	teamsRouter.HandleFunc("", newTeam).Methods("POST")
-	teamsRouter.HandleFunc("/", newTeam).Methods("POST")
-	teamsRouter.HandleFunc("/{id:[0-9]+}", getTeam).Methods("GET")
-	teamsRouter.HandleFunc("/{id:[0-9]+}", editTeam).Methods("POST")
-	teamsRouter.HandleFunc("/{id:[0-9]+}", deleteTeam).Methods("DELETE")
+	teamsRouter.Use(theServer.middleware)
+	teamsRouter.HandleFunc("", theServer.getTeams).Methods("GET")
+	teamsRouter.HandleFunc("/", theServer.getTeams).Methods("GET")
+	teamsRouter.HandleFunc("", theServer.newTeam).Methods("POST")
+	teamsRouter.HandleFunc("/", theServer.newTeam).Methods("POST")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", theServer.getTeam).Methods("GET")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", theServer.editTeam).Methods("POST")
+	teamsRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteTeam).Methods("DELETE")
 	// no auth
 	tokenRouter := r.PathPrefix("/token").Subrouter()
-	tokenRouter.HandleFunc("/host", getNewHostToken).Methods("GET")
-	tokenRouter.HandleFunc("/team", postTeamHostToken).Methods("POST")
+	tokenRouter.HandleFunc("/host", theServer.getNewHostToken).Methods("GET")
+	tokenRouter.HandleFunc("/team", theServer.postTeamHostToken).Methods("POST")
 
 	log.Println("Ready to serve requests")
 	addr := ":" + strconv.Itoa(port)
