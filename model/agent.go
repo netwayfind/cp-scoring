@@ -10,7 +10,7 @@ import (
 
 type CurrentHost interface {
 	GetUsers() ([]User, error)
-	GetGroups() (map[string][]string, error)
+	GetGroups() (map[string][]GroupMember, error)
 	GetProcesses() ([]Process, error)
 	GetSoftware() ([]Software, error)
 	GetNetworkConnections() ([]NetworkConnection, error)
@@ -34,7 +34,7 @@ type State struct {
 	Hostname           string
 	Errors             []string
 	Users              []User
-	Groups             map[string][]string
+	Groups             map[string][]GroupMember
 	Processes          []Process
 	Software           []Software
 	NetworkConnections []NetworkConnection
@@ -56,6 +56,11 @@ type User struct {
 	AccountExpires  bool
 	PasswordLastSet int64
 	PasswordExpires bool
+}
+
+type GroupMember struct {
+	Name        string
+	ObjectState ObjectState
 }
 
 type Process struct {

@@ -32,7 +32,7 @@ func (h hostLinux) GetUsers() ([]model.User, error) {
 	return mergeUserMaps(userMapEtcPasswd, userMapEtcShadow), nil
 }
 
-func (h hostLinux) GetGroups() (map[string][]string, error) {
+func (h hostLinux) GetGroups() (map[string][]model.GroupMember, error) {
 	bs, err := ioutil.ReadFile("/etc/group")
 	if err != nil {
 		return nil, err

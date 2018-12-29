@@ -1171,7 +1171,7 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user" {
+	if users[0].Name != "user" {
 		t.Fatal("Did not find expected user in group")
 	}
 
@@ -1188,10 +1188,10 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 2 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user1" {
+	if users[0].Name != "user1" {
 		t.Fatal("Did not find expected user in group")
 	}
-	if users[1] != "user2" {
+	if users[1].Name != "user2" {
 		t.Fatal("Did not find expected user in group")
 	}
 
@@ -1208,7 +1208,7 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user1" {
+	if users[0].Name != "user1" {
 		t.Fatal("Did not find expected user in group")
 	}
 	users, present = groups["group2"]
@@ -1218,7 +1218,7 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user2" {
+	if users[0].Name != "user2" {
 		t.Fatal("Did not find expected user in group")
 	}
 
@@ -1235,10 +1235,10 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 2 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user1" {
+	if users[0].Name != "user1" {
 		t.Fatal("Did not find expected user in group")
 	}
-	if users[1] != "user2" {
+	if users[1].Name != "user2" {
 		t.Fatal("Did not find expected user in group")
 	}
 	users, present = groups["group2"]
@@ -1248,7 +1248,7 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user1" {
+	if users[0].Name != "user1" {
 		t.Fatal("Did not find expected user in group")
 	}
 
@@ -1265,10 +1265,10 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 2 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user1" {
+	if users[0].Name != "user1" {
 		t.Fatal("Did not find expected user in group")
 	}
-	if users[1] != "user3" {
+	if users[1].Name != "user3" {
 		t.Fatal("Did not find expected user in group")
 	}
 	users, present = groups["group2"]
@@ -1278,7 +1278,7 @@ func TestParseWindowsGroups(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not find expected number of users in group")
 	}
-	if users[0] != "user2" {
+	if users[0].Name != "user2" {
 		t.Fatal("Did not find expected user in group")
 	}
 }
@@ -1609,10 +1609,10 @@ func TestParseEtcGroup(t *testing.T) {
 	if len(groupMembers2) != 2 {
 		t.Fatal("Unexpected group members")
 	}
-	if groupMembers2[0] != "user1" {
+	if groupMembers2[0].Name != "user1" {
 		t.Fatal("Unexpected user")
 	}
-	if groupMembers2[1] != "user2" {
+	if groupMembers2[1].Name != "user2" {
 		t.Fatal("Unexpected user")
 	}
 }

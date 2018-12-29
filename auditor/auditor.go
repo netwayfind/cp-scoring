@@ -217,7 +217,7 @@ func auditGroups(state model.State, template model.Template) []model.Finding {
 	for group, members := range state.Groups {
 		foundMembers := make(map[string]bool)
 		for _, member := range members {
-			foundMembers[member] = true
+			foundMembers[member.Name] = true
 		}
 
 		templateMembers, present := template.GroupMembersAdd[group]

@@ -179,18 +179,19 @@ func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
 	return conns
 }
 
-func parseEtcGroup(bs []byte) map[string][]string {
-	groups := make(map[string][]string)
+func parseEtcGroup(bs []byte) map[string][]model.GroupMember {
+	groups := make(map[string][]model.GroupMember)
 	for _, line := range strings.Split(string(bs), "\n") {
 		tokens := strings.Split(line, ":")
 		if len(tokens) != 4 {
 			continue
 		}
 		group, membersStr := tokens[0], tokens[3]
-		if len(membersStr) == 0 {
-			groups[group] = make([]string, 0)
-		} else {
-			groups[group] = strings.Split(membersStr, ",")
+		groups[group] = make([]model.GroupMember, 0)
+		if len(membersStr) > 0 {
+			for _, name := range strings.Split(membersStr, ",") {
+				groups[group] = append(groups[group], model.GroupMember{Name: name})
+			}
 		}
 	}
 
@@ -496,8 +497,8 @@ func parseWindowsProcesses(bs []byte) []model.Process {
 	return processes
 }
 
-func parseWindowsGroups(bs []byte) map[string][]string {
-	groups := make(map[string][]string)
+func parseWindowsGroups(bs []byte) map[string][]model.GroupMember {
+	groups := make(map[string][]model.GroupMember)
 
 	r := csv.NewReader(bytes.NewReader(bs))
 	records, err := r.ReadAll()
@@ -552,13 +553,13 @@ func parseWindowsGroups(bs []byte) map[string][]string {
 		if len(token) <= 7 {
 			continue
 		}
-		user := token[6 : len(token)-1]
+		name := token[6 : len(token)-1]
 
 		g, present := groups[group]
 		if !present {
-			g = make([]string, 0)
+			g = make([]model.GroupMember, 0)
 		}
-		g = append(g, user)
+		g = append(g, model.GroupMember{Name: name})
 		groups[group] = g
 	}
 

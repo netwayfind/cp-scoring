@@ -69,7 +69,7 @@ func getPowerShellVersion() (string, error) {
 	return parsePowerShellVersion(out), nil
 }
 
-func (host hostWindows) GetGroups() (map[string][]string, error) {
+func (host hostWindows) GetGroups() (map[string][]model.GroupMember, error) {
 	out, err := powershellCsv("Get-WmiObject -class Win32_GroupUser", "GroupComponent,PartComponent")
 	if err != nil {
 		return nil, err
