@@ -831,19 +831,7 @@ class Templates extends React.Component {
       users: this.state.selectedTemplate.Template.Users,
       callback: this.handleCallback
     }), React.createElement(Groups, {
-      name: "GroupMembersAdd",
-      label: "Group members to add",
-      groups: this.state.selectedTemplate.Template.GroupMembersAdd,
-      callback: this.handleCallback
-    }), React.createElement(Groups, {
-      name: "GroupMembersKeep",
-      label: "Group members to keep",
-      groups: this.state.selectedTemplate.Template.GroupMembersKeep,
-      callback: this.handleCallback
-    }), React.createElement(Groups, {
-      name: "GroupMembersRemove",
-      label: "Group members to remove",
-      groups: this.state.selectedTemplate.Template.GroupMembersRemove,
+      groups: this.state.selectedTemplate.Template.Groups,
       callback: this.handleCallback
     }), React.createElement(Processes, {
       processes: this.state.selectedTemplate.Template.Processes,
@@ -1011,8 +999,10 @@ class Groups extends React.Component {
     };
     this.newGroupName = React.createRef();
     this.addGroup = this.addGroup.bind(this);
+    this.addGroupMember = this.addGroupMember.bind(this);
     this.removeGroup = this.removeGroup.bind(this);
-    this.updateGroup = this.updateGroup.bind(this);
+    this.removeGroupMember = this.removeGroupMember.bind(this);
+    this.updateGroupMember = this.updateGroupMember.bind(this);
   }
 
   addGroup() {
@@ -1027,47 +1017,99 @@ class Groups extends React.Component {
     this.setState({
       groups: groups
     });
-    this.props.callback(this.props.name, groups);
+    this.props.callback("Groups", groups);
   }
 
-  removeGroup(name) {
-    let groups = this.state.groups;
-    delete groups[name];
-    this.setState({
-      groups: groups
+  addGroupMember(groupName) {
+    let group = this.state.groups[groupName];
+    group.push({
+      Name: "",
+      ObjectState: "Keep"
     });
-    this.props.callback(this.props.name, groups);
-  }
 
-  updateGroup(name, members) {
     let groups = _objectSpread({}, this.state.groups, {
-      [name]: members
+      [groupName]: group
     });
 
     this.setState({
       groups: groups
     });
-    this.props.callback(this.props.name, groups);
+    this.props.callback("Groups", groups);
+  }
+
+  removeGroup(groupName) {
+    let groups = this.state.groups;
+    delete groups[groupName];
+    this.setState({
+      groups: groups
+    });
+    this.props.callback("Groups", groups);
+  }
+
+  removeGroupMember(groupName, memberIndex) {
+    let group = this.state.groups[groupName];
+    group.splice(memberIndex, 1);
+
+    let groups = _objectSpread({}, this.state.groups, {
+      [groupName]: group
+    });
+
+    this.setState({
+      groups: groups
+    });
+    this.props.callback("Groups", groups);
+  }
+
+  updateGroupMember(groupName, memberIndex, key, value) {
+    let group = this.state.groups[groupName];
+    let member = group[memberIndex];
+    member[key] = value;
+
+    let groups = _objectSpread({}, this.state.groups, {
+      [groupName]: group
+    });
+
+    this.setState({
+      groups: groups
+    });
+    this.props.callback("Groups", groups);
   }
 
   render() {
     let groups = [];
 
     for (let groupName in this.state.groups) {
-      let members = this.state.groups[groupName];
+      let groupMembers = [];
+
+      for (let i in this.state.groups[groupName]) {
+        let member = this.state.groups[groupName][i];
+        groupMembers.push(React.createElement("details", {
+          key: i
+        }, React.createElement("summary", null, member.Name), React.createElement("button", {
+          type: "button",
+          onClick: this.removeGroupMember.bind(this, groupName, i)
+        }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+          type: "text",
+          value: member.Name,
+          onChange: event => this.updateGroupMember(groupName, i, "Name", event.target.value)
+        })), React.createElement("li", null, React.createElement(ObjectState, {
+          value: member.ObjectState,
+          onChange: event => this.updateGroupMember(groupName, i, "ObjectState", event.target.value)
+        })))));
+      }
+
       groups.push(React.createElement("details", {
         key: groupName
       }, React.createElement("summary", null, groupName), React.createElement("button", {
         type: "button",
         onClick: this.removeGroup.bind(this, groupName)
-      }, "-"), React.createElement(ItemList, {
-        name: groupName,
-        defaultValue: members,
-        callback: this.updateGroup
-      })));
+      }, "Remove Group"), React.createElement("br", null), React.createElement("button", {
+        type: "button",
+        onClick: event => this.addGroupMember(groupName, event)
+      }, "Add Group Member"), React.createElement("ul", null, groupMembers)));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("input", {
+    return React.createElement("details", null, React.createElement("summary", null, "Groups"), React.createElement("input", {
       ref: this.newGroupName
     }), React.createElement("button", {
       type: "button",

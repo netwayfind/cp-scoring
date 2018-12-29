@@ -789,9 +789,7 @@ class Templates extends React.Component {
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
           <Users users={this.state.selectedTemplate.Template.Users} callback={this.handleCallback}/>
-          <Groups name="GroupMembersAdd" label="Group members to add" groups={this.state.selectedTemplate.Template.GroupMembersAdd} callback={this.handleCallback}/>
-          <Groups name="GroupMembersKeep" label="Group members to keep" groups={this.state.selectedTemplate.Template.GroupMembersKeep} callback={this.handleCallback}/>
-          <Groups name="GroupMembersRemove" label="Group members to remove" groups={this.state.selectedTemplate.Template.GroupMembersRemove} callback={this.handleCallback}/>
+          <Groups groups={this.state.selectedTemplate.Template.Groups} callback={this.handleCallback}/>
           <Processes processes={this.state.selectedTemplate.Template.Processes} callback={this.handleCallback}/>
           <Software software={this.state.selectedTemplate.Template.Software} callback={this.handleCallback}/>
           <NetworkConns conns={this.state.selectedTemplate.Template.NetworkConns} callback={this.handleCallback}/>
@@ -968,8 +966,10 @@ class Groups extends React.Component {
     this.newGroupName = React.createRef();
 
     this.addGroup = this.addGroup.bind(this);
+    this.addGroupMember = this.addGroupMember.bind(this);
     this.removeGroup = this.removeGroup.bind(this);
-    this.updateGroup = this.updateGroup.bind(this);
+    this.removeGroupMember = this.removeGroupMember.bind(this);
+    this.updateGroupMember = this.updateGroupMember.bind(this);
   }
 
   addGroup() {
@@ -983,45 +983,99 @@ class Groups extends React.Component {
     this.setState({
       groups: groups
     });
-    this.props.callback(this.props.name, groups)
+    this.props.callback("Groups", groups)
   }
 
-  removeGroup(name) {
+  addGroupMember(groupName) {
+    let group = this.state.groups[groupName];
+    group.push({
+      Name: "",
+      ObjectState: "Keep"
+    });
+    let groups = {
+      ...this.state.groups,
+      [groupName]: group
+    }
+    this.setState({
+      groups: groups
+    })
+    this.props.callback("Groups", groups)
+  }
+
+  removeGroup(groupName) {
     let groups = this.state.groups;
-    delete groups[name];
+    delete groups[groupName];
     this.setState({
       groups: groups
     });
-    this.props.callback(this.props.name, groups);
+    this.props.callback("Groups", groups);
   }
 
-  updateGroup(name, members) {
+  removeGroupMember(groupName, memberIndex) {
+    let group = this.state.groups[groupName];
+    group.splice(memberIndex, 1);
     let groups = {
       ...this.state.groups,
-      [name]: members
+      [groupName]: group
     }
     this.setState({
       groups: groups
     });
-    this.props.callback(this.props.name, groups);
+    this.props.callback("Groups", groups);
+  }
+
+  updateGroupMember(groupName, memberIndex, key, value) {
+    let group = this.state.groups[groupName];
+    let member = group[memberIndex];
+    member[key] = value
+    let groups = {
+      ...this.state.groups,
+      [groupName]: group
+    }
+    this.setState({
+      groups: groups
+    });
+    this.props.callback("Groups", groups);
   }
 
   render() {
     let groups = [];
     for (let groupName in this.state.groups) {
-      let members = this.state.groups[groupName];
+      let groupMembers = [];
+      for (let i in this.state.groups[groupName]) {
+        let member = this.state.groups[groupName][i];
+        groupMembers.push(
+          <details key={i}>
+            <summary>{member.Name}</summary>
+            <button type="button" onClick={this.removeGroupMember.bind(this, groupName, i)}>-</button>
+            <ul>
+              <li>
+                <label>Name</label>
+                <input type="text" value={member.Name} onChange={event=> this.updateGroupMember(groupName, i, "Name", event.target.value)}/>
+              </li>
+              <li>
+                <ObjectState value={member.ObjectState} onChange={event=> this.updateGroupMember(groupName, i, "ObjectState", event.target.value)} />
+              </li>
+            </ul>
+          </details>
+        );
+      }
       groups.push(
         <details key={groupName}>
           <summary>{groupName}</summary>
-          <button type="button" onClick={this.removeGroup.bind(this, groupName)}>-</button>
-          <ItemList name={groupName} defaultValue={members} callback={this.updateGroup}/>
+          <button type="button" onClick={this.removeGroup.bind(this, groupName)}>Remove Group</button>
+          <br />
+          <button type="button" onClick={event => this.addGroupMember(groupName, event)}>Add Group Member</button>
+          <ul>
+            {groupMembers}
+          </ul>
         </details>
       );
     }
 
     return (
       <details>
-        <summary>{this.props.label}</summary>
+        <summary>Groups</summary>
         <input ref={this.newGroupName}></input>
         <button type="button" onClick={this.addGroup.bind(this)}>Add Group</button>
         <ul>
