@@ -845,20 +845,8 @@ class Templates extends React.Component {
       label: "Group members to remove",
       groups: this.state.selectedTemplate.Template.GroupMembersRemove,
       callback: this.handleCallback
-    }), React.createElement(ItemList, {
-      name: "ProcessesAdd",
-      label: "Processes to add",
-      defaultValue: this.state.selectedTemplate.Template.ProcessesAdd,
-      callback: this.handleCallback
-    }), React.createElement(ItemList, {
-      name: "ProcessesKeep",
-      label: "Processes to keep",
-      defaultValue: this.state.selectedTemplate.Template.ProcessesKeep,
-      callback: this.handleCallback
-    }), React.createElement(ItemList, {
-      name: "ProcessesRemove",
-      label: "Processes to remove",
-      defaultValue: this.state.selectedTemplate.Template.ProcessesRemove,
+    }), React.createElement(Processes, {
+      processes: this.state.selectedTemplate.Template.Processes,
       callback: this.handleCallback
     }), React.createElement(Software, {
       software: this.state.selectedTemplate.Template.Software,
@@ -1085,6 +1073,85 @@ class Groups extends React.Component {
       type: "button",
       onClick: this.addGroup.bind(this)
     }, "Add Group"), React.createElement("ul", null, groups));
+  }
+
+}
+
+class Processes extends React.Component {
+  constructor(props) {
+    super(props);
+    let processes = props.processes;
+
+    if (processes === undefined || processes === null) {
+      processes = [];
+    }
+
+    this.state = {
+      processes: processes
+    };
+    this.addProcess = this.addProcess.bind(this);
+    this.removeProcess = this.removeProcess.bind(this);
+    this.updateProcess = this.updateProcess.bind(this);
+  }
+
+  addProcess() {
+    let empty = {
+      CommandLine: "",
+      ObjectState: "Keep"
+    };
+    let processes = [...this.state.processes, empty];
+    this.setState({
+      processes: processes
+    });
+    this.props.callback("Processes", processes);
+  }
+
+  removeProcess(id) {
+    let processes = this.state.processes.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      processes: processes
+    });
+    this.props.callback("Processes", processes);
+  }
+
+  updateProcess(id, field, event) {
+    let updated = this.state.processes;
+    let value = event.target.value;
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      processes: updated
+    });
+    this.props.callback("Processes", updated);
+  }
+
+  render() {
+    let processes = [];
+
+    for (let i in this.state.processes) {
+      let entry = this.state.processes[i];
+      processes.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.CommandLine), React.createElement("button", {
+        type: "button",
+        onClick: this.removeProcess.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Command line"), React.createElement("input", {
+        type: "text",
+        value: entry.CommandLine,
+        onChange: event => this.updateProcess(i, "CommandLine", event)
+      })), React.createElement("li", null, React.createElement(ObjectState, {
+        value: entry.ObjectState,
+        onChange: event => this.updateProcess(i, "ObjectState", event)
+      })))));
+    }
+
+    return React.createElement("details", null, React.createElement("summary", null, "Processes"), React.createElement("button", {
+      type: "button",
+      onClick: this.addProcess.bind(this)
+    }, "Add Process"), React.createElement("ul", null, processes));
   }
 
 }

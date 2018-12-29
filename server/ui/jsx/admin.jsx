@@ -792,9 +792,7 @@ class Templates extends React.Component {
           <Groups name="GroupMembersAdd" label="Group members to add" groups={this.state.selectedTemplate.Template.GroupMembersAdd} callback={this.handleCallback}/>
           <Groups name="GroupMembersKeep" label="Group members to keep" groups={this.state.selectedTemplate.Template.GroupMembersKeep} callback={this.handleCallback}/>
           <Groups name="GroupMembersRemove" label="Group members to remove" groups={this.state.selectedTemplate.Template.GroupMembersRemove} callback={this.handleCallback}/>
-          <ItemList name="ProcessesAdd" label="Processes to add" defaultValue={this.state.selectedTemplate.Template.ProcessesAdd} callback={this.handleCallback}/>
-          <ItemList name="ProcessesKeep" label="Processes to keep" defaultValue={this.state.selectedTemplate.Template.ProcessesKeep} callback={this.handleCallback}/>
-          <ItemList name="ProcessesRemove" label="Processes to remove" defaultValue={this.state.selectedTemplate.Template.ProcessesRemove} callback={this.handleCallback}/>
+          <Processes processes={this.state.selectedTemplate.Template.Processes} callback={this.handleCallback}/>
           <Software software={this.state.selectedTemplate.Template.Software} callback={this.handleCallback}/>
           <NetworkConns conns={this.state.selectedTemplate.Template.NetworkConns} callback={this.handleCallback}/>
         </BasicModal>
@@ -1028,6 +1026,94 @@ class Groups extends React.Component {
         <button type="button" onClick={this.addGroup.bind(this)}>Add Group</button>
         <ul>
           {groups}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class Processes extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    let processes = props.processes;
+    if (processes === undefined || processes === null) {
+      processes = [];
+    }
+    this.state = {
+      processes: processes
+    }
+
+    this.addProcess = this.addProcess.bind(this);
+    this.removeProcess = this.removeProcess.bind(this);
+    this.updateProcess = this.updateProcess.bind(this);
+  }
+
+  addProcess() {
+    let empty = {
+      CommandLine: "",
+      ObjectState: "Keep"
+    };
+    let processes = [
+      ...this.state.processes,
+      empty
+    ];
+    this.setState({
+      processes: processes
+    });
+    this.props.callback("Processes", processes)
+  }
+
+  removeProcess(id) {
+    let processes = this.state.processes.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      processes: processes
+    });
+    this.props.callback("Processes", processes);
+  }
+
+  updateProcess(id, field, event) {
+    let updated = this.state.processes;
+    let value = event.target.value;
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      processes: updated
+    })
+    this.props.callback("Processes", updated);
+  }
+
+  render() {
+    let processes = [];
+    for (let i in this.state.processes) {
+      let entry = this.state.processes[i];
+      processes.push(
+        <details key={i}>
+          <summary>{entry.CommandLine}</summary>
+          <button type="button" onClick={this.removeProcess.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Command line</label>
+              <input type="text" value={entry.CommandLine} onChange={event=> this.updateProcess(i, "CommandLine", event)}></input>
+            </li>
+            <li>
+              <ObjectState value={entry.ObjectState} onChange={event=> this.updateProcess(i, "ObjectState", event)} />
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>Processes</summary>
+        <button type="button" onClick={this.addProcess.bind(this)}>Add Process</button>
+        <ul>
+          {processes}
         </ul>
       </details>
     )
