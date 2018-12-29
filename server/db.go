@@ -34,7 +34,7 @@ func (db dbObj) dbInit() {
 	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
 	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
 	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BIT NOT NULL, key VARCHAR NOT NULL)")
-	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, template BLOB NOT NULL)")
+	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, state BLOB NOT NULL)")
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
@@ -315,8 +315,8 @@ func (db dbObj) UpdateTeam(id int64, team model.Team) error {
 	return db.dbUpdate("UPDATE teams SET name=(?), poc=(?), email=(?), enabled=(?), key=(?) WHERE id=(?)", team.Name, team.POC, team.Email, team.Enabled, team.Key, id)
 }
 
-func (db dbObj) SelectTemplates() ([]model.TemplateEntry, error) {
-	rows, err := db.dbConn.Query("SELECT id, name, template FROM templates ORDER BY name ASC")
+func (db dbObj) SelectTemplates() ([]model.Template, error) {
+	rows, err := db.dbConn.Query("SELECT id, name, state FROM templates ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -324,58 +324,58 @@ func (db dbObj) SelectTemplates() ([]model.TemplateEntry, error) {
 
 	var id int64
 	var name string
-	var templateBytes []byte
-	templateEntries := make([]model.TemplateEntry, 0)
+	var stateBytes []byte
+	templates := make([]model.Template, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&id, &name, &templateBytes)
+		err = rows.Scan(&id, &name, &stateBytes)
 		if err != nil {
 			return nil, err
 		}
-		var template model.Template
-		err = json.Unmarshal(templateBytes, &template)
+		var state model.State
+		err = json.Unmarshal(stateBytes, &state)
 		if err != nil {
 			continue
 		}
-		var entry model.TemplateEntry
-		entry.ID = id
-		entry.Name = name
-		entry.Template = template
-		templateEntries = append(templateEntries, entry)
+		var template model.Template
+		template.ID = id
+		template.Name = name
+		template.State = state
+		templates = append(templates, template)
 	}
 
-	return templateEntries, nil
+	return templates, nil
 }
 
-func (db dbObj) SelectTemplate(id int64) (model.TemplateEntry, error) {
-	var templateEntry model.TemplateEntry
+func (db dbObj) SelectTemplate(id int64) (model.Template, error) {
 	var template model.Template
 	var name string
-	var templateBytes []byte
+	var state model.State
+	var stateBytes []byte
 
-	rows, err := db.dbConn.Query("SELECT name, template FROM templates where id=(?)", id)
+	rows, err := db.dbConn.Query("SELECT name, state FROM templates where id=(?)", id)
 	if err != nil {
-		return templateEntry, err
+		return template, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		err := rows.Scan(&name, &templateBytes)
+		err := rows.Scan(&name, &stateBytes)
 		if err != nil {
-			return templateEntry, err
+			return template, err
 		}
-		err = json.Unmarshal(templateBytes, &template)
+		err = json.Unmarshal(stateBytes, &state)
 		if err != nil {
-			return templateEntry, err
+			return template, err
 		}
 		// only get first result
-		templateEntry.ID = id
-		templateEntry.Name = name
-		templateEntry.Template = template
+		template.ID = id
+		template.Name = name
+		template.State = state
 		break
 	}
 
-	return templateEntry, nil
+	return template, nil
 }
 
 func (db dbObj) DeleteTemplate(id int64) error {
@@ -402,44 +402,50 @@ func (db dbObj) SelectScenariosForHostname(hostname string) ([]int64, error) {
 }
 
 func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error) {
-	rows, err := db.dbConn.Query("SELECT templates.template FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.scenario_id=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
+	rows, err := db.dbConn.Query("SELECT templates.id, templates.name, templates.state FROM templates, hosts, hosts_templates WHERE hosts.hostname=(?) AND hosts_templates.scenario_id=(?) AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	templates := make([]model.Template, 0)
-	var templateBytes []byte
+	var id int64
+	var name string
+	var stateBytes []byte
 	for rows.Next() {
-		err := rows.Scan(&templateBytes)
+		err := rows.Scan(&id, &name, &stateBytes)
+		if err != nil {
+			return nil, err
+		}
+		var state model.State
+		err = json.Unmarshal(stateBytes, &state)
 		if err != nil {
 			return nil, err
 		}
 		var template model.Template
-		err = json.Unmarshal(templateBytes, &template)
-		if err != nil {
-			return nil, err
-		}
+		template.ID = id
+		template.Name = name
+		template.State = state
 		templates = append(templates, template)
 	}
 	return templates, nil
 }
 
-func (db dbObj) InsertTemplate(templateEntry model.TemplateEntry) error {
-	b, err := json.Marshal(templateEntry.Template)
+func (db dbObj) InsertTemplate(template model.Template) error {
+	b, err := json.Marshal(template.State)
 	if err != nil {
 		return err
 	}
-	_, err = db.dbInsert("INSERT INTO templates(name, template) VALUES(?,?)", templateEntry.Name, b)
+	_, err = db.dbInsert("INSERT INTO templates(name, state) VALUES(?,?)", template.Name, b)
 	return err
 }
 
-func (db dbObj) UpdateTemplate(id int64, templateEntry model.TemplateEntry) error {
-	b, err := json.Marshal(templateEntry.Template)
+func (db dbObj) UpdateTemplate(id int64, template model.Template) error {
+	b, err := json.Marshal(template.State)
 	if err != nil {
 		return err
 	}
-	return db.dbUpdate("UPDATE templates SET name=(?), template=(?) WHERE id=(?)", templateEntry.Name, b, id)
+	return db.dbUpdate("UPDATE templates SET name=(?), state=(?) WHERE id=(?)", template.Name, b, id)
 }
 
 func (db dbObj) SelectHosts() ([]model.Host, error) {

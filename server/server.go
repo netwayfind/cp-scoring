@@ -584,8 +584,8 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var templateEntry model.TemplateEntry
-	err = json.Unmarshal(body, &templateEntry)
+	var template model.Template
+	err = json.Unmarshal(body, &template)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
@@ -593,7 +593,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = theServer.backingStore.InsertTemplate(templateEntry)
+	err = theServer.backingStore.InsertTemplate(template)
 	if err != nil {
 		msg := "ERROR: cannot insert template;"
 		log.Println(msg, err)
@@ -629,8 +629,8 @@ func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var templateEntry model.TemplateEntry
-	err = json.Unmarshal(body, &templateEntry)
+	var template model.Template
+	err = json.Unmarshal(body, &template)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
@@ -638,7 +638,7 @@ func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	err = theServer.backingStore.UpdateTemplate(id, templateEntry)
+	err = theServer.backingStore.UpdateTemplate(id, template)
 	if err != nil {
 		msg := "ERROR: cannot update template;"
 		log.Println(msg, err)

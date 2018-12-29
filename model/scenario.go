@@ -1,17 +1,14 @@
 package model
 
-type TemplateEntry struct {
-	ID       int64
-	Name     string
-	Template Template
+type Template struct {
+	ID    int64
+	Name  string
+	State State
 }
 
-type Template struct {
-	Users        []User
-	Groups       map[string][]GroupMember
-	Processes    []Process
-	Software     []Software
-	NetworkConns []NetworkConnection
+// NewTemplate returns a new Template instance
+func NewTemplate() Template {
+	return Template{State: State{}}
 }
 
 type Finding struct {

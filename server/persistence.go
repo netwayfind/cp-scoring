@@ -27,11 +27,11 @@ type backingStore interface {
 	InsertTeam(team model.Team) error
 	UpdateTeam(teamID int64, team model.Team) error
 	DeleteTeam(teamID int64) error
-	SelectTemplates() ([]model.TemplateEntry, error)
+	SelectTemplates() ([]model.Template, error)
 	SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error)
-	SelectTemplate(templateID int64) (model.TemplateEntry, error)
-	InsertTemplate(templateEntry model.TemplateEntry) error
-	UpdateTemplate(templateID int64, templateEntry model.TemplateEntry) error
+	SelectTemplate(templateID int64) (model.Template, error)
+	InsertTemplate(template model.Template) error
+	UpdateTemplate(templateID int64, template model.Template) error
 	DeleteTemplate(templateID int64) error
 	SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error)
 	SelectScenariosForHostname(hostname string) ([]int64, error)

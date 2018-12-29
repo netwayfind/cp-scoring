@@ -29,7 +29,9 @@ func TestAudit(t *testing.T) {
 	state := model.State{}
 	emptyTemplates := make([]model.Template, 0)
 	templateUsers := append(make([]model.User, 0), model.User{Name: "user", ObjectState: model.ObjectStateKeep})
-	sampleTemplates := append(emptyTemplates, model.Template{Users: templateUsers})
+	template := model.NewTemplate()
+	template.State.Users = templateUsers
+	sampleTemplates := append(emptyTemplates, template)
 
 	// empty state
 	// no templates
@@ -198,7 +200,7 @@ func TestAuditUsers(t *testing.T) {
 
 	// no users in template, no users in state
 	state.Users = make([]model.User, 0)
-	template := model.Template{}
+	template := model.NewTemplate()
 	findings := auditUsers(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
@@ -208,7 +210,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	user := model.User{Name: "user1"}
 	state.Users = append(state.Users, user)
-	template = model.Template{}
+	template = model.NewTemplate()
 	findings = auditUsers(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
@@ -216,10 +218,10 @@ func TestAuditUsers(t *testing.T) {
 
 	// user to add in template, user in not state
 	state.Users = make([]model.User, 0)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser := model.User{Name: "user1", ObjectState: model.ObjectStateAdd}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -230,10 +232,10 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	user = model.User{Name: "user1", AccountActive: true}
 	state.Users = append(state.Users, user)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateAdd, AccountActive: true}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 5 {
 		t.Fatal("Expected 5 findings")
@@ -246,10 +248,10 @@ func TestAuditUsers(t *testing.T) {
 
 	// user to keep in template, user in not state
 	state.Users = make([]model.User, 0)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateKeep}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -260,10 +262,10 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	user = model.User{Name: "user1", AccountActive: true}
 	state.Users = append(state.Users, user)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateKeep, AccountActive: true}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 5 {
 		t.Fatal("Expected 5 findings")
@@ -278,10 +280,10 @@ func TestAuditUsers(t *testing.T) {
 
 	// user to remove in template, user in not state
 	state.Users = make([]model.User, 0)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateRemove}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -292,10 +294,10 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	user = model.User{Name: "user1", AccountActive: true}
 	state.Users = append(state.Users, user)
-	template = model.Template{}
-	template.Users = make([]model.User, 0)
+	template = model.NewTemplate()
+	template.State.Users = make([]model.User, 0)
 	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateRemove, AccountActive: true}
-	template.Users = append(template.Users, tUser)
+	template.State.Users = append(template.State.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -448,7 +450,7 @@ func TestAuditSoftware(t *testing.T) {
 	sw := model.Software{Name: "sw", Version: "1.0.0"}
 
 	// no software in template
-	template := model.Template{}
+	template := model.NewTemplate()
 	// software not in state
 	state.Software = make([]model.Software, 0)
 	findings := auditSoftware(state, template)
@@ -463,9 +465,9 @@ func TestAuditSoftware(t *testing.T) {
 	}
 
 	// template software to add
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateSw := model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateAdd}
-	template.Software = append(make([]model.Software, 0), templateSw)
+	template.State.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)
 	findings = auditSoftware(state, template)
@@ -482,9 +484,9 @@ func TestAuditSoftware(t *testing.T) {
 	checkFinding(t, findings[0], true, 1, "Software added: sw, 1.0.0")
 
 	// template software to keep
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateSw = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateKeep}
-	template.Software = append(make([]model.Software, 0), templateSw)
+	template.State.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)
 	findings = auditSoftware(state, template)
@@ -501,9 +503,9 @@ func TestAuditSoftware(t *testing.T) {
 	checkFinding(t, findings[0], false, 0, "Software found: sw, 1.0.0")
 
 	// template software to remove
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateSw = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateRemove}
-	template.Software = append(make([]model.Software, 0), templateSw)
+	template.State.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)
 	findings = auditSoftware(state, template)
@@ -642,7 +644,7 @@ func TestAuditNetworkConnection(t *testing.T) {
 	nc := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443"}
 
 	// no network connection in template
-	template := model.Template{}
+	template := model.NewTemplate()
 	// network connection not in state
 	state.NetworkConnections = make([]model.NetworkConnection, 0)
 	findings := auditNetworkConnections(state, template)
@@ -657,9 +659,9 @@ func TestAuditNetworkConnection(t *testing.T) {
 	}
 
 	// network connection to add in template
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateNC := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateAdd}
-	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	template.State.NetworkConnections = append(make([]model.NetworkConnection, 0), templateNC)
 	// network connection not in state
 	state.NetworkConnections = make([]model.NetworkConnection, 0)
 	findings = auditNetworkConnections(state, template)
@@ -676,9 +678,9 @@ func TestAuditNetworkConnection(t *testing.T) {
 	checkFinding(t, findings[0], true, 1, "Network connection added: TCP 127.0.0.1:8443 :")
 
 	// network connection to keep in template
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateNC = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateKeep}
-	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	template.State.NetworkConnections = append(make([]model.NetworkConnection, 0), templateNC)
 	// network connection not in state
 	state.NetworkConnections = make([]model.NetworkConnection, 0)
 	findings = auditNetworkConnections(state, template)
@@ -695,9 +697,9 @@ func TestAuditNetworkConnection(t *testing.T) {
 	checkFinding(t, findings[0], false, 0, "Network connection found: TCP 127.0.0.1:8443 :")
 
 	// network connection to remove in template
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateNC = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443", ObjectState: model.ObjectStateRemove}
-	template.NetworkConns = append(make([]model.NetworkConnection, 0), templateNC)
+	template.State.NetworkConnections = append(make([]model.NetworkConnection, 0), templateNC)
 	// network connection not in state
 	state.NetworkConnections = make([]model.NetworkConnection, 0)
 	findings = auditNetworkConnections(state, template)
@@ -781,7 +783,7 @@ func TestAuditProcesses(t *testing.T) {
 	notEmpty := append(empty, process)
 
 	// no process in template
-	template := model.Template{}
+	template := model.NewTemplate()
 	// process not in state
 	state.Processes = empty
 	findings := auditProcesses(state, template)
@@ -796,9 +798,9 @@ func TestAuditProcesses(t *testing.T) {
 	}
 
 	// template process to add
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateProcess := model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateAdd}
-	template.Processes = append(make([]model.Process, 0), templateProcess)
+	template.State.Processes = append(make([]model.Process, 0), templateProcess)
 	// process not in state
 	state.Processes = empty
 	findings = auditProcesses(state, template)
@@ -815,9 +817,9 @@ func TestAuditProcesses(t *testing.T) {
 	checkFinding(t, findings[0], true, 1, "Process added: /bin/sh")
 
 	// template process to keep
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateKeep}
-	template.Processes = append(make([]model.Process, 0), templateProcess)
+	template.State.Processes = append(make([]model.Process, 0), templateProcess)
 	// process not in state
 	state.Processes = empty
 	findings = auditProcesses(state, template)
@@ -834,9 +836,9 @@ func TestAuditProcesses(t *testing.T) {
 	checkFinding(t, findings[0], false, 0, "Process found: /bin/sh")
 
 	// template process to remove
-	template = model.Template{}
+	template = model.NewTemplate()
 	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateRemove}
-	template.Processes = append(make([]model.Process, 0), templateProcess)
+	template.State.Processes = append(make([]model.Process, 0), templateProcess)
 	// process not in state
 	state.Processes = empty
 	findings = auditProcesses(state, template)
@@ -859,15 +861,15 @@ func TestAuditGroups(t *testing.T) {
 	state.Groups["Users"] = append(make([]model.GroupMember, 0), model.GroupMember{Name: "user"})
 
 	// no template members
-	template := model.Template{}
-	template.Groups = make(map[string][]model.GroupMember)
+	template := model.NewTemplate()
+	template.State.Groups = make(map[string][]model.GroupMember)
 	findings := auditGroups(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
 	}
 
 	// empty template members
-	template.Groups["Users"] = make([]model.GroupMember, 0)
+	template.State.Groups["Users"] = make([]model.GroupMember, 0)
 	findings = auditGroups(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
@@ -875,7 +877,7 @@ func TestAuditGroups(t *testing.T) {
 
 	// unknown state
 	templateMember := model.GroupMember{Name: "user"}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -885,7 +887,7 @@ func TestAuditGroups(t *testing.T) {
 	// group member to add
 	// present
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateAdd}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -893,7 +895,7 @@ func TestAuditGroups(t *testing.T) {
 	checkFinding(t, findings[0], true, 1, "Group Users, member added: user")
 	// not present
 	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateAdd}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -903,7 +905,7 @@ func TestAuditGroups(t *testing.T) {
 	// group member to keep
 	// present
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateKeep}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -911,7 +913,7 @@ func TestAuditGroups(t *testing.T) {
 	checkFinding(t, findings[0], false, 0, "Group Users, member found: user")
 	// not present
 	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateKeep}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -921,7 +923,7 @@ func TestAuditGroups(t *testing.T) {
 	// group member to remove
 	// present
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateRemove}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -929,7 +931,7 @@ func TestAuditGroups(t *testing.T) {
 	checkFinding(t, findings[0], false, 0, "Group Users, member not removed: user")
 	// not present
 	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateRemove}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -939,17 +941,17 @@ func TestAuditGroups(t *testing.T) {
 
 func TestAuditGroupsNotPresent(t *testing.T) {
 	state := model.State{}
+	template := model.NewTemplate()
 
 	// no group members
-	template := model.Template{}
-	template.Groups = make(map[string][]model.GroupMember)
+	template.State.Groups = make(map[string][]model.GroupMember)
 	findings := auditGroups(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
 	}
 
 	// empty group members
-	template.Groups["Users"] = make([]model.GroupMember, 0)
+	template.State.Groups["Users"] = make([]model.GroupMember, 0)
 	findings = auditGroups(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
@@ -957,7 +959,7 @@ func TestAuditGroupsNotPresent(t *testing.T) {
 
 	// unknown state
 	templateMember := model.GroupMember{Name: "user"}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -966,7 +968,7 @@ func TestAuditGroupsNotPresent(t *testing.T) {
 
 	// group member to add
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateAdd}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -975,7 +977,7 @@ func TestAuditGroupsNotPresent(t *testing.T) {
 
 	// group member to keep
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateKeep}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
@@ -984,7 +986,7 @@ func TestAuditGroupsNotPresent(t *testing.T) {
 
 	// group member to remove
 	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateRemove}
-	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	template.State.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
 	findings = auditGroups(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")

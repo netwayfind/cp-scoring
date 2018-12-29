@@ -174,7 +174,7 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		foundUsers[user.Name] = user
 	}
 
-	for _, templateUser := range template.Users {
+	for _, templateUser := range template.State.Users {
 		user, present := foundUsers[templateUser.Name]
 
 		// check for user account state
@@ -214,7 +214,7 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 func auditGroups(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for templateGroup, templateMembers := range template.Groups {
+	for templateGroup, templateMembers := range template.State.Groups {
 		if groupMembers, present := state.Groups[templateGroup]; present {
 			// template group present
 			foundMembers := make(map[string]bool)
@@ -293,7 +293,7 @@ func auditGroups(state model.State, template model.Template) []model.Finding {
 func auditProcesses(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for _, templateProcess := range template.Processes {
+	for _, templateProcess := range template.State.Processes {
 		finding := auditProcessState(templateProcess, state)
 		findings = append(findings, finding)
 	}
@@ -420,7 +420,7 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 func auditSoftware(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for _, templateSoftware := range template.Software {
+	for _, templateSoftware := range template.State.Software {
 		finding := auditSoftwareState(templateSoftware, state)
 		findings = append(findings, finding)
 	}
@@ -503,7 +503,7 @@ func auditNetworkConnectionObjectState(templateConn model.NetworkConnection, sta
 func auditNetworkConnections(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for _, templateConn := range template.NetworkConns {
+	for _, templateConn := range template.State.NetworkConnections {
 		finding := auditNetworkConnectionObjectState(templateConn, state)
 		findings = append(findings, finding)
 	}
