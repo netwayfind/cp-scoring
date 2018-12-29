@@ -7,13 +7,11 @@ type TemplateEntry struct {
 }
 
 type Template struct {
-	Users              []User
-	GroupMembersAdd    map[string][]string
-	GroupMembersKeep   map[string][]string
-	GroupMembersRemove map[string][]string
-	Processes          []Process
-	Software           []Software
-	NetworkConns       []NetworkConnection
+	Users        []User
+	Groups       map[string][]GroupMember
+	Processes    []Process
+	Software     []Software
+	NetworkConns []NetworkConnection
 }
 
 type Finding struct {

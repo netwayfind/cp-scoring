@@ -814,3 +814,142 @@ func TestAuditProcesses(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "Process not removed: /bin/sh")
 }
+
+func TestAuditGroups(t *testing.T) {
+	state := model.State{}
+	state.Groups = make(map[string][]model.GroupMember)
+	state.Groups["Users"] = append(make([]model.GroupMember, 0), model.GroupMember{Name: "user"})
+
+	// no template members
+	template := model.Template{}
+	template.Groups = make(map[string][]model.GroupMember)
+	findings := auditGroups(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// empty template members
+	template.Groups["Users"] = make([]model.GroupMember, 0)
+	findings = auditGroups(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// unknown state
+	templateMember := model.GroupMember{Name: "user"}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member unknown state: user")
+
+	// group member to add
+	// present
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateAdd}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Group Users, member added: user")
+	// not present
+	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateAdd}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member not added: nobody")
+
+	// group member to keep
+	// present
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateKeep}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member found: user")
+	// not present
+	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateKeep}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Group Users, member not found: nobody")
+
+	// group member to remove
+	// present
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateRemove}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member not removed: user")
+	// not present
+	templateMember = model.GroupMember{Name: "nobody", ObjectState: model.ObjectStateRemove}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Group Users, member removed: nobody")
+}
+
+func TestAuditGroupsNotPresent(t *testing.T) {
+	state := model.State{}
+
+	// no group members
+	template := model.Template{}
+	template.Groups = make(map[string][]model.GroupMember)
+	findings := auditGroups(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// empty group members
+	template.Groups["Users"] = make([]model.GroupMember, 0)
+	findings = auditGroups(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// unknown state
+	templateMember := model.GroupMember{Name: "user"}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member unknown state: user")
+
+	// group member to add
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateAdd}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Group Users, member not added: user")
+
+	// group member to keep
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateKeep}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Group Users, member not found: user")
+
+	// group member to remove
+	templateMember = model.GroupMember{Name: "user", ObjectState: model.ObjectStateRemove}
+	template.Groups["Users"] = append(make([]model.GroupMember, 0), templateMember)
+	findings = auditGroups(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Group Users, member removed: user")
+}

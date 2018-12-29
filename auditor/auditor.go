@@ -214,59 +214,73 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 func auditGroups(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for group, members := range state.Groups {
-		foundMembers := make(map[string]bool)
-		for _, member := range members {
-			foundMembers[member.Name] = true
-		}
-
-		templateMembers, present := template.GroupMembersAdd[group]
-		if present {
+	for templateGroup, templateMembers := range template.Groups {
+		if groupMembers, present := state.Groups[templateGroup]; present {
+			// template group present
+			foundMembers := make(map[string]bool)
+			for _, groupMember := range groupMembers {
+				foundMembers[groupMember.Name] = true
+			}
 			for _, templateMember := range templateMembers {
-				_, p := foundMembers[templateMember]
-				var finding model.Finding
-				if p {
-					finding.Show = true
-					finding.Value = 1
-					finding.Message = "User " + templateMember + " added to group " + group
+				finding := model.Finding{}
+				_, memberPresent := foundMembers[templateMember.Name]
+				if templateMember.ObjectState == model.ObjectStateAdd {
+					if memberPresent {
+						finding.Show = true
+						finding.Value = 1
+						finding.Message = "Group " + templateGroup + ", member added: " + templateMember.Name
+					} else {
+						finding.Show = false
+						finding.Value = 0
+						finding.Message = "Group " + templateGroup + ", member not added: " + templateMember.Name
+					}
+				} else if templateMember.ObjectState == model.ObjectStateKeep {
+					if memberPresent {
+						finding.Show = false
+						finding.Value = 0
+						finding.Message = "Group " + templateGroup + ", member found: " + templateMember.Name
+					} else {
+						finding.Show = true
+						finding.Value = -1
+						finding.Message = "Group " + templateGroup + ", member not found: " + templateMember.Name
+					}
+				} else if templateMember.ObjectState == model.ObjectStateRemove {
+					if memberPresent {
+						finding.Show = false
+						finding.Value = 0
+						finding.Message = "Group " + templateGroup + ", member not removed: " + templateMember.Name
+					} else {
+						finding.Show = true
+						finding.Value = 1
+						finding.Message = "Group " + templateGroup + ", member removed: " + templateMember.Name
+					}
 				} else {
 					finding.Show = false
 					finding.Value = 0
-					finding.Message = "User " + templateMember + " not added to group " + group
+					finding.Message = "Group " + templateGroup + ", member unknown state: " + templateMember.Name
 				}
 				findings = append(findings, finding)
 			}
-		}
-		templateMembers, present = template.GroupMembersKeep[group]
-		if present {
+		} else {
+			// template group not present
 			for _, templateMember := range templateMembers {
-				_, p := foundMembers[templateMember]
-				var finding model.Finding
-				if p {
+				finding := model.Finding{}
+				if templateMember.ObjectState == model.ObjectStateAdd {
 					finding.Show = false
 					finding.Value = 0
-					finding.Message = "User " + templateMember + " in group " + group
-				} else {
+					finding.Message = "Group " + templateGroup + ", member not added: " + templateMember.Name
+				} else if templateMember.ObjectState == model.ObjectStateKeep {
 					finding.Show = true
 					finding.Value = -1
-					finding.Message = "User " + templateMember + " not in group " + group
-				}
-				findings = append(findings, finding)
-			}
-		}
-		templateMembers, present = template.GroupMembersRemove[group]
-		if present {
-			for _, templateMember := range templateMembers {
-				_, p := foundMembers[templateMember]
-				var finding model.Finding
-				if p {
-					finding.Show = false
-					finding.Value = 0
-					finding.Message = "User " + templateMember + " in group " + group
-				} else {
+					finding.Message = "Group " + templateGroup + ", member not found: " + templateMember.Name
+				} else if templateMember.ObjectState == model.ObjectStateRemove {
 					finding.Show = true
 					finding.Value = 1
-					finding.Message = "User " + templateMember + " removed from group " + group
+					finding.Message = "Group " + templateGroup + ", member removed: " + templateMember.Name
+				} else {
+					finding.Show = false
+					finding.Value = 0
+					finding.Message = "Group " + templateGroup + ", member unknown state: " + templateMember.Name
 				}
 				findings = append(findings, finding)
 			}
