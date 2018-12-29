@@ -59,6 +59,7 @@ type User struct {
 }
 
 type Process struct {
+	ObjectState ObjectState
 	PID         int64
 	User        string
 	CommandLine string

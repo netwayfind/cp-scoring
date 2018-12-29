@@ -11,9 +11,7 @@ type Template struct {
 	GroupMembersAdd    map[string][]string
 	GroupMembersKeep   map[string][]string
 	GroupMembersRemove map[string][]string
-	ProcessesAdd       []string
-	ProcessesKeep      []string
-	ProcessesRemove    []string
+	Processes          []Process
 	Software           []Software
 	NetworkConns       []NetworkConnection
 }

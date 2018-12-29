@@ -675,3 +675,142 @@ func TestAuditNetworkConnection(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "Network connection not removed: TCP 127.0.0.1:8443 :")
 }
+func TestAuditProcessState(t *testing.T) {
+	state := model.State{}
+	empty := make([]model.Process, 0)
+	notEmpty := append(empty, model.Process{CommandLine: "/bin/sh"})
+
+	// unknown process state, process not in state
+	templateProcess := model.Process{CommandLine: "/bin/sh"}
+	state.Processes = empty
+	finding := auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Unknown process state: /bin/sh")
+	// unknown process state, process in state
+	state.Processes = notEmpty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Unknown process state: /bin/sh")
+	// unknown process state, process different name
+	templateProcess = model.Process{CommandLine: "/bin/bash"}
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Unknown process state: /bin/bash")
+
+	// template process to add, process not in state
+	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateAdd}
+	state.Processes = empty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Process not added: /bin/sh")
+	// template process to add, process in state
+	state.Processes = notEmpty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, true, 1, "Process added: /bin/sh")
+	// template process to add, process different name
+	templateProcess = model.Process{CommandLine: "/bin/bash", ObjectState: model.ObjectStateAdd}
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Process not added: /bin/bash")
+
+	// template process to keep, process not in state
+	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateKeep}
+	state.Processes = empty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, true, -1, "Process not found: /bin/sh")
+	// template process to keep, process in state
+	state.Processes = notEmpty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Process found: /bin/sh")
+	// template process to keep, process different name
+	templateProcess = model.Process{CommandLine: "/bin/bash", ObjectState: model.ObjectStateKeep}
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, true, -1, "Process not found: /bin/bash")
+
+	// template process to remove, process not in state
+	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateRemove}
+	state.Processes = empty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, true, 1, "Process removed: /bin/sh")
+	// template process to remove, process in state
+	state.Processes = notEmpty
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, false, 0, "Process not removed: /bin/sh")
+	// template process to remove, process different name
+	templateProcess = model.Process{CommandLine: "/bin/bash", ObjectState: model.ObjectStateRemove}
+	finding = auditProcessState(templateProcess, state)
+	checkFinding(t, finding, true, 1, "Process removed: /bin/bash")
+}
+func TestAuditProcesses(t *testing.T) {
+	state := model.State{}
+	process := model.Process{CommandLine: "/bin/sh"}
+	empty := make([]model.Process, 0)
+	notEmpty := append(empty, process)
+
+	// no process in template
+	template := model.Template{}
+	// process not in state
+	state.Processes = empty
+	findings := auditProcesses(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// process in state
+	state.Processes = notEmpty
+	findings = auditProcesses(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// template process to add
+	template = model.Template{}
+	templateProcess := model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateAdd}
+	template.Processes = append(make([]model.Process, 0), templateProcess)
+	// process not in state
+	state.Processes = empty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Process not added: /bin/sh")
+	// template process to add, process in state
+	state.Processes = notEmpty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Process added: /bin/sh")
+
+	// template process to keep
+	template = model.Template{}
+	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateKeep}
+	template.Processes = append(make([]model.Process, 0), templateProcess)
+	// process not in state
+	state.Processes = empty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Process not found: /bin/sh")
+	// process in state
+	state.Processes = notEmpty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Process found: /bin/sh")
+
+	// template process to remove
+	template = model.Template{}
+	templateProcess = model.Process{CommandLine: "/bin/sh", ObjectState: model.ObjectStateRemove}
+	template.Processes = append(make([]model.Process, 0), templateProcess)
+	// process not in state
+	state.Processes = empty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Process removed: /bin/sh")
+	// process in state
+	state.Processes = notEmpty
+	findings = auditProcesses(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Process not removed: /bin/sh")
+}

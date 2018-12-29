@@ -279,57 +279,65 @@ func auditGroups(state model.State, template model.Template) []model.Finding {
 func auditProcesses(state model.State, template model.Template) []model.Finding {
 	findings := make([]model.Finding, 0)
 
-	for _, templateProcess := range template.ProcessesAdd {
-		for _, process := range state.Processes {
-			if !strings.HasPrefix(process.CommandLine, templateProcess) {
-				continue
-			}
-			var finding model.Finding
-			finding.Show = true
-			finding.Value = 1
-			finding.Message = "Process found: " + templateProcess
-			findings = append(findings, finding)
-			break
-		}
-	}
-
-	for _, templateProcess := range template.ProcessesKeep {
-		match := false
-		for _, process := range state.Processes {
-			if !strings.HasPrefix(process.CommandLine, templateProcess) {
-				continue
-			}
-			match = true
-			break
-		}
-		if !match {
-			var finding model.Finding
-			finding.Show = true
-			finding.Value = -1
-			finding.Message = "Process not found: " + templateProcess
-			findings = append(findings, finding)
-		}
-	}
-
-	for _, templateProcess := range template.ProcessesRemove {
-		match := false
-		for _, process := range state.Processes {
-			if !strings.HasPrefix(process.CommandLine, templateProcess) {
-				continue
-			}
-			match = true
-			break
-		}
-		if !match {
-			var finding model.Finding
-			finding.Show = true
-			finding.Value = 1
-			finding.Message = "Process removed: " + templateProcess
-			findings = append(findings, finding)
-		}
+	for _, templateProcess := range template.Processes {
+		finding := auditProcessState(templateProcess, state)
+		findings = append(findings, finding)
 	}
 
 	return findings
+}
+
+func auditProcessState(templateProcess model.Process, state model.State) model.Finding {
+	var finding model.Finding
+
+	found := false
+	for _, process := range state.Processes {
+		// only need prefix match
+		if strings.HasPrefix(process.CommandLine, templateProcess.CommandLine) {
+			found = true
+			break
+		}
+	}
+
+	if templateProcess.ObjectState == model.ObjectStateAdd {
+		if found {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Process added: "
+		} else {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Process not added: "
+		}
+	} else if templateProcess.ObjectState == model.ObjectStateKeep {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Process found: "
+		} else {
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Process not found: "
+		}
+	} else if templateProcess.ObjectState == model.ObjectStateRemove {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Process not removed: "
+		} else {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Process removed: "
+		}
+	} else {
+		finding.Show = false
+		finding.Value = 0
+		finding.Message = "Unknown process state: "
+	}
+
+	finding.Message += templateProcess.CommandLine
+
+	return finding
 }
 
 func auditSoftwareState(templateSoftware model.Software, state model.State) model.Finding {
