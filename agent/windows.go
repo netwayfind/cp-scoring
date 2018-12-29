@@ -163,7 +163,7 @@ func getScheduledTaskXML() []byte {
 </Task>`)
 }
 
-func copyAgent(installPath string) {
+func copyAgentWindows(installPath string) {
 	log.Println("Copying this executable to installation folder")
 	ex, err := os.Executable()
 	if err != nil {
@@ -209,7 +209,7 @@ func (host hostWindows) Install() {
 	log.Println("Created installation folder: " + installPath)
 
 	// copy agent
-	copyAgent(installPath)
+	copyAgentWindows(installPath)
 
 	// create Task Scheduler file
 	createScheduledTask(installPath)
