@@ -703,7 +703,7 @@ class Templates extends React.Component {
       templates: [],
       showModal: false,
       selectedTemplate: {
-        Template: {}
+        State: {}
       }
     };
     this.modal = React.createRef();
@@ -735,7 +735,7 @@ class Templates extends React.Component {
     this.setState({
       selectedTemplateID: null,
       selectedTemplate: {
-        Template: {}
+        State: {}
       }
     });
     this.toggleModal();
@@ -783,16 +783,16 @@ class Templates extends React.Component {
   }
 
   handleCallback(key, value) {
-    let template = _objectSpread({}, this.state.selectedTemplate.Template, {
+    let state = _objectSpread({}, this.state.selectedTemplate.State, {
       [key]: value
     });
 
     this.setState({
       selectedTemplate: _objectSpread({}, this.state.selectedTemplate, {
-        Template: template
+        State: state
       })
     });
-    this.modal.current.setValue("Template", template);
+    this.modal.current.setValue("State", state);
   }
 
   render() {
@@ -828,19 +828,19 @@ class Templates extends React.Component {
       type: "text",
       defaultValue: this.state.selectedTemplate.Name
     }), React.createElement(Users, {
-      users: this.state.selectedTemplate.Template.Users,
+      users: this.state.selectedTemplate.State.Users,
       callback: this.handleCallback
     }), React.createElement(Groups, {
-      groups: this.state.selectedTemplate.Template.Groups,
+      groups: this.state.selectedTemplate.State.Groups,
       callback: this.handleCallback
     }), React.createElement(Processes, {
-      processes: this.state.selectedTemplate.Template.Processes,
+      processes: this.state.selectedTemplate.State.Processes,
       callback: this.handleCallback
     }), React.createElement(Software, {
-      software: this.state.selectedTemplate.Template.Software,
+      software: this.state.selectedTemplate.State.Software,
       callback: this.handleCallback
-    }), React.createElement(NetworkConns, {
-      conns: this.state.selectedTemplate.Template.NetworkConns,
+    }), React.createElement(NetworkConnections, {
+      conns: this.state.selectedTemplate.State.NetworkConnections,
       callback: this.handleCallback
     })), React.createElement("ul", null, rows));
   }
@@ -1282,7 +1282,7 @@ class Software extends React.Component {
 
 }
 
-class NetworkConns extends React.Component {
+class NetworkConnections extends React.Component {
   constructor(props) {
     super(props);
     let conns = props.conns;
@@ -1312,7 +1312,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: conns
     });
-    this.props.callback("NetworkConns", conns);
+    this.props.callback("NetworkConnections", conns);
   }
 
   remove(id) {
@@ -1322,7 +1322,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: conns
     });
-    this.props.callback("NetworkConns", conns);
+    this.props.callback("NetworkConnections", conns);
   }
 
   update(id, field, event) {
@@ -1334,7 +1334,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: updated
     });
-    this.props.callback("NetworkConns", updated);
+    this.props.callback("NetworkConnections", updated);
   }
 
   render() {

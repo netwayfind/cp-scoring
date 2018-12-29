@@ -671,7 +671,7 @@ class Templates extends React.Component {
       templates: [],
       showModal: false,
       selectedTemplate: {
-        Template: {}
+        State: {}
       }
     };
     this.modal = React.createRef();
@@ -704,7 +704,7 @@ class Templates extends React.Component {
     this.setState({
       selectedTemplateID: null,
       selectedTemplate: {
-        Template: {}
+        State: {}
       }
     });
     this.toggleModal();
@@ -755,17 +755,17 @@ class Templates extends React.Component {
   }
 
   handleCallback(key, value) {
-    let template = {
-      ...this.state.selectedTemplate.Template,
+    let state = {
+      ...this.state.selectedTemplate.State,
       [key]: value
     }
     this.setState({
       selectedTemplate: {
         ...this.state.selectedTemplate,
-        Template: template
+        State: state
       }
     })
-    this.modal.current.setValue("Template", template);
+    this.modal.current.setValue("State", state);
   }
 
   render() {
@@ -788,11 +788,11 @@ class Templates extends React.Component {
         <button onClick={this.createTemplate.bind(this)}>Create Template</button>
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
-          <Users users={this.state.selectedTemplate.Template.Users} callback={this.handleCallback}/>
-          <Groups groups={this.state.selectedTemplate.Template.Groups} callback={this.handleCallback}/>
-          <Processes processes={this.state.selectedTemplate.Template.Processes} callback={this.handleCallback}/>
-          <Software software={this.state.selectedTemplate.Template.Software} callback={this.handleCallback}/>
-          <NetworkConns conns={this.state.selectedTemplate.Template.NetworkConns} callback={this.handleCallback}/>
+          <Users users={this.state.selectedTemplate.State.Users} callback={this.handleCallback}/>
+          <Groups groups={this.state.selectedTemplate.State.Groups} callback={this.handleCallback}/>
+          <Processes processes={this.state.selectedTemplate.State.Processes} callback={this.handleCallback}/>
+          <Software software={this.state.selectedTemplate.State.Software} callback={this.handleCallback}/>
+          <NetworkConnections conns={this.state.selectedTemplate.State.NetworkConnections} callback={this.handleCallback}/>
         </BasicModal>
         <ul>{rows}</ul>
       </div>
@@ -1267,7 +1267,7 @@ class Software extends React.Component {
   }
 }
 
-class NetworkConns extends React.Component {
+class NetworkConnections extends React.Component {
   constructor(props) {
     super(props);
     
@@ -1300,7 +1300,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: conns
     });
-    this.props.callback("NetworkConns", conns)
+    this.props.callback("NetworkConnections", conns)
   }
 
   remove(id) {
@@ -1310,7 +1310,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: conns
     });
-    this.props.callback("NetworkConns", conns);
+    this.props.callback("NetworkConnections", conns);
   }
 
   update(id, field, event) {
@@ -1323,7 +1323,7 @@ class NetworkConns extends React.Component {
     this.setState({
       conns: updated
     })
-    this.props.callback("NetworkConns", updated);
+    this.props.callback("NetworkConnections", updated);
   }
 
   render() {
