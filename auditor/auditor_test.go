@@ -25,6 +25,44 @@ func checkFinding(t *testing.T, finding model.Finding, show bool, value int64, m
 	}
 }
 
+func TestAudit(t *testing.T) {
+	state := model.State{}
+	emptyTemplates := make([]model.Template, 0)
+	templateUsers := append(make([]model.User, 0), model.User{Name: "user", ObjectState: model.ObjectStateKeep})
+	sampleTemplates := append(emptyTemplates, model.Template{Users: templateUsers})
+
+	// empty state
+	// no templates
+	report := Audit(state, emptyTemplates)
+	if len(report.Findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// sample template
+	report = Audit(state, sampleTemplates)
+	if len(report.Findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, report.Findings[0], true, -1, "User not present: user")
+
+	// sample state
+	state.Users = append(make([]model.User, 0), model.User{Name: "user", AccountActive: true})
+	// no templates
+	report = Audit(state, emptyTemplates)
+	if len(report.Findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// sample template
+	report = Audit(state, sampleTemplates)
+	if len(report.Findings) != 5 {
+		t.Fatal("Expected 5 findings")
+	}
+	checkFinding(t, report.Findings[0], false, 0, "User present: user")
+	checkFinding(t, report.Findings[1], false, 0, "User active: user")
+	checkFinding(t, report.Findings[2], false, 0, "User account does not expire: user")
+	checkFinding(t, report.Findings[3], false, 0, "User password does not expire: user")
+	checkFinding(t, report.Findings[4], false, 0, "User password not changed: user")
+}
+
 func TestAuditUserPresent(t *testing.T) {
 	// template account state not set
 	templateUser := model.User{Name: "user1"}
