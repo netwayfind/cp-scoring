@@ -29,37 +29,37 @@ func TestAuditUserPresent(t *testing.T) {
 	// template account state not set
 	templateUser := model.User{Name: "user1"}
 	// account not present
-	finding := auditUserAccountState(templateUser, false)
+	finding := auditUserObjectState(templateUser, false)
 	checkFinding(t, finding, false, 0, "Unknown user account state: user1")
 	// account present
-	finding = auditUserAccountState(templateUser, true)
+	finding = auditUserObjectState(templateUser, true)
 	checkFinding(t, finding, false, 0, "Unknown user account state: user1")
 
 	// template account state add
-	templateUser = model.User{Name: "user1", AccountState: model.ObjectStateAdd}
+	templateUser = model.User{Name: "user1", ObjectState: model.ObjectStateAdd}
 	// account not present
-	finding = auditUserAccountState(templateUser, false)
+	finding = auditUserObjectState(templateUser, false)
 	checkFinding(t, finding, false, 0, "User not added: user1")
 	// account present
-	finding = auditUserAccountState(templateUser, true)
+	finding = auditUserObjectState(templateUser, true)
 	checkFinding(t, finding, true, 1, "User added: user1")
 
 	// template account state keep
-	templateUser = model.User{Name: "user1", AccountState: model.ObjectStateKeep}
+	templateUser = model.User{Name: "user1", ObjectState: model.ObjectStateKeep}
 	// account not present
-	finding = auditUserAccountState(templateUser, false)
+	finding = auditUserObjectState(templateUser, false)
 	checkFinding(t, finding, true, -1, "User not present: user1")
 	// account present
-	finding = auditUserAccountState(templateUser, true)
+	finding = auditUserObjectState(templateUser, true)
 	checkFinding(t, finding, false, 0, "User present: user1")
 
 	// template account state remove
-	templateUser = model.User{Name: "user1", AccountState: model.ObjectStateRemove}
+	templateUser = model.User{Name: "user1", ObjectState: model.ObjectStateRemove}
 	// account not present
-	finding = auditUserAccountState(templateUser, false)
+	finding = auditUserObjectState(templateUser, false)
 	checkFinding(t, finding, true, 1, "User removed: user1")
 	// account present
-	finding = auditUserAccountState(templateUser, true)
+	finding = auditUserObjectState(templateUser, true)
 	checkFinding(t, finding, false, 0, "User not removed: user1")
 }
 
@@ -180,7 +180,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser := model.User{Name: "user1", AccountState: model.ObjectStateAdd}
+	tUser := model.User{Name: "user1", ObjectState: model.ObjectStateAdd}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
@@ -194,7 +194,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = append(state.Users, user)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser = model.User{Name: "user1", AccountState: model.ObjectStateAdd, AccountActive: true}
+	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateAdd, AccountActive: true}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 5 {
@@ -210,7 +210,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser = model.User{Name: "user1", AccountState: model.ObjectStateKeep}
+	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateKeep}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
@@ -224,7 +224,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = append(state.Users, user)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser = model.User{Name: "user1", AccountState: model.ObjectStateKeep, AccountActive: true}
+	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateKeep, AccountActive: true}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 5 {
@@ -242,7 +242,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = make([]model.User, 0)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser = model.User{Name: "user1", AccountState: model.ObjectStateRemove}
+	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateRemove}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
@@ -256,7 +256,7 @@ func TestAuditUsers(t *testing.T) {
 	state.Users = append(state.Users, user)
 	template = model.Template{}
 	template.Users = make([]model.User, 0)
-	tUser = model.User{Name: "user1", AccountState: model.ObjectStateRemove, AccountActive: true}
+	tUser = model.User{Name: "user1", ObjectState: model.ObjectStateRemove, AccountActive: true}
 	template.Users = append(template.Users, tUser)
 	findings = auditUsers(state, template)
 	if len(findings) != 1 {
@@ -289,7 +289,7 @@ func TestAuditSoftwareState(t *testing.T) {
 	checkFinding(t, finding, false, 0, "Unknown software state: sw, 1.0.1")
 
 	// template software to add, software not in state
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateAdd}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not added: sw, 1.0.0")
@@ -298,16 +298,16 @@ func TestAuditSoftwareState(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software added: sw, 1.0.0")
 	// template software to add, software different name
-	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", ObjectState: model.ObjectStateAdd}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not added: ws, 1.0.0")
 	// template software to add, software different version
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateAdd}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", ObjectState: model.ObjectStateAdd}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not added: sw, 1.0.1")
 
 	// template software to keep, software not in state
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateKeep}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, -1, "Software not found: sw, 1.0.0")
@@ -316,16 +316,16 @@ func TestAuditSoftwareState(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software found: sw, 1.0.0")
 	// template software to keep, software different name
-	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", ObjectState: model.ObjectStateKeep}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, -1, "Software not found: ws, 1.0.0")
 	// template software to keep, software different version
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateKeep}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", ObjectState: model.ObjectStateKeep}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, -1, "Software not found: sw, 1.0.1")
 
 	// template software to remove, software not in state
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateRemove}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software removed: sw, 1.0.0")
@@ -334,11 +334,11 @@ func TestAuditSoftwareState(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not removed: sw, 1.0.0")
 	// template software to remove, software different name
-	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	templateSoftware = model.Software{Name: "ws", Version: "1.0.0", ObjectState: model.ObjectStateRemove}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software removed: ws, 1.0.0")
 	// template software to remove, software different version
-	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", SoftwareState: model.ObjectStateRemove}
+	templateSoftware = model.Software{Name: "sw", Version: "1.0.1", ObjectState: model.ObjectStateRemove}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software removed: sw, 1.0.1")
 }
@@ -363,7 +363,7 @@ func TestAuditSoftwareStateNameOnly(t *testing.T) {
 	checkFinding(t, finding, false, 0, "Unknown software state: ws")
 
 	// template software to add, software not in state
-	templateSoftware = model.Software{Name: "sw", SoftwareState: model.ObjectStateAdd}
+	templateSoftware = model.Software{Name: "sw", ObjectState: model.ObjectStateAdd}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not added: sw")
@@ -372,12 +372,12 @@ func TestAuditSoftwareStateNameOnly(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software added: sw")
 	// template software to add, software different name
-	templateSoftware = model.Software{Name: "ws", SoftwareState: model.ObjectStateAdd}
+	templateSoftware = model.Software{Name: "ws", ObjectState: model.ObjectStateAdd}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not added: ws")
 
 	// template software to keep, software not in state
-	templateSoftware = model.Software{Name: "sw", SoftwareState: model.ObjectStateKeep}
+	templateSoftware = model.Software{Name: "sw", ObjectState: model.ObjectStateKeep}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, -1, "Software not found: sw")
@@ -386,12 +386,12 @@ func TestAuditSoftwareStateNameOnly(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software found: sw")
 	// template software to keep, software different name
-	templateSoftware = model.Software{Name: "ws", SoftwareState: model.ObjectStateKeep}
+	templateSoftware = model.Software{Name: "ws", ObjectState: model.ObjectStateKeep}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, -1, "Software not found: ws")
 
 	// template software to remove, software not in state
-	templateSoftware = model.Software{Name: "sw", SoftwareState: model.ObjectStateRemove}
+	templateSoftware = model.Software{Name: "sw", ObjectState: model.ObjectStateRemove}
 	state.Software = empty
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software removed: sw")
@@ -400,7 +400,7 @@ func TestAuditSoftwareStateNameOnly(t *testing.T) {
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, false, 0, "Software not removed: sw")
 	// template software to remove, software different name
-	templateSoftware = model.Software{Name: "ws", SoftwareState: model.ObjectStateRemove}
+	templateSoftware = model.Software{Name: "ws", ObjectState: model.ObjectStateRemove}
 	finding = auditSoftwareState(templateSoftware, state)
 	checkFinding(t, finding, true, 1, "Software removed: ws")
 }
@@ -426,7 +426,7 @@ func TestAuditSoftware(t *testing.T) {
 
 	// template software to add
 	template = model.Template{}
-	templateSw := model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateAdd}
+	templateSw := model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateAdd}
 	template.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)
@@ -445,7 +445,7 @@ func TestAuditSoftware(t *testing.T) {
 
 	// template software to keep
 	template = model.Template{}
-	templateSw = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateKeep}
+	templateSw = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateKeep}
 	template.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)
@@ -464,7 +464,7 @@ func TestAuditSoftware(t *testing.T) {
 
 	// template software to remove
 	template = model.Template{}
-	templateSw = model.Software{Name: "sw", Version: "1.0.0", SoftwareState: model.ObjectStateRemove}
+	templateSw = model.Software{Name: "sw", Version: "1.0.0", ObjectState: model.ObjectStateRemove}
 	template.Software = append(make([]model.Software, 0), templateSw)
 	// software not in state
 	state.Software = make([]model.Software, 0)

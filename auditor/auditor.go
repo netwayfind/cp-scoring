@@ -21,9 +21,9 @@ func Audit(state model.State, templates []model.Template) model.Report {
 	return report
 }
 
-func auditUserAccountState(templateUser model.User, present bool) model.Finding {
+func auditUserObjectState(templateUser model.User, present bool) model.Finding {
 	var presentFinding model.Finding
-	if templateUser.AccountState == model.ObjectStateAdd {
+	if templateUser.ObjectState == model.ObjectStateAdd {
 		if present {
 			presentFinding.Show = true
 			presentFinding.Value = 1
@@ -33,7 +33,7 @@ func auditUserAccountState(templateUser model.User, present bool) model.Finding 
 			presentFinding.Value = 0
 			presentFinding.Message = "User not added: " + templateUser.Name
 		}
-	} else if templateUser.AccountState == model.ObjectStateKeep {
+	} else if templateUser.ObjectState == model.ObjectStateKeep {
 		if present {
 			// don't show indication that user should be kept
 			presentFinding.Show = false
@@ -44,7 +44,7 @@ func auditUserAccountState(templateUser model.User, present bool) model.Finding 
 			presentFinding.Value = -1
 			presentFinding.Message = "User not present: " + templateUser.Name
 		}
-	} else if templateUser.AccountState == model.ObjectStateRemove {
+	} else if templateUser.ObjectState == model.ObjectStateRemove {
 		if present {
 			presentFinding.Show = false
 			presentFinding.Value = 0
@@ -69,7 +69,7 @@ func auditUserAccountActive(templateUser model.User, user model.User) model.Find
 		if user.AccountActive {
 			activeFinding.Message = "User active: " + templateUser.Name
 			// if user is supposed to be kept, don't show this and don't add points
-			if templateUser.AccountState == model.ObjectStateKeep {
+			if templateUser.ObjectState == model.ObjectStateKeep {
 				activeFinding.Show = false
 				activeFinding.Value = 0
 			} else {
@@ -170,7 +170,7 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 
 	foundUsers := make(map[string]model.User)
 	for _, user := range state.Users {
-		// all user accounts should have AccountState as Keep
+		// all user accounts should have ObjectState as Keep
 		foundUsers[user.Name] = user
 	}
 
@@ -178,7 +178,7 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		user, present := foundUsers[templateUser.Name]
 
 		// check for user account state
-		presentFinding := auditUserAccountState(templateUser, present)
+		presentFinding := auditUserObjectState(templateUser, present)
 		findings = append(findings, presentFinding)
 
 		// no need to check further if user isn't present
@@ -187,7 +187,7 @@ func auditUsers(state model.State, template model.Template) []model.Finding {
 		}
 
 		// no need to check further if user should be removed
-		if templateUser.AccountState == model.ObjectStateRemove {
+		if templateUser.ObjectState == model.ObjectStateRemove {
 			continue
 		}
 
@@ -358,7 +358,7 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 		}
 	}
 
-	if templateSoftware.SoftwareState == model.ObjectStateAdd {
+	if templateSoftware.ObjectState == model.ObjectStateAdd {
 		if found {
 			finding.Show = true
 			finding.Value = 1
@@ -368,7 +368,7 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 			finding.Value = 0
 			finding.Message = "Software not added: "
 		}
-	} else if templateSoftware.SoftwareState == model.ObjectStateKeep {
+	} else if templateSoftware.ObjectState == model.ObjectStateKeep {
 		if found {
 			finding.Show = false
 			finding.Value = 0
@@ -378,7 +378,7 @@ func auditSoftwareState(templateSoftware model.Software, state model.State) mode
 			finding.Value = -1
 			finding.Message = "Software not found: "
 		}
-	} else if templateSoftware.SoftwareState == model.ObjectStateRemove {
+	} else if templateSoftware.ObjectState == model.ObjectStateRemove {
 		if found {
 			finding.Show = false
 			finding.Value = 0

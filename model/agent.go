@@ -51,7 +51,7 @@ const (
 type User struct {
 	Name            string
 	ID              string
-	AccountState    ObjectState
+	ObjectState     ObjectState
 	AccountActive   bool
 	AccountExpires  bool
 	PasswordLastSet int64
@@ -66,9 +66,9 @@ type Process struct {
 }
 
 type Software struct {
-	Name          string
-	Version       string
-	SoftwareState ObjectState
+	Name        string
+	Version     string
+	ObjectState ObjectState
 }
 
 type NetworkConnectionState string

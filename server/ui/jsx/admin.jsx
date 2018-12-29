@@ -841,7 +841,7 @@ class Users extends React.Component {
   addUser() {
     let empty = {
       Name: "",
-      AccountState: "Keep",
+      ObjectState: "Keep",
       AccountActive: true,
       PasswordExpires: true,
       // unix timestamp in seconds
@@ -905,7 +905,7 @@ class Users extends React.Component {
       passwordLastSet += "-";
       passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
       let userOptions = null;
-      if (user.AccountState != "Remove") {
+      if (user.ObjectState != "Remove") {
         userOptions = (
           <React.Fragment>
             <li>
@@ -933,7 +933,7 @@ class Users extends React.Component {
               <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
             </li>
             <li>
-              <ObjectState value={user.AccountState} onChange={event=> this.updateUser(i, "AccountState", event)} />
+              <ObjectState value={user.ObjectState} onChange={event=> this.updateUser(i, "ObjectState", event)} />
             </li>
             {userOptions}
           </ul>
@@ -1141,7 +1141,7 @@ class Software extends React.Component {
     let empty = {
       Name: "",
       Version: "",
-      SoftwareState: "Keep"
+      ObjectState: "Keep"
     };
     let software = [
       ...this.state.software,
@@ -1194,7 +1194,7 @@ class Software extends React.Component {
               <input type="text" value={entry.Version} onChange={event=> this.updateSoftware(i, "Version", event)}></input>
             </li>
             <li>
-              <ObjectState value={entry.SoftwareState} onChange={event=> this.updateSoftware(i, "SoftwareState", event)} />
+              <ObjectState value={entry.ObjectState} onChange={event=> this.updateSoftware(i, "ObjectState", event)} />
             </li>
           </ul>
         </details>

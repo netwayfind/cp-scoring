@@ -893,7 +893,7 @@ class Users extends React.Component {
   addUser() {
     let empty = {
       Name: "",
-      AccountState: "Keep",
+      ObjectState: "Keep",
       AccountActive: true,
       PasswordExpires: true,
       // unix timestamp in seconds
@@ -958,7 +958,7 @@ class Users extends React.Component {
       passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
       let userOptions = null;
 
-      if (user.AccountState != "Remove") {
+      if (user.ObjectState != "Remove") {
         userOptions = React.createElement(React.Fragment, null, React.createElement("li", null, React.createElement("label", null, "Active"), React.createElement("input", {
           type: "checkbox",
           checked: user.AccountActive,
@@ -984,8 +984,8 @@ class Users extends React.Component {
         value: user.Name,
         onChange: event => this.updateUser(i, "Name", event)
       })), React.createElement("li", null, React.createElement(ObjectState, {
-        value: user.AccountState,
-        onChange: event => this.updateUser(i, "AccountState", event)
+        value: user.ObjectState,
+        onChange: event => this.updateUser(i, "ObjectState", event)
       })), userOptions)));
     }
 
@@ -1177,7 +1177,7 @@ class Software extends React.Component {
     let empty = {
       Name: "",
       Version: "",
-      SoftwareState: "Keep"
+      ObjectState: "Keep"
     };
     let software = [...this.state.software, empty];
     this.setState({
@@ -1227,8 +1227,8 @@ class Software extends React.Component {
         value: entry.Version,
         onChange: event => this.updateSoftware(i, "Version", event)
       })), React.createElement("li", null, React.createElement(ObjectState, {
-        value: entry.SoftwareState,
-        onChange: event => this.updateSoftware(i, "SoftwareState", event)
+        value: entry.ObjectState,
+        onChange: event => this.updateSoftware(i, "ObjectState", event)
       })))));
     }
 
