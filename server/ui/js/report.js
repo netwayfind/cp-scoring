@@ -35,8 +35,7 @@ class ScoreTimeline extends React.Component {
     this.state = {
       scenarioName: "",
       hostname: "",
-      timestamps: [],
-      scores: [],
+      timelines: [],
       report: {},
       scenarioHosts: []
     };
@@ -83,13 +82,21 @@ class ScoreTimeline extends React.Component {
       return response.json();
     }).then(function (data) {
       if (data) {
-        // should only be one match
+        // may have multiple timelines
+        let timelines = [];
+
+        for (let i in data) {
+          timelines.push({
+            scores: data[i].Scores,
+            // timestamps is seconds, need milliseconds
+            timestamps: data[i].Timestamps.map(function (timestamp) {
+              return timestamp * 1000;
+            })
+          });
+        }
+
         this.setState({
-          scores: data.Scores,
-          // timestamps is seconds, need milliseconds
-          timestamps: data.Timestamps.map(function (timestamp) {
-            return timestamp * 1000;
-          })
+          timelines: timelines
         });
       }
     }.bind(this));
@@ -113,14 +120,24 @@ class ScoreTimeline extends React.Component {
 
   render() {
     let teamKey = this.props.teamKey;
-    let data = [{
-      x: this.state.timestamps,
-      y: this.state.scores,
-      type: 'scatter',
-      mode: 'markers',
-      fill: 'tozeroy'
-    }];
+    let data = []; // plot each timeline
+
+    for (let i in this.state.timelines) {
+      let timeline = this.state.timelines[i];
+      data.push({
+        x: timeline.timestamps,
+        y: timeline.scores,
+        type: 'scatter',
+        mode: 'markers',
+        marker: {
+          color: 'steelblue'
+        },
+        fill: 'tozeroy'
+      });
+    }
+
     let layout = {
+      showlegend: false,
       height: 200,
       margin: {
         t: 25,
@@ -213,7 +230,7 @@ class ScoreTimeline extends React.Component {
         data: data,
         layout: layout,
         config: config
-      }), React.createElement("p", null), "Last Updated: ", lastUpdated, React.createElement("p", null), "Score: ", score, React.createElement("ul", null, React.createElement("li", null, "Points earned: ", pointsEarned), React.createElement("li", null, "Points lost: ", pointsLost)), React.createElement("p", null), "Findings:", React.createElement("br", null), React.createElement("ul", null, findings));
+      }), React.createElement("br", null), "Host instances found: ", this.state.timelines.length, React.createElement("p", null), "Latest Report: ", lastUpdated, React.createElement("p", null), "Report Score: ", score, React.createElement("ul", null, React.createElement("li", null, "Points earned: ", pointsEarned), React.createElement("li", null, "Points lost: ", pointsLost)), React.createElement("p", null), "Report Findings:", React.createElement("br", null), React.createElement("ul", null, findings));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("div", {

@@ -30,8 +30,7 @@ class ScoreTimeline extends React.Component {
     this.state = {
       scenarioName: "",
       hostname: "",
-      timestamps: [],
-      scores: [],
+      timelines: [],
       report: {},
       scenarioHosts: []
     }
@@ -82,13 +81,19 @@ class ScoreTimeline extends React.Component {
     })
     .then(function(data) {
       if (data) {
-        // should only be one match
+        // may have multiple timelines
+        let timelines = [];
+        for (let i in data) {
+          timelines.push({
+            scores: data[i].Scores,
+            // timestamps is seconds, need milliseconds
+            timestamps: data[i].Timestamps.map(function(timestamp) {
+              return timestamp * 1000;
+            })
+          });
+        }
         this.setState({
-          scores: data.Scores,
-          // timestamps is seconds, need milliseconds
-          timestamps: data.Timestamps.map(function(timestamp) {
-            return timestamp * 1000;
-          })
+          timelines: timelines
         })
       }
     }.bind(this));
@@ -115,17 +120,21 @@ class ScoreTimeline extends React.Component {
   render() {
     let teamKey = this.props.teamKey;
 
-    let data = [
-      {
-        x: this.state.timestamps,
-        y: this.state.scores,
+    let data = [];
+    // plot each timeline
+    for (let i in this.state.timelines) {
+      let timeline = this.state.timelines[i];
+      data.push({
+        x: timeline.timestamps,
+        y: timeline.scores,
         type: 'scatter',
         mode: 'markers',
         fill: 'tozeroy'
-      }
-    ];
+      })
+    }
 
     let layout = {
+      showlegend: false,
       height: 200,
       margin: {
         t: 25,
@@ -220,16 +229,18 @@ class ScoreTimeline extends React.Component {
           <h2>{this.state.scenarioName}</h2>
           <h3>{this.state.hostname}</h3>
           <Plot data={data} layout={layout} config={config}/>
+          <br />
+          Host instances found: {this.state.timelines.length}
           <p />
-          Last Updated: {lastUpdated}
+          Latest Report: {lastUpdated}
           <p />
-          Score: {score}
+          Report Score: {score}
           <ul>
             <li>Points earned: {pointsEarned}</li>
             <li>Points lost: {pointsLost}</li>
           </ul>
           <p />
-          Findings:
+          Report Findings:
           <br />
           <ul>
             {findings}
