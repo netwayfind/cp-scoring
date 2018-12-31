@@ -148,18 +148,11 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 
 	log.Println("Getting information")
 	hostToken := stateSubmission.HostToken
-	teamID, err := theServer.backingStore.SelectTeamIDFromHostToken(hostToken)
-	if err != nil {
-		log.Println("ERROR: cannot get team id;")
-		return err
+	if len(hostToken) == 0 {
+		log.Println("ERROR: received state submission without host token")
+		// allow file to be deleted
+		return nil
 	}
-	log.Println(fmt.Sprintf("Team ID: %d", teamID))
-	hostID, err := theServer.backingStore.SelectHostIDForHostname(state.Hostname)
-	if err != nil {
-		log.Println("ERROR: cannot get host id;")
-		return err
-	}
-	log.Println(fmt.Sprintf("Host ID: %d", hostID))
 
 	log.Println("Getting scenarios")
 	scenarioIDs, err := theServer.backingStore.SelectScenariosForHostname(state.Hostname)
@@ -169,6 +162,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	}
 	if len(scenarioIDs) == 0 {
 		log.Println("ERROR: no scenarios found")
+		// allow file to be deleted
 		return nil
 	}
 	for _, scenarioID := range scenarioIDs {
@@ -183,7 +177,8 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 		log.Println(fmt.Sprintf("Found template count: %d", len(templates)))
 		if len(templates) == 0 {
 			log.Println("ERROR: no templates found")
-			return nil
+			// skip this scenario
+			continue
 		}
 
 		log.Println("Auditing state")
@@ -191,7 +186,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 
 		log.Println("Saving report")
 		report.Timestamp = state.Timestamp
-		err = theServer.backingStore.InsertScenarioReport(scenarioID, teamID, hostID, report)
+		err = theServer.backingStore.InsertScenarioReport(scenarioID, hostToken, report)
 		if err != nil {
 			log.Println("ERROR: cannot insert report;")
 			return err
@@ -205,8 +200,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 
 		var scoreEntry model.ScenarioScore
 		scoreEntry.ScenarioID = scenarioID
-		scoreEntry.TeamID = teamID
-		scoreEntry.HostID = hostID
+		scoreEntry.HostToken = hostToken
 		scoreEntry.Timestamp = state.Timestamp
 		scoreEntry.Score = score
 		err = theServer.backingStore.InsertScenarioScore(scoreEntry)
@@ -858,7 +852,7 @@ func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Requ
 		w.Write([]byte(msg))
 		return
 	}
-	log.Println(id)
+	log.Println(fmt.Sprintf("Scenario ID: %d", id))
 	scores, err := theServer.backingStore.SelectScenarioLatestScores(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario scores;"
@@ -900,22 +894,25 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostname := r.FormValue("hostname")
-	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
+	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
 	if err != nil {
-		msg := "ERROR: cannot retrieve host id;"
+		msg := "ERROR: cannot retrieve host token;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
-	log.Println(fmt.Sprintf("Host ID: %d", hostID))
-	timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, teamID, hostID)
-	if err != nil {
-		msg := "ERROR: cannot retrieve scenario timeline for team;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
+	timelines := make([]model.ScenarioTimeline, 0)
+	for _, hostToken := range hostTokens {
+		timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, hostToken)
+		if err != nil {
+			msg := "ERROR: cannot retrieve scenario timeline for team;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+		timelines = append(timelines, timeline)
 	}
-	out, err := json.Marshal(timeline)
+	out, err := json.Marshal(timelines)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario timeline for team;"
 		log.Println(msg, err)
@@ -949,15 +946,16 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostname := r.FormValue("hostname")
-	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
+	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
 	if err != nil {
-		msg := "ERROR: cannot retrieve host id;"
+		msg := "ERROR: cannot retrieve host token;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
-	log.Println(fmt.Sprintf("Host ID: %d", hostID))
-	report, err := theServer.backingStore.SelectLatestScenarioReport(scenarioID, teamID, hostID)
+	// only take latest host token
+	hostToken := hostTokens[len(hostTokens)-1]
+	report, err := theServer.backingStore.SelectLatestScenarioReport(scenarioID, hostToken)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario report for team;"
 		log.Println(msg, err)
@@ -1282,12 +1280,6 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Hostname missing", http.StatusBadRequest)
 		return
 	}
-	hostID, err := theServer.backingStore.SelectHostIDForHostname(hostname)
-	if err != nil {
-		log.Println("Could not get host id;", err)
-		http.Error(w, "Host not found", http.StatusBadRequest)
-		return
-	}
 	teamKey := r.Form.Get("team_key")
 	if len(teamKey) == 0 {
 		http.Error(w, "Team key missing", http.StatusBadRequest)
@@ -1300,7 +1292,7 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = theServer.backingStore.InsertTeamHostToken(teamID, hostID, hostToken, timestamp)
+	err = theServer.backingStore.InsertTeamHostToken(teamID, hostname, hostToken, timestamp)
 	if err != nil {
 		log.Println("ERROR: unable to insert team host token;", err)
 		http.Error(w, "Internal server error. Try again later", http.StatusInternalServerError)

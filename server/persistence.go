@@ -40,13 +40,14 @@ type backingStore interface {
 	UpdateScenario(scenarioID int64, scenario model.Scenario) error
 	DeleteScenario(scenarioID int64) error
 	SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error)
-	InsertScenarioReport(scenarioID int64, teamID int64, hostID int64, report model.Report) error
+	InsertScenarioReport(scenarioID int64, hostToken string, report model.Report) error
 	InsertScenarioScore(score model.ScenarioScore) error
-	SelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error)
-	SelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) (model.Report, error)
+	SelectScenarioTimeline(scenarioID int64, hostToken string) (model.ScenarioTimeline, error)
+	SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error)
 	SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error)
 	InsertHostToken(hostToken string, timestamp int64, hostname string, source string) error
-	InsertTeamHostToken(teamID int64, hostID int64, hostToken string, timestamp int64) error
+	InsertTeamHostToken(teamID int64, hostname string, hostToken string, timestamp int64) error
+	SelectHostTokens(teamID int64, hostname string) ([]string, error)
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {

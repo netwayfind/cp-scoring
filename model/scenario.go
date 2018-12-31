@@ -57,8 +57,7 @@ type ScenarioLatestScore struct {
 
 type ScenarioScore struct {
 	ScenarioID int64
-	TeamID     int64
-	HostID     int64
+	HostToken  string
 	Timestamp  int64
 	Score      int64
 }

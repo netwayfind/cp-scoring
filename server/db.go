@@ -38,10 +38,10 @@ func (db dbObj) dbInit() {
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id INTEGER PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
-	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, hostname VARCHAR NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(hostname) REFERENCES host_tokens(hostname), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BIT NOT NULL)")
-	db.createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
-	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, team_id INTEGER NOT NULL, host_id INTEGER NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
+	db.createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, report BLOB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 
 	log.Println("Finished setting up database")
 }
@@ -661,7 +661,7 @@ func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
 }
 
 func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
-	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams WHERE scenario_id=(?) AND scores.team_id=teams.id GROUP BY scores.team_id,scores.host_id ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
+	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams, team_host_tokens WHERE scenario_id=(?) AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id GROUP BY team_host_tokens.team_id,team_host_tokens.hostname ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -710,41 +710,12 @@ func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLa
 	return totalScores, nil
 }
 
-func (db dbObj) SelectScenarioScores(scenarioID int64, teamID int64) ([]model.ScenarioScore, error) {
-	rows, err := db.dbConn.Query("SELECT host_id, timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) ORDER BY timestamp DESC", scenarioID, teamID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	scores := make([]model.ScenarioScore, 0)
-	var hostID int64
-	var timestamp int64
-	var score int64
-
-	for rows.Next() {
-		err := rows.Scan(&hostID, &timestamp, &score)
-		if err != nil {
-			return nil, err
-		}
-		var entry model.ScenarioScore
-		entry.ScenarioID = scenarioID
-		entry.TeamID = teamID
-		entry.HostID = hostID
-		entry.Timestamp = timestamp
-		entry.Score = score
-		scores = append(scores, entry)
-	}
-
-	return scores, nil
-}
-
-func (db dbObj) SelectScenarioTimeline(scenarioID int64, teamID int64, hostID int64) (model.ScenarioTimeline, error) {
+func (db dbObj) SelectScenarioTimeline(scenarioID int64, hostToken string) (model.ScenarioTimeline, error) {
 	var timeline model.ScenarioTimeline
 	timeline.Timestamps = make([]int64, 0)
 	timeline.Scores = make([]int64, 0)
 
-	rows, err := db.dbConn.Query("SELECT timestamp, score FROM scores WHERE scenario_id=(?) AND team_id=(?) AND host_id=(?) ORDER BY timestamp ASC", scenarioID, teamID, hostID)
+	rows, err := db.dbConn.Query("SELECT timestamp, score FROM scores WHERE scenario_id=(?) AND host_token=(?) ORDER BY timestamp ASC", scenarioID, hostToken)
 	if err != nil {
 		return timeline, err
 	}
@@ -766,7 +737,7 @@ func (db dbObj) SelectScenarioTimeline(scenarioID int64, teamID int64, hostID in
 }
 
 func (db dbObj) InsertScenarioScore(entry model.ScenarioScore) error {
-	_, err := db.dbInsert("INSERT INTO scores(scenario_id, team_id, host_id, timestamp, score) VALUES(?, ?, ?, ?, ?)", entry.ScenarioID, entry.TeamID, entry.HostID, entry.Timestamp, entry.Score)
+	_, err := db.dbInsert("INSERT INTO scores(scenario_id, host_token, timestamp, score) VALUES(?, ?, ?, ?)", entry.ScenarioID, entry.HostToken, entry.Timestamp, entry.Score)
 	if err != nil {
 		return err
 	}
@@ -774,9 +745,9 @@ func (db dbObj) InsertScenarioScore(entry model.ScenarioScore) error {
 	return nil
 }
 
-func (db dbObj) SelectLatestScenarioReport(scenarioID int64, teamID int64, hostID int64) (model.Report, error) {
+func (db dbObj) SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error) {
 	var report model.Report
-	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=(?) AND team_id=(?) and host_id=(?) GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, teamID, hostID)
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=(?) AND host_token=(?) GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, hostToken)
 	if err != nil {
 		return report, err
 	}
@@ -796,12 +767,12 @@ func (db dbObj) SelectLatestScenarioReport(scenarioID int64, teamID int64, hostI
 	return report, nil
 }
 
-func (db dbObj) InsertScenarioReport(scenarioID int64, teamID int64, hostID int64, entry model.Report) error {
+func (db dbObj) InsertScenarioReport(scenarioID int64, hostToken string, entry model.Report) error {
 	b, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	_, err = db.dbInsert("INSERT INTO reports(scenario_id, team_id, host_id, timestamp, report) VALUES(?, ?, ?, ?, ?)", scenarioID, teamID, hostID, entry.Timestamp, b)
+	_, err = db.dbInsert("INSERT INTO reports(scenario_id, host_token, timestamp, report) VALUES(?, ?, ?, ?)", scenarioID, hostToken, entry.Timestamp, b)
 	if err != nil {
 		return err
 	}
@@ -811,7 +782,7 @@ func (db dbObj) InsertScenarioReport(scenarioID int64, teamID int64, hostID int6
 
 func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
-	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts WHERE team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_id=hosts.id", teamID)
+	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
 	if err != nil {
 		return scenarioHosts, err
 	}
@@ -892,11 +863,32 @@ func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (int64, error) {
 	return teamID, nil
 }
 
-func (db dbObj) InsertTeamHostToken(teamID int64, hostID int64, hostToken string, timestamp int64) error {
-	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, host_id, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, hostID, hostToken, timestamp)
+func (db dbObj) InsertTeamHostToken(teamID int64, hostname string, hostToken string, timestamp int64) error {
+	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, hostname, host_token, timestamp) VALUES(?, ?, ?, ?)", teamID, hostname, hostToken, timestamp)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (db dbObj) SelectHostTokens(teamID int64, hostname string) ([]string, error) {
+	hostTokens := make([]string, 0)
+
+	rows, err := db.dbConn.Query("SELECT DISTINCT host_token from team_host_tokens WHERE team_id=(?) AND hostname=(?) ORDER BY timestamp ASC", teamID, hostname)
+	if err != nil {
+		return hostTokens, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var hostToken string
+		rows.Scan(&hostToken)
+		hostTokens = append(hostTokens, hostToken)
+	}
+	if len(hostTokens) == 0 {
+		return hostTokens, errors.New("No host token found")
+	}
+
+	return hostTokens, nil
 }
