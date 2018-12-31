@@ -105,6 +105,7 @@ class Login extends React.Component {
     var url = "/login";
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -210,6 +211,7 @@ class BasicModal extends React.Component {
     }
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -276,7 +278,9 @@ class Teams extends React.Component {
   populateTeams() {
     var url = '/teams';
   
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -306,7 +310,9 @@ class Teams extends React.Component {
   editTeam(id) {
     let url = "/teams/" + id;
 
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -326,6 +332,7 @@ class Teams extends React.Component {
     var url = "/teams/" + id;
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     })
     .then(function(response) {
@@ -423,7 +430,9 @@ class Scenarios extends React.Component {
   populateScenarios() {
     var url = '/scenarios';
   
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -446,7 +455,9 @@ class Scenarios extends React.Component {
   editScenario(id) {
     let url = "/scenarios/" + id;
 
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -466,6 +477,7 @@ class Scenarios extends React.Component {
     var url = "/scenarios/" + id;
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     })
     .then(function(response) {
@@ -494,7 +506,9 @@ class Scenarios extends React.Component {
   mapItems(callback) {
     var url = "/hosts";
 
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -515,7 +529,9 @@ class Scenarios extends React.Component {
   listItems(callback) {
     var url = "/templates";
 
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -583,7 +599,9 @@ class Hosts extends React.Component {
   populateHosts() {
     var url = '/hosts';
   
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -615,6 +633,7 @@ class Hosts extends React.Component {
     var url = "/hosts/" + id;
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     })
     .then(function(response) {
@@ -688,7 +707,9 @@ class Templates extends React.Component {
   populateTemplates() {
     var url = "/templates";
   
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -713,7 +734,9 @@ class Templates extends React.Component {
   editTemplate(id) {
     let url = "/templates/" + id;
 
-    fetch(url)
+    fetch(url, {
+      credentials: 'same-origin'
+    })
     .then(function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
@@ -733,6 +756,7 @@ class Templates extends React.Component {
     var url = "/templates/" + id;
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     })
     .then(function(response) {

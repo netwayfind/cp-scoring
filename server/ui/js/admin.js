@@ -96,6 +96,7 @@ class Login extends React.Component {
 
     var url = "/login";
     fetch(url, {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -204,6 +205,7 @@ class BasicModal extends React.Component {
     }
 
     fetch(url, {
+      credentials: 'same-origin',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -275,7 +277,9 @@ class Teams extends React.Component {
 
   populateTeams() {
     var url = '/teams';
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -305,7 +309,9 @@ class Teams extends React.Component {
 
   editTeam(id) {
     let url = "/teams/" + id;
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -323,6 +329,7 @@ class Teams extends React.Component {
   deleteTeam(id) {
     var url = "/teams/" + id;
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     }).then(function (response) {
       if (response.status >= 400) {
@@ -428,7 +435,9 @@ class Scenarios extends React.Component {
 
   populateScenarios() {
     var url = '/scenarios';
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -453,7 +462,9 @@ class Scenarios extends React.Component {
 
   editScenario(id) {
     let url = "/scenarios/" + id;
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -471,6 +482,7 @@ class Scenarios extends React.Component {
   deleteScenario(id) {
     var url = "/scenarios/" + id;
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     }).then(function (response) {
       if (response.status >= 400) {
@@ -498,7 +510,9 @@ class Scenarios extends React.Component {
 
   mapItems(callback) {
     var url = "/hosts";
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -517,7 +531,9 @@ class Scenarios extends React.Component {
 
   listItems(callback) {
     var url = "/templates";
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -603,7 +619,9 @@ class Hosts extends React.Component {
 
   populateHosts() {
     var url = '/hosts';
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -635,6 +653,7 @@ class Hosts extends React.Component {
   deleteHost(id) {
     var url = "/hosts/" + id;
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     }).then(function (response) {
       if (response.status >= 400) {
@@ -718,7 +737,9 @@ class Templates extends React.Component {
 
   populateTemplates() {
     var url = "/templates";
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -743,7 +764,9 @@ class Templates extends React.Component {
 
   editTemplate(id) {
     let url = "/templates/" + id;
-    fetch(url).then(function (response) {
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
@@ -761,6 +784,7 @@ class Templates extends React.Component {
   deleteTemplate(id) {
     var url = "/templates/" + id;
     fetch(url, {
+      credentials: 'same-origin',
       method: 'DELETE'
     }).then(function (response) {
       if (response.status >= 400) {
