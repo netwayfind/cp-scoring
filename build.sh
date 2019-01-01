@@ -3,7 +3,7 @@
 set -e
 
 PKG_BASE="github.com/sumwonyuno/cp-scoring"
-BASEDIR="cp-scoring"
+BASEDIR="target"
 
 echo "Using directory $(realpath $BASEDIR)"
 mkdir -p $BASEDIR
