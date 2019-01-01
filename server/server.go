@@ -1071,7 +1071,8 @@ func (theServer theServer) getAdmins(w http.ResponseWriter, r *http.Request) {
 
 func getRandStr() string {
 	randKey := securecookie.GenerateRandomKey(32)
-	return base64.StdEncoding.EncodeToString(randKey)
+	// make sure URL safe, no padding
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(randKey)
 }
 
 func (theServer theServer) authAdmin(w http.ResponseWriter, r *http.Request) {
