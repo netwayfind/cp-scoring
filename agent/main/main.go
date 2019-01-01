@@ -174,18 +174,19 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) error {
 }
 
 func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) error {
-	url := serverURL + "/token/team"
 	var s string
 	// if have host token, then connected
 	if len(hostToken) > 0 {
-		s = "<html><head><body>" +
-			"<form method=\"POST\" action=" + url + ">" +
-			"<input name=\"host_token\" hidden value=\"" + hostToken + "\"/>" +
-			"<input name=\"hostname\" hidden value=\"" + hostname + "\"/>" +
-			"<label id=\"team_key\">Enter team key:</label>" +
-			"<input name=\"team_key\" />" +
-			"<button type=\"submit\">Submit</button>" +
-			"</form></body></html>"
+		u, err := url.Parse(serverURL)
+		if err != nil {
+			return err
+		}
+		u.Path = "/ui/report"
+		params := url.Values{}
+		params.Add("hostname", hostname)
+		params.Add("host_token", hostToken)
+		u.RawQuery = params.Encode()
+		s = "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + u.String() + "\"></head><body><a href=\"" + u.String() + "\">Report</a></body></html>"
 	} else {
 		// refresh page every 30 seconds
 		s = "<html><head><meta http-equiv=\"refresh\" content=\"30\"/></head><body>" +

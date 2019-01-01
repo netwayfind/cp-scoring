@@ -4,7 +4,10 @@ const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
   render() {
+    // check for these in query params
     let teamKey = "";
+    let hostname = "";
+    let hostToken = "";
     let query = window.location.search.substring(1);
     let params = query.split("&");
 
@@ -16,8 +19,19 @@ class App extends React.Component {
       }
 
       if (param[0] === "team_key") {
-        teamKey = param[1];
+        teamKey = param[1].trim();
+      } else if (param[0] == "hostname") {
+        hostname = param[1].trim();
+      } else if (param[0] == "host_token") {
+        hostToken = param[1].trim();
       }
+    }
+
+    if (teamKey.length == 0) {
+      return React.createElement(AskTeamKey, {
+        hostname: hostname,
+        hostToken: hostToken
+      });
     }
 
     return React.createElement("div", {
@@ -29,9 +43,53 @@ class App extends React.Component {
 
 }
 
+class AskTeamKey extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    // default is to just show report for team
+    // if given host token and hostname, register team token with team
+    if (this.props.hostToken && this.props.hostname) {
+      return React.createElement(React.Fragment, null, React.createElement("form", {
+        method: "POST",
+        action: "/token/team"
+      }, React.createElement("input", {
+        name: "host_token",
+        hidden: true,
+        value: this.props.hostToken
+      }), React.createElement("input", {
+        name: "hostname",
+        hidden: true,
+        value: this.props.hostname
+      }), React.createElement("label", {
+        id: "team_key"
+      }, "Enter team key:"), React.createElement("input", {
+        name: "team_key"
+      }), React.createElement("button", {
+        type: "submit"
+      }, "Submit")));
+    } // otherwise, just set team key
+    else {
+        return React.createElement(React.Fragment, null, React.createElement("form", {
+          method: "GET",
+          action: "/ui/report"
+        }, React.createElement("label", {
+          id: "team_key"
+        }, "Enter team key:"), React.createElement("input", {
+          name: "team_key"
+        }), React.createElement("button", {
+          type: "submit"
+        }, "Submit")));
+      }
+  }
+
+}
+
 class ScoreTimeline extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       scenarioName: "",
       hostname: "",
@@ -129,9 +187,6 @@ class ScoreTimeline extends React.Component {
         y: timeline.scores,
         type: 'scatter',
         mode: 'markers',
-        marker: {
-          color: 'steelblue'
-        },
         fill: 'tozeroy'
       });
     }
