@@ -6,7 +6,7 @@ Scoring a bunch of computers.
 __Table of Contents__
 1. [Intro](#Intro)
 1. [Building](#Building)
-1. [Deploying and Running](#Deploying\ and\ Running)
+1. [Deploying and Running](#Deploying-and-Running)
 
 # Intro
 
