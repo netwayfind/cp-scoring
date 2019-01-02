@@ -5,10 +5,8 @@ Scoring a bunch of computers.
 
 __Table of Contents__
 1. [Intro](#Intro)
-1. [Design](#Design)
 1. [Building](#Building)
-1. [Running](#Running)
-1. [Development](#Development)
+1. [Deploying and Running](#Deploying\ and\ Running)
 
 # Intro
 
@@ -90,11 +88,14 @@ To build [The Server] and [agents]:
 1. `cd cp-scoring`
 1. `sh build.sh`
 
+To create a bundle for deployment:
+1. `sh bundle.sh`
+
 # Deploying and Running
 
 ## [The Server]
 
-Copy the generated cp-scoring folder (cp-scoring/cp-scoring) to the intended location. The subfolder should have the following:
+Copy the generated cp-scoring.tar.gz (from cp-scoring/target) to the intended location. The archive should have the following:
 * public
   * cp-scoring-agent-linux
   * cp-scoring-agent-windows
@@ -103,18 +104,56 @@ Copy the generated cp-scoring folder (cp-scoring/cp-scoring) to the intended loc
 
 Currently, only Linux is the supported OS to running [The Server].
 
-Execute the following:
+To extract files:
+
+`tar xzvf cp-scoring.tar.gz`
+
+To run server:
 
 `./cp-scoring-server-linux`
 
-When [The Server] starts up for the first time, it will set up its database, generate a private key and self-signed certificate for HTTPS, and generate a private key and public key for encrypting data.
+Options:
 
-When the server is ready, [The Server] should be available over https://\<server\>:\<port\> .
+- -cert: path to X.509 certificate (default: public/server.crt)
+- -key: path to RSA private key (default: private/server.key)
+- -port: TCP port to listen on (default: 8443)
+
+When [The Server] starts up for the first time, it will set up its database, and generate a private key and public key for encrypting data.
+
+[The Server] requires a HTTPS certificate and key to run. By default, it expects the certificate at public/server.crt and the key at private/server.key. Either create an RSA private key and X.509 certificate at these paths or specify file paths to these files with the -cert and -key arguments.
+
+When the server is ready, [The Server] should be available over https://\<server\>:\<port\> . By default, the port is 8443. The port number can be changed with the -port argument.
 
 ## [agents]
 
-Download from https://\<server\>:\<port\>/public . Choose the correct executable agent for the [host]. Also download the file 'server', the file 'server.crt', and the file 'server.pub'. Move these files into the desired folder. In that folder, create a team.key file that contains the secret API key.
+Download from https://\<server\>:\<port\>/public . Choose the correct [agent] for the [host].
 
-Execute the following:
+Windows instructions:
+1. Download cp-scoring-agent-windows.exe
+1. Open Administrator Command Prompt
+1. `cd C:\Users\<user>\Downloads`
+1. `cp-scoring-agent-windows.exe -install`
+   - This will install files to C:\cp-scoring
+1. `cd C:\cp-scoring`
+1. `cp-scoring-agent-windows.exe -server https://<server>:<port>`
+   - This will download files to allow sending data to [The Server]
+1. Restart computer. [agent] will automatically start.
+1. If everything is OK, delete cp-scoring-agent-windows.exe in the Downloads folder
+1. Create shortcut for C:\cp-scoring\scoreboard.html to Desktop
+1. Create shortcut for C:\cp-scoring\report.html to Desktop
 
-`./cp-scoring-agent-<OS> -server https://<server>:<port>`
+Linux instructions:
+
+1. Download cp-scoring-agent-linux
+1. Open Terminal
+1. `cd ~/Downloads`
+1. `chmod +x cp-scoring-agent-linux`
+1. `sudo ./cp-scoring-agent-linux -install`
+   - This will install files to /opt/cp-scoring
+1. `cd /opt/cp-scoring`
+1. `sudo cp-scoring-agent-linux -server https://<server>:<port>`
+   - This will download files to allow sending data to [The Server]
+1. Restart computer. [agent] will automatically start.
+1. If everything is OK, delete cp-scoring-agent-linux in the Downloads folder
+1. `ln -s /opt/cp-scoring/scoreboard.html ~/Desktop`
+1. `ln -s /opt/cp-scoring/report.html ~/Desktop`
