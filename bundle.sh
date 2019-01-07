@@ -2,8 +2,10 @@
 
 set -e
 
-TARGET="$(readlink -f $(dirname $0))/target"
-OUTPUT_FILE=$TARGET/cp-scoring.tar.gz
+SCRIPTDIR="$(readlink -f $(dirname $0))"
+TARGET="$SCRIPTDIR/target"
+VERSION="$(cat $SCRIPTDIR/VERSION)"
+OUTPUT_FILE=$TARGET/cp-scoring-$VERSION.tar.gz
 
 echo "Saving to $OUTPUT_FILE"
 if [ -z $OUTPUT_FILE ]
