@@ -27,6 +27,8 @@ import (
 
 const cookieName string = "cp-scoring"
 
+var version string
+
 type theServer struct {
 	userTokens   map[string]string
 	backingStore backingStore
@@ -1344,11 +1346,18 @@ func main() {
 	var fileKey string
 	var fileCert string
 	var port int
+	var askVersion bool
 
 	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
 	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
 	flag.IntVar(&port, "port", 8443, "port")
+	flag.BoolVar(&askVersion, "version", false, "get version number")
 	flag.Parse()
+
+	if askVersion {
+		log.Println("Version: " + version)
+		os.Exit(0)
+	}
 
 	log.Println("Using server key file: " + fileKey)
 	log.Println("Using server cert file: " + fileCert)

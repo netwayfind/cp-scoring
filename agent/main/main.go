@@ -26,6 +26,8 @@ import (
 	_ "golang.org/x/crypto/ripemd160"
 )
 
+var version string
+
 func getServerURL(path string) (string, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -259,13 +261,20 @@ func main() {
 
 	var serverURL string
 	var install bool
+	var askVersion bool
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.BoolVar(&install, "install", false, "install to this computer")
+	flag.BoolVar(&askVersion, "version", false, "get version number")
 	flag.Parse()
 
 	if install {
 		installThis()
+		os.Exit(0)
+	}
+
+	if askVersion {
+		log.Println("Version: " + version)
 		os.Exit(0)
 	}
 

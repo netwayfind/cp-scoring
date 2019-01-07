@@ -4,6 +4,7 @@ set -e
 
 PKG_BASE="github.com/sumwonyuno/cp-scoring"
 BASEDIR="target"
+SCRIPTDIR="$(dirname $(realpath $0))"
 
 echo "Using directory $(realpath $BASEDIR)"
 mkdir -p $BASEDIR
@@ -15,8 +16,11 @@ go get golang.org/x/crypto/openpgp/armor
 go get golang.org/x/crypto/ripemd160
 go get golang.org/x/sys/windows/registry
 
+VERSION=$(cat $SCRIPTDIR/VERSION)
+echo "Setting to version $VERSION"
+
 echo "Building linux server"
-GOOS=linux GOARCH=amd64 go build -o $BASEDIR/cp-scoring-server-linux $PKG_BASE/server
+GOOS=linux GOARCH=amd64 go build -o $BASEDIR/cp-scoring-server-linux -ldflags "-X main.version=$VERSION" $PKG_BASE/server
 echo "Building server UI files"
 npx babel --out-dir $(dirname $0)/server/ui/js $(dirname $0)/server/ui/jsx
 echo "Copying server UI files"
@@ -32,9 +36,9 @@ cp $(dirname $0)/server/ui/admin/index.html $BASEDIR/ui/admin
 cp $(dirname $0)/server/ui/scoreboard/index.html $BASEDIR/ui/scoreboard
 cp $(dirname $0)/server/ui/report/index.html $BASEDIR/ui/report
 echo "Building linux agent"
-GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux $PKG_BASE/agent/main
+GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
 echo "Building windows agent"
-GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe $PKG_BASE/agent/main
+GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
 
 echo "Running unit tests"
 go test github.com/sumwonyuno/cp-scoring/agent
