@@ -1313,6 +1313,33 @@ func main() {
 		log.Fatal("ERROR: unable to get executable", err)
 	}
 	workDir := filepath.Dir(ex)
+	publicDir := path.Join(workDir, "public")
+	privateDir := path.Join(workDir, "private")
+	dataDir := path.Join(workDir, "data")
+
+	var fileKey string
+	var fileCert string
+	var port int
+	var askVersion bool
+
+	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
+	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
+	flag.IntVar(&port, "port", 8443, "port")
+	flag.BoolVar(&askVersion, "version", false, "get version number")
+	flag.Parse()
+
+	if askVersion {
+		log.Println("Version: " + version)
+		os.Exit(0)
+	}
+
+	err = os.MkdirAll(publicDir, 0700)
+	err = os.MkdirAll(privateDir, 0700)
+	err = os.MkdirAll(dataDir, 0700)
+
+	log.Println("Using server key file: " + fileKey)
+	log.Println("Using server cert file: " + fileCert)
+	log.Println("Using network port: " + strconv.Itoa(port))
 
 	theServer := theServer{}
 	theServer.userTokens = make(map[string]string)
@@ -1335,33 +1362,6 @@ func main() {
 		}
 		theServer.backingStore.InsertAdmin("admin", passwordHash)
 	}
-
-	publicDir := path.Join(workDir, "public")
-	privateDir := path.Join(workDir, "private")
-	dataDir := path.Join(workDir, "data")
-	err = os.MkdirAll(publicDir, 0700)
-	err = os.MkdirAll(privateDir, 0700)
-	err = os.MkdirAll(dataDir, 0700)
-
-	var fileKey string
-	var fileCert string
-	var port int
-	var askVersion bool
-
-	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
-	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
-	flag.IntVar(&port, "port", 8443, "port")
-	flag.BoolVar(&askVersion, "version", false, "get version number")
-	flag.Parse()
-
-	if askVersion {
-		log.Println("Version: " + version)
-		os.Exit(0)
-	}
-
-	log.Println("Using server key file: " + fileKey)
-	log.Println("Using server cert file: " + fileCert)
-	log.Println("Using network port: " + strconv.Itoa(port))
 
 	filePGPPub := path.Join(publicDir, "server.pub")
 	filePGPPriv := path.Join(privateDir, "server.priv")
