@@ -4,9 +4,9 @@ set -e
 
 PKG_BASE="github.com/sumwonyuno/cp-scoring"
 BASEDIR="target"
-SCRIPTDIR="$(dirname $(realpath $0))"
+SCRIPTDIR="$(dirname $(readlink -f $0))"
 
-echo "Using directory $(realpath $BASEDIR)"
+echo "Using directory $(readlink -f $BASEDIR)"
 mkdir -p $BASEDIR
 
 echo "Fetching dependencies, this may take a while."
