@@ -87,12 +87,12 @@ func (host hostWindows) GetProcesses() ([]model.Process, error) {
 
 func (host hostWindows) GetSoftware() ([]model.Software, error) {
 	// check two locations for software in registry
-	loc1, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	loc1, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*", "DisplayName,DisplayVersion")
 	if err != nil {
 		return nil, err
 	}
 	sw1 := parseWindowsSoftware(loc1)
-	loc2, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall", "DisplayName,DisplayVersion")
+	loc2, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*", "DisplayName,DisplayVersion")
 	if err != nil {
 		return nil, err
 	}
