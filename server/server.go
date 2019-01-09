@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -1455,9 +1456,13 @@ func main() {
 	tokenRouter.HandleFunc("/team", theServer.postTeamHostToken).Methods("POST")
 
 	log.Println("Ready to serve requests")
-	addr := ":" + strconv.Itoa(port)
-	err = http.ListenAndServeTLS(addr, fileCert, fileKey, r)
+	addr := "0.0.0.0:" + strconv.Itoa(port)
+	l, err := net.Listen("tcp4", addr)
 	if err != nil {
-		log.Println("ERROR: cannot start server;", err)
+		log.Fatal(err)
+	}
+	err = http.ServeTLS(l, r, fileCert, fileKey)
+	if err != nil {
+		log.Fatal("ERROR: cannot start server;", err)
 	}
 }
