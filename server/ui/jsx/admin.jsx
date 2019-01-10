@@ -848,7 +848,7 @@ class Templates extends React.Component {
       <div className="Templates">
         <strong>Templates</strong>
         <p />
-        <button onClick={this.createTemplate.bind(this)}>Create Template</button>
+        <button onClick={this.createTemplate.bind(this)}>Add Template</button>
         <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
           <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
           <Users users={this.state.selectedTemplate.State.Users} callback={this.handleCallback}/>

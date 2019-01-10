@@ -887,7 +887,7 @@ class Templates extends React.Component {
       className: "Templates"
     }, React.createElement("strong", null, "Templates"), React.createElement("p", null), React.createElement("button", {
       onClick: this.createTemplate.bind(this)
-    }, "Create Template"), React.createElement(BasicModal, {
+    }, "Add Template"), React.createElement(BasicModal, {
       ref: this.modal,
       subjectClass: "templates",
       subjectID: this.state.selectedTemplateID,
