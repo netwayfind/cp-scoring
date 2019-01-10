@@ -6,10 +6,12 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      authenticated: false
+      authenticated: false,
+      page: null
     }
 
     this.authCallback = this.authCallback.bind(this);
+    this.setPage = this.setPage.bind(this);
     this.logout = this.logout.bind(this);
   }
 
@@ -48,6 +50,23 @@ class App extends React.Component {
     .then(function(response) {
       this.authCallback(response.status);
     }.bind(this));
+
+    // track which page to be on
+    let i = window.location.hash.indexOf('#');
+    let hash = window.location.hash.slice(i + 1);
+    this.setPage(hash);
+    // handle browser back/forward
+    window.onhashchange = (e) => {
+        let i = e.newURL.indexOf('#');
+        let hash = e.newURL.slice(i + 1);
+        this.setPage(hash);
+    };
+  }
+
+  setPage(page) {
+    this.setState({
+      page: page
+    })
   }
 
   render() {
@@ -58,17 +77,37 @@ class App extends React.Component {
         </div>
       );
     }
+
+    // default page is empty
+    let content = (<React.Fragment></React.Fragment>)
+    if (this.state.page == "teams") {
+      content = (<Teams />);
+    }
+    else if (this.state.page == "hosts") {
+      content = (<Hosts />);
+    }
+    else if (this.state.page == "templates") {
+      content = (<Templates />);
+    }
+    else if (this.state.page == "scenarios") {
+      content = (<Scenarios />);
+    }
+
     return (
       <div className="App">
-        <button onClick={this.logout}>Logout</button>
-        <p/>
-        <Teams />
-
-        <Hosts />
-
-        <Templates />
-
-        <Scenarios />
+        <div className="heading">
+          <h1>cp-scoring</h1>
+        </div>
+        <div className="navbar">
+          <a className="nav-button" href="#teams">Teams</a>
+          <a className="nav-button" href="#hosts">Hosts</a>
+          <a className="nav-button" href="#templates">Templates</a>
+          <a className="nav-button" href="#scenarios">Scenarios</a>
+          <button className="right" onClick={this.logout}>Logout</button>
+        </div>
+        <div>
+          {content}
+        </div>
       </div>
     );
   }

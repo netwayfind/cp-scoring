@@ -10,9 +10,11 @@ class App extends React.Component {
   constructor() {
     super();
     this.state = {
-      authenticated: false
+      authenticated: false,
+      page: null
     };
     this.authCallback = this.authCallback.bind(this);
+    this.setPage = this.setPage.bind(this);
     this.logout = this.logout.bind(this);
   }
 
@@ -47,7 +49,23 @@ class App extends React.Component {
       credentials: 'same-origin'
     }).then(function (response) {
       this.authCallback(response.status);
-    }.bind(this));
+    }.bind(this)); // track which page to be on
+
+    let i = window.location.hash.indexOf('#');
+    let hash = window.location.hash.slice(i + 1);
+    this.setPage(hash); // handle browser back/forward
+
+    window.onhashchange = e => {
+      let i = e.newURL.indexOf('#');
+      let hash = e.newURL.slice(i + 1);
+      this.setPage(hash);
+    };
+  }
+
+  setPage(page) {
+    this.setState({
+      page: page
+    });
   }
 
   render() {
@@ -57,13 +75,43 @@ class App extends React.Component {
       }, React.createElement(Login, {
         callback: this.authCallback
       }));
+    } // default page is empty
+
+
+    let content = React.createElement(React.Fragment, null);
+
+    if (this.state.page == "teams") {
+      content = React.createElement(Teams, null);
+    } else if (this.state.page == "hosts") {
+      content = React.createElement(Hosts, null);
+    } else if (this.state.page == "templates") {
+      content = React.createElement(Templates, null);
+    } else if (this.state.page == "scenarios") {
+      content = React.createElement(Scenarios, null);
     }
 
     return React.createElement("div", {
       className: "App"
-    }, React.createElement("button", {
+    }, React.createElement("div", {
+      className: "heading"
+    }, React.createElement("h1", null, "cp-scoring")), React.createElement("div", {
+      className: "navbar"
+    }, React.createElement("a", {
+      className: "nav-button",
+      href: "#teams"
+    }, "Teams"), React.createElement("a", {
+      className: "nav-button",
+      href: "#hosts"
+    }, "Hosts"), React.createElement("a", {
+      className: "nav-button",
+      href: "#templates"
+    }, "Templates"), React.createElement("a", {
+      className: "nav-button",
+      href: "#scenarios"
+    }, "Scenarios"), React.createElement("button", {
+      className: "right",
       onClick: this.logout
-    }, "Logout"), React.createElement("p", null), React.createElement(Teams, null), React.createElement(Hosts, null), React.createElement(Templates, null), React.createElement(Scenarios, null));
+    }, "Logout")), React.createElement("div", null, content));
   }
 
 }
