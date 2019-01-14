@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"flag"
 	"io/ioutil"
@@ -73,7 +74,6 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 
 	// expected URLs
 	serverPubKeyFileURL := serverURL + "/public/server.pub"
-	serverCrtFileURL := serverURL + "/public/server.crt"
 
 	// do insecure fetch, as need to get cert to check later...
 	tr := &http.Transport{
@@ -82,7 +82,30 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	client := &http.Client{Transport: tr}
 	log.Println("Retrieving files from server")
 
-	r, err := client.Get(serverPubKeyFileURL)
+	// download certificate chain
+	serverCrtFileBytes := make([]byte, 0)
+	r, err := client.Get(serverURL)
+	if err != nil {
+		log.Fatalln("ERROR: unable to get server certificate")
+	}
+	if r.TLS.PeerCertificates != nil {
+		for _, cert := range r.TLS.PeerCertificates {
+			if err != nil {
+				log.Println("WARN: unable to marshal cert bytes;", err)
+				continue
+			}
+			pemBlock := pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}
+			pemBlockBytes := pem.EncodeToMemory(&pemBlock)
+			serverCrtFileBytes = append(serverCrtFileBytes, pemBlockBytes...)
+		}
+	}
+	if err != nil {
+		log.Fatalln("ERROR: unable to read server public key response;", err)
+	}
+	log.Println("Fetched server certificate")
+
+	// download public key
+	r, err = client.Get(serverPubKeyFileURL)
 	if err != nil {
 		log.Fatalln("ERROR: unable to get server public key;", err)
 	}
@@ -92,17 +115,6 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 		log.Fatalln("ERROR: unable to read server public key response;", err)
 	}
 	log.Println("Fetched server public key")
-
-	r, err = client.Get(serverCrtFileURL)
-	if err != nil {
-		log.Fatalln("ERROR: unabel to get server certificate")
-	}
-	defer r.Body.Close()
-	serverCrtFileBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatalln("ERROR: unable to read server public key response;", err)
-	}
-	log.Println("Fetch server certificate")
 
 	// if here, must be OK
 	// write to files, only readable by this process
