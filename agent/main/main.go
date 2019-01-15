@@ -351,6 +351,10 @@ func main() {
 			// get host token if not set yet
 			if len(hostToken) == 0 {
 				hostToken = getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
+				err := os.Remove(linkReport)
+				if err != nil {
+					log.Println("WARN: cannot remove report file;", err)
+				}
 				createLinkReport(serverURL, linkReport, hostname, hostToken)
 			}
 			sendState(dataDir, serverURL, transport, hostToken)
