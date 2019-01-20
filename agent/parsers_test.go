@@ -1494,7 +1494,7 @@ func TestFromHexStringIP(t *testing.T) {
 		t.Fatal("Unexpected parsed IP")
 	}
 
-	s, err = fromHexStringIP("7F000001")
+	s, err = fromHexStringIP("0100007F")
 	if s != "127.0.0.1" {
 		t.Fatal("Unexpected parsed IP")
 	}
@@ -1516,7 +1516,7 @@ func TestBadParseProcNet(t *testing.T) {
 	}
 
 	// cut off
-	bs = []byte("sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n0: 00000000:0")
+	bs = []byte("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n   0: 00000000:0")
 	conns = parseProcNet("TCP", bs)
 	if len(conns) != 0 {
 		t.Fatal("Parsed tcp conn out of incomplete string")
@@ -1524,7 +1524,8 @@ func TestBadParseProcNet(t *testing.T) {
 }
 
 func TestParseProcNet(t *testing.T) {
-	bs := []byte("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode                                                     \n0: 7F000001:0386 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 23479 1 ffff9e697826e080 100 0 0 10 0")
+	// example 1
+	bs := []byte("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n   0: 0100007F:0386 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 23479 1 ffff9e697826e080 100 0 0 10 0")
 	conns := parseProcNet("TCP", bs)
 	if len(conns) != 1 {
 		t.Fatal("Did not parse expected tcp conn")
@@ -1546,6 +1547,35 @@ func TestParseProcNet(t *testing.T) {
 		t.Fatal("Unexpected remote address")
 	}
 	if conn.RemotePort != "0" {
+		t.Fatal("Unexpected remote port")
+	}
+	if conn.PID != 0 {
+		t.Fatal("Unexpected PID")
+	}
+
+	// example 2
+	bs = []byte("  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n   7: 0201A8C0:A2B8 0D0C0B0A:01BB 01 00000000:00000000 00:00000000 00000000  1000        0 73261 1 ffff9256263d0000 37 4 9 10 -1")
+	conns = parseProcNet("TCP", bs)
+	if len(conns) != 1 {
+		t.Fatal("Did not parse expected tcp conn")
+	}
+	conn = conns[0]
+	if conn.Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if conn.State != model.NetworkConnectionEstablished {
+		t.Fatal("Unexpected state")
+	}
+	if conn.LocalAddress != "192.168.1.2" {
+		t.Fatal("Unexpected local address")
+	}
+	if conn.LocalPort != "41656" {
+		t.Fatal("Unexpected local port")
+	}
+	if conn.RemoteAddress != "10.11.12.13" {
+		t.Fatal("Unexpected remote address")
+	}
+	if conn.RemotePort != "443" {
 		t.Fatal("Unexpected remote port")
 	}
 	if conn.PID != 0 {

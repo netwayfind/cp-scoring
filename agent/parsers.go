@@ -122,7 +122,7 @@ func fromHexStringIP(hexIP string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("%d.%d.%d.%d", bs[0], bs[1], bs[2], bs[3]), nil
+	return fmt.Sprintf("%d.%d.%d.%d", bs[3], bs[2], bs[1], bs[0]), nil
 }
 
 func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
@@ -138,6 +138,8 @@ func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
 
 		// remove duplicate spaces
 		line = space.ReplaceAllString(line, " ")
+		// remove leading and trailing spaces
+		line = strings.TrimSpace(line)
 
 		// based on spec
 		tokens := strings.Split(line, " ")
