@@ -715,6 +715,63 @@ func TestAuditNetworkConnection(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "Network connection not removed: TCP 127.0.0.1:8443 :")
 }
+
+func TestAuditNetworkConnectionOnlyPorts(t *testing.T) {
+	// protocol and port
+	templateConn := model.NetworkConnection{Protocol: "TCP", LocalPort: "443"}
+	// only protocol match
+	conn := model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+	// only port match
+	conn = model.NetworkConnection{Protocol: "UDP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+	// both match
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+
+	// just port
+	templateConn = model.NetworkConnection{LocalPort: "443"}
+	// UDP
+	conn = model.NetworkConnection{Protocol: "UDP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+	// TCP
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+	// not matched
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+
+	// empty strings
+	templateConn = model.NetworkConnection{Protocol: "", LocalAddress: "", LocalPort: "443", RemoteAddress: "", RemotePort: ""}
+	// UDP
+	conn = model.NetworkConnection{Protocol: "UDP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+	// TCP
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "443"}
+	if !compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Expected network connection matched")
+	}
+	// not matched
+	conn = model.NetworkConnection{Protocol: "TCP", LocalAddress: "127.0.0.1", LocalPort: "8443"}
+	if compareNetworkConnection(templateConn, conn) {
+		t.Fatal("Unexpected network connection matched")
+	}
+}
+
 func TestAuditProcessState(t *testing.T) {
 	state := model.State{}
 	empty := make([]model.Process, 0)
