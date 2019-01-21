@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/agent"
@@ -203,9 +204,11 @@ func createLinkReport(serverURL string, linkReport string, hostname string, host
 		s = "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + u.String() + "\"></head><body><a href=\"" + u.String() + "\">Report</a></body></html>"
 	} else {
 		// refresh page every 30 seconds
-		s = "<html><head><meta http-equiv=\"refresh\" content=\"30\"/></head><body>" +
-			"Cannot connect to server. Check Internet connection and try again later." +
+		s = "<html><head><meta http-equiv=\"refresh\" content=\"10\"/></head><body>" +
+			"Cannot connect to server, check Internet connection to <a href=\"" + serverURL + "\">" + serverURL + "</a>" +
 			"<p />" +
+			"This page will automatically refresh." +
+			"<br>" +
 			"Last check: " + time.Now().Format("Jan 2 2006 15:04:05 MST") +
 			"</body></html>"
 	}
@@ -337,17 +340,28 @@ func main() {
 		log.Fatalln("ERROR: cannot read server cert file;", err)
 	}
 
-	// host token
-	hostTokenURL := serverURL + "/token/host"
-	hostToken := ""
+	var wg sync.WaitGroup
 
-	// main loop
-	nextTime := time.Now()
-	for {
-		nextTime = nextTime.Add(time.Minute)
-		saveState(dataDir, entities)
-		// get host token and send state asynchronously
-		go func() {
+	// collect state
+	wg.Add(1)
+	go func() {
+		nextTime := time.Now()
+		for {
+			saveState(dataDir, entities)
+			nextTime = nextTime.Add(time.Minute)
+			wait := time.Since(nextTime) * -1
+			time.Sleep(wait)
+		}
+	}()
+
+	// send state
+	wg.Add(1)
+	go func() {
+		hostTokenURL := serverURL + "/token/host"
+		hostToken := ""
+
+		nextTime := time.Now()
+		for {
 			// get host token if not set yet
 			if len(hostToken) == 0 {
 				hostToken = getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
@@ -358,10 +372,13 @@ func main() {
 				createLinkReport(serverURL, linkReport, hostname, hostToken)
 			}
 			sendState(dataDir, serverURL, transport, hostToken)
-		}()
-		wait := time.Since(nextTime) * -1
-		time.Sleep(wait)
-	}
+			nextTime = nextTime.Add(10 * time.Second)
+			wait := time.Since(nextTime) * -1
+			time.Sleep(wait)
+		}
+	}()
+
+	wg.Wait()
 }
 
 func saveState(dir string, entities []*openpgp.Entity) {
@@ -390,7 +407,6 @@ func sendState(dir string, serverURL string, transport *http.Transport, hostToke
 	if len(hostToken) == 0 {
 		return
 	}
-	log.Println("Sending state")
 
 	url := serverURL + "/audit"
 	c := &http.Client{Transport: transport}
