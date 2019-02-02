@@ -1483,6 +1483,12 @@ func TestFromHexStringIPv4(t *testing.T) {
 		t.Fatal("Parsed IP out of long string;", err)
 	}
 
+	// non-hex string
+	s, err = fromHexStringIPv4("0000000G")
+	if err == nil {
+		t.Fatal("Parsed IP out of non-hex string;", err)
+	}
+
 	// acceptable string
 	s, err = fromHexStringIPv4("00000000")
 	if s != "0.0.0.0" {
@@ -1535,6 +1541,12 @@ func TestFromHexStringIPv6(t *testing.T) {
 	s, err = fromHexStringIPv6("000000000000000000000000000000000")
 	if err == nil {
 		t.Fatal("Parsed IP out of long string;", err)
+	}
+
+	// non-hex string
+	s, err = fromHexStringIPv6("0000000000000000000000000000000G")
+	if err == nil {
+		t.Fatal("Parsed IP out of non-hex string;", err)
 	}
 
 	// acceptable string
