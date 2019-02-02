@@ -67,20 +67,36 @@ func (h hostLinux) GetSoftware() ([]model.Software, error) {
 
 func (h hostLinux) GetNetworkConnections() ([]model.NetworkConnection, error) {
 	// TCP connections
+	// IPv4
 	bs, err := ioutil.ReadFile("/proc/net/tcp")
 	if err != nil {
 		return nil, err
 	}
+	// IPv6
 	tcpConns := parseProcNet("TCP", bs)
+	bs, err = ioutil.ReadFile("/proc/net/tcp6")
+	if err != nil {
+		return nil, err
+	}
+	tcp6Conns := parseProcNet6("TCP", bs)
 
 	// UDP connections
+	// IPv4
 	bs, err = ioutil.ReadFile("/proc/net/udp")
 	if err != nil {
 		return nil, err
 	}
 	udpConns := parseProcNet("UDP", bs)
+	bs, err = ioutil.ReadFile("/proc/net/udp6")
+	if err != nil {
+		return nil, err
+	}
+	udp6Conns := parseProcNet6("UDP", bs)
 
-	return append(tcpConns, udpConns...), err
+	conns := append(tcpConns, tcp6Conns...)
+	conns = append(conns, udpConns...)
+	conns = append(conns, udp6Conns...)
+	return conns, nil
 }
 
 func copyAgentLinux(installPath string) {

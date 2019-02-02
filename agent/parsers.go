@@ -111,9 +111,11 @@ func fromHexStringPort(hexPort string) (string, error) {
 	return strconv.Itoa(int(num)), nil
 }
 
-func fromHexStringIP(hexIP string) (string, error) {
+func fromHexStringIPv4(hexIP string) (string, error) {
 	if len(hexIP) == 0 {
 		return "", fmt.Errorf("Empty string")
+	} else if len(hexIP) != 8 {
+		return "", fmt.Errorf("Invalid number of bytes")
 	}
 
 	bs := make([]byte, 4)
@@ -123,6 +125,30 @@ func fromHexStringIP(hexIP string) (string, error) {
 	}
 
 	return fmt.Sprintf("%d.%d.%d.%d", bs[3], bs[2], bs[1], bs[0]), nil
+}
+
+func fromHexStringIPv6(hexIP string) (string, error) {
+	if len(hexIP) == 0 {
+		return "", fmt.Errorf("Empty string")
+	} else if len(hexIP) != 32 {
+		return "", fmt.Errorf("Invalid number of bytes")
+	}
+
+	bs := make([]byte, 16)
+	_, err := hex.Decode(bs, []byte(hexIP))
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X:%02X%02X",
+		bs[3], bs[2],
+		bs[1], bs[0],
+		bs[7], bs[6],
+		bs[5], bs[4],
+		bs[11], bs[10],
+		bs[9], bs[8],
+		bs[15], bs[14],
+		bs[13], bs[12]), nil
 }
 
 func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
@@ -156,7 +182,7 @@ func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
 		conn.State = model.GetNetworkConnectionStateLinux(tokens[3])
 
 		localParts := strings.Split(tokens[1], ":")
-		localAddress, err := fromHexStringIP(localParts[0])
+		localAddress, err := fromHexStringIPv4(localParts[0])
 		if err == nil {
 			conn.LocalAddress = localAddress
 		}
@@ -166,7 +192,63 @@ func parseProcNet(protocol string, bs []byte) []model.NetworkConnection {
 		}
 
 		remoteParts := strings.Split(tokens[2], ":")
-		remoteAddress, err := fromHexStringIP(remoteParts[0])
+		remoteAddress, err := fromHexStringIPv4(remoteParts[0])
+		if err == nil {
+			conn.RemoteAddress = remoteAddress
+		}
+		remotePort, err := fromHexStringPort(remoteParts[1])
+		if err == nil {
+			conn.RemotePort = remotePort
+		}
+
+		conns = append(conns, conn)
+	}
+
+	return conns
+}
+
+func parseProcNet6(protocol string, bs []byte) []model.NetworkConnection {
+	conns := make([]model.NetworkConnection, 0)
+
+	space := regexp.MustCompile("\\s+")
+
+	for i, line := range strings.Split(string(bs), "\n") {
+		// skip first line
+		if i == 0 {
+			continue
+		}
+
+		// remove duplicate spaces
+		line = space.ReplaceAllString(line, " ")
+		// remove leading and trailing spaces
+		line = strings.TrimSpace(line)
+
+		// based on spec
+		tokens := strings.Split(line, " ")
+		if len(tokens) < 9 {
+			continue
+		}
+
+		var conn model.NetworkConnection
+		conn.Protocol = protocol
+		pid, err := strconv.ParseInt(tokens[8], 10, 64)
+		if err == nil {
+			conn.PID = pid
+		}
+		conn.State = model.GetNetworkConnectionStateLinux(tokens[3])
+
+		localParts := strings.Split(tokens[1], ":")
+		localAddress, err := fromHexStringIPv6(localParts[0])
+		if err == nil {
+			conn.LocalAddress = localAddress
+		}
+		localPort, err := fromHexStringPort(localParts[1])
+		if err == nil {
+			conn.LocalPort = localPort
+		}
+
+		remoteParts := strings.Split(tokens[2], ":")
+		remoteAddress, err := fromHexStringIPv6(remoteParts[0])
 		if err == nil {
 			conn.RemoteAddress = remoteAddress
 		}

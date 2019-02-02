@@ -1446,56 +1446,110 @@ func TestFromHexStringPort(t *testing.T) {
 	}
 }
 
-func TestFromHexStringIP(t *testing.T) {
+func TestFromHexStringIPv4(t *testing.T) {
 	// empty string
-	s, err := fromHexStringIP("")
+	s, err := fromHexStringIPv4("")
 	if err == nil {
 		t.Fatal("Parsed IP out of empty string")
 	}
 
 	// bad string
-	s, err = fromHexStringIP(" ")
+	s, err = fromHexStringIPv4(" ")
 	if err == nil {
 		t.Fatal("Parsed IP out of space string")
 	}
 
 	// bad string
-	s, err = fromHexStringIP("asdf!")
+	s, err = fromHexStringIPv4("asdf!")
 	if err == nil {
 		t.Fatal("Parsed IP out of bad string;", err)
 	}
 
 	// bad string
-	s, err = fromHexStringIP("bad")
+	s, err = fromHexStringIPv4("bad")
 	if err == nil {
 		t.Fatal("Parsed IP out of bad string;", err)
 	}
 
 	// too short
-	s, err = fromHexStringIP("0000000")
+	s, err = fromHexStringIPv4("0000000")
 	if err == nil {
 		t.Fatal("Parsed IP out of short string;", err)
 	}
 
 	// too long
-	s, err = fromHexStringIP("000000000")
+	s, err = fromHexStringIPv4("000000000")
 	if err == nil {
 		t.Fatal("Parsed IP out of long string;", err)
 	}
 
 	// acceptable string
-	s, err = fromHexStringIP("00000000")
+	s, err = fromHexStringIPv4("00000000")
 	if s != "0.0.0.0" {
 		t.Fatal("Unexpected parsed IP")
 	}
 
-	s, err = fromHexStringIP("FFFFFFFF")
+	s, err = fromHexStringIPv4("FFFFFFFF")
 	if s != "255.255.255.255" {
 		t.Fatal("Unexpected parsed IP")
 	}
 
-	s, err = fromHexStringIP("0100007F")
+	s, err = fromHexStringIPv4("0100007F")
 	if s != "127.0.0.1" {
+		t.Fatal("Unexpected parsed IP")
+	}
+}
+
+func TestFromHexStringIPv6(t *testing.T) {
+	// empty string
+	s, err := fromHexStringIPv6("")
+	if err == nil {
+		t.Fatal("Parsed IP out of empty string")
+	}
+
+	// bad string
+	s, err = fromHexStringIPv6(" ")
+	if err == nil {
+		t.Fatal("Parsed IP out of space string")
+	}
+
+	// bad string
+	s, err = fromHexStringIPv6("asdf!")
+	if err == nil {
+		t.Fatal("Parsed IP out of bad string;", err)
+	}
+
+	// bad string
+	s, err = fromHexStringIPv6("bad")
+	if err == nil {
+		t.Fatal("Parsed IP out of bad string;", err)
+	}
+
+	// too short
+	s, err = fromHexStringIPv6("0000000000000000000000000000000")
+	if err == nil {
+		t.Fatal("Parsed IP out of short string;", err)
+	}
+
+	// too long
+	s, err = fromHexStringIPv6("000000000000000000000000000000000")
+	if err == nil {
+		t.Fatal("Parsed IP out of long string;", err)
+	}
+
+	// acceptable string
+	s, err = fromHexStringIPv6("00000000000000000000000000000000")
+	if s != "0000:0000:0000:0000:0000:0000:0000:0000" {
+		t.Fatal("Unexpected parsed IP")
+	}
+
+	s, err = fromHexStringIPv6("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+	if s != "FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF" {
+		t.Fatal("Unexpected parsed IP")
+	}
+
+	s, err = fromHexStringIPv6("00000000000000000000000001000000")
+	if s != "0000:0000:0000:0000:0000:0000:0000:0001" {
 		t.Fatal("Unexpected parsed IP")
 	}
 }
@@ -1573,6 +1627,89 @@ func TestParseProcNet(t *testing.T) {
 		t.Fatal("Unexpected local port")
 	}
 	if conn.RemoteAddress != "10.11.12.13" {
+		t.Fatal("Unexpected remote address")
+	}
+	if conn.RemotePort != "443" {
+		t.Fatal("Unexpected remote port")
+	}
+	if conn.PID != 0 {
+		t.Fatal("Unexpected PID")
+	}
+}
+
+func TestEmptyParseProcNet6(t *testing.T) {
+	bs := []byte("")
+	conns := parseProcNet6("TCP", bs)
+	if len(conns) != 0 {
+		t.Fatal("Parsed tcp conn out of empty string")
+	}
+}
+
+func TestBadParseProcNet6(t *testing.T) {
+	bs := []byte("bad")
+	conns := parseProcNet6("TCP", bs)
+	if len(conns) != 0 {
+		t.Fatal("Parsed tcp conn out of bad string")
+	}
+
+	// cut off
+	bs = []byte("  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n   0: 00000000000000000000000000000000:0386 00000")
+	conns = parseProcNet6("TCP", bs)
+	if len(conns) != 0 {
+		t.Fatal("Parsed tcp conn out of incomplete string")
+	}
+}
+
+func TestParseProcNet6(t *testing.T) {
+	// example 1
+	bs := []byte("  sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n	0: 00000000000000000000000001000000:0386 00000000000000000000000000000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 27887 1 ffffa01c77fde800 100 0 0 10 0")
+	conns := parseProcNet6("TCP", bs)
+	if len(conns) != 1 {
+		t.Fatal("Did not parse expected tcp conn")
+	}
+	conn := conns[0]
+	if conn.Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if conn.State != model.NetworkConnectionListen {
+		t.Fatal("Unexpected state")
+	}
+	if conn.LocalAddress != "0000:0000:0000:0000:0000:0000:0000:0001" {
+		t.Fatal("Unexpected local address")
+	}
+	if conn.LocalPort != "902" {
+		t.Fatal("Unexpected local port")
+	}
+	if conn.RemoteAddress != "0000:0000:0000:0000:0000:0000:0000:0000" {
+		t.Fatal("Unexpected remote address")
+	}
+	if conn.RemotePort != "0" {
+		t.Fatal("Unexpected remote port")
+	}
+	if conn.PID != 0 {
+		t.Fatal("Unexpected PID")
+	}
+
+	// example 2
+	bs = []byte("sl  local_address                         remote_address                        st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode\n	0: 00000000000000000000000001000000:A2B8 3000000020000000100000003400007F:01BB 01 00000000:00000000 00:00000000 00000000     0        0 27887 1 ffffa01c77fde800 100 0 0 10 0")
+	conns = parseProcNet6("TCP", bs)
+	if len(conns) != 1 {
+		t.Fatal("Did not parse expected tcp conn")
+	}
+	conn = conns[0]
+	if conn.Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if conn.State != model.NetworkConnectionEstablished {
+		t.Fatal("Unexpected state")
+	}
+	if conn.LocalAddress != "0000:0000:0000:0000:0000:0000:0000:0001" {
+		t.Fatal("Unexpected local address")
+	}
+	if conn.LocalPort != "41656" {
+		t.Fatal("Unexpected local port")
+	}
+	if conn.RemoteAddress != "0000:0030:0000:0020:0000:0010:7F00:0034" {
 		t.Fatal("Unexpected remote address")
 	}
 	if conn.RemotePort != "443" {
