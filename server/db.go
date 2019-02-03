@@ -660,7 +660,7 @@ func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
 	return db.InsertScenarioHostTemplates(id, scenario)
 }
 
-func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error) {
+func (db dbObj) SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error) {
 	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams, team_host_tokens WHERE scenario_id=(?) AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id GROUP BY team_host_tokens.team_id,team_host_tokens.hostname ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
 	if err != nil {
 		return nil, err
@@ -670,14 +670,14 @@ func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLa
 	var teamName string
 	var timestamp int64
 	var score int64
-	scores := make([]model.ScenarioLatestScore, 0)
+	scores := make([]model.TeamScore, 0)
 
 	for rows.Next() {
 		err = rows.Scan(&teamName, &timestamp, &score)
 		if err != nil {
 			return nil, err
 		}
-		var entry model.ScenarioLatestScore
+		var entry model.TeamScore
 		entry.TeamName = teamName
 		entry.Timestamp = timestamp
 		entry.Score = score
@@ -685,7 +685,7 @@ func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLa
 	}
 
 	// combine scores into total scores
-	totalScoresMap := make(map[string]model.ScenarioLatestScore)
+	totalScoresMap := make(map[string]model.TeamScore)
 	teamNames := make([]string, 0)
 	for _, score := range scores {
 		storedScore, present := totalScoresMap[score.TeamName]
@@ -701,7 +701,7 @@ func (db dbObj) SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLa
 		}
 		totalScoresMap[score.TeamName] = storedScore
 	}
-	totalScores := make([]model.ScenarioLatestScore, len(teamNames))
+	totalScores := make([]model.TeamScore, len(teamNames))
 	for i, teamName := range teamNames {
 		storedScore, _ := totalScoresMap[teamName]
 		totalScores[i] = storedScore
@@ -736,7 +736,7 @@ func (db dbObj) SelectScenarioTimeline(scenarioID int64, hostToken string) (mode
 	return timeline, nil
 }
 
-func (db dbObj) InsertScenarioScore(entry model.ScenarioScore) error {
+func (db dbObj) InsertScenarioScore(entry model.ScenarioHostScore) error {
 	_, err := db.dbInsert("INSERT INTO scores(scenario_id, host_token, timestamp, score) VALUES(?, ?, ?, ?)", entry.ScenarioID, entry.HostToken, entry.Timestamp, entry.Score)
 	if err != nil {
 		return err

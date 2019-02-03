@@ -201,7 +201,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 			score += finding.Value
 		}
 
-		var scoreEntry model.ScenarioScore
+		var scoreEntry model.ScenarioHostScore
 		scoreEntry.ScenarioID = scenarioID
 		scoreEntry.HostToken = hostToken
 		scoreEntry.Timestamp = state.Timestamp
@@ -856,7 +856,7 @@ func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", id))
-	scores, err := theServer.backingStore.SelectScenarioLatestScores(id)
+	scores, err := theServer.backingStore.SelectLatestScenarioScores(id)
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario scores;"
 		log.Println(msg, err)

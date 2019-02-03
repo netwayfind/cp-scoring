@@ -39,9 +39,9 @@ type backingStore interface {
 	InsertScenario(scenario model.Scenario) error
 	UpdateScenario(scenarioID int64, scenario model.Scenario) error
 	DeleteScenario(scenarioID int64) error
-	SelectScenarioLatestScores(scenarioID int64) ([]model.ScenarioLatestScore, error)
+	SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error)
 	InsertScenarioReport(scenarioID int64, hostToken string, report model.Report) error
-	InsertScenarioScore(score model.ScenarioScore) error
+	InsertScenarioScore(score model.ScenarioHostScore) error
 	SelectScenarioTimeline(scenarioID int64, hostToken string) (model.ScenarioTimeline, error)
 	SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error)
 	SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error)

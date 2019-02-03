@@ -49,13 +49,13 @@ type Scenario struct {
 	HostTemplates map[int64][]int64
 }
 
-type ScenarioLatestScore struct {
+type TeamScore struct {
 	TeamName  string
 	Timestamp int64
 	Score     int64
 }
 
-type ScenarioScore struct {
+type ScenarioHostScore struct {
 	ScenarioID int64
 	HostToken  string
 	Timestamp  int64
