@@ -1,3 +1,7 @@
+__Table of Contents__
+1. [Principles](#principles)
+1. [Design Requirements](#design-requirements)
+
 # Principles
 
 * [The Server] has [admins] that set up [templates] and [scenarios]
