@@ -19,11 +19,11 @@
   "homepage": "https://github.com/sumwonyuno/cp-scoring#readme",
   "dependencies": {},
   "devDependencies": {
-    "@babel/cli": "^7.0.0",
-    "@babel/core": "^7.0.1",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.3.2",
     "@babel/preset-react": "^7.0.0",
-    "plotly.js": "^1.40.1",
+    "plotly.js": "^1.44.4",
     "react-plotly.js": "^2.2.0"
   }
 }
