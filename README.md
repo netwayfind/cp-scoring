@@ -99,6 +99,8 @@ Windows instructions:
 1. `cd C:\cp-scoring`
 1. `cp-scoring-agent-windows.exe -server https://<server>:<port>`
    - This will download files to allow sending data to [The Server]
+1. `icacls report.html /setowner LOCALSERVICE`
+   - This is necessary to finish setting up [agent]
 1. Restart computer. [agent] will automatically start.
 1. If everything is OK, delete cp-scoring-agent-windows.exe in the Downloads folder
 1. Create shortcut for C:\cp-scoring\scoreboard.html to Desktop
