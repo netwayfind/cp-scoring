@@ -439,7 +439,7 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = theServer.backingStore.InsertTeam(team)
+	id, err := theServer.backingStore.InsertTeam(team)
 	if err != nil {
 		msg := "ERROR: cannot insert team;"
 		log.Println(msg, err)
@@ -447,10 +447,11 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idStr := strconv.FormatInt(id, 10)
+
 	// new team
-	msg := "Saved team"
-	log.Println(msg)
-	w.Write([]byte(msg))
+	log.Println("Saved team " + idStr)
+	w.Write([]byte(idStr))
 }
 
 func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {

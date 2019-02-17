@@ -306,9 +306,8 @@ func (db dbObj) DeleteTeam(id int64) error {
 	return db.dbDelete("DELETE FROM teams where id=(?)", id)
 }
 
-func (db dbObj) InsertTeam(team model.Team) error {
-	_, err := db.dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES(?, ?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled, team.Key)
-	return err
+func (db dbObj) InsertTeam(team model.Team) (int64, error) {
+	return db.dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES(?, ?, ?, ?, ?)", team.Name, team.POC, team.Email, team.Enabled, team.Key)
 }
 
 func (db dbObj) UpdateTeam(id int64, team model.Team) error {

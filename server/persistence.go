@@ -24,7 +24,7 @@ type backingStore interface {
 	SelectTeam(teamID int64) (model.Team, error)
 	SelectTeamIDFromHostToken(hostToken string) (int64, error)
 	SelectTeamIDForKey(teamKey string) (int64, error)
-	InsertTeam(team model.Team) error
+	InsertTeam(team model.Team) (int64, error)
 	UpdateTeam(teamID int64, team model.Team) error
 	DeleteTeam(teamID int64) error
 	SelectTemplates() ([]model.Template, error)
