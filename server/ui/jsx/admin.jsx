@@ -1465,6 +1465,7 @@ class ItemMap extends React.Component {
       [this.state.item]: []
     }
     this.setState({
+      item: "",
       value: value
     })
     this.props.callback(this.props.name, value);
@@ -1595,6 +1596,7 @@ class ItemList extends React.Component {
       value = [...this.state.value, this.state.item];
     }
     this.setState({
+      item: "",
       value: value
     })
     this.props.callback(this.props.name, value);
