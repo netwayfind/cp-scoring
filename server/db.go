@@ -782,7 +782,7 @@ func (db dbObj) InsertScenarioReport(scenarioID int64, hostToken string, entry m
 
 func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
-	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=(?) AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
+	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=(?) AND scenarios.enabled=1 AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
 	if err != nil {
 		return scenarioHosts, err
 	}
