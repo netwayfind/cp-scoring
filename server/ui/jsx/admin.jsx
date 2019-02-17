@@ -8,7 +8,8 @@ class App extends React.Component {
     this.state = {
       authenticated: false,
       page: null,
-      id: null
+      id: null,
+      lastUpdatedTeams: 0
     }
 
     this.authCallback = this.authCallback.bind(this);
@@ -77,6 +78,12 @@ class App extends React.Component {
     })
   }
 
+  updateTeamCallback() {
+    this.setState({
+      lastUpdatedTeams: Date.now()
+    })
+  }
+
   render() {
     if (!this.state.authenticated) {
       return (
@@ -90,8 +97,8 @@ class App extends React.Component {
     let page = (<React.Fragment></React.Fragment>)
     let content = (<React.Fragment></React.Fragment>)
     if (this.state.page == "teams") {
-      page = (<Teams />);
-      content = (<TeamEntry id={this.state.id}/>);
+      page = (<Teams lastUpdated={this.state.lastUpdatedTeams}/>);
+      content = (<TeamEntry id={this.state.id} updateCallback={this.updateTeamCallback.bind(this)}/>);
     }
     else if (this.state.page == "hosts") {
       page = (<Hosts />);
@@ -308,16 +315,18 @@ class BasicModal extends React.Component {
 }
 
 class Teams extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       teams: []
     }
-
-    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
   componentDidMount() {
+    this.populateTeams();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateTeams();
   }
 
@@ -334,12 +343,10 @@ class Teams extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      this.setState({teams: data})
+      this.setState({
+        teams: data
+      });
     }.bind(this));
-  }
-
-  handleSubmit() {
-    this.populateTeams();
   }
 
   render() {
@@ -448,6 +455,7 @@ class TeamEntry extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
+      this.props.updateCallback();
       this.setState({
         team: {}
       })
@@ -475,6 +483,7 @@ class TeamEntry extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
+      this.props.updateCallback();
       if (this.state.team.ID === null || this.state.team.ID === undefined) {
         // for new teams, response should be team ID
         response.text().then(function(id) {
