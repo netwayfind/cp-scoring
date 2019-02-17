@@ -11,7 +11,8 @@ class App extends React.Component {
     super();
     this.state = {
       authenticated: false,
-      page: null
+      page: null,
+      id: null
     };
     this.authCallback = this.authCallback.bind(this);
     this.setPage = this.setPage.bind(this);
@@ -62,9 +63,18 @@ class App extends React.Component {
     };
   }
 
-  setPage(page) {
+  setPage(hash) {
+    let parts = hash.split("/");
+    let page = parts[0];
+    let id = null;
+
+    if (parts.length >= 2) {
+      id = parts[1];
+    }
+
     this.setState({
-      page: page
+      page: page,
+      id: id
     });
   }
 
@@ -78,16 +88,20 @@ class App extends React.Component {
     } // default page is empty
 
 
+    let page = React.createElement(React.Fragment, null);
     let content = React.createElement(React.Fragment, null);
 
     if (this.state.page == "teams") {
-      content = React.createElement(Teams, null);
+      page = React.createElement(Teams, null);
+      content = React.createElement(TeamEntry, {
+        id: this.state.id
+      });
     } else if (this.state.page == "hosts") {
-      content = React.createElement(Hosts, null);
+      page = React.createElement(Hosts, null);
     } else if (this.state.page == "templates") {
-      content = React.createElement(Templates, null);
+      page = React.createElement(Templates, null);
     } else if (this.state.page == "scenarios") {
-      content = React.createElement(Scenarios, null);
+      page = React.createElement(Scenarios, null);
     }
 
     return React.createElement("div", {
@@ -111,7 +125,11 @@ class App extends React.Component {
     }, "Scenarios"), React.createElement("button", {
       className: "right",
       onClick: this.logout
-    }, "Logout")), React.createElement("div", null, content));
+    }, "Logout")), React.createElement("div", {
+      className: "toc"
+    }, page), React.createElement("div", {
+      className: "content"
+    }, content));
   }
 
 }
@@ -308,15 +326,9 @@ class Teams extends React.Component {
   constructor() {
     super();
     this.state = {
-      teams: [],
-      showModal: false,
-      selectedTeamID: null,
-      selectedTeam: {}
+      teams: []
     };
-    this.modal = React.createRef();
     this.handleSubmit = this.handleSubmit.bind(this);
-    this.regenKey = this.regenKey.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -340,22 +352,72 @@ class Teams extends React.Component {
     }.bind(this));
   }
 
-  newKey() {
+  handleSubmit() {
+    this.populateTeams();
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.teams.length; i++) {
+      let team = this.state.teams[i];
+      rows.push(React.createElement("li", {
+        key: team.ID
+      }, React.createElement("a", {
+        href: "#teams/" + team.ID
+      }, "[", team.ID, "] ", team.Name)));
+    }
+
+    return React.createElement("div", {
+      className: "Teams"
+    }, React.createElement("strong", null, "Teams"), React.createElement("ul", null, rows));
+  }
+
+}
+
+class TeamEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      team: {}
+    };
+    this.getTeam = this.getTeam.bind(this);
+  }
+
+  static newKey() {
     return Math.random().toString(16).substring(7);
   }
 
-  createTeam() {
-    this.setState({
-      selectedTeamID: null,
-      selectedTeam: {
-        Enabled: true,
-        Key: this.newKey()
-      }
-    });
-    this.toggleModal();
+  componentDidMount() {
+    if (this.props.id) {
+      this.getTeam(this.props.id);
+    }
   }
 
-  editTeam(id) {
+  componentWillReceiveProps(nextProps) {
+    if (this.props.id != nextProps.id) {
+      this.getTeam(nextProps.id);
+    }
+  }
+
+  newTeam() {
+    window.location.href = "#teams";
+    this.setState({
+      team: {
+        Name: "",
+        POC: "",
+        Email: "",
+        Enabled: true,
+        Key: TeamEntry.newKey()
+      }
+    });
+  }
+
+  getTeam(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
     let url = "/teams/" + id;
     fetch(url, {
       credentials: 'same-origin'
@@ -367,11 +429,23 @@ class Teams extends React.Component {
       return response.json();
     }).then(function (data) {
       this.setState({
-        selectedTeamID: id,
-        selectedTeam: data
+        team: data
       });
-      this.toggleModal();
     }.bind(this));
+  }
+
+  updateTeam(event) {
+    let value = event.target.value;
+
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+
+    this.setState({
+      team: _objectSpread({}, this.state.team, {
+        [event.target.name]: value
+      })
+    });
   }
 
   deleteTeam(id) {
@@ -384,79 +458,94 @@ class Teams extends React.Component {
         throw new Error("Bad response from server");
       }
 
-      this.populateTeams();
+      this.setState({
+        team: {}
+      });
+      window.location.href = "#teams";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateTeams();
-    this.toggleModal();
-  }
+  saveTeam(event) {
+    event.preventDefault();
+    var url = "/teams";
 
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    });
+    if (this.state.team.ID != null) {
+      url += "/" + this.state.team.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.team)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      if (this.state.team.ID === null || this.state.team.ID === undefined) {
+        // for new teams, response should be team ID
+        response.text().then(function (id) {
+          window.location.href = "#teams/" + id;
+        });
+      }
+    }.bind(this));
   }
 
   regenKey() {
-    let key = this.newKey();
+    let key = TeamEntry.newKey();
     this.setState({
-      selectedTeam: _objectSpread({}, this.state.selectedTeam, {
+      team: _objectSpread({}, this.state.team, {
         Key: key
       })
     });
-    this.modal.current.setValue("Key", key);
   }
 
   render() {
-    let rows = [];
+    let content = null;
 
-    for (let i = 0; i < this.state.teams.length; i++) {
-      let team = this.state.teams[i];
-      rows.push(React.createElement("li", {
-        key: team.ID
-      }, team.Name, React.createElement("button", {
+    if (Object.entries(this.state.team).length != 0) {
+      content = React.createElement(React.Fragment, null, React.createElement("form", {
+        onChange: this.updateTeam.bind(this),
+        onSubmit: this.saveTeam.bind(this)
+      }, React.createElement("label", {
+        htmlFor: "ID"
+      }, "ID"), React.createElement("input", {
+        disabled: true,
+        value: this.state.team.ID || ""
+      }), React.createElement(Item, {
+        name: "Name",
+        value: this.state.team.Name
+      }), React.createElement(Item, {
+        name: "POC",
+        value: this.state.team.POC
+      }), React.createElement(Item, {
+        name: "Email",
+        type: "email",
+        value: this.state.team.Email
+      }), React.createElement(Item, {
+        name: "Enabled",
+        type: "checkbox",
+        checked: !!this.state.team.Enabled
+      }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.team.Key, React.createElement("button", {
         type: "button",
-        onClick: this.editTeam.bind(this, team.ID)
-      }, "Edit"), React.createElement("button", {
+        onClick: this.regenKey.bind(this)
+      }, "Regenerate")))), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+        type: "submit"
+      }, "Save"), React.createElement("button", {
+        class: "right",
         type: "button",
-        onClick: this.deleteTeam.bind(this, team.ID)
-      }, "-")));
+        disabled: !this.state.team.ID,
+        onClick: this.deleteTeam.bind(this, this.state.team.ID)
+      }, "Delete"))));
     }
 
-    return React.createElement("div", {
-      className: "Teams"
-    }, React.createElement("strong", null, "Teams"), React.createElement("p", null), React.createElement("button", {
-      onClick: this.createTeam.bind(this)
-    }, "Add Team"), React.createElement(BasicModal, {
-      ref: this.modal,
-      subjectClass: "teams",
-      subjectID: this.state.selectedTeamID,
-      subject: this.state.selectedTeam,
-      show: this.state.showModal,
-      onClose: this.toggleModal,
-      submit: this.handleSubmit
-    }, React.createElement(Item, {
-      name: "Name",
-      defaultValue: this.state.selectedTeam.Name
-    }), React.createElement(Item, {
-      name: "POC",
-      defaultValue: this.state.selectedTeam.POC
-    }), React.createElement(Item, {
-      name: "Email",
-      type: "email",
-      defaultValue: this.state.selectedTeam.Email
-    }), React.createElement("label", {
-      htmlFor: "Enabled"
-    }, "Enabled"), React.createElement("input", {
-      name: "Enabled",
-      type: "checkbox",
-      defaultChecked: !!this.state.selectedTeam.Enabled
-    }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.selectedTeam.Key, React.createElement("button", {
+    return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
-      onClick: this.regenKey.bind(this)
-    }, "Regenerate"))))), React.createElement("ul", null, rows));
+      onClick: this.newTeam.bind(this)
+    }, "New Team"), React.createElement("hr", null), content);
   }
 
 }
@@ -1469,8 +1558,8 @@ class Item extends React.Component {
     }, this.props.name), React.createElement("input", {
       name: this.props.name,
       type: this.props.type,
-      defaultValue: this.props.defaultValue,
-      defaultChecked: this.props.defaultChecked
+      value: this.props.value,
+      checked: this.props.checked
     }));
   }
 

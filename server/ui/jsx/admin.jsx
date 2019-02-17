@@ -7,7 +7,8 @@ class App extends React.Component {
     super();
     this.state = {
       authenticated: false,
-      page: null
+      page: null,
+      id: null
     }
 
     this.authCallback = this.authCallback.bind(this);
@@ -63,9 +64,16 @@ class App extends React.Component {
     };
   }
 
-  setPage(page) {
+  setPage(hash) {
+    let parts = hash.split("/")
+    let page = parts[0];
+    let id = null;
+    if (parts.length >= 2) {
+      id = parts[1];
+    }
     this.setState({
-      page: page
+      page: page,
+      id: id
     })
   }
 
@@ -79,18 +87,20 @@ class App extends React.Component {
     }
 
     // default page is empty
+    let page = (<React.Fragment></React.Fragment>)
     let content = (<React.Fragment></React.Fragment>)
     if (this.state.page == "teams") {
-      content = (<Teams />);
+      page = (<Teams />);
+      content = (<TeamEntry id={this.state.id}/>);
     }
     else if (this.state.page == "hosts") {
-      content = (<Hosts />);
+      page = (<Hosts />);
     }
     else if (this.state.page == "templates") {
-      content = (<Templates />);
+      page = (<Templates />);
     }
     else if (this.state.page == "scenarios") {
-      content = (<Scenarios />);
+      page = (<Scenarios />);
     }
 
     return (
@@ -105,7 +115,10 @@ class App extends React.Component {
           <a className="nav-button" href="#scenarios">Scenarios</a>
           <button className="right" onClick={this.logout}>Logout</button>
         </div>
-        <div>
+        <div className="toc">
+          {page}
+        </div>
+        <div className="content">
           {content}
         </div>
       </div>
@@ -298,16 +311,10 @@ class Teams extends React.Component {
   constructor() {
     super();
     this.state = {
-      teams: [],
-      showModal: false,
-      selectedTeamID: null,
-      selectedTeam: {}
+      teams: []
     }
 
-    this.modal = React.createRef()
     this.handleSubmit = this.handleSubmit.bind(this);
-    this.regenKey = this.regenKey.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
@@ -331,22 +338,74 @@ class Teams extends React.Component {
     }.bind(this));
   }
 
-  newKey() {
+  handleSubmit() {
+    this.populateTeams();
+  }
+
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.teams.length; i++) {
+      let team = this.state.teams[i];
+      rows.push(
+        <li key={team.ID}>
+          <a href={"#teams/" + team.ID}>[{team.ID}] {team.Name}</a>
+        </li>
+      );
+    }
+
+    return (
+      <div className="Teams">
+        <strong>Teams</strong>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class TeamEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      team: {}
+    }
+
+    this.getTeam = this.getTeam.bind(this);
+  }
+
+  static newKey() {
     return Math.random().toString(16).substring(7);
   }
 
-  createTeam() {
-    this.setState({
-      selectedTeamID: null,
-      selectedTeam: {
-        Enabled: true,
-        Key: this.newKey()
-      }
-    });
-    this.toggleModal();
+  componentDidMount() {
+    if (this.props.id) {
+      this.getTeam(this.props.id);
+    }
   }
 
-  editTeam(id) {
+  componentWillReceiveProps(nextProps) {
+    if (this.props.id != nextProps.id) {
+      this.getTeam(nextProps.id);
+    }
+  }
+
+  newTeam() {
+    window.location.href = "#teams";
+    this.setState({
+      team: {
+        Name: "",
+        POC: "",
+        Email: "",
+        Enabled: true,
+        Key: TeamEntry.newKey()
+      }
+    });
+  }
+
+  getTeam(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
     let url = "/teams/" + id;
 
     fetch(url, {
@@ -360,11 +419,22 @@ class Teams extends React.Component {
     })
     .then(function(data) {
       this.setState({
-        selectedTeamID: id,
-        selectedTeam: data
+        team: data
       });
-      this.toggleModal();
     }.bind(this));
+  }
+
+  updateTeam(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      team: {
+        ...this.state.team,
+        [event.target.name]: value
+      }
+    })
   }
 
   deleteTeam(id) {
@@ -378,69 +448,90 @@ class Teams extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      this.populateTeams();
+      this.setState({
+        team: {}
+      })
+      window.location.href = "#teams";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateTeams();
-    this.toggleModal();
-  }
+  saveTeam(event) {
+    event.preventDefault();
 
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
+    var url = "/teams";
+    if (this.state.team.ID != null) {
+      url += "/" + this.state.team.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.team)
     })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      if (this.state.team.ID === null || this.state.team.ID === undefined) {
+        // for new teams, response should be team ID
+        response.text().then(function(id) {
+          window.location.href = "#teams/" + id;
+        });
+      }
+    }.bind(this));
   }
 
   regenKey() {
-    let key = this.newKey()
+    let key = TeamEntry.newKey()
     this.setState({
-      selectedTeam: {
-        ...this.state.selectedTeam,
+      team: {
+        ...this.state.team,
         Key: key
       }
     })
-    this.modal.current.setValue("Key", key)
   }
 
   render() {
-    let rows = [];
-    for (let i = 0; i < this.state.teams.length; i++) {
-      let team = this.state.teams[i];
-      rows.push(
-        <li key={team.ID}>
-          {team.Name}
-          <button type="button" onClick={this.editTeam.bind(this, team.ID)}>Edit</button>
-          <button type="button" onClick={this.deleteTeam.bind(this, team.ID)}>-</button>
-        </li>
-      );
-    }
-
-    return (
-      <div className="Teams">
-        <strong>Teams</strong>
-        <p />
-        <button onClick={this.createTeam.bind(this)}>Add Team</button>
-        <BasicModal ref={this.modal} subjectClass="teams" subjectID={this.state.selectedTeamID} subject={this.state.selectedTeam} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
-          <Item name="Name" defaultValue={this.state.selectedTeam.Name}/>
-          <Item name="POC" defaultValue={this.state.selectedTeam.POC}/>
-          <Item name="Email" type="email" defaultValue={this.state.selectedTeam.Email}/>
-          <label htmlFor="Enabled">Enabled</label>
-          <input name="Enabled" type="checkbox" defaultChecked={!!this.state.selectedTeam.Enabled}></input>
+    let content = null;
+    if (Object.entries(this.state.team).length != 0) {
+      content = (
+        <React.Fragment>
+          <form onChange={this.updateTeam.bind(this)} onSubmit={this.saveTeam.bind(this)}>
+          <label htmlFor="ID">ID</label>
+          <input disabled value={this.state.team.ID || ""}/>
+          <Item name="Name" value={this.state.team.Name}/>
+          <Item name="POC" value={this.state.team.POC}/>
+          <Item name="Email" type="email" value={this.state.team.Email}/>
+          <Item name="Enabled" type="checkbox" checked={!!this.state.team.Enabled}/>
           <br />
           <details>
             <summary>Key</summary>
             <ul>
               <li>
-                {this.state.selectedTeam.Key}
+                {this.state.team.Key}
                 <button type="button" onClick={this.regenKey.bind(this)}>Regenerate</button>
               </li>
             </ul>
           </details>
-        </BasicModal>
-        <ul>{rows}</ul>
-      </div>
+          <br />
+          <div>
+            <button type="submit">Save</button>
+            <button class="right" type="button" disabled={!this.state.team.ID} onClick={this.deleteTeam.bind(this, this.state.team.ID)}>Delete</button>
+          </div>
+        </form>
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <React.Fragment>
+        <button type="button" onClick={this.newTeam.bind(this)}>New Team</button>
+        <hr />
+        {content}
+      </React.Fragment>
     );
   }
 }
@@ -1451,7 +1542,7 @@ class Item extends React.Component {
     return (
       <div>
         <label htmlFor={this.props.name}>{this.props.name}</label>
-        <input name={this.props.name} type={this.props.type} defaultValue={this.props.defaultValue} defaultChecked={this.props.defaultChecked}></input>
+        <input name={this.props.name} type={this.props.type} value={this.props.value} checked={this.props.checked}></input>
       </div>
     )
   }
