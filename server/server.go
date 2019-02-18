@@ -592,7 +592,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = theServer.backingStore.InsertTemplate(template)
+	id, err := theServer.backingStore.InsertTemplate(template)
 	if err != nil {
 		msg := "ERROR: cannot insert template;"
 		log.Println(msg, err)
@@ -600,10 +600,11 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idStr := strconv.FormatInt(id, 10)
+
 	// new template
-	msg := "Saved template"
-	log.Println(msg)
-	w.Write([]byte(msg))
+	log.Println("Saved template " + idStr)
+	w.Write([]byte(idStr))
 }
 
 func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) {

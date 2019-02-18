@@ -30,7 +30,7 @@ type backingStore interface {
 	SelectTemplates() ([]model.Template, error)
 	SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error)
 	SelectTemplate(templateID int64) (model.Template, error)
-	InsertTemplate(template model.Template) error
+	InsertTemplate(template model.Template) (int64, error)
 	UpdateTemplate(templateID int64, template model.Template) error
 	DeleteTemplate(templateID int64) error
 	SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error)

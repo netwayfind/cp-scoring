@@ -430,13 +430,12 @@ func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([
 	return templates, nil
 }
 
-func (db dbObj) InsertTemplate(template model.Template) error {
+func (db dbObj) InsertTemplate(template model.Template) (int64, error) {
 	b, err := json.Marshal(template.State)
 	if err != nil {
-		return err
+		return -1, err
 	}
-	_, err = db.dbInsert("INSERT INTO templates(name, state) VALUES(?,?)", template.Name, b)
-	return err
+	return db.dbInsert("INSERT INTO templates(name, state) VALUES(?,?)", template.Name, b)
 }
 
 func (db dbObj) UpdateTemplate(id int64, template model.Template) error {
