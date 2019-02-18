@@ -14,7 +14,8 @@ class App extends React.Component {
       page: null,
       id: null,
       lastUpdatedTeams: 0,
-      lastUpdatedHosts: 0
+      lastUpdatedHosts: 0,
+      lastUpdatedScenarios: 0
     };
     this.authCallback = this.authCallback.bind(this);
     this.setPage = this.setPage.bind(this);
@@ -92,6 +93,12 @@ class App extends React.Component {
     });
   }
 
+  updateScenarioCallback() {
+    this.setState({
+      lastUpdatedScenarios: Date.now()
+    });
+  }
+
   render() {
     if (!this.state.authenticated) {
       return React.createElement("div", {
@@ -124,7 +131,13 @@ class App extends React.Component {
     } else if (this.state.page == "templates") {
       page = React.createElement(Templates, null);
     } else if (this.state.page == "scenarios") {
-      page = React.createElement(Scenarios, null);
+      page = React.createElement(Scenarios, {
+        lastUpdated: this.state.lastUpdatedScenarios
+      });
+      content = React.createElement(ScenarioEntry, {
+        id: this.state.id,
+        updateCallback: this.updateScenarioCallback.bind(this)
+      });
     }
 
     return React.createElement("div", {
@@ -576,22 +589,18 @@ class TeamEntry extends React.Component {
 }
 
 class Scenarios extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      scenarios: [],
-      showModal: false,
-      selectedScenario: {}
+      scenarios: []
     };
-    this.modal = React.createRef();
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleCallback = this.handleCallback.bind(this);
-    this.mapItems = this.mapItems.bind(this);
-    this.listItems = this.listItems.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
+    this.populateScenarios();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateScenarios();
   }
 
@@ -612,17 +621,62 @@ class Scenarios extends React.Component {
     }.bind(this));
   }
 
-  createScenario() {
-    this.setState({
-      selectedScenarioID: null,
-      selectedScenario: {
-        Enabled: true
-      }
-    });
-    this.toggleModal();
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.scenarios.length; i++) {
+      let scenario = this.state.scenarios[i];
+      rows.push(React.createElement("li", {
+        key: scenario.ID
+      }, React.createElement("a", {
+        href: "#scenarios/" + scenario.ID
+      }, scenario.Name)));
+    }
+
+    return React.createElement("div", {
+      className: "Scenarios"
+    }, React.createElement("strong", null, "Scenarios"), React.createElement("ul", null, rows));
   }
 
-  editScenario(id) {
+}
+
+class ScenarioEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      scenario: {}
+    };
+  }
+
+  componentDidMount() {
+    if (this.props.id) {
+      this.getScenario(this.props.id);
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.id != nextProps.id) {
+      this.getScenario(nextProps.id);
+    }
+  }
+
+  newScenario() {
+    window.location.href = "#scenarios";
+    this.setState({
+      scenario: {
+        Name: "",
+        Description: "",
+        Enabled: true,
+        HostTemplates: {}
+      }
+    });
+  }
+
+  getScenario(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
     let url = "/scenarios/" + id;
     fetch(url, {
       credentials: 'same-origin'
@@ -634,10 +688,53 @@ class Scenarios extends React.Component {
       return response.json();
     }).then(function (data) {
       this.setState({
-        selectedScenarioID: id,
-        selectedScenario: data
+        scenario: data
       });
-      this.toggleModal();
+    }.bind(this));
+  }
+
+  updateScenario(event) {
+    let value = event.target.value;
+
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+
+    this.setState({
+      scenario: _objectSpread({}, this.state.scenario, {
+        [event.target.name]: value
+      })
+    });
+  }
+
+  saveScenario(event) {
+    event.preventDefault();
+    var url = "/scenarios";
+
+    if (this.state.scenario.ID != null) {
+      url += "/" + this.state.scenario.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.scenario)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.props.updateCallback();
+
+      if (this.state.scenario.ID === null || this.state.scenario.ID === undefined) {
+        // for new scenarios, response should be scenario ID
+        response.text().then(function (id) {
+          window.location.href = "#scenarios/" + id;
+        });
+      }
     }.bind(this));
   }
 
@@ -651,23 +748,20 @@ class Scenarios extends React.Component {
         throw new Error("Bad response from server");
       }
 
-      this.populateScenarios();
+      this.props.updateCallback();
+      this.setState({
+        scenario: {}
+      });
+      window.location.href = "#scenarios";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateScenarios();
-    this.toggleModal();
-  }
-
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    });
-  }
-
   handleCallback(key, value) {
-    this.modal.current.setValue(key, value);
+    this.setState({
+      scenario: _objectSpread({}, this.state.scenario, {
+        [key]: value
+      })
+    });
   }
 
   mapItems(callback) {
@@ -713,52 +807,48 @@ class Scenarios extends React.Component {
   }
 
   render() {
-    let rows = [];
+    let content = null;
 
-    for (let i = 0; i < this.state.scenarios.length; i++) {
-      let scenario = this.state.scenarios[i];
-      rows.push(React.createElement("li", {
-        key: scenario.ID
-      }, scenario.Name, React.createElement("button", {
+    if (Object.entries(this.state.scenario).length != 0) {
+      content = React.createElement(React.Fragment, null, React.createElement("form", {
+        onChange: this.updateScenario.bind(this),
+        onSubmit: this.saveScenario.bind(this)
+      }, React.createElement("label", {
+        htmlFor: "ID"
+      }, "ID"), React.createElement("input", {
+        disabled: true,
+        value: this.state.scenario.ID || ""
+      }), React.createElement(Item, {
+        name: "Name",
+        value: this.state.scenario.Name
+      }), React.createElement(Item, {
+        name: "Description",
+        value: this.state.scenario.Description
+      }), React.createElement(Item, {
+        name: "Enabled",
+        type: "checkbox",
+        checked: !!this.state.scenario.Enabled
+      }), React.createElement(ItemMap, {
+        name: "HostTemplates",
+        label: "Hosts",
+        listLabel: "Templates",
+        value: this.state.scenario.HostTemplates,
+        callback: this.handleCallback.bind(this),
+        mapItems: this.mapItems,
+        listItems: this.listItems
+      }), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+        type: "submit"
+      }, "Save"), React.createElement("button", {
+        class: "right",
         type: "button",
-        onClick: this.editScenario.bind(this, scenario.ID)
-      }, "Edit"), React.createElement("button", {
-        type: "button",
-        onClick: this.deleteScenario.bind(this, scenario.ID)
-      }, "-")));
+        disabled: !this.state.scenario.ID,
+        onClick: this.deleteScenario.bind(this, this.state.scenario.ID)
+      }, "Delete"))));
     }
 
-    return React.createElement("div", {
-      className: "Scenarios"
-    }, React.createElement("strong", null, "Scenarios"), React.createElement("p", null), React.createElement("button", {
-      onClick: this.createScenario.bind(this)
-    }, "Add Scenario"), React.createElement(BasicModal, {
-      ref: this.modal,
-      subjectClass: "scenarios",
-      subjectID: this.state.selectedScenarioID,
-      subject: this.state.selectedScenario,
-      show: this.state.showModal,
-      onClose: this.toggleModal,
-      submit: this.handleSubmit
-    }, React.createElement(Item, {
-      name: "Name",
-      defaultValue: this.state.selectedScenario.Name
-    }), React.createElement(Item, {
-      name: "Description",
-      defaultValue: this.state.selectedScenario.Description
-    }), React.createElement(Item, {
-      name: "Enabled",
-      type: "checkbox",
-      defaultChecked: !!this.state.selectedScenario.Enabled
-    }), React.createElement(ItemMap, {
-      name: "HostTemplates",
-      label: "Hosts",
-      listLabel: "Templates",
-      defaultValue: this.state.selectedScenario.HostTemplates,
-      callback: this.handleCallback,
-      mapItems: this.mapItems,
-      listItems: this.listItems
-    })), React.createElement("ul", null, rows));
+    return React.createElement(React.Fragment, null, React.createElement("button", {
+      onClick: this.newScenario.bind(this)
+    }, "New Scenario"), React.createElement("hr", null), content);
   }
 
 }
@@ -1683,7 +1773,7 @@ class ItemMap extends React.Component {
     super(props);
     this.state = {
       item: "",
-      value: this.props.defaultValue,
+      value: this.props.value,
       mapItems: [],
       listItems: []
     };
@@ -1691,6 +1781,14 @@ class ItemMap extends React.Component {
     this.remove = this.remove.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleCallback = this.handleCallback.bind(this);
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.value != newProps.value) {
+      this.setState({
+        value: newProps.value
+      });
+    }
   }
 
   handleChange(event) {
@@ -1787,7 +1885,7 @@ class ItemMap extends React.Component {
           label: this.props.listLabel,
           type: "select",
           listItems: this.state.listItems,
-          defaultValue: this.state.value[i],
+          value: this.state.value[i],
           callback: this.handleCallback
         }))));
       }
@@ -1830,11 +1928,19 @@ class ItemList extends React.Component {
     super(props);
     this.state = {
       item: "",
-      value: this.props.defaultValue
+      value: this.props.value
     };
     this.add = this.add.bind(this);
     this.remove = this.remove.bind(this);
     this.handleChange = this.handleChange.bind(this);
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.value != newProps.value) {
+      this.setState({
+        value: newProps.value
+      });
+    }
   }
 
   handleChange(event) {
