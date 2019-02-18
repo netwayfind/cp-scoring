@@ -13,7 +13,8 @@ class App extends React.Component {
       authenticated: false,
       page: null,
       id: null,
-      lastUpdatedTeams: 0
+      lastUpdatedTeams: 0,
+      lastUpdatedHosts: 0
     };
     this.authCallback = this.authCallback.bind(this);
     this.setPage = this.setPage.bind(this);
@@ -85,6 +86,12 @@ class App extends React.Component {
     });
   }
 
+  updateHostCallback() {
+    this.setState({
+      lastUpdatedHosts: Date.now()
+    });
+  }
+
   render() {
     if (!this.state.authenticated) {
       return React.createElement("div", {
@@ -107,7 +114,13 @@ class App extends React.Component {
         updateCallback: this.updateTeamCallback.bind(this)
       });
     } else if (this.state.page == "hosts") {
-      page = React.createElement(Hosts, null);
+      page = React.createElement(Hosts, {
+        lastUpdated: this.state.lastUpdatedHosts
+      });
+      content = React.createElement(HostEntry, {
+        id: this.state.id,
+        updateCallback: this.updateHostCallback.bind(this)
+      });
     } else if (this.state.page == "templates") {
       page = React.createElement(Templates, null);
     } else if (this.state.page == "scenarios") {
@@ -751,18 +764,18 @@ class Scenarios extends React.Component {
 }
 
 class Hosts extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      hosts: [],
-      showModal: false,
-      selectedHost: {}
+      hosts: []
     };
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
+    this.populateHosts();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateHosts();
   }
 
@@ -783,20 +796,117 @@ class Hosts extends React.Component {
     }.bind(this));
   }
 
-  createHost() {
-    this.setState({
-      selectedHostID: null,
-      selectedHost: {}
-    });
-    this.toggleModal();
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.hosts.length; i++) {
+      let host = this.state.hosts[i];
+      rows.push(React.createElement("li", {
+        key: host.ID
+      }, React.createElement("a", {
+        href: "#hosts/" + host.ID
+      }, host.Hostname, " - ", host.OS)));
+    }
+
+    return React.createElement("div", {
+      className: "Hosts"
+    }, React.createElement("strong", null, "Hosts"), React.createElement("ul", null, rows));
   }
 
-  editHost(id, host) {
+}
+
+class HostEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      host: {}
+    };
+  }
+
+  componentDidMount() {
+    this.getHost(this.props.id);
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.id != newProps.id) {
+      this.getHost(newProps.id);
+    }
+  }
+
+  newHost() {
+    window.location.href = "#hosts";
     this.setState({
-      selectedHostID: id,
-      selectedHost: host
+      host: {
+        Hostname: "",
+        OS: ""
+      }
     });
-    this.toggleModal();
+  }
+
+  getHost(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
+    let url = "/hosts/" + id;
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        host: data
+      });
+    }.bind(this));
+  }
+
+  updateHost(event) {
+    let value = event.target.value;
+
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+
+    this.setState({
+      host: _objectSpread({}, this.state.host, {
+        [event.target.name]: value
+      })
+    });
+  }
+
+  saveHost(event) {
+    event.preventDefault();
+    var url = "/hosts";
+
+    if (this.state.host.ID != null) {
+      url += "/" + this.state.host.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.host)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.props.updateCallback();
+
+      if (this.state.host.ID === null || this.state.host.ID === undefined) {
+        // for new hosts, response should be host ID
+        response.text().then(function (id) {
+          window.location.href = "#hosts/" + id;
+        });
+      }
+    }.bind(this));
   }
 
   deleteHost(id) {
@@ -809,57 +919,48 @@ class Hosts extends React.Component {
         throw new Error("Bad response from server");
       }
 
-      this.populateHosts();
+      this.props.updateCallback();
+      this.setState({
+        host: {}
+      });
+      window.location.href = "#hosts";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateHosts();
-    this.toggleModal();
-  }
-
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    });
-  }
-
   render() {
-    let rows = [];
+    let content = null;
 
-    for (let i = 0; i < this.state.hosts.length; i++) {
-      let host = this.state.hosts[i];
-      rows.push(React.createElement("li", {
-        key: host.ID
-      }, host.Hostname, " - ", host.OS, React.createElement("button", {
+    if (Object.entries(this.state.host).length != 0) {
+      content = React.createElement(React.Fragment, null, React.createElement("form", {
+        onChange: this.updateHost.bind(this),
+        onSubmit: this.saveHost.bind(this)
+      }, React.createElement("label", {
+        htmlFor: "ID"
+      }, "ID"), React.createElement("input", {
+        disabled: true,
+        value: this.state.host.ID || ""
+      }), React.createElement(Item, {
+        name: "Hostname",
+        type: "text",
+        value: this.state.host.Hostname
+      }), React.createElement(Item, {
+        name: "OS",
+        type: "text",
+        value: this.state.host.OS
+      }), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+        type: "submit"
+      }, "Save"), React.createElement("button", {
+        class: "right",
         type: "button",
-        onClick: this.editHost.bind(this, host.ID, host)
-      }, "Edit"), React.createElement("button", {
-        type: "button",
-        onClick: this.deleteHost.bind(this, host.ID)
-      }, "-")));
+        disabled: !this.state.host.ID,
+        onClick: this.deleteHost.bind(this, this.state.host.ID)
+      }, "Delete"))));
     }
 
-    return React.createElement("div", {
-      className: "Hosts"
-    }, React.createElement("strong", null, "Hosts"), React.createElement("p", null), React.createElement("button", {
-      onClick: this.createHost.bind(this)
-    }, "Add Host"), React.createElement(BasicModal, {
-      subjectClass: "hosts",
-      subjectID: this.state.selectedHostID,
-      subject: this.state.selectedHost,
-      show: this.state.showModal,
-      onClose: this.toggleModal,
-      submit: this.handleSubmit
-    }, React.createElement(Item, {
-      name: "Hostname",
-      type: "text",
-      defaultValue: this.state.selectedHost.Hostname
-    }), React.createElement(Item, {
-      name: "OS",
-      type: "text",
-      defaultValue: this.state.selectedHost.OS
-    })), React.createElement("ul", null, rows));
+    return React.createElement(React.Fragment, null, React.createElement("button", {
+      type: "button",
+      onClick: this.newHost.bind(this)
+    }, "New Host"), React.createElement("hr", null), content);
   }
 
 }

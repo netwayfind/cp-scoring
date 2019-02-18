@@ -9,7 +9,8 @@ class App extends React.Component {
       authenticated: false,
       page: null,
       id: null,
-      lastUpdatedTeams: 0
+      lastUpdatedTeams: 0,
+      lastUpdatedHosts: 0
     }
 
     this.authCallback = this.authCallback.bind(this);
@@ -84,6 +85,12 @@ class App extends React.Component {
     })
   }
 
+  updateHostCallback() {
+    this.setState({
+      lastUpdatedHosts: Date.now()
+    })
+  }
+
   render() {
     if (!this.state.authenticated) {
       return (
@@ -101,7 +108,8 @@ class App extends React.Component {
       content = (<TeamEntry id={this.state.id} updateCallback={this.updateTeamCallback.bind(this)}/>);
     }
     else if (this.state.page == "hosts") {
-      page = (<Hosts />);
+      page = (<Hosts lastUpdated={this.state.lastUpdatedHosts}/>);
+      content = (<HostEntry id={this.state.id} updateCallback={this.updateHostCallback.bind(this)}/>);
     }
     else if (this.state.page == "templates") {
       page = (<Templates />);
@@ -719,19 +727,18 @@ class Scenarios extends React.Component {
 }
 
 class Hosts extends React.Component {
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
-      hosts: [],
-      showModal: false,
-      selectedHost: {}
+      hosts: []
     };
-
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
+    this.populateHosts();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateHosts();
   }
 
@@ -752,20 +759,118 @@ class Hosts extends React.Component {
     }.bind(this));
   }
 
-  createHost() {
-    this.setState({
-      selectedHostID: null,
-      selectedHost: {}
-    });
-    this.toggleModal();
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.hosts.length; i++) {
+      let host = this.state.hosts[i];
+      rows.push(
+        <li key={host.ID}>
+          <a href={"#hosts/" + host.ID}>{host.Hostname} - {host.OS}</a>
+        </li>
+      );
+    }
+  
+    return (
+      <div className="Hosts">
+        <strong>Hosts</strong>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class HostEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      host: {}
+    }
   }
 
-  editHost(id, host) {
+  componentDidMount() {
+    this.getHost(this.props.id);
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.id != newProps.id) {
+      this.getHost(newProps.id);
+    }
+  }
+
+  newHost() {
+    window.location.href = "#hosts";
     this.setState({
-      selectedHostID: id,
-      selectedHost: host
+      host: {
+        Hostname: "",
+        OS: ""
+      }
     });
-    this.toggleModal();
+  }
+
+  getHost(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
+    let url = "/hosts/" + id;
+
+    fetch(url, {
+      credentials: 'same-origin'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json()
+    })
+    .then(function(data) {
+      this.setState({
+        host: data
+      });
+    }.bind(this));
+  }
+
+  updateHost(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      host: {
+        ...this.state.host,
+        [event.target.name]: value
+      }
+    })
+  }
+
+  saveHost(event) {
+    event.preventDefault();
+
+    var url = "/hosts";
+    if (this.state.host.ID != null) {
+      url += "/" + this.state.host.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.host)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.updateCallback();
+      if (this.state.host.ID === null || this.state.host.ID === undefined) {
+        // for new hosts, response should be host ID
+        response.text().then(function(id) {
+          window.location.href = "#hosts/" + id;
+        });
+      }
+    }.bind(this));
   }
 
   deleteHost(id) {
@@ -779,45 +884,40 @@ class Hosts extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      this.populateHosts();
+      this.props.updateCallback();
+      this.setState({
+        host: {}
+      })
+      window.location.href = "#hosts";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateHosts();
-    this.toggleModal();
-  }
-
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    })
-  }
-
   render() {
-    let rows = [];
-    for (let i = 0; i < this.state.hosts.length; i++) {
-      let host = this.state.hosts[i];
-      rows.push(
-        <li key={host.ID}>
-          {host.Hostname} - {host.OS}
-          <button type="button" onClick={this.editHost.bind(this, host.ID, host)}>Edit</button>
-          <button type="button" onClick={this.deleteHost.bind(this, host.ID)}>-</button>
-        </li>
+    let content = null;
+    if (Object.entries(this.state.host).length != 0) {
+      content = (
+        <React.Fragment>
+          <form onChange={this.updateHost.bind(this)} onSubmit={this.saveHost.bind(this)}>
+          <label htmlFor="ID">ID</label>
+          <input disabled value={this.state.host.ID || ""}/>
+          <Item name="Hostname" type="text" value={this.state.host.Hostname}/>
+          <Item name="OS" type="text" value={this.state.host.OS}/>
+          <br />
+          <div>
+            <button type="submit">Save</button>
+            <button class="right" type="button" disabled={!this.state.host.ID} onClick={this.deleteHost.bind(this, this.state.host.ID)}>Delete</button>
+          </div>
+        </form>
+        </React.Fragment>
       );
     }
-  
+
     return (
-      <div className="Hosts">
-        <strong>Hosts</strong>
-        <p />
-        <button onClick={this.createHost.bind(this)}>Add Host</button>
-        <BasicModal subjectClass="hosts" subjectID={this.state.selectedHostID} subject={this.state.selectedHost} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
-          <Item name="Hostname" type="text" defaultValue={this.state.selectedHost.Hostname}/>
-          <Item name="OS" type="text" defaultValue={this.state.selectedHost.OS}/>
-        </BasicModal>
-        <ul>{rows}</ul>
-      </div>
+      <React.Fragment>
+        <button type="button" onClick={this.newHost.bind(this)}>New Host</button>
+        <hr />
+        {content}
+      </React.Fragment>
     );
   }
 }
