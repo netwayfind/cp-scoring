@@ -506,9 +506,8 @@ func (db dbObj) DeleteHost(id int64) error {
 	return db.dbDelete("DELETE FROM hosts where id=(?)", id)
 }
 
-func (db dbObj) InsertHost(host model.Host) error {
-	_, err := db.dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
-	return err
+func (db dbObj) InsertHost(host model.Host) (int64, error) {
+	return db.dbInsert("INSERT INTO hosts(hostname, os) VALUES(?, ?)", host.Hostname, host.OS)
 }
 
 func (db dbObj) UpdateHost(id int64, host model.Host) error {

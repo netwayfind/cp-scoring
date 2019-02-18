@@ -288,7 +288,7 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = theServer.backingStore.InsertHost(host)
+	id, err := theServer.backingStore.InsertHost(host)
 	if err != nil {
 		msg := "ERROR: cannot insert host;"
 		log.Println(msg, err)
@@ -296,10 +296,11 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idStr := strconv.FormatInt(id, 10)
+
 	// new host
-	msg := "Saved host"
-	log.Println(msg)
-	w.Write([]byte(msg))
+	log.Println("Saved host " + idStr)
+	w.Write([]byte(idStr))
 }
 
 func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {

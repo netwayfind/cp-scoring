@@ -17,7 +17,7 @@ type backingStore interface {
 	SelectHosts() ([]model.Host, error)
 	SelectHost(hostID int64) (model.Host, error)
 	SelectHostIDForHostname(hostname string) (int64, error)
-	InsertHost(host model.Host) error
+	InsertHost(host model.Host) (int64, error)
 	UpdateHost(hostID int64, host model.Host) error
 	DeleteHost(hostID int64) error
 	SelectTeams() ([]model.TeamSummary, error)
