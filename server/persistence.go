@@ -36,7 +36,7 @@ type backingStore interface {
 	SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error)
 	SelectScenariosForHostname(hostname string) ([]int64, error)
 	SelectScenario(scenarioID int64) (model.Scenario, error)
-	InsertScenario(scenario model.Scenario) error
+	InsertScenario(scenario model.Scenario) (int64, error)
 	UpdateScenario(scenarioID int64, scenario model.Scenario) error
 	DeleteScenario(scenarioID int64) error
 	SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error)

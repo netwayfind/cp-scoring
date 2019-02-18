@@ -743,7 +743,7 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = theServer.backingStore.InsertScenario(scenario)
+	id, err := theServer.backingStore.InsertScenario(scenario)
 	if err != nil {
 		msg := "ERROR: cannot insert scenario;"
 		log.Println(msg, err)
@@ -751,10 +751,11 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idStr := strconv.FormatInt(id, 10)
+
 	// new scenario
-	msg := "Saved scenario"
-	log.Println(msg)
-	w.Write([]byte(msg))
+	log.Println("Saved scenario " + idStr)
+	w.Write([]byte(idStr))
 }
 
 func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) {

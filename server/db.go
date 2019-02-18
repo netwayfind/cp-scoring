@@ -637,13 +637,13 @@ func (db dbObj) InsertScenarioHostTemplates(id int64, scenario model.Scenario) e
 	return nil
 }
 
-func (db dbObj) InsertScenario(scenario model.Scenario) error {
+func (db dbObj) InsertScenario(scenario model.Scenario) (int64, error) {
 	id, err := db.dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES(?, ?, ?)", scenario.Name, scenario.Description, scenario.Enabled)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	return db.InsertScenarioHostTemplates(id, scenario)
+	return id, db.InsertScenarioHostTemplates(id, scenario)
 }
 
 func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
