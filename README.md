@@ -101,10 +101,10 @@ Windows instructions:
    - This will download files to allow sending data to [The Server]
 1. `icacls report.html /setowner LOCALSERVICE`
    - This is necessary to finish setting up [agent]
-1. Restart computer. [agent] will automatically start.
-1. If everything is OK, delete cp-scoring-agent-windows.exe in the Downloads folder
 1. Create shortcut for C:\cp-scoring\scoreboard.html to Desktop
 1. Create shortcut for C:\cp-scoring\report.html to Desktop
+1. Delete cp-scoring-agent-windows.exe in the Downloads folder
+1. Restart computer. [agent] will automatically start.
 
 Linux instructions:
 
@@ -117,7 +117,7 @@ Linux instructions:
 1. `cd /opt/cp-scoring`
 1. `sudo cp-scoring-agent-linux -server https://<server>:<port>`
    - This will download files to allow sending data to [The Server]
-1. Restart computer. [agent] will automatically start.
-1. If everything is OK, delete cp-scoring-agent-linux in the Downloads folder
 1. `ln -s /opt/cp-scoring/scoreboard.html ~/Desktop`
 1. `ln -s /opt/cp-scoring/report.html ~/Desktop`
+1. Delete cp-scoring-agent-linux in the Downloads folder
+1. Restart computer. [agent] will automatically start.
