@@ -15,6 +15,7 @@ class App extends React.Component {
       id: null,
       lastUpdatedTeams: 0,
       lastUpdatedHosts: 0,
+      lastUpdatedTemplates: 0,
       lastUpdatedScenarios: 0
     };
     this.authCallback = this.authCallback.bind(this);
@@ -93,6 +94,12 @@ class App extends React.Component {
     });
   }
 
+  updateTemplateCallback() {
+    this.setState({
+      lastUpdatedTemplates: Date.now()
+    });
+  }
+
   updateScenarioCallback() {
     this.setState({
       lastUpdatedScenarios: Date.now()
@@ -129,7 +136,13 @@ class App extends React.Component {
         updateCallback: this.updateHostCallback.bind(this)
       });
     } else if (this.state.page == "templates") {
-      page = React.createElement(Templates, null);
+      page = React.createElement(Templates, {
+        lastUpdated: this.state.lastUpdatedTemplates
+      });
+      content = React.createElement(TemplateEntry, {
+        id: this.state.id,
+        updateCallback: this.updateTemplateCallback.bind(this)
+      });
     } else if (this.state.page == "scenarios") {
       page = React.createElement(Scenarios, {
         lastUpdated: this.state.lastUpdatedScenarios
@@ -1059,19 +1072,15 @@ class Templates extends React.Component {
   constructor() {
     super();
     this.state = {
-      templates: [],
-      showModal: false,
-      selectedTemplate: {
-        State: {}
-      }
+      templates: []
     };
-    this.modal = React.createRef();
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleCallback = this.handleCallback.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
+    this.populateTemplates();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateTemplates();
   }
 
@@ -1092,17 +1101,60 @@ class Templates extends React.Component {
     }.bind(this));
   }
 
-  createTemplate() {
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.templates.length; i++) {
+      let template = this.state.templates[i];
+      rows.push(React.createElement("li", {
+        key: template.ID
+      }, React.createElement("a", {
+        href: "#templates/" + template.ID
+      }, template.Name)));
+    }
+
+    return React.createElement("div", {
+      className: "Templates"
+    }, React.createElement("strong", null, "Templates"), React.createElement("ul", null, rows));
+  }
+
+}
+
+class TemplateEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      template: {}
+    };
+  }
+
+  componentDidMount() {
+    if (this.props.id) {
+      this.getTemplate(this.props.id);
+    }
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.id != newProps.id) {
+      this.getTemplate(newProps.id);
+    }
+  }
+
+  newTemplate() {
+    window.location.href = "#templates";
     this.setState({
-      selectedTemplateID: null,
-      selectedTemplate: {
+      template: {
+        Name: "",
         State: {}
       }
     });
-    this.toggleModal();
   }
 
-  editTemplate(id) {
+  getTemplate(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
     let url = "/templates/" + id;
     fetch(url, {
       credentials: 'same-origin'
@@ -1114,10 +1166,53 @@ class Templates extends React.Component {
       return response.json();
     }).then(function (data) {
       this.setState({
-        selectedTemplateID: id,
-        selectedTemplate: data
+        template: data
       });
-      this.toggleModal();
+    }.bind(this));
+  }
+
+  updateTemplate(event) {
+    let value = event.target.value;
+
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+
+    this.setState({
+      template: _objectSpread({}, this.state.template, {
+        [event.target.name]: value
+      })
+    });
+  }
+
+  saveTemplate(event) {
+    event.preventDefault();
+    var url = "/templates";
+
+    if (this.state.template.ID != null) {
+      url += "/" + this.state.template.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.template)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.props.updateCallback();
+
+      if (this.state.template.ID === null || this.state.template.ID === undefined) {
+        // for new templates, response should be template ID
+        response.text().then(function (id) {
+          window.location.href = "#templates/" + id;
+        });
+      }
     }.bind(this));
   }
 
@@ -1131,82 +1226,73 @@ class Templates extends React.Component {
         throw new Error("Bad response from server");
       }
 
-      this.populateTemplates();
+      this.props.updateCallback();
+      this.setState({
+        template: {
+          State: {}
+        }
+      });
+      window.location.href = "#templates";
     }.bind(this));
   }
 
-  handleSubmit() {
-    this.populateTemplates();
-    this.toggleModal();
-  }
-
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    });
-  }
-
   handleCallback(key, value) {
-    let state = _objectSpread({}, this.state.selectedTemplate.State, {
+    let state = _objectSpread({}, this.state.template.State, {
       [key]: value
     });
 
     this.setState({
-      selectedTemplate: _objectSpread({}, this.state.selectedTemplate, {
+      template: _objectSpread({}, this.state.template, {
         State: state
       })
     });
-    this.modal.current.setValue("State", state);
   }
 
   render() {
-    let rows = [];
+    let content = null;
 
-    for (let i = 0; i < this.state.templates.length; i++) {
-      let template = this.state.templates[i];
-      rows.push(React.createElement("li", {
-        key: template.ID
-      }, template.Name, React.createElement("button", {
+    if (Object.entries(this.state.template).length != 0) {
+      content = React.createElement(React.Fragment, null, React.createElement("form", {
+        onChange: this.updateTemplate.bind(this),
+        onSubmit: this.saveTemplate.bind(this)
+      }, React.createElement("label", {
+        htmlFor: "ID"
+      }, "ID"), React.createElement("input", {
+        disabled: true,
+        value: this.state.template.ID || ""
+      }), React.createElement(Item, {
+        name: "Name",
+        type: "text",
+        value: this.state.template.Name
+      }), React.createElement(Users, {
+        users: this.state.template.State.Users,
+        callback: this.handleCallback.bind(this)
+      }), React.createElement(Groups, {
+        groups: this.state.template.State.Groups,
+        callback: this.handleCallback.bind(this)
+      }), React.createElement(Processes, {
+        processes: this.state.template.State.Processes,
+        callback: this.handleCallback.bind(this)
+      }), React.createElement(Software, {
+        software: this.state.template.State.Software,
+        callback: this.handleCallback.bind(this)
+      }), React.createElement(NetworkConnections, {
+        conns: this.state.template.State.NetworkConnections,
+        callback: this.handleCallback.bind(this)
+      }), React.createElement("div", null, React.createElement("button", {
+        type: "submit"
+      }, "Save"), React.createElement("button", {
+        class: "right",
         type: "button",
-        onClick: this.editTemplate.bind(this, template.ID)
-      }, "Edit"), React.createElement("button", {
-        type: "button",
-        onClick: this.deleteTemplate.bind(this, template.ID)
-      }, "-")));
+        disabled: !this.state.template.ID,
+        onClick: this.deleteTemplate.bind(this, this.state.template.ID)
+      }, "Delete"))));
     }
 
-    return React.createElement("div", {
-      className: "Templates"
-    }, React.createElement("strong", null, "Templates"), React.createElement("p", null), React.createElement("button", {
-      onClick: this.createTemplate.bind(this)
-    }, "Add Template"), React.createElement(BasicModal, {
-      ref: this.modal,
-      subjectClass: "templates",
-      subjectID: this.state.selectedTemplateID,
-      subject: this.state.selectedTemplate,
-      show: this.state.showModal,
-      onClose: this.toggleModal,
-      submit: this.handleSubmit
-    }, React.createElement(Item, {
-      name: "Name",
-      type: "text",
-      defaultValue: this.state.selectedTemplate.Name
-    }), React.createElement(Users, {
-      users: this.state.selectedTemplate.State.Users,
-      callback: this.handleCallback
-    }), React.createElement(Groups, {
-      groups: this.state.selectedTemplate.State.Groups,
-      callback: this.handleCallback
-    }), React.createElement(Processes, {
-      processes: this.state.selectedTemplate.State.Processes,
-      callback: this.handleCallback
-    }), React.createElement(Software, {
-      software: this.state.selectedTemplate.State.Software,
-      callback: this.handleCallback
-    }), React.createElement(NetworkConnections, {
-      conns: this.state.selectedTemplate.State.NetworkConnections,
-      callback: this.handleCallback
-    })), React.createElement("ul", null, rows));
+    return React.createElement(React.Fragment, null, React.createElement("button", {
+      type: "button",
+      onClick: this.newTemplate.bind(this)
+    }, "New Template"), React.createElement("hr", null), content);
   }
 
 }
@@ -1228,18 +1314,27 @@ class ObjectState extends React.Component {
 class Users extends React.Component {
   constructor(props) {
     super(props);
-    let users = props.users;
+    this.state = {
+      users: []
+    };
+  }
 
+  componentDidMount() {
+    this.setUsers(this.props.users);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setUsers(newProps.users);
+  }
+
+  setUsers(users) {
     if (users === undefined || users === null) {
       users = [];
     }
 
-    this.state = {
+    this.setState({
       users: users
-    };
-    this.addUser = this.addUser.bind(this);
-    this.removeUser = this.removeUser.bind(this);
-    this.updateUser = this.updateUser.bind(this);
+    });
   }
 
   addUser() {
@@ -1352,14 +1447,8 @@ class Users extends React.Component {
 class Groups extends React.Component {
   constructor(props) {
     super(props);
-    let groups = props.groups;
-
-    if (groups === undefined || groups === null) {
-      groups = {};
-    }
-
     this.state = {
-      groups: groups
+      groups: []
     };
     this.newGroupName = React.createRef();
     this.addGroup = this.addGroup.bind(this);
@@ -1369,8 +1458,28 @@ class Groups extends React.Component {
     this.updateGroupMember = this.updateGroupMember.bind(this);
   }
 
+  componentDidMount() {
+    this.setGroups(this.props.groups);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setGroups(newProps.groups);
+  }
+
+  setGroups(groups) {
+    if (groups === undefined || groups === null) {
+      groups = {};
+    }
+
+    this.setState({
+      groups: groups
+    });
+  }
+
   addGroup() {
     if (this.newGroupName.current === null) {
+      return;
+    } else if (this.newGroupName.current.value.length === 0) {
       return;
     }
 
@@ -1381,6 +1490,7 @@ class Groups extends React.Component {
     this.setState({
       groups: groups
     });
+    this.newGroupName.current.value = "";
     this.props.callback("Groups", groups);
   }
 
@@ -1486,18 +1596,30 @@ class Groups extends React.Component {
 class Processes extends React.Component {
   constructor(props) {
     super(props);
-    let processes = props.processes;
-
-    if (processes === undefined || processes === null) {
-      processes = [];
-    }
-
     this.state = {
-      processes: processes
+      processes: []
     };
     this.addProcess = this.addProcess.bind(this);
     this.removeProcess = this.removeProcess.bind(this);
     this.updateProcess = this.updateProcess.bind(this);
+  }
+
+  componentDidMount() {
+    this.setProcesses(this.props.processes);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setProcesses(newProps.processes);
+  }
+
+  setProcesses(processes) {
+    if (processes === undefined || processes === null) {
+      processes = [];
+    }
+
+    this.setState({
+      processes: processes
+    });
   }
 
   addProcess() {
@@ -1565,18 +1687,30 @@ class Processes extends React.Component {
 class Software extends React.Component {
   constructor(props) {
     super(props);
-    let software = props.software;
-
-    if (software === undefined || software === null) {
-      software = [];
-    }
-
     this.state = {
-      software: software
+      software: []
     };
     this.addSoftware = this.addSoftware.bind(this);
     this.removeSoftware = this.removeSoftware.bind(this);
     this.updateSoftware = this.updateSoftware.bind(this);
+  }
+
+  componentDidMount() {
+    this.setSoftware(this.props.software);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setSoftware(newProps.software);
+  }
+
+  setSoftware(software) {
+    if (software === undefined || software === null) {
+      software = [];
+    }
+
+    this.setState({
+      software: software
+    });
   }
 
   addSoftware() {
@@ -1649,18 +1783,30 @@ class Software extends React.Component {
 class NetworkConnections extends React.Component {
   constructor(props) {
     super(props);
-    let conns = props.conns;
-
-    if (conns === undefined || conns === null) {
-      conns = [];
-    }
-
     this.state = {
-      conns: conns
+      conns: []
     };
     this.add = this.add.bind(this);
     this.remove = this.remove.bind(this);
     this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setConns(this.props.conns);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setConns(newProps.conns);
+  }
+
+  setConns(conns) {
+    if (conns === undefined || conns === null) {
+      conns = [];
+    }
+
+    this.setState({
+      conns: conns
+    });
   }
 
   add() {

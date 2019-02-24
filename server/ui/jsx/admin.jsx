@@ -11,6 +11,7 @@ class App extends React.Component {
       id: null,
       lastUpdatedTeams: 0,
       lastUpdatedHosts: 0,
+      lastUpdatedTemplates: 0,
       lastUpdatedScenarios: 0
     }
 
@@ -92,6 +93,12 @@ class App extends React.Component {
     })
   }
 
+  updateTemplateCallback() {
+    this.setState({
+      lastUpdatedTemplates: Date.now()
+    })
+  }
+
   updateScenarioCallback() {
     this.setState({
       lastUpdatedScenarios: Date.now()
@@ -119,7 +126,8 @@ class App extends React.Component {
       content = (<HostEntry id={this.state.id} updateCallback={this.updateHostCallback.bind(this)}/>);
     }
     else if (this.state.page == "templates") {
-      page = (<Templates />);
+      page = (<Templates lastUpdated={this.state.lastUpdatedTemplates}/>);
+      content = (<TemplateEntry id={this.state.id} updateCallback={this.updateTemplateCallback.bind(this)}/>);
     }
     else if (this.state.page == "scenarios") {
       page = (<Scenarios lastUpdated={this.state.lastUpdatedScenarios}/>);
@@ -1018,20 +1026,15 @@ class Templates extends React.Component {
   constructor() {
     super();
     this.state = {
-      templates: [],
-      showModal: false,
-      selectedTemplate: {
-        State: {}
-      }
+      templates: []
     };
-    this.modal = React.createRef();
-
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.handleCallback = this.handleCallback.bind(this);
-    this.toggleModal = this.toggleModal.bind(this);
   }
 
   componentDidMount() {
+    this.populateTemplates();
+  }
+
+  componentWillReceiveProps(_) {
     this.populateTemplates();
   }
 
@@ -1048,21 +1051,67 @@ class Templates extends React.Component {
       return response.json();
     })
     .then(function(data) {
-      this.setState({templates: data})
+      this.setState({
+        templates: data
+      })
     }.bind(this));
   }
 
-  createTemplate() {
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.templates.length; i++) {
+      let template = this.state.templates[i];
+      rows.push(
+        <li key={template.ID}>
+          <a href={"#templates/" + template.ID}>{template.Name}</a>
+        </li>
+      );
+    }
+
+    return (
+      <div className="Templates">
+        <strong>Templates</strong>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class TemplateEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      template: {}
+    }
+  }
+
+  componentDidMount() {
+    if (this.props.id) {
+      this.getTemplate(this.props.id);
+    }
+  }
+
+  componentWillReceiveProps(newProps) {
+    if (this.props.id != newProps.id) {
+      this.getTemplate(newProps.id);
+    }
+  }
+
+  newTemplate() {
+    window.location.href = "#templates";
     this.setState({
-      selectedTemplateID: null,
-      selectedTemplate: {
+      template: {
+        Name: "",
         State: {}
       }
     });
-    this.toggleModal();
   }
 
-  editTemplate(id) {
+  getTemplate(id) {
+    if (id === null || id === undefined) {
+      return;
+    }
+
     let url = "/templates/" + id;
 
     fetch(url, {
@@ -1076,10 +1125,51 @@ class Templates extends React.Component {
     })
     .then(function(data) {
       this.setState({
-        selectedTemplateID: id,
-        selectedTemplate: data
+        template: data
       });
-      this.toggleModal();
+    }.bind(this));
+  }
+
+  updateTemplate(event) {
+    let value = event.target.value;
+    if (event.target.type == 'checkbox') {
+      value = event.target.checked;
+    }
+    this.setState({
+      template: {
+        ...this.state.template,
+        [event.target.name]: value
+      }
+    })
+  }
+
+  saveTemplate(event) {
+    event.preventDefault();
+
+    var url = "/templates";
+    if (this.state.template.ID != null) {
+      url += "/" + this.state.template.ID;
+    }
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.template)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.updateCallback();
+      if (this.state.template.ID === null || this.state.template.ID === undefined) {
+        // for new templates, response should be template ID
+        response.text().then(function(id) {
+          window.location.href = "#templates/" + id;
+        });
+      }
     }.bind(this));
   }
 
@@ -1094,63 +1184,58 @@ class Templates extends React.Component {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      this.populateTemplates();
+      this.props.updateCallback();
+      this.setState({
+        template: {
+          State: {}
+        }
+      })
+      window.location.href = "#templates";
     }.bind(this));
-  }
-
-  handleSubmit() {
-    this.populateTemplates();
-    this.toggleModal();
-  }
-
-  toggleModal() {
-    this.setState({
-      showModal: !this.state.showModal
-    })
   }
 
   handleCallback(key, value) {
     let state = {
-      ...this.state.selectedTemplate.State,
+      ...this.state.template.State,
       [key]: value
     }
     this.setState({
-      selectedTemplate: {
-        ...this.state.selectedTemplate,
+      template: {
+        ...this.state.template,
         State: state
       }
     })
-    this.modal.current.setValue("State", state);
   }
 
   render() {
-    let rows = [];
-    for (let i = 0; i < this.state.templates.length; i++) {
-      let template = this.state.templates[i];
-      rows.push(
-        <li key={template.ID}>
-          {template.Name}
-          <button type="button" onClick={this.editTemplate.bind(this, template.ID)}>Edit</button>
-          <button type="button" onClick={this.deleteTemplate.bind(this, template.ID)}>-</button>
-        </li>
+    let content = null;
+    if (Object.entries(this.state.template).length != 0) {
+      content = (
+        <React.Fragment>
+          <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveTemplate.bind(this)}>
+            <label htmlFor="ID">ID</label>
+            <input disabled value={this.state.template.ID || ""}/>
+            <Item name="Name" type="text" value={this.state.template.Name}/>
+            <Users users={this.state.template.State.Users} callback={this.handleCallback.bind(this)}/>
+            <Groups groups={this.state.template.State.Groups} callback={this.handleCallback.bind(this)}/>
+            <Processes processes={this.state.template.State.Processes} callback={this.handleCallback.bind(this)}/>
+            <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
+            <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
+            <div>
+              <button type="submit">Save</button>
+              <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
+            </div>
+          </form>
+        </React.Fragment>
       );
     }
 
     return (
-      <div className="Templates">
-        <strong>Templates</strong>
-        <p />
-        <button onClick={this.createTemplate.bind(this)}>Add Template</button>
-        <BasicModal ref={this.modal} subjectClass="templates" subjectID={this.state.selectedTemplateID} subject={this.state.selectedTemplate} show={this.state.showModal} onClose={this.toggleModal} submit={this.handleSubmit}>
-          <Item name="Name" type="text" defaultValue={this.state.selectedTemplate.Name}/>
-          <Users users={this.state.selectedTemplate.State.Users} callback={this.handleCallback}/>
-          <Groups groups={this.state.selectedTemplate.State.Groups} callback={this.handleCallback}/>
-          <Processes processes={this.state.selectedTemplate.State.Processes} callback={this.handleCallback}/>
-          <Software software={this.state.selectedTemplate.State.Software} callback={this.handleCallback}/>
-          <NetworkConnections conns={this.state.selectedTemplate.State.NetworkConnections} callback={this.handleCallback}/>
-        </BasicModal>
-        <ul>{rows}</ul>
-      </div>
+      <React.Fragment>
+        <button type="button" onClick={this.newTemplate.bind(this)}>New Template</button>
+        <hr />
+        {content}
+      </React.Fragment>
     );
   }
 }
@@ -1177,18 +1262,26 @@ class ObjectState extends React.Component {
 class Users extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      users: []
+    }
+  }
 
-    let users = props.users;
+  componentDidMount() {
+    this.setUsers(this.props.users);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setUsers(newProps.users);
+  }
+
+  setUsers(users) {
     if (users === undefined || users === null) {
       users = [];
     }
-    this.state = {
+    this.setState({
       users: users
-    }
-
-    this.addUser = this.addUser.bind(this);
-    this.removeUser = this.removeUser.bind(this);
-    this.updateUser = this.updateUser.bind(this);
+    });
   }
 
   addUser() {
@@ -1309,13 +1402,9 @@ class Users extends React.Component {
 class Groups extends React.Component {
   constructor(props) {
     super(props);
-    
-    let groups = props.groups;
-    if (groups === undefined || groups === null) {
-      groups = {};
-    }
+
     this.state = {
-      groups: groups
+      groups: []
     }
 
     this.newGroupName = React.createRef();
@@ -1327,8 +1416,28 @@ class Groups extends React.Component {
     this.updateGroupMember = this.updateGroupMember.bind(this);
   }
 
+  componentDidMount() {
+    this.setGroups(this.props.groups);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setGroups(newProps.groups);
+  }
+
+  setGroups(groups) {
+    if (groups === undefined || groups === null) {
+      groups = {};
+    }
+    this.setState({
+      groups: groups
+    });
+  }
+
   addGroup() {
     if (this.newGroupName.current === null) {
+      return;
+    }
+    else if (this.newGroupName.current.value.length === 0) {
       return;
     }
     let groups = {
@@ -1338,6 +1447,7 @@ class Groups extends React.Component {
     this.setState({
       groups: groups
     });
+    this.newGroupName.current.value = "";
     this.props.callback("Groups", groups)
   }
 
@@ -1445,17 +1555,30 @@ class Processes extends React.Component {
   constructor(props) {
     super(props);
     
-    let processes = props.processes;
-    if (processes === undefined || processes === null) {
-      processes = [];
-    }
     this.state = {
-      processes: processes
+      processes: []
     }
 
     this.addProcess = this.addProcess.bind(this);
     this.removeProcess = this.removeProcess.bind(this);
     this.updateProcess = this.updateProcess.bind(this);
+  }
+
+  componentDidMount() {
+    this.setProcesses(this.props.processes);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setProcesses(newProps.processes);
+  }
+
+  setProcesses(processes) {
+    if (processes === undefined || processes === null) {
+      processes = [];
+    }
+    this.setState({
+      processes: processes
+    });
   }
 
   addProcess() {
@@ -1533,17 +1656,30 @@ class Software extends React.Component {
   constructor(props) {
     super(props);
     
-    let software = props.software;
-    if (software === undefined || software === null) {
-      software = [];
-    }
     this.state = {
-      software: software
+      software: []
     }
 
     this.addSoftware = this.addSoftware.bind(this);
     this.removeSoftware = this.removeSoftware.bind(this);
     this.updateSoftware = this.updateSoftware.bind(this);
+  }
+
+  componentDidMount() {
+    this.setSoftware(this.props.software);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setSoftware(newProps.software);
+  }
+
+  setSoftware(software) {
+    if (software === undefined || software === null) {
+      software = [];
+    }
+    this.setState({
+      software: software
+    });
   }
 
   addSoftware() {
@@ -1626,17 +1762,30 @@ class NetworkConnections extends React.Component {
   constructor(props) {
     super(props);
     
-    let conns = props.conns;
-    if (conns === undefined || conns === null) {
-      conns = [];
-    }
     this.state = {
-      conns: conns
+      conns: []
     }
 
     this.add = this.add.bind(this);
     this.remove = this.remove.bind(this);
     this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setConns(this.props.conns);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setConns(newProps.conns);
+  }
+
+  setConns(conns) {
+    if (conns === undefined || conns === null) {
+      conns = [];
+    }
+    this.setState({
+      conns: conns
+    });
   }
 
   add() {
