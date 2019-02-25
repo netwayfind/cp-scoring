@@ -1254,10 +1254,35 @@ class Users extends React.Component {
       } else {
         value = false;
       }
-    }
+    } else if (event.target.type === "date") {
+      let parts = event.target.value.split("-");
 
-    if (event.target.type === "date") {
-      value = Math.trunc(new Date(event.target.value).getTime() / 1000);
+      if (parts.length != 3) {
+        return;
+      }
+
+      let current = new Date(Math.trunc(this.state.users[id].PasswordLastSet * 1000));
+      current.setFullYear(parts[0]); // months start counting at 0
+
+      current.setMonth(parts[1] - 1);
+      current.setDate(parts[2]);
+      value = Math.trunc(current.getTime() / 1000);
+
+      if (Number.isNaN(value)) {
+        return;
+      }
+    } else if (event.target.type === "time") {
+      let parts = event.target.value.split(":");
+
+      if (parts.length != 3) {
+        return;
+      }
+
+      let current = new Date(Math.trunc(this.state.users[id].PasswordLastSet * 1000));
+      current.setHours(parts[0]);
+      current.setMinutes(parts[1]);
+      current.setSeconds(parts[2]);
+      value = Math.trunc(current.getTime() / 1000);
 
       if (Number.isNaN(value)) {
         return;
@@ -1279,11 +1304,16 @@ class Users extends React.Component {
     for (let i = 0; i < this.state.users.length; i++) {
       let user = this.state.users[i];
       let d = new Date(user.PasswordLastSet * 1000);
-      let passwordLastSet = ("000" + d.getUTCFullYear()).slice(-4);
-      passwordLastSet += "-";
-      passwordLastSet += ("0" + (d.getUTCMonth() + 1)).slice(-2);
-      passwordLastSet += "-";
-      passwordLastSet += ("0" + d.getUTCDate()).slice(-2);
+      let passwordLastSetDate = ("000" + d.getFullYear()).slice(-4);
+      passwordLastSetDate += "-";
+      passwordLastSetDate += ("0" + (d.getMonth() + 1)).slice(-2);
+      passwordLastSetDate += "-";
+      passwordLastSetDate += ("0" + d.getDate()).slice(-2);
+      let passwordLastSetTime = ("000" + d.getHours()).slice(-2);
+      passwordLastSetTime += ":";
+      passwordLastSetTime += ("000" + d.getMinutes()).slice(-2);
+      passwordLastSetTime += ":";
+      passwordLastSetTime += ("000" + d.getSeconds()).slice(-2);
       let userOptions = null;
 
       if (user.ObjectState != "Remove") {
@@ -1297,7 +1327,11 @@ class Users extends React.Component {
           onChange: event => this.updateUser(i, "PasswordExpires", event)
         })), React.createElement("li", null, React.createElement("label", null, "Password Last Set"), React.createElement("input", {
           type: "date",
-          value: passwordLastSet,
+          value: passwordLastSetDate,
+          onChange: event => this.updateUser(i, "PasswordLastSet", event)
+        }), React.createElement("input", {
+          type: "time",
+          value: passwordLastSetTime,
           onChange: event => this.updateUser(i, "PasswordLastSet", event)
         })));
       }
