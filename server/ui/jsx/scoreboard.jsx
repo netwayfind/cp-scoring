@@ -1,7 +1,5 @@
 'use strict';
 
-const Plot = createPlotlyComponent(Plotly);
-
 class App extends React.Component {
   render() {
     return (
