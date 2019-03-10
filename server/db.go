@@ -30,7 +30,7 @@ func newPostgresDBConn(args []string) (*sql.DB, error) {
 }
 
 func (db dbObj) dbInit() {
-	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(state VARCHAR)")
+	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(state JSONB)")
 	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
 	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state BYTEA NOT NULL)")
@@ -102,7 +102,7 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 }
 
 func (db dbObj) InsertState(state string) error {
-	_, err := db.dbInsert("INSERT INTO states(state) VALUES=$1", state)
+	_, err := db.dbInsert("INSERT INTO states(state) VALUES($1)", state)
 	return err
 }
 
