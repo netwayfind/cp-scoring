@@ -70,17 +70,22 @@ To extract files:
 
 `tar xzvf cp-scoring.tar.gz`
 
+Prerequisites:
+- postgres
+  - may be local service or Docker instance
+
 To run server:
 
 `./cp-scoring-server-linux`
 
-Options:
+Config file at cp-scoring.conf. Settings:
 
-- -cert: path to X.509 certificate (default: public/server.crt)
-- -key: path to RSA private key (default: private/server.key)
-- -port: TCP port to listen on (default: 8443)
+- cert: path to X.509 certificate (default: public/server.crt)
+- key: path to RSA private key (default: private/server.key)
+- port: TCP port to listen on (default: 8443)
+- sql_url: SQL URL for postgres (default: postgres://localhost)
 
-When [The Server] starts up for the first time, it will set up its database, and generate a private key and public key for encrypting data.
+When [The Server] starts up for the first time, it will set up the persistent backing store, and generate a private key and public key for encrypting data.
 
 [The Server] requires a HTTPS certificate and key to run. By default, it expects the certificate at public/server.crt and the key at private/server.key. Either create an RSA private key and X.509 certificate at these paths or specify file paths to these files with the -cert and -key arguments.
 
