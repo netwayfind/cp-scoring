@@ -1401,7 +1401,6 @@ func main() {
 
 	theServer := theServer{}
 	theServer.userTokens = make(map[string]string)
-	// theServer.backingStore, err = getBackingStore("sqlite", workDir)
 	theServer.backingStore, err = getBackingStore("postgres", sqlURL)
 	if err != nil {
 		log.Fatal("ERROR: Unable to get backing store;", err)

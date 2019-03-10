@@ -51,16 +51,7 @@ type backingStore interface {
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {
-	if store == "sqlite" {
-		db := dbObj{}
-		dbConn, err := newSQLiteDBConn(args)
-		if err != nil {
-			return nil, err
-		}
-		db.dbConn = dbConn
-		db.dbInit()
-		return db, nil
-	} else if store == "postgres" {
+	if store == "postgres" {
 		db := dbObj{}
 		dbConn, err := newPostgresDBConn(args)
 		if err != nil {

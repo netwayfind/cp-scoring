@@ -5,30 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"path"
 	"strings"
 
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
 type dbObj struct {
 	dbConn *sql.DB
-}
-
-func newSQLiteDBConn(args []string) (*sql.DB, error) {
-	// must have first argument as work directory
-	if len(args) < 1 {
-		return nil, errors.New("ERROR: work directory required")
-	}
-	workDir := args[0]
-	dbConn, err := sql.Open("sqlite3", path.Join(workDir, "cp-scoring.db"))
-	if err != nil {
-		return nil, err
-	}
-	log.Println("Connected to database")
-	return dbConn, nil
 }
 
 func newPostgresDBConn(args []string) (*sql.DB, error) {
