@@ -1326,11 +1326,13 @@ func main() {
 	var fileCert string
 	var port int
 	var askVersion bool
+	var sqlURL string
 
 	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
 	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
 	flag.IntVar(&port, "port", 8443, "port")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
+	flag.StringVar(&sqlURL, "sql_url", "postgres://localhost", "SQL URL")
 	flag.Parse()
 
 	if askVersion {
@@ -1348,7 +1350,8 @@ func main() {
 
 	theServer := theServer{}
 	theServer.userTokens = make(map[string]string)
-	theServer.backingStore, err = getBackingStore("sqlite", workDir)
+	// theServer.backingStore, err = getBackingStore("sqlite", workDir)
+	theServer.backingStore, err = getBackingStore("postgres", sqlURL)
 	if err != nil {
 		log.Fatal("ERROR: Unable to get backing store;", err)
 	}

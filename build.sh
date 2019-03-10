@@ -11,6 +11,7 @@ mkdir -p $BASEDIR
 
 echo "Fetching dependencies, this may take a while."
 go get github.com/mattn/go-sqlite3
+go get github.com/lib/pq
 go get golang.org/x/crypto/openpgp
 go get golang.org/x/crypto/openpgp/armor
 go get golang.org/x/crypto/ripemd160
