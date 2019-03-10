@@ -7,7 +7,7 @@ import (
 )
 
 type backingStore interface {
-	InsertState(state string) error
+	InsertState(timestamp int64, source string, hostToken string, state []byte) error
 	SelectAdmins() ([]string, error)
 	IsAdmin(username string) (bool, error)
 	SelectAdminPasswordHash(username string) (string, error)

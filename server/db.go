@@ -30,7 +30,7 @@ func newPostgresDBConn(args []string) (*sql.DB, error) {
 }
 
 func (db dbObj) dbInit() {
-	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(id BIGSERIAL PRIMARY KEY, state JSONB)")
+	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(id BIGSERIAL PRIMARY KEY, timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB)")
 	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
 	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state BYTEA NOT NULL)")
@@ -101,8 +101,8 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
-func (db dbObj) InsertState(state string) error {
-	_, err := db.dbInsert("INSERT INTO states(state) VALUES($1)", state)
+func (db dbObj) InsertState(timestamp int64, source string, hostToken string, state []byte) error {
+	_, err := db.dbInsert("INSERT INTO states(timestamp, source, host_token, state) VALUES($1, $2, $3, $4) RETURNING id", timestamp, source, hostToken, state)
 	return err
 }
 

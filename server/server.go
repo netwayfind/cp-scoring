@@ -90,9 +90,10 @@ func saveAuditRequest(w http.ResponseWriter, r *http.Request, dataDir string) {
 	}
 
 	// save request to temp file
-	// temp file is dataDir/<timestamp>_<tempname>
+	// temp file is dataDir/<timestamp>_<source>_<tempname>
 	timestampStr := strconv.FormatInt(time.Now().Unix(), 10)
-	outFile, err := ioutil.TempFile(dataDir, timestampStr+"_")
+	sourceStr := strings.Split(r.RemoteAddr, ":")[0]
+	outFile, err := ioutil.TempFile(dataDir, timestampStr+"_"+sourceStr+"_")
 	outFile.Chmod(0600)
 	defer outFile.Close()
 	outFile.Write(body)
@@ -143,19 +144,35 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 		return nil
 	}
 
-	log.Println("Saving state")
-	err = theServer.backingStore.InsertState(string(fileBytes))
-	if err != nil {
-		log.Println("ERROR: cannot insert state;")
-		return err
-	}
-
 	log.Println("Getting information")
 	hostToken := stateSubmission.HostToken
 	if len(hostToken) == 0 {
 		log.Println("ERROR: received state submission without host token")
 		// allow file to be deleted
 		return nil
+	}
+	// get these from temporary file name (<timestamp>_<source>_<tempname>)
+	fileStrTokens := strings.Split(fileStr, "/")
+	filename := fileStrTokens[len(fileStrTokens)-1]
+	filenameTokens := strings.Split(filename, "_")
+	timestamp, err := strconv.ParseInt(filenameTokens[0], 10, 64)
+	if err != nil {
+		log.Println("ERROR: Unable to parse temporary file name")
+		// allow file to be deleted
+		return nil
+	}
+	source := filenameTokens[1]
+
+	log.Println("Saving state")
+	stateJSONBytes, err := json.Marshal(state)
+	if err != nil {
+		log.Println("ERROR: cannot insert state;")
+		return err
+	}
+	err = theServer.backingStore.InsertState(timestamp, source, hostToken, stateJSONBytes)
+	if err != nil {
+		log.Println("ERROR: cannot insert state;")
+		return err
 	}
 
 	log.Println("Getting scenarios")
