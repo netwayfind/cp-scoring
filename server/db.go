@@ -244,7 +244,7 @@ func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
 	var id int64 = -1
 	key = strings.TrimSpace(key)
 
-	rows, err := db.dbConn.Query("SELECT id FROM teams WHERE key=$1 AND enabled=1", key)
+	rows, err := db.dbConn.Query("SELECT id FROM teams WHERE key=$1 AND enabled=TRUE", key)
 	if err != nil {
 		return id, err
 	}
@@ -379,7 +379,7 @@ func (db dbObj) DeleteTemplate(id int64) error {
 }
 
 func (db dbObj) SelectScenariosForHostname(hostname string) ([]int64, error) {
-	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=$1 AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=1", hostname)
+	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=$1 AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=TRUE", hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -779,7 +779,7 @@ func (db dbObj) InsertScenarioReport(scenarioID int64, hostToken string, entry m
 
 func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
-	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=$1 AND scenarios.enabled=1 AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
+	rows, err := db.dbConn.Query("SELECT DISTINCT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=$1 AND scenarios.enabled=TRUE AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
 	if err != nil {
 		return scenarioHosts, err
 	}
