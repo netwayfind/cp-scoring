@@ -19,7 +19,6 @@ __Table of Contents__
 General
 - software must run on 64-bit Windows and 64-bit Linux
 - software must run on bare-metal computer or on virtual machine
-- software must be self-contained, must not require installing dependencies on host
 - software distributables must be minimal, an executable file and a few files for its configuration
 - software may have different executable files for each operating system platform (Windows, Linux)
 - communication must be initiated from [agents] to [The Server]; no expectation of an open network port to [hosts]
@@ -48,9 +47,7 @@ General
 # Persistent Backing Store
 The persistent backing store saves the data for [The Server] and from the [agents]. These are the available implementations:
 
-- sqlite
-
-sqlite is intended to be for development and small test environments with a few [hosts] and [teams], limited time operation (several hours), and infrequent data access (a few times a minute).
+- postgres
 
 See [persistence.go](server/persistence.go) for interface. The persistent backing store must handle the following items and actions:
 
