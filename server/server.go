@@ -27,6 +27,7 @@ import (
 )
 
 const cookieName string = "cp-scoring"
+const configFileName string = "cp-scoring.conf"
 
 var version string
 
@@ -1321,18 +1322,11 @@ func main() {
 	publicDir := path.Join(workDir, "public")
 	privateDir := path.Join(workDir, "private")
 	dataDir := path.Join(workDir, "data")
+	configFile := path.Join(workDir, configFileName)
 
-	var fileKey string
-	var fileCert string
-	var port int
 	var askVersion bool
-	var sqlURL string
 
-	flag.StringVar(&fileKey, "key", path.Join(privateDir, "server.key"), "server key")
-	flag.StringVar(&fileCert, "cert", path.Join(publicDir, "server.crt"), "server cert")
-	flag.IntVar(&port, "port", 8443, "port")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
-	flag.StringVar(&sqlURL, "sql_url", "postgres://localhost", "SQL URL")
 	flag.Parse()
 
 	if askVersion {
@@ -1340,13 +1334,70 @@ func main() {
 		os.Exit(0)
 	}
 
+	// if config file doesn't exist, generate default config file
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		log.Printf("Creating default config file %s\n", configFile)
+		w, err := os.Create(configFile)
+		if err != nil {
+			log.Fatal("ERROR: could not create default config file;", err)
+		}
+		w.Chmod(0600)
+		fmt.Fprintf(w, "key %s\n", path.Join(privateDir, "server.key"))
+		fmt.Fprintf(w, "cert %s\n", path.Join(publicDir, "server.crt"))
+		fmt.Fprintf(w, "port %d\n", 8443)
+		fmt.Fprintf(w, "sql_url %s\n", "postgres://localhost")
+	}
+
+	// read config file
+	log.Printf("Reading config file %s\n", configFile)
+	configFileBytes, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		log.Fatal("ERROR: unable to read config file;", err)
+	}
+	var fileKey string
+	var fileCert string
+	var port string
+	var sqlURL string
+	for _, line := range strings.Split(string(configFileBytes), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		tokens := strings.Split(line, " ")
+		if tokens[0] == "key" {
+			fileKey = tokens[1]
+		} else if tokens[0] == "cert" {
+			fileCert = tokens[1]
+		} else if tokens[0] == "port" {
+			port = tokens[1]
+		} else if tokens[0] == "sql_url" {
+			sqlURL = tokens[1]
+		} else {
+			log.Fatalf("ERROR: unknown config file setting %s\n", tokens[0])
+		}
+	}
+
 	err = os.MkdirAll(publicDir, 0700)
+	if err != nil {
+		log.Fatalln("ERROR: unable to create public directory;", err)
+	}
 	err = os.MkdirAll(privateDir, 0700)
+	if err != nil {
+		log.Fatalln("ERROR: unable to create private directory;", err)
+	}
 	err = os.MkdirAll(dataDir, 0700)
+	if err != nil {
+		log.Fatalln("ERROR: unable to create data directory;", err)
+	}
 
 	log.Println("Using server key file: " + fileKey)
 	log.Println("Using server cert file: " + fileCert)
-	log.Println("Using network port: " + strconv.Itoa(port))
+	log.Println("Using network port: " + port)
+	log.Println("Using SQL URL: " + sqlURL)
 
 	theServer := theServer{}
 	theServer.userTokens = make(map[string]string)
@@ -1463,7 +1514,7 @@ func main() {
 	tokenRouter.HandleFunc("/team", theServer.postTeamHostToken).Methods("POST")
 
 	log.Println("Ready to serve requests")
-	addr := "0.0.0.0:" + strconv.Itoa(port)
+	addr := "0.0.0.0:" + port
 	l, err := net.Listen("tcp4", addr)
 	if err != nil {
 		log.Fatal(err)
