@@ -30,7 +30,7 @@ func newPostgresDBConn(args []string) (*sql.DB, error) {
 }
 
 func (db dbObj) dbInit() {
-	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(state JSONB)")
+	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(id BIGSERIAL PRIMARY KEY, state JSONB)")
 	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
 	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state BYTEA NOT NULL)")
