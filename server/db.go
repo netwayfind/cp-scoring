@@ -66,13 +66,20 @@ func (db dbObj) dbInsert(stmtStr string, args ...interface{}) (int64, error) {
 		return -1, err
 	}
 
-	var id int64
-	err = stmt.QueryRow(args...).Scan(&id)
-	if err != nil {
-		return -1, err
+	if strings.Contains(stmtStr, "RETURNING") {
+		var id int64
+		err = stmt.QueryRow(args...).Scan(&id)
+		if err != nil {
+			return -1, err
+		}
+		return id, nil
+	} else {
+		_, err := stmt.Exec(args...)
+		if err != nil {
+			return -1, err
+		}
+		return -1, nil
 	}
-
-	return id, nil
 }
 
 func (db dbObj) dbDelete(stmtStr string, args ...interface{}) error {
@@ -173,7 +180,7 @@ func (db dbObj) DeleteAdmin(username string) error {
 }
 
 func (db dbObj) UpdateAdmin(username string, passwordHash string) error {
-	return db.dbUpdate("UPDATE admins SET password_hash=$1 WHERE username=$1", passwordHash, username)
+	return db.dbUpdate("UPDATE admins SET password_hash=$1 WHERE username=$2", passwordHash, username)
 }
 
 func (db dbObj) InsertAdmin(username string, passwordHash string) error {
