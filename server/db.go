@@ -33,14 +33,14 @@ func (db dbObj) dbInit() {
 	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB)")
 	db.createTable("admins", "CREATE TABLE IF NOT EXISTS admins(username VARCHAR PRIMARY KEY, password_hash VARCHAR NOT NULL)")
 	db.createTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
-	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state BYTEA NOT NULL)")
+	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state JSONB NOT NULL)")
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id BIGSERIAL PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR UNIQUE NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR UNIQUE NOT NULL, source VARCHAR NOT NULL)")
 	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, hostname VARCHAR NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(hostname) REFERENCES host_tokens(hostname), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	db.createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
-	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, report BYTEA NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, report JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 
 	log.Println("Finished setting up database")
 }
