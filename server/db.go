@@ -34,7 +34,7 @@ func (db dbObj) dbInit() {
 	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, state JSONB NOT NULL)")
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id BIGSERIAL PRIMARY KEY, hostname VARCHAR NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR UNIQUE NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
-	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, hostname VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB NOT NULL, FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
@@ -663,7 +663,7 @@ func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
 }
 
 func (db dbObj) SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error) {
-	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM scores, teams, team_host_tokens WHERE scenario_id=$1 AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id GROUP BY team_host_tokens.team_id,team_host_tokens.hostname ORDER BY teams.name ASC,max(scores.timestamp) DESC", scenarioID)
+	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM (SELECT scores.host_token, MAX(scores.timestamp) AS latest_timestamp FROM scores WHERE scenario_id=$1 GROUP BY scores.host_token) AS latest, scores, team_host_tokens, teams WHERE latest.host_token=scores.host_token AND latest.latest_timestamp=scores.timestamp AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id;", scenarioID)
 	if err != nil {
 		return nil, err
 	}

@@ -46,6 +46,11 @@ func getTestBackingStore() (backingStore, error) {
 		}
 		directDBConn = dbc
 
+		err = dropTables()
+		if err != nil {
+			return testDBObj, err
+		}
+
 		tbs, err := getBackingStore("postgres", sqlURL)
 		if err != nil {
 			return testDBObj, err
@@ -53,6 +58,29 @@ func getTestBackingStore() (backingStore, error) {
 		testDBObj = tbs
 	}
 	return testDBObj, nil
+}
+
+func dropTables() error {
+	tx, err := directDBConn.Begin()
+	if err != nil {
+		return err
+	}
+	tx.Exec("DROP TABLE IF EXISTS reports")
+	tx.Exec("DROP TABLE IF EXISTS scores")
+	tx.Exec("DROP TABLE IF EXISTS hosts_templates")
+	tx.Exec("DROP TABLE IF EXISTS scenarios")
+	tx.Exec("DROP TABLE IF EXISTS states")
+	tx.Exec("DROP TABLE IF EXISTS team_host_tokens")
+	tx.Exec("DROP TABLE IF EXISTS host_tokens")
+	tx.Exec("DROP TABLE IF EXISTS hosts")
+	tx.Exec("DROP TABLE IF EXISTS templates")
+	tx.Exec("DROP TABLE IF EXISTS teams")
+	tx.Exec("DROP TABLE IF EXISTS admins")
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func clearTables() error {
@@ -81,8 +109,7 @@ func clearTables() error {
 func TestGetPostgresBackingStore(t *testing.T) {
 	backingStore, err := getTestBackingStore()
 	if err != nil {
-		log.Print(err)
-		t.Fatal("Unexpected error")
+		t.Fatal(err)
 	}
 	if backingStore == nil {
 		t.Fatal("Expected postgres backing store to not be nil")
@@ -141,14 +168,252 @@ func TestInsertState(t *testing.T) {
 		// check bytes can be turned into State
 		err = json.Unmarshal(readStateBytes, &readState)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 		if readState.Hostname != "test" {
-			log.Fatal("Unexpected hostname from state")
+			t.Fatal("Unexpected hostname from state")
 		}
 		counter++
 	}
 	if counter != 1 {
 		t.Fatal("Unexpected number of rows:", counter)
+	}
+}
+
+func TestInsertScenarioScore(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert score, no existing scenario
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{})
+	if err == nil {
+		t.Fatal("Expected error due to missing scenario")
+	}
+
+	// insert sample scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert sample scores, no existing host token
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1000,
+		HostToken:  "host1",
+		ScenarioID: scenarioID,
+		Score:      1,
+	})
+	if err == nil {
+		t.Fatal("Expected error due to missing host token")
+	}
+
+	// insert sample host token
+	err = backingStore.InsertHostToken("host1", 0, "host", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert sample score
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1000,
+		HostToken:  "host1",
+		ScenarioID: scenarioID,
+		Score:      1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := directDBConn.Query("SELECT * from scores")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readScenarioID int64
+	var readHostToken string
+	var readTimestamp int64
+	var readScore int64
+	for rows.Next() {
+		err = rows.Scan(&readScenarioID, &readHostToken, &readTimestamp, &readScore)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if readScenarioID != scenarioID {
+			t.Fatal("Unexpected scenario ID")
+		}
+		if readHostToken != "host1" {
+			t.Fatal("Unexpected host token")
+		}
+		if readTimestamp != 1000 {
+			t.Fatal("Unexpected timestamp")
+		}
+		if readScore != 1 {
+			t.Fatal("Unexpected score")
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected number of rows:", counter)
+	}
+}
+
+func TestSelectLatestScenarioScores(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert sample scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// insert sample host tokens
+	err = backingStore.InsertHostToken("host1_1", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host1_2", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host1_3", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host2_1", 0, "host2", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// insert sample teams
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "Team 1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team2ID, err := backingStore.InsertTeam(model.Team{Name: "Team 2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// insert sample team, host token mapping
+	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host1_1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host1_2", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host2_1", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host1_3", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no existing scores
+	scores, err := backingStore.SelectLatestScenarioScores(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scores) != 0 {
+		t.Fatal("Expected no scores")
+	}
+
+	// insert sample scores
+	// team 1 has 2 hosts, host1 has 2 instances, host2 has 1 instance
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1000,
+		HostToken:  "host1_1",
+		ScenarioID: scenarioID,
+		Score:      1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1005,
+		HostToken:  "host1_1",
+		ScenarioID: scenarioID,
+		Score:      2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1010,
+		HostToken:  "host1_2",
+		ScenarioID: scenarioID,
+		Score:      2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1002,
+		HostToken:  "host2_1",
+		ScenarioID: scenarioID,
+		Score:      1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// team 2 just has host1
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1040,
+		HostToken:  "host1_3",
+		ScenarioID: scenarioID,
+		Score:      6,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		Timestamp:  1039,
+		HostToken:  "host1_3",
+		ScenarioID: scenarioID,
+		Score:      7,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scores, err = backingStore.SelectLatestScenarioScores(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// should just be 2 latest scores, one for each team
+	if len(scores) != 2 {
+		t.Fatal("Unexpected number of scores:", len(scores))
+	}
+	// should be ordered by team name
+	if scores[0].TeamName != "Team 1" {
+		t.Fatal("Unexpected team name")
+	}
+	if scores[0].Timestamp != 1010 {
+		t.Fatal("Unexpected timestamp")
+	}
+	if scores[0].Score != 5 {
+		t.Fatal("Unexpected score", scores[0].Score)
+	}
+	if scores[1].TeamName != "Team 2" {
+		t.Fatal("Unexpected team name")
+	}
+	if scores[1].Timestamp != 1040 {
+		t.Fatal("Unexpected timestamp")
+	}
+	if scores[1].Score != 6 {
+		t.Fatal("Unexpected score")
 	}
 }
