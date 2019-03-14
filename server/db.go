@@ -24,7 +24,7 @@ func newPostgresDBConn(args []string) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Connected to postgres")
+	log.Println("New connection to database")
 	return dbConn, nil
 }
 
@@ -72,13 +72,12 @@ func (db dbObj) dbInsert(stmtStr string, args ...interface{}) (int64, error) {
 			return -1, err
 		}
 		return id, nil
-	} else {
-		_, err := stmt.Exec(args...)
-		if err != nil {
-			return -1, err
-		}
-		return -1, nil
 	}
+	_, err = stmt.Exec(args...)
+	if err != nil {
+		return -1, err
+	}
+	return -1, nil
 }
 
 func (db dbObj) dbDelete(stmtStr string, args ...interface{}) error {
