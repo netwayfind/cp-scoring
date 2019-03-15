@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -606,5 +607,126 @@ func TestSelectLatestScenarioReport(t *testing.T) {
 	}
 	if finding.Value != 0 {
 		t.Fatal("Unexpected finding value")
+	}
+}
+
+func TestSelectScenarioTimeline(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no existing data
+	timeline, err := backingStore.SelectScenarioTimeline(-1, "host-token1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timeline.Timestamps) != 0 {
+		t.Fatal("Unexpected number of timestamps:", len(timeline.Timestamps))
+	}
+	if len(timeline.Scores) != 0 {
+		t.Fatal("Unexpected number of scores:", len(timeline.Scores))
+	}
+
+	// insert sample scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// insert sample host tokens
+	err = backingStore.InsertHostToken("host-token1", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token2", 0, "host2", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no existing scores
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timeline.Timestamps) != 0 {
+		t.Fatal("Unexpected number of timestamps:", len(timeline.Timestamps))
+	}
+	if len(timeline.Scores) != 0 {
+		t.Fatal("Unexpected number of scores:", len(timeline.Scores))
+	}
+
+	// insert sample scores
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		HostToken:  "host-token1",
+		ScenarioID: scenarioID,
+		Score:      14,
+		Timestamp:  1300,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		HostToken:  "host-token1",
+		ScenarioID: scenarioID,
+		Score:      14,
+		Timestamp:  1360,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		HostToken:  "host-token1",
+		ScenarioID: scenarioID,
+		Score:      15,
+		Timestamp:  1420,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		HostToken:  "host-token2",
+		ScenarioID: scenarioID,
+		Score:      7,
+		Timestamp:  521,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{
+		HostToken:  "host-token2",
+		ScenarioID: scenarioID,
+		Score:      7,
+		Timestamp:  520,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check host token 1
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(timeline.Timestamps, []int64{1300, 1360, 1420}) {
+		t.Fatal("Unexpected timestamp values")
+	}
+	if !reflect.DeepEqual(timeline.Scores, []int64{14, 14, 15}) {
+		t.Fatal("Unexpected score values")
+	}
+
+	// check host token 2
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(timeline.Timestamps, []int64{520, 521}) {
+		t.Fatal("Unexpected timestamp values")
+	}
+	if !reflect.DeepEqual(timeline.Scores, []int64{7, 7}) {
+		t.Fatal("Unexpected timestamp values")
 	}
 }
