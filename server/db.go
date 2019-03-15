@@ -749,7 +749,7 @@ func (db dbObj) InsertScenarioScore(entry model.ScenarioHostScore) error {
 
 func (db dbObj) SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error) {
 	var report model.Report
-	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 GROUP BY timestamp ORDER BY timestamp DESC", scenarioID, hostToken)
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 GROUP BY timestamp, report ORDER BY timestamp DESC LIMIT 1", scenarioID, hostToken)
 	if err != nil {
 		return report, err
 	}

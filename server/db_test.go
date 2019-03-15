@@ -417,3 +417,194 @@ func TestSelectLatestScenarioScores(t *testing.T) {
 		t.Fatal("Unexpected score")
 	}
 }
+
+func TestInsertScenarioReport(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// sample report
+	findings := append(make([]model.Finding, 0), model.Finding{Show: true, Message: "test", Value: 1})
+	report := model.Report{Timestamp: 1500, Findings: findings}
+
+	// insert report without scenario and host token
+	err = backingStore.InsertScenarioReport(-1, "host-token", report)
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// insert sample scenario and host token
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+
+	// insert sample report
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check report inserted
+	rows, err := directDBConn.Query("SELECT * from reports")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readScenarioID int64
+	var readHostToken string
+	var readTimestamp int64
+	var readReportBytes []byte
+	var readReport model.Report
+	for rows.Next() {
+		err = rows.Scan(&readScenarioID, &readHostToken, &readTimestamp, &readReportBytes)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if readScenarioID != scenarioID {
+			t.Fatal("Unexpected scenario ID")
+		}
+		if readHostToken != "host-token" {
+			t.Fatal("Unexpected host token")
+		}
+		if readTimestamp != 1500 {
+			t.Fatal("Unexpected timestamp")
+		}
+		// check bytes can be turned into Report
+		err = json.Unmarshal(readReportBytes, &readReport)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if readReport.Timestamp != 1500 {
+			t.Fatal("Unexpected timestamp from report")
+		}
+		if len(readReport.Findings) != 1 {
+			t.Fatal("Unexpected number of findings in report")
+		}
+		finding := readReport.Findings[0]
+		if finding.Show != true {
+			t.Fatal("Unexpected finding show setting")
+		}
+		if finding.Message != "test" {
+			t.Fatal("Unexpected finding message")
+		}
+		if finding.Value != 1 {
+			t.Fatal("Unexpected finding value")
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected number of rows:", counter)
+	}
+}
+
+func TestSelectLatestScenarioReport(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert sample scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// insert sample host tokens
+	err = backingStore.InsertHostToken("host-token1", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token2", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no existing reports
+	report, err := backingStore.SelectLatestScenarioReport(scenarioID, "host-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// should be empty report
+	if report.Timestamp != 0 {
+		t.Fatal("Unexpected report timestamp:", report.Timestamp)
+	}
+	if len(report.Findings) != 0 {
+		t.Fatal("Expected no report findings")
+	}
+
+	// insert multiple reports
+	findings1 := append(make([]model.Finding, 0), model.Finding{Show: true, Message: "test", Value: 1})
+	report1a := model.Report{Timestamp: 1001, Findings: findings1}
+	report1b := model.Report{Timestamp: 1000, Findings: findings1}
+	findings2 := append(make([]model.Finding, 0), model.Finding{Show: false, Message: "test2", Value: 0})
+	report2 := model.Report{Timestamp: 1200, Findings: findings2}
+
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", report1a)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", report1b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token2", report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check first host token
+	report, err = backingStore.SelectLatestScenarioReport(scenarioID, "host-token1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// should be latest report
+	if report.Timestamp != 1001 {
+		t.Fatal("Unexpected report timestamp:", report.Timestamp)
+	}
+	if len(report.Findings) != 1 {
+		t.Fatal("Expected 1 report findings")
+	}
+	finding := report.Findings[0]
+	if finding.Show != true {
+		t.Fatal("Unexpected finding show setting")
+	}
+	if finding.Message != "test" {
+		t.Fatal("Unexpected finding message")
+	}
+	if finding.Value != 1 {
+		t.Fatal("Unexpected finding value")
+	}
+
+	// check second host token
+	report, err = backingStore.SelectLatestScenarioReport(scenarioID, "host-token2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// should be latest report
+	if report.Timestamp != 1200 {
+		t.Fatal("Unexpected report timestamp:", report.Timestamp)
+	}
+	if len(report.Findings) != 1 {
+		t.Fatal("Expected 1 report findings")
+	}
+	finding = report.Findings[0]
+	if finding.Show != false {
+		t.Fatal("Unexpected finding show setting")
+	}
+	if finding.Message != "test2" {
+		t.Fatal("Unexpected finding message")
+	}
+	if finding.Value != 0 {
+		t.Fatal("Unexpected finding value")
+	}
+}
