@@ -113,7 +113,7 @@ func (db dbObj) InsertState(timestamp int64, source string, hostToken string, st
 
 func (db dbObj) SelectAdmins() ([]string, error) {
 	var admins []string
-	rows, err := db.dbConn.Query("SELECT DISTINCT username FROM admins")
+	rows, err := db.dbConn.Query("SELECT DISTINCT username FROM admins ORDER BY username ASC")
 	if err != nil {
 		return admins, err
 	}

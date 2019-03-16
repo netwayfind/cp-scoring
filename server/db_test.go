@@ -730,3 +730,271 @@ func TestSelectScenarioTimeline(t *testing.T) {
 		t.Fatal("Unexpected timestamp values")
 	}
 }
+
+func TestInsertAdmin(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = backingStore.InsertAdmin("admin", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := directDBConn.Query("SELECT * FROM admins")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var username string
+	var passwordHash string
+	for rows.Next() {
+		err = rows.Scan(&username, &passwordHash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if username != "admin" {
+			t.Fatal("Unexpected username")
+		}
+		if passwordHash != "hash" {
+			t.Fatal("Unexpected password hash")
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected number of rows:", counter)
+	}
+}
+
+func TestIsAdmin(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// does not exist yet
+	present, err := backingStore.IsAdmin("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if present {
+		t.Fatal("user should not exist yet")
+	}
+
+	// add user
+	err = backingStore.InsertAdmin("admin", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should exist
+	present, err = backingStore.IsAdmin("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !present {
+		t.Fatal("user should exist")
+	}
+}
+
+func TestSelectAdminPasswordHash(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// user does not exist yet
+	passwordHash, err := backingStore.SelectAdminPasswordHash("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// add user and hash
+	err = backingStore.InsertAdmin("admin", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// user should exist
+	passwordHash, err = backingStore.SelectAdminPasswordHash("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if passwordHash != "hash" {
+		t.Fatal("Unexpected password hash")
+	}
+}
+
+func TestSelectAdmins(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no admins yet
+	admins, err := backingStore.SelectAdmins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(admins) != 0 {
+		t.Fatal("Unexpected admin count:", len(admins))
+	}
+
+	// add sample admins
+	err = backingStore.InsertAdmin("admin2", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertAdmin("admin1", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should be in sorted order
+	admins, err = backingStore.SelectAdmins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(admins) != 2 {
+		t.Fatal("Unexpected admin count:", len(admins))
+	}
+	if admins[0] != "admin1" {
+		t.Fatal("Unexpected admin")
+	}
+	if admins[1] != "admin2" {
+		t.Fatal("Unexpected admin")
+	}
+}
+
+func TestUpdateAdmin(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update user that does not exist, no errors
+	err = backingStore.UpdateAdmin("admin1", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have created user
+	rows, err := directDBConn.Query("SELECT * from admins")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	for rows.Next() {
+		counter++
+	}
+	if counter != 0 {
+		t.Fatal("Unexpected number of rows:", counter)
+	}
+
+	// create sample admin users
+	err = backingStore.InsertAdmin("admin1", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertAdmin("admin2", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update password hash
+	err = backingStore.UpdateAdmin("admin1", "hashhash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check updates
+	passwordHash, err := backingStore.SelectAdminPasswordHash("admin1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if passwordHash != "hashhash" {
+		t.Fatal("Unexpected password hash")
+	}
+	passwordHash, err = backingStore.SelectAdminPasswordHash("admin2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if passwordHash != "hash" {
+		t.Fatal("Unexpected password hash")
+	}
+}
+
+func TestDeleteAdmin(t *testing.T) {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// test delete user does not exist yet
+	err = backingStore.DeleteAdmin("admin1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create sample admin users
+	err = backingStore.InsertAdmin("admin1", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertAdmin("admin2", "hash")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should be present
+	admins, err := backingStore.SelectAdmins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(admins) != 2 {
+		t.Fatal("Unexpected number of admins:", len(admins))
+	}
+
+	// test delete
+	err = backingStore.DeleteAdmin("admin1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should only be admin2
+	admins, err = backingStore.SelectAdmins()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(admins) != 1 {
+		t.Fatal("Unexpected number of admins:", len(admins))
+	}
+	if admins[0] != "admin2" {
+		t.Fatal("Unexpected admin")
+	}
+}
