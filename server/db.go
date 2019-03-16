@@ -231,18 +231,10 @@ func (db dbObj) SelectHostIDForHostname(hostname string) (int64, error) {
 
 	// did not find any
 	if id == -1 {
-		return id, &errorStr{hostname + " hostname not found"}
+		return id, errors.New(hostname + " hostname not found")
 	}
 
 	return id, nil
-}
-
-type errorStr struct {
-	error string
-}
-
-func (e *errorStr) Error() string {
-	return e.error
 }
 
 func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
@@ -266,7 +258,7 @@ func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
 
 	// did not find any
 	if id == -1 {
-		return id, &errorStr{key + " key not found"}
+		return id, errors.New(key + " key not found")
 	}
 
 	return id, err
