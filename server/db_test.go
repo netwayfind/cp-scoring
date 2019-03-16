@@ -741,6 +741,7 @@ func TestInsertAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// insert sample admin
 	err = backingStore.InsertAdmin("admin", "hash")
 	if err != nil {
 		t.Fatal(err)
@@ -764,6 +765,24 @@ func TestInsertAdmin(t *testing.T) {
 		if passwordHash != "hash" {
 			t.Fatal("Unexpected password hash")
 		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected number of rows:", counter)
+	}
+
+	// insert admin with same name
+	err = backingStore.InsertAdmin("admin", "hash")
+	if err == nil {
+		t.Fatal("Expected error for inserting duplicate admin")
+	}
+	// should still be 1 user
+	rows, err = directDBConn.Query("SELECT * FROM admins")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter = 0
+	for rows.Next() {
 		counter++
 	}
 	if counter != 1 {
