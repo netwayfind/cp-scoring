@@ -107,6 +107,18 @@ func clearTables() error {
 	return nil
 }
 
+func initBackingStore(t *testing.T) backingStore {
+	backingStore, err := getTestBackingStore()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = clearTables()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return backingStore
+}
+
 func TestGetPostgresBackingStore(t *testing.T) {
 	backingStore, err := getTestBackingStore()
 	if err != nil {
@@ -118,17 +130,13 @@ func TestGetPostgresBackingStore(t *testing.T) {
 }
 
 func TestInsertState(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	state := model.State{Hostname: "test"}
-	stateBytes, _ := json.Marshal(state)
+	stateBytes, err := json.Marshal(state)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// state, no existing host token
 	err = backingStore.InsertState(1000, "127.0.0.1", "host-token", stateBytes)
@@ -137,7 +145,10 @@ func TestInsertState(t *testing.T) {
 	}
 
 	// state, existing host token
-	backingStore.InsertHostToken("host-token", 1000, "host", "127.0.0.1")
+	err = backingStore.InsertHostToken("host-token", 1000, "host", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = backingStore.InsertState(1000, "127.0.0.1", "host-token", stateBytes)
 	if err != nil {
 		t.Fatal(err)
@@ -182,17 +193,10 @@ func TestInsertState(t *testing.T) {
 }
 
 func TestInsertScenarioScore(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// insert score, no existing scenario
-	err = backingStore.InsertScenarioScore(model.ScenarioHostScore{})
+	err := backingStore.InsertScenarioScore(model.ScenarioHostScore{})
 	if err == nil {
 		t.Fatal("Expected error due to missing scenario")
 	}
@@ -265,14 +269,7 @@ func TestInsertScenarioScore(t *testing.T) {
 }
 
 func TestSelectLatestScenarioScores(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// insert sample scenario
 	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
@@ -420,21 +417,14 @@ func TestSelectLatestScenarioScores(t *testing.T) {
 }
 
 func TestInsertScenarioReport(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// sample report
 	findings := append(make([]model.Finding, 0), model.Finding{Show: true, Message: "test", Value: 1})
 	report := model.Report{Timestamp: 1500, Findings: findings}
 
 	// insert report without scenario and host token
-	err = backingStore.InsertScenarioReport(-1, "host-token", report)
+	err := backingStore.InsertScenarioReport(-1, "host-token", report)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -506,14 +496,7 @@ func TestInsertScenarioReport(t *testing.T) {
 }
 
 func TestSelectLatestScenarioReport(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// insert sample scenario
 	scenarioID, err := backingStore.InsertScenario(model.Scenario{})
@@ -611,14 +594,7 @@ func TestSelectLatestScenarioReport(t *testing.T) {
 }
 
 func TestSelectScenarioTimeline(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// no existing data
 	timeline, err := backingStore.SelectScenarioTimeline(-1, "host-token1")
@@ -732,17 +708,10 @@ func TestSelectScenarioTimeline(t *testing.T) {
 }
 
 func TestInsertAdmin(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// insert sample admin
-	err = backingStore.InsertAdmin("admin", "hash")
+	err := backingStore.InsertAdmin("admin", "hash")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -791,14 +760,7 @@ func TestInsertAdmin(t *testing.T) {
 }
 
 func TestIsAdmin(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// does not exist yet
 	present, err := backingStore.IsAdmin("admin")
@@ -826,14 +788,7 @@ func TestIsAdmin(t *testing.T) {
 }
 
 func TestSelectAdminPasswordHash(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// user does not exist yet
 	passwordHash, err := backingStore.SelectAdminPasswordHash("admin")
@@ -858,14 +813,7 @@ func TestSelectAdminPasswordHash(t *testing.T) {
 }
 
 func TestSelectAdmins(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// no admins yet
 	admins, err := backingStore.SelectAdmins()
@@ -903,17 +851,10 @@ func TestSelectAdmins(t *testing.T) {
 }
 
 func TestUpdateAdmin(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// update user that does not exist, no errors
-	err = backingStore.UpdateAdmin("admin1", "hash")
+	err := backingStore.UpdateAdmin("admin1", "hash")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -965,17 +906,10 @@ func TestUpdateAdmin(t *testing.T) {
 }
 
 func TestDeleteAdmin(t *testing.T) {
-	backingStore, err := getTestBackingStore()
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = clearTables()
-	if err != nil {
-		t.Fatal(err)
-	}
+	backingStore := initBackingStore(t)
 
 	// test delete user does not exist yet
-	err = backingStore.DeleteAdmin("admin1")
+	err := backingStore.DeleteAdmin("admin1")
 	if err != nil {
 		t.Fatal(err)
 	}
