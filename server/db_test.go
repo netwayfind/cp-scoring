@@ -951,3 +951,293 @@ func TestDeleteAdmin(t *testing.T) {
 		t.Fatal("Unexpected admin")
 	}
 }
+
+func TestInsertTeam(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// sample team
+	teamID, err := backingStore.InsertTeam(model.Team{
+		Name:    "team1",
+		POC:     "person1",
+		Email:   "poc@example.com",
+		Enabled: true,
+		Key:     "12345",
+	})
+
+	// check in database
+	rows, err := directDBConn.Query("SELECT * FROM teams")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readTeamID int64
+	var name string
+	var poc string
+	var email string
+	var enabled bool
+	var key string
+	if rows.Next() {
+		counter++
+		err = rows.Scan(&readTeamID, &name, &poc, &email, &enabled, &key)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if readTeamID != teamID {
+			t.Fatal("Unexpected read team ID")
+		}
+		if name != "team1" {
+			t.Fatal("Unexpected team name")
+		}
+		if poc != "person1" {
+			t.Fatal("Unexpected team POC")
+		}
+		if email != "poc@example.com" {
+			t.Fatal("Unexpected team email")
+		}
+		if enabled != true {
+			t.Fatal("Unexpected team enabled setting")
+		}
+		if key != "12345" {
+			t.Fatal("Unexpected team key")
+		}
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", err)
+	}
+
+	// insert team with same name
+	teamID, err = backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err == nil {
+		t.Fatal("Expected error for team with same name")
+	}
+
+	// should be no change
+	rows, err = directDBConn.Query("SELECT * FROM teams")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter = 0
+	if rows.Next() {
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", counter)
+	}
+}
+
+func TestSelectTeam(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing team
+	team, err := backingStore.SelectTeam(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if team.ID != 0 {
+		t.Fatal("Expected empty team")
+	}
+
+	// add sample team
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check can get team
+	team, err = backingStore.SelectTeam(team1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if team.ID != team1ID {
+		t.Fatal("Unexpected team ID:", team.ID)
+	}
+	if team.Name != "team1" {
+		t.Fatal("Unexpected team ID:", team.ID)
+	}
+}
+
+func TestSelectTeams(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing teams
+	teams, err := backingStore.SelectTeams()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(teams) != 0 {
+		t.Fatal("Unexpected teams count:", len(teams))
+	}
+
+	// add sample teams
+	team2ID, err := backingStore.InsertTeam(model.Team{Name: "team2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check teams
+	teams, err = backingStore.SelectTeams()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(teams) != 2 {
+		t.Fatal("Unexpected teams count:", len(teams))
+	}
+	// should be in team name order
+	if teams[0].ID != team1ID {
+		t.Fatal("Unexpected team ID")
+	}
+	if teams[0].Name != "team1" {
+		t.Fatal("Unexpected team name")
+	}
+	if teams[1].ID != team2ID {
+		t.Fatal("Unexpected team ID")
+	}
+	if teams[1].Name != "team2" {
+		t.Fatal("Unexpected team name")
+	}
+}
+
+func TestSelectTeamIDForKey(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing team
+	_, err := backingStore.SelectTeamIDForKey("team1key")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// insert sample teams
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1", Key: "team1key", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = backingStore.InsertTeam(model.Team{Name: "team2", Key: "team2key", Enabled: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check can get team
+	// team enabled
+	teamID, err := backingStore.SelectTeamIDForKey("team1key")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if teamID != team1ID {
+		t.Fatal("Unexpected team ID from team key")
+	}
+	// team disabled
+	teamID, err = backingStore.SelectTeamIDForKey("team2key")
+	if err == nil {
+		t.Fatal("Expected error, team disabled")
+	}
+}
+
+func TestUpdateTeam(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing team
+	err := backingStore.UpdateTeam(-1, model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should be no teams
+	teams, err := backingStore.SelectTeams()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(teams) != 0 {
+		t.Fatal("Unexpected team count:", len(teams))
+	}
+
+	// add sample teams
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1", Key: "team1key", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team2ID, err := backingStore.InsertTeam(model.Team{Name: "team2", Key: "team2key", Enabled: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update team 2
+	err = backingStore.UpdateTeam(team2ID, model.Team{Name: "Team 2", Key: "keykey", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check teams
+	team1, err := backingStore.SelectTeam(team1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if team1.ID != team1ID {
+		t.Fatal("Unexpected team ID")
+	}
+	if team1.Key != "team1key" {
+		t.Fatal("Unexpected team key")
+	}
+	if team1.Enabled != true {
+		t.Fatal("Unexpected team enabled setting")
+	}
+	team2, err := backingStore.SelectTeam(team2ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if team2.ID != team2ID {
+		t.Fatal("Unexpected team ID")
+	}
+	if team2.Key != "keykey" {
+		t.Fatal("Unexpected team key")
+	}
+	if team2.Enabled != true {
+		t.Fatal("Unexpected team enabled setting")
+	}
+}
+
+func TestDeleteTeam(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing team
+	err := backingStore.DeleteTeam(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// sample team
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// team should be there
+	teams, err := backingStore.SelectTeams()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(teams) != 1 {
+		t.Fatal("Unexpected number of teams:", len(teams))
+	}
+	if teams[0].ID != team1ID {
+		t.Fatal("Unexpected team ID")
+	}
+
+	// delete team
+	err = backingStore.DeleteTeam(team1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// team should not be there
+	teams, err = backingStore.SelectTeams()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(teams) != 0 {
+		t.Fatal("Unexpected number of teams:", len(teams))
+	}
+}
