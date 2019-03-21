@@ -1241,3 +1241,258 @@ func TestDeleteTeam(t *testing.T) {
 		t.Fatal("Unexpected number of teams:", len(teams))
 	}
 }
+
+func TestInsertHost(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	hostID, err := backingStore.InsertHost(model.Host{
+		Hostname: "hostname",
+		OS:       "this OS",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows, err := directDBConn.Query("SELECT * FROM hosts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readHostID int64
+	var readHostname string
+	var readOS string
+	if rows.Next() {
+		err = rows.Scan(&readHostID, &readHostname, &readOS)
+		if err != nil {
+			t.Fatal(err)
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", counter)
+	}
+	if readHostID != hostID {
+		t.Fatal("Unexpected host ID")
+	}
+	if readHostname != "hostname" {
+		t.Fatal("Unexpected hostname")
+	}
+	if readOS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+
+	// test inserting host with same hostname
+	_, err = backingStore.InsertHost(model.Host{
+		Hostname: "hostname",
+		OS:       "this OS",
+	})
+	if err == nil {
+		t.Fatal("Expected error for same hostname")
+	}
+}
+
+func TestSelectHost(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host
+	host, err := backingStore.SelectHost(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if host.ID != 0 {
+		t.Fatal("Expected empty host")
+	}
+
+	// add sample host
+	hostID, err := backingStore.InsertHost(model.Host{Hostname: "hostname", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check host
+	host, err = backingStore.SelectHost(hostID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if host.ID != hostID {
+		t.Fatal("Unexpected host ID")
+	}
+	if host.Hostname != "hostname" {
+		t.Fatal("Unexpected hostname")
+	}
+	if host.OS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+}
+
+func TestSelectHosts(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing hosts
+	hosts, err := backingStore.SelectHosts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hosts) != 0 {
+		t.Fatal("Unexpected host count:", len(hosts))
+	}
+
+	// add sample hosts
+	host2ID, err := backingStore.InsertHost(model.Host{Hostname: "host2", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	host1ID, err := backingStore.InsertHost(model.Host{Hostname: "host1", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hosts, err = backingStore.SelectHosts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hosts) != 2 {
+		t.Fatal("Unexpected host count:", len(hosts))
+	}
+	// hosts should be sorted by hostname
+	if hosts[0].ID != host1ID {
+		t.Fatal("Unexpected host ID")
+	}
+	if hosts[0].Hostname != "host1" {
+		t.Fatal("Unexpected hostname")
+	}
+	if hosts[0].OS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+	if hosts[1].ID != host2ID {
+		t.Fatal("Unexpected host ID")
+	}
+	if hosts[1].Hostname != "host2" {
+		t.Fatal("Unexpected hostname")
+	}
+	if hosts[1].OS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+}
+
+func TestSelectHostIDForHostname(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host
+	hostID, err := backingStore.SelectHostIDForHostname("hostname")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// add sample host
+	hostID, err = backingStore.InsertHost(model.Host{Hostname: "hostname"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check exists
+	readHostID, err := backingStore.SelectHostIDForHostname("hostname")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if readHostID != hostID {
+		t.Fatal("Unexpected host ID")
+	}
+}
+
+func TestUpdateHost(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host
+	err := backingStore.UpdateHost(-1, model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should still be no hosts
+	hosts, err := backingStore.SelectHosts()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hosts) != 0 {
+		t.Fatal("Unexpected number of hosts:", len(hosts))
+	}
+
+	// add sample hosts
+	host1ID, err := backingStore.InsertHost(model.Host{Hostname: "host1", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	host2ID, err := backingStore.InsertHost(model.Host{Hostname: "host2", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update host2
+	err = backingStore.UpdateHost(host2ID, model.Host{Hostname: "Host 2", OS: "this OS"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check hosts
+	host, err := backingStore.SelectHost(host1ID)
+	if host.ID != host1ID {
+		t.Fatal("Unexpected host ID")
+	}
+	if host.Hostname != "host1" {
+		t.Fatal("Unexpected hostname")
+	}
+	if host.OS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+	host, err = backingStore.SelectHost(host2ID)
+	if host.ID != host2ID {
+		t.Fatal("Unexpected host ID")
+	}
+	if host.Hostname != "Host 2" {
+		t.Fatal("Unexpected hostname")
+	}
+	if host.OS != "this OS" {
+		t.Fatal("Unexpected host OS")
+	}
+}
+
+func TestDeleteHost(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host
+	err := backingStore.DeleteHost(-1)
+	if err != nil {
+		t.Fatal()
+	}
+
+	// sample host
+	hostID, err := backingStore.InsertHost(model.Host{Hostname: "hostname"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// host should be there
+	hosts, err := backingStore.SelectHosts()
+	if len(hosts) != 1 {
+		t.Fatal("Unexpected number of hosts:", len(hosts))
+	}
+	if hosts[0].ID != hostID {
+		t.Fatal("Unexpected host ID")
+	}
+	if hosts[0].Hostname != "hostname" {
+		t.Fatal("Unexpected hostname")
+	}
+
+	// delete host
+	err = backingStore.DeleteHost(hostID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// host shouldn't be there
+	hosts, err = backingStore.SelectHosts()
+	if len(hosts) != 0 {
+		t.Fatal("Unexpected number of hosts:", len(hosts))
+	}
+}
