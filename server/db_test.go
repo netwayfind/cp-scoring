@@ -1496,3 +1496,303 @@ func TestDeleteHost(t *testing.T) {
 		t.Fatal("Unexpected number of hosts:", len(hosts))
 	}
 }
+
+func TestInsertHostToken(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// insert sample host token
+	err := backingStore.InsertHostToken("host-token", 1540, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check host token added
+	rows, err := directDBConn.Query("SELECT * FROM host_tokens")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var hostToken string
+	var timestamp int64
+	var hostname string
+	var source string
+	for rows.Next() {
+		err = rows.Scan(&hostToken, &timestamp, &hostname, &source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", counter)
+	}
+	if hostToken != "host-token" {
+		t.Fatal("Unexpected host token")
+	}
+	if timestamp != 1540 {
+		t.Fatal("Unexpected timestamp")
+	}
+	if hostname != "host1" {
+		t.Fatal("Unexpected hostname")
+	}
+	if source != "127.0.0.1" {
+		t.Fatal("Unexpected source")
+	}
+}
+
+func TestInsertTeamHostToken(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// insert team host token without existing team or host token
+	err := backingStore.InsertTeamHostToken(-1, "hostname", "host-token", 1300)
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// should be no team host token
+	rows, err := directDBConn.Query("SELECT * FROM team_host_tokens")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	for rows.Next() {
+		counter++
+	}
+	if counter != 0 {
+		t.Fatal("Unexpected row count:", err)
+	}
+
+	// add team
+	teamID, err := backingStore.InsertTeam(model.Team{Name: "team"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert team host token without existing host token
+	err = backingStore.InsertTeamHostToken(teamID, "hostname", "host-token", 1300)
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// should be no team host token
+	rows, err = directDBConn.Query("SELECT * FROM team_host_tokens")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter = 0
+	for rows.Next() {
+		counter++
+	}
+	if counter != 0 {
+		t.Fatal("Unexpected row count:", err)
+	}
+
+	// add host token
+	err = backingStore.InsertHostToken("host-token", 1200, "hostname", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// insert team host token
+	err = backingStore.InsertTeamHostToken(teamID, "hostname", "host-token", 1300)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// team host token should be present
+	rows, err = directDBConn.Query("SELECT * FROM team_host_tokens")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter = 0
+	var readTeamID int64
+	var hostToken string
+	var hostname string
+	var timestamp int64
+	for rows.Next() {
+		err = rows.Scan(&readTeamID, &hostToken, &hostname, &timestamp)
+		if err != nil {
+			t.Fatal(err)
+		}
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", err)
+	}
+	if readTeamID != teamID {
+		t.Fatal("Unexpected team ID")
+	}
+	if hostToken != "host-token" {
+		t.Fatal("Unexpected host token")
+	}
+	if hostname != "hostname" {
+		t.Fatal("Unexpected hostname")
+	}
+	if timestamp != 1300 {
+		t.Fatal("Unexpected timestamp")
+	}
+}
+
+func TestSelectHostTokens(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host tokens
+	hostTokens, err := backingStore.SelectHostTokens(-1, "host1")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// add sample teams
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team2ID, err := backingStore.InsertTeam(model.Team{Name: "team2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// add sample host tokens
+	err = backingStore.InsertHostToken("host-token1a", 251, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token1b", 250, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token2", 300, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token3", 250, "host2", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assign host tokens to teams
+	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1a", 401)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1b", 400)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host-token2", 400)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host-token3", 400)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check host tokens assigned to teams
+	hostTokens, err = backingStore.SelectHostTokens(team1ID, "host1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hostTokens) != 2 {
+		t.Fatal("Unexpected host tokens count:", len(hostTokens))
+	}
+	// should be in added timestamp ordered
+	if hostTokens[0] != "host-token1b" {
+		t.Fatal("Unexpected host token")
+	}
+	if hostTokens[1] != "host-token1a" {
+		t.Fatal("Unexpected host token")
+	}
+	hostTokens, err = backingStore.SelectHostTokens(team1ID, "host2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hostTokens) != 1 {
+		t.Fatal("Unexpected host tokens count:", len(hostTokens))
+	}
+	if hostTokens[0] != "host-token3" {
+		t.Fatal("Unexpected host token")
+	}
+	hostTokens, err = backingStore.SelectHostTokens(team2ID, "host1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hostTokens) != 1 {
+		t.Fatal("Unexpected host tokens count:", len(hostTokens))
+	}
+	if hostTokens[0] != "host-token2" {
+		t.Fatal("Unexpected host token")
+	}
+	hostTokens, err = backingStore.SelectHostTokens(team2ID, "host2")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestSelectTeamIDFromHostToken(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing host token or team host token
+	_, err := backingStore.SelectTeamIDFromHostToken("host-token")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// add sample teams
+	team1ID, err := backingStore.InsertTeam(model.Team{Name: "team1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	team2ID, err := backingStore.InsertTeam(model.Team{Name: "team2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// add host tokens
+	err = backingStore.InsertHostToken("host-token1a", 750, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token1b", 751, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token2", 750, "host2", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// set up team host tokens
+	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1a", 900)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host-token1b", 900)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host-token2", 900)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check team ID for host token
+	teamID, err := backingStore.SelectTeamIDFromHostToken("host-token1a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if teamID != team1ID {
+		t.Fatal("Unexpected team ID")
+	}
+	teamID, err = backingStore.SelectTeamIDFromHostToken("host-token1b")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if teamID != team2ID {
+		t.Fatal("Unexpected team ID")
+	}
+	teamID, err = backingStore.SelectTeamIDFromHostToken("host-token2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if teamID != team1ID {
+		t.Fatal("Unexpected team ID")
+	}
+}
