@@ -1,5 +1,3 @@
-// +build integration
-
 package main
 
 import (
@@ -1794,5 +1792,231 @@ func TestSelectTeamIDFromHostToken(t *testing.T) {
 	}
 	if teamID != team1ID {
 		t.Fatal("Unexpected team ID")
+	}
+}
+
+func TestInsertTemplate(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template1", State: model.State{Hostname: "host1"}})
+	if err != nil {
+		t.Fatal()
+	}
+
+	rows, err := directDBConn.Query("SELECT * FROM templates")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readTemplateID int64
+	var templateName string
+	var templateStateBytes []byte
+	var templateState model.State
+	for rows.Next() {
+		err = rows.Scan(&readTemplateID, &templateName, &templateStateBytes)
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", counter)
+	}
+	if readTemplateID != templateID {
+		t.Fatal("Unexpected template ID")
+	}
+	if templateName != "template1" {
+		t.Fatal("Unexpected template name")
+	}
+	err = json.Unmarshal(templateStateBytes, &templateState)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if templateState.Hostname != "host1" {
+		t.Fatal("Unexpected hostname")
+	}
+
+	// insert template with same name
+	templateID, err = backingStore.InsertTemplate(model.Template{Name: "template1", State: model.State{Hostname: "host1"}})
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+}
+
+func TestSelectTemplate(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing template
+	template, err := backingStore.SelectTemplate(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if template.ID != 0 {
+		t.Fatal("Unexpected template ID")
+	}
+
+	// insert template
+	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template1", State: model.State{Hostname: "host1"}})
+	if err != nil {
+		t.Fatal()
+	}
+
+	// check template
+	template, err = backingStore.SelectTemplate(templateID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if template.ID != templateID {
+		t.Fatal("Unexpected template ID")
+	}
+	if template.Name != "template1" {
+		t.Fatal("Unexpected template name")
+	}
+	if template.State.Hostname != "host1" {
+		t.Fatal("Unexpected template state content")
+	}
+}
+
+func TestSelectTemplates(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing templates
+	templates, err := backingStore.SelectTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+
+	// insert sample templates
+	template2ID, err := backingStore.InsertTemplate(model.Template{Name: "template2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	template1ID, err := backingStore.InsertTemplate(model.Template{Name: "template1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check templates
+	templates, err = backingStore.SelectTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 2 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+	// should be template name order
+	if templates[0].ID != template1ID {
+		t.Fatal("Unexpected template ID")
+	}
+	if templates[0].Name != "template1" {
+		t.Fatal("Unexpected template ID")
+	}
+	if templates[1].ID != template2ID {
+		t.Fatal("Unexpected template ID")
+	}
+	if templates[1].Name != "template2" {
+		t.Fatal("Unexpected template ID")
+	}
+}
+
+func TestUpdateTemplate(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing template
+	err := backingStore.UpdateTemplate(-1, model.Template{Name: "template1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should be no templates added
+	templates, err := backingStore.SelectTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+
+	// insert sample templates
+	template1ID, err := backingStore.InsertTemplate(model.Template{Name: "template1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	template2ID, err := backingStore.InsertTemplate(model.Template{Name: "template2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update template2
+	err = backingStore.UpdateTemplate(template2ID, model.Template{Name: "Template 2"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check templates
+	// template1
+	template, err := backingStore.SelectTemplate(template1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if template.ID != template1ID {
+		t.Fatal("Unexpected template ID")
+	}
+	if template.Name != "template1" {
+		t.Fatal("Unexpected template name")
+	}
+	// Template 2
+	template, err = backingStore.SelectTemplate(template2ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if template.ID != template2ID {
+		t.Fatal("Unexpected template ID")
+	}
+	if template.Name != "Template 2" {
+		t.Fatal("Unexpected template name")
+	}
+}
+
+func TestDeleteTemplate(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing template
+	err := backingStore.DeleteTemplate(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// add sample template
+	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure template present
+	template, err := backingStore.SelectTemplate(templateID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if template.ID != templateID {
+		t.Fatal("Unexpected template ID")
+	}
+	if template.Name != "template" {
+		t.Fatal("Unexpected template name")
+	}
+
+	// delete template
+	err = backingStore.DeleteTemplate(templateID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure deleted
+	templates, err := backingStore.SelectTemplates()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
 	}
 }
