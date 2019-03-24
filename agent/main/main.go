@@ -188,7 +188,7 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) error {
 	return nil
 }
 
-func createLinkReport(serverURL string, linkReport string, hostname string, hostToken string) error {
+func createLinkReport(serverURL string, linkReport string, hostToken string) error {
 	var s string
 	// if have host token, then connected
 	if len(hostToken) > 0 {
@@ -198,7 +198,6 @@ func createLinkReport(serverURL string, linkReport string, hostname string, host
 		}
 		u.Path = "/ui/report"
 		params := url.Values{}
-		params.Add("hostname", hostname)
 		params.Add("host_token", hostToken)
 		u.RawQuery = params.Encode()
 		s = "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + u.String() + "\"></head><body><a href=\"" + u.String() + "\">Report</a></body></html>"
@@ -300,7 +299,7 @@ func main() {
 		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
-		createLinkReport(serverURL, linkReport, hostname, "")
+		createLinkReport(serverURL, linkReport, "")
 		os.Exit(0)
 	}
 
@@ -369,7 +368,7 @@ func main() {
 				if err != nil {
 					log.Println("WARN: cannot remove report file;", err)
 				}
-				createLinkReport(serverURL, linkReport, hostname, hostToken)
+				createLinkReport(serverURL, linkReport, hostToken)
 			}
 			sendState(dataDir, serverURL, transport, hostToken)
 			nextTime = nextTime.Add(10 * time.Second)
