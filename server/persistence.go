@@ -15,39 +15,39 @@ type backingStore interface {
 	UpdateAdmin(username string, passwordHash string) error
 	DeleteAdmin(username string) error
 	SelectHosts() ([]model.Host, error)
-	SelectHost(hostID int64) (model.Host, error)
-	SelectHostIDForHostname(hostname string) (int64, error)
-	InsertHost(host model.Host) (int64, error)
-	UpdateHost(hostID int64, host model.Host) error
-	DeleteHost(hostID int64) error
+	SelectHost(hostID uint64) (model.Host, error)
+	SelectHostIDForHostname(hostname string) (uint64, error)
+	InsertHost(host model.Host) (uint64, error)
+	UpdateHost(hostID uint64, host model.Host) error
+	DeleteHost(hostID uint64) error
 	SelectTeams() ([]model.TeamSummary, error)
-	SelectTeam(teamID int64) (model.Team, error)
-	SelectTeamIDFromHostToken(hostToken string) (int64, error)
-	SelectTeamIDForKey(teamKey string) (int64, error)
-	InsertTeam(team model.Team) (int64, error)
-	UpdateTeam(teamID int64, team model.Team) error
-	DeleteTeam(teamID int64) error
+	SelectTeam(teamID uint64) (model.Team, error)
+	SelectTeamIDFromHostToken(hostToken string) (uint64, error)
+	SelectTeamIDForKey(teamKey string) (uint64, error)
+	InsertTeam(team model.Team) (uint64, error)
+	UpdateTeam(teamID uint64, team model.Team) error
+	DeleteTeam(teamID uint64) error
 	SelectTemplates() ([]model.Template, error)
-	SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error)
-	SelectTemplate(templateID int64) (model.Template, error)
-	InsertTemplate(template model.Template) (int64, error)
-	UpdateTemplate(templateID int64, template model.Template) error
-	DeleteTemplate(templateID int64) error
+	SelectTemplatesForHostname(scenarioID uint64, hostname string) ([]model.Template, error)
+	SelectTemplate(templateID uint64) (model.Template, error)
+	InsertTemplate(template model.Template) (uint64, error)
+	UpdateTemplate(templateID uint64, template model.Template) error
+	DeleteTemplate(templateID uint64) error
 	SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error)
-	SelectScenariosForHostname(hostname string) ([]int64, error)
-	SelectScenario(scenarioID int64) (model.Scenario, error)
-	InsertScenario(scenario model.Scenario) (int64, error)
-	UpdateScenario(scenarioID int64, scenario model.Scenario) error
-	DeleteScenario(scenarioID int64) error
-	SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error)
-	InsertScenarioReport(scenarioID int64, hostToken string, report model.Report) error
+	SelectScenariosForHostname(hostname string) ([]uint64, error)
+	SelectScenario(scenarioID uint64) (model.Scenario, error)
+	InsertScenario(scenario model.Scenario) (uint64, error)
+	UpdateScenario(scenarioID uint64, scenario model.Scenario) error
+	DeleteScenario(scenarioID uint64) error
+	SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error)
+	InsertScenarioReport(scenarioID uint64, hostToken string, report model.Report) error
 	InsertScenarioScore(score model.ScenarioHostScore) error
-	SelectScenarioTimeline(scenarioID int64, hostToken string) (model.ScenarioTimeline, error)
-	SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error)
-	SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error)
+	SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error)
+	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)
+	SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error)
 	InsertHostToken(hostToken string, timestamp int64, hostname string, source string) error
-	InsertTeamHostToken(teamID int64, hostname string, hostToken string, timestamp int64) error
-	SelectHostTokens(teamID int64, hostname string) ([]string, error)
+	InsertTeamHostToken(teamID uint64, hostname string, hostToken string, timestamp int64) error
+	SelectHostTokens(teamID uint64, hostname string) ([]string, error)
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {

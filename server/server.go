@@ -261,9 +261,9 @@ func (theServer theServer) getHosts(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) getHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a host")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /hosts/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
@@ -316,7 +316,7 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := strconv.FormatInt(id, 10)
+	idStr := strconv.FormatUint(id, 10)
 
 	// new host
 	log.Println("Saved host " + idStr)
@@ -326,9 +326,9 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit host")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /hosts/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
@@ -370,9 +370,9 @@ func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) deleteHost(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete host")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /hosts/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
@@ -413,9 +413,9 @@ func (theServer theServer) getTeams(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) getTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a team")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /teams/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
@@ -468,7 +468,7 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := strconv.FormatInt(id, 10)
+	idStr := strconv.FormatUint(id, 10)
 
 	// new team
 	log.Println("Saved team " + idStr)
@@ -478,9 +478,9 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit team")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /teams/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
@@ -522,9 +522,9 @@ func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) deleteTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete team")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /teams/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[7:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[7:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
@@ -565,9 +565,9 @@ func (theServer theServer) getTemplates(w http.ResponseWriter, r *http.Request) 
 func (theServer theServer) getTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a template")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /templates/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
@@ -620,7 +620,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := strconv.FormatInt(id, 10)
+	idStr := strconv.FormatUint(id, 10)
 
 	// new template
 	log.Println("Saved template " + idStr)
@@ -630,9 +630,9 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit template")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /templates/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
@@ -674,9 +674,9 @@ func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) 
 func (theServer theServer) deleteTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete template")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /templates/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
@@ -717,9 +717,9 @@ func (theServer theServer) getScenarios(w http.ResponseWriter, r *http.Request) 
 func (theServer theServer) getScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("get a scenario")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /scenarios/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -772,7 +772,7 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := strconv.FormatInt(id, 10)
+	idStr := strconv.FormatUint(id, 10)
 
 	// new scenario
 	log.Println("Saved scenario " + idStr)
@@ -782,9 +782,9 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("edit scenario")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /scenarios/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -826,9 +826,9 @@ func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) 
 func (theServer theServer) deleteScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("delete scenario")
 
-	// parse out int64 id
+	// parse out uint64 id
 	// remove /scenarios/ from URL
-	id, err := strconv.ParseInt(r.URL.Path[11:], 10, 64)
+	id, err := strconv.ParseUint(r.URL.Path[11:], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -869,10 +869,10 @@ func (theServer theServer) getScenariosForScoreboard(w http.ResponseWriter, r *h
 func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario scores")
 
-	// parse out int64 id
+	// parse out uint64 id
 	vars := mux.Vars(r)
 
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	id, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -900,10 +900,10 @@ func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Requ
 func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario timeline for team")
 
-	// parse out int64 id
+	// parse out uint64 id
 	vars := mux.Vars(r)
 
-	scenarioID, err := strconv.ParseInt(vars["id"], 10, 64)
+	scenarioID, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -952,10 +952,10 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("get scenario report for team")
 
-	// parse out int64 id
+	// parse out uint64 id
 	vars := mux.Vars(r)
 
-	scenarioID, err := strconv.ParseInt(vars["id"], 10, 64)
+	scenarioID, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
@@ -1190,7 +1190,7 @@ func (theServer theServer) newAdmin(w http.ResponseWriter, r *http.Request) {
 func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	log.Println("editing admin")
 
-	// parse out int64 id
+	// parse out uint64 id
 	vars := mux.Vars(r)
 
 	username := vars["username"]

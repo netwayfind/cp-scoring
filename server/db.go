@@ -59,25 +59,25 @@ func (db dbObj) createTable(name string, stmtStr string) {
 	}
 }
 
-func (db dbObj) dbInsert(stmtStr string, args ...interface{}) (int64, error) {
+func (db dbObj) dbInsert(stmtStr string, args ...interface{}) (uint64, error) {
 	stmt, err := db.dbConn.Prepare(stmtStr)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	if strings.Contains(stmtStr, "RETURNING") {
-		var id int64
+		var id uint64
 		err = stmt.QueryRow(args...).Scan(&id)
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		return id, nil
 	}
 	_, err = stmt.Exec(args...)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
-	return -1, nil
+	return 0, nil
 }
 
 func (db dbObj) dbDelete(stmtStr string, args ...interface{}) error {
@@ -193,7 +193,7 @@ func (db dbObj) SelectTeams() ([]model.TeamSummary, error) {
 	}
 	defer rows.Close()
 
-	var id int64
+	var id uint64
 	var name string
 	teams := make([]model.TeamSummary, 0)
 
@@ -211,8 +211,8 @@ func (db dbObj) SelectTeams() ([]model.TeamSummary, error) {
 	return teams, nil
 }
 
-func (db dbObj) SelectHostIDForHostname(hostname string) (int64, error) {
-	var id int64 = -1
+func (db dbObj) SelectHostIDForHostname(hostname string) (uint64, error) {
+	var id uint64
 
 	rows, err := db.dbConn.Query("SELECT id FROM hosts WHERE hostname=$1", hostname)
 	if err != nil {
@@ -230,15 +230,15 @@ func (db dbObj) SelectHostIDForHostname(hostname string) (int64, error) {
 	}
 
 	// did not find any
-	if id == -1 {
+	if id == 0 {
 		return id, errors.New(hostname + " hostname not found")
 	}
 
 	return id, nil
 }
 
-func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
-	var id int64 = -1
+func (db dbObj) SelectTeamIDForKey(key string) (uint64, error) {
+	var id uint64
 	key = strings.TrimSpace(key)
 
 	rows, err := db.dbConn.Query("SELECT id FROM teams WHERE key=$1 AND enabled=TRUE", key)
@@ -257,14 +257,14 @@ func (db dbObj) SelectTeamIDForKey(key string) (int64, error) {
 	}
 
 	// did not find any
-	if id == -1 {
+	if id == 0 {
 		return id, errors.New(key + " key not found")
 	}
 
 	return id, err
 }
 
-func (db dbObj) SelectTeam(id int64) (model.Team, error) {
+func (db dbObj) SelectTeam(id uint64) (model.Team, error) {
 	var team model.Team
 
 	rows, err := db.dbConn.Query("SELECT name, poc, email, enabled, key FROM teams where id=$1", id)
@@ -296,15 +296,15 @@ func (db dbObj) SelectTeam(id int64) (model.Team, error) {
 	return team, nil
 }
 
-func (db dbObj) DeleteTeam(id int64) error {
+func (db dbObj) DeleteTeam(id uint64) error {
 	return db.dbDelete("DELETE FROM teams where id=$1", id)
 }
 
-func (db dbObj) InsertTeam(team model.Team) (int64, error) {
+func (db dbObj) InsertTeam(team model.Team) (uint64, error) {
 	return db.dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES($1, $2, $3, $4, $5) RETURNING id", team.Name, team.POC, team.Email, team.Enabled, team.Key)
 }
 
-func (db dbObj) UpdateTeam(id int64, team model.Team) error {
+func (db dbObj) UpdateTeam(id uint64, team model.Team) error {
 	return db.dbUpdate("UPDATE teams SET name=$1, poc=$2, email=$3, enabled=$4, key=$5 WHERE id=$6", team.Name, team.POC, team.Email, team.Enabled, team.Key, id)
 }
 
@@ -315,7 +315,7 @@ func (db dbObj) SelectTemplates() ([]model.Template, error) {
 	}
 	defer rows.Close()
 
-	var id int64
+	var id uint64
 	var name string
 	var stateBytes []byte
 	templates := make([]model.Template, 0)
@@ -340,7 +340,7 @@ func (db dbObj) SelectTemplates() ([]model.Template, error) {
 	return templates, nil
 }
 
-func (db dbObj) SelectTemplate(id int64) (model.Template, error) {
+func (db dbObj) SelectTemplate(id uint64) (model.Template, error) {
 	var template model.Template
 	var name string
 	var state model.State
@@ -371,19 +371,19 @@ func (db dbObj) SelectTemplate(id int64) (model.Template, error) {
 	return template, nil
 }
 
-func (db dbObj) DeleteTemplate(id int64) error {
+func (db dbObj) DeleteTemplate(id uint64) error {
 	return db.dbDelete("DELETE FROM templates where id=$1", id)
 }
 
-func (db dbObj) SelectScenariosForHostname(hostname string) ([]int64, error) {
+func (db dbObj) SelectScenariosForHostname(hostname string) ([]uint64, error) {
 	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=$1 AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=TRUE", hostname)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	scenarioIDs := make([]int64, 0)
-	var id int64
+	scenarioIDs := make([]uint64, 0)
+	var id uint64
 	for rows.Next() {
 		err := rows.Scan(&id)
 		if err != nil {
@@ -394,7 +394,7 @@ func (db dbObj) SelectScenariosForHostname(hostname string) ([]int64, error) {
 	return scenarioIDs, nil
 }
 
-func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([]model.Template, error) {
+func (db dbObj) SelectTemplatesForHostname(scenarioID uint64, hostname string) ([]model.Template, error) {
 	rows, err := db.dbConn.Query("SELECT templates.id, templates.name, templates.state FROM templates, hosts, hosts_templates WHERE hosts.hostname=$1 AND hosts_templates.scenario_id=$2 AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
 	if err != nil {
 		return nil, err
@@ -402,7 +402,7 @@ func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([
 	defer rows.Close()
 
 	templates := make([]model.Template, 0)
-	var id int64
+	var id uint64
 	var name string
 	var stateBytes []byte
 	for rows.Next() {
@@ -424,15 +424,15 @@ func (db dbObj) SelectTemplatesForHostname(scenarioID int64, hostname string) ([
 	return templates, nil
 }
 
-func (db dbObj) InsertTemplate(template model.Template) (int64, error) {
+func (db dbObj) InsertTemplate(template model.Template) (uint64, error) {
 	b, err := json.Marshal(template.State)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	return db.dbInsert("INSERT INTO templates(name, state) VALUES($1, $2) RETURNING id", template.Name, b)
 }
 
-func (db dbObj) UpdateTemplate(id int64, template model.Template) error {
+func (db dbObj) UpdateTemplate(id uint64, template model.Template) error {
 	b, err := json.Marshal(template.State)
 	if err != nil {
 		return err
@@ -447,7 +447,7 @@ func (db dbObj) SelectHosts() ([]model.Host, error) {
 	}
 	defer rows.Close()
 
-	var id int64
+	var id uint64
 	var hostname string
 	var os string
 	hosts := make([]model.Host, 0)
@@ -467,7 +467,7 @@ func (db dbObj) SelectHosts() ([]model.Host, error) {
 	return hosts, nil
 }
 
-func (db dbObj) SelectHost(id int64) (model.Host, error) {
+func (db dbObj) SelectHost(id uint64) (model.Host, error) {
 	var host model.Host
 
 	rows, err := db.dbConn.Query("SELECT hostname, os FROM hosts where id=$1", id)
@@ -495,28 +495,28 @@ func (db dbObj) SelectHost(id int64) (model.Host, error) {
 	return host, nil
 }
 
-func (db dbObj) DeleteHost(id int64) error {
+func (db dbObj) DeleteHost(id uint64) error {
 	return db.dbDelete("DELETE FROM hosts where id=$1", id)
 }
 
-func (db dbObj) InsertHost(host model.Host) (int64, error) {
+func (db dbObj) InsertHost(host model.Host) (uint64, error) {
 	return db.dbInsert("INSERT INTO hosts(hostname, os) VALUES($1, $2) RETURNING id", host.Hostname, host.OS)
 }
 
-func (db dbObj) UpdateHost(id int64, host model.Host) error {
+func (db dbObj) UpdateHost(id uint64, host model.Host) error {
 	return db.dbUpdate("UPDATE hosts SET hostname=$1,os=$2 WHERE id=$3", host.Hostname, host.OS, id)
 }
 
-func (db dbObj) SelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64, error) {
+func (db dbObj) SelectScenarioHostTemplates(scenarioID uint64) (map[uint64][]uint64, error) {
 	rows, err := db.dbConn.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=$1", scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var templateID int64
-	var hostID int64
-	hostTemplates := make(map[int64][]int64)
+	var templateID uint64
+	var hostID uint64
+	hostTemplates := make(map[uint64][]uint64)
 
 	for rows.Next() {
 		err = rows.Scan(&hostID, &templateID)
@@ -525,7 +525,7 @@ func (db dbObj) SelectScenarioHostTemplates(scenarioID int64) (map[int64][]int64
 		}
 		entry := hostTemplates[hostID]
 		if entry == nil {
-			entry = make([]int64, 1)
+			entry = make([]uint64, 1)
 			entry[0] = templateID
 			hostTemplates[hostID] = entry
 		} else {
@@ -550,7 +550,7 @@ func (db dbObj) SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, erro
 	}
 	defer rows.Close()
 
-	var id int64
+	var id uint64
 	var name string
 	scenarios := make([]model.ScenarioSummary, 0)
 
@@ -568,7 +568,7 @@ func (db dbObj) SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, erro
 	return scenarios, nil
 }
 
-func (db dbObj) SelectScenario(id int64) (model.Scenario, error) {
+func (db dbObj) SelectScenario(id uint64) (model.Scenario, error) {
 	var scenario model.Scenario
 
 	stmt, err := db.dbConn.Prepare("SELECT name, description, enabled FROM scenarios where id=$1")
@@ -605,11 +605,11 @@ func (db dbObj) SelectScenario(id int64) (model.Scenario, error) {
 	return scenario, nil
 }
 
-func (db dbObj) DeleteScenarioHostTemplates(scenarioID int64) error {
+func (db dbObj) DeleteScenarioHostTemplates(scenarioID uint64) error {
 	return db.dbDelete("DELETE FROM hosts_templates WHERE scenario_id=$1", scenarioID)
 }
 
-func (db dbObj) DeleteScenario(id int64) error {
+func (db dbObj) DeleteScenario(id uint64) error {
 	err := db.dbDelete("DELETE FROM scenarios WHERE id=$1", id)
 	if err != nil {
 		return err
@@ -617,7 +617,7 @@ func (db dbObj) DeleteScenario(id int64) error {
 	return db.DeleteScenarioHostTemplates(id)
 }
 
-func (db dbObj) InsertScenarioHostTemplates(id int64, scenario model.Scenario) error {
+func (db dbObj) InsertScenarioHostTemplates(id uint64, scenario model.Scenario) error {
 	for hostID, templateIDs := range scenario.HostTemplates {
 		for _, templateID := range templateIDs {
 			_, err := db.dbInsert("INSERT INTO hosts_templates(scenario_id, host_id, template_id) VALUES($1, $2, $3)", id, hostID, templateID)
@@ -629,16 +629,16 @@ func (db dbObj) InsertScenarioHostTemplates(id int64, scenario model.Scenario) e
 	return nil
 }
 
-func (db dbObj) InsertScenario(scenario model.Scenario) (int64, error) {
+func (db dbObj) InsertScenario(scenario model.Scenario) (uint64, error) {
 	id, err := db.dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES($1, $2, $3) RETURNING id", scenario.Name, scenario.Description, scenario.Enabled)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	return id, db.InsertScenarioHostTemplates(id, scenario)
 }
 
-func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
+func (db dbObj) UpdateScenario(id uint64, scenario model.Scenario) error {
 	enabled := 1
 	if !scenario.Enabled {
 		enabled = 0
@@ -654,7 +654,7 @@ func (db dbObj) UpdateScenario(id int64, scenario model.Scenario) error {
 	return db.InsertScenarioHostTemplates(id, scenario)
 }
 
-func (db dbObj) SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore, error) {
+func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error) {
 	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM (SELECT scores.host_token, MAX(scores.timestamp) AS latest_timestamp FROM scores WHERE scenario_id=$1 GROUP BY scores.host_token) AS latest, scores, team_host_tokens, teams WHERE latest.host_token=scores.host_token AND latest.latest_timestamp=scores.timestamp AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id;", scenarioID)
 	if err != nil {
 		return nil, err
@@ -704,7 +704,7 @@ func (db dbObj) SelectLatestScenarioScores(scenarioID int64) ([]model.TeamScore,
 	return totalScores, nil
 }
 
-func (db dbObj) SelectScenarioTimeline(scenarioID int64, hostToken string) (model.ScenarioTimeline, error) {
+func (db dbObj) SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error) {
 	var timeline model.ScenarioTimeline
 	timeline.Timestamps = make([]int64, 0)
 	timeline.Scores = make([]int64, 0)
@@ -739,7 +739,7 @@ func (db dbObj) InsertScenarioScore(entry model.ScenarioHostScore) error {
 	return nil
 }
 
-func (db dbObj) SelectLatestScenarioReport(scenarioID int64, hostToken string) (model.Report, error) {
+func (db dbObj) SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error) {
 	var report model.Report
 	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 GROUP BY timestamp, report ORDER BY timestamp DESC LIMIT 1", scenarioID, hostToken)
 	if err != nil {
@@ -761,7 +761,7 @@ func (db dbObj) SelectLatestScenarioReport(scenarioID int64, hostToken string) (
 	return report, nil
 }
 
-func (db dbObj) InsertScenarioReport(scenarioID int64, hostToken string, entry model.Report) error {
+func (db dbObj) InsertScenarioReport(scenarioID uint64, hostToken string, entry model.Report) error {
 	b, err := json.Marshal(entry)
 	if err != nil {
 		return err
@@ -774,7 +774,7 @@ func (db dbObj) InsertScenarioReport(scenarioID int64, hostToken string, entry m
 	return nil
 }
 
-func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, error) {
+func (db dbObj) SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
 	rows, err := db.dbConn.Query("SELECT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=$1 AND scenarios.enabled=TRUE AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
 	if err != nil {
@@ -783,15 +783,15 @@ func (db dbObj) SelectTeamScenarioHosts(teamID int64) ([]model.ScenarioHosts, er
 	defer rows.Close()
 
 	var scenarioName string
-	var scenarioID int64
+	var scenarioID uint64
 	var hostname string
-	var hostID int64
+	var hostID uint64
 	var hostOS string
 
 	// need to collect scenario to hosts mapping
-	collectedHosts := make(map[int64][]model.Host)
+	collectedHosts := make(map[uint64][]model.Host)
 	// cache scenario name
-	scenarioNames := make(map[int64]string)
+	scenarioNames := make(map[uint64]string)
 
 	for rows.Next() {
 		err := rows.Scan(&scenarioName, &scenarioID, &hostname, &hostID, &hostOS)
@@ -834,15 +834,14 @@ func (db dbObj) InsertHostToken(token string, timestamp int64, hostname string, 
 	return nil
 }
 
-func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (int64, error) {
+func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (uint64, error) {
 	rows, err := db.dbConn.Query("SELECT team_id from team_host_tokens WHERE host_token=$1", hostToken)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	defer rows.Close()
 
-	var teamID int64
-	teamID = -1
+	var teamID uint64
 
 	// should only be one match
 	for rows.Next() {
@@ -850,14 +849,14 @@ func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (int64, error) {
 		break
 	}
 	// should have changed
-	if teamID == -1 {
+	if teamID == 0 {
 		return teamID, errors.New("No team ID found")
 	}
 
 	return teamID, nil
 }
 
-func (db dbObj) InsertTeamHostToken(teamID int64, hostname string, hostToken string, timestamp int64) error {
+func (db dbObj) InsertTeamHostToken(teamID uint64, hostname string, hostToken string, timestamp int64) error {
 	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, hostname, host_token, timestamp) VALUES($1, $2, $3, $4)", teamID, hostname, hostToken, timestamp)
 	if err != nil {
 		return err
@@ -866,7 +865,7 @@ func (db dbObj) InsertTeamHostToken(teamID int64, hostname string, hostToken str
 	return nil
 }
 
-func (db dbObj) SelectHostTokens(teamID int64, hostname string) ([]string, error) {
+func (db dbObj) SelectHostTokens(teamID uint64, hostname string) ([]string, error) {
 	hostTokens := make([]string, 0)
 
 	rows, err := db.dbConn.Query("SELECT host_token from team_host_tokens WHERE team_id=$1 AND hostname=$2 ORDER BY timestamp ASC", teamID, hostname)

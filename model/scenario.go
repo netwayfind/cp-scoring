@@ -1,7 +1,7 @@
 package model
 
 type Template struct {
-	ID    int64
+	ID    uint64
 	Name  string
 	State State
 }
@@ -23,12 +23,12 @@ type Report struct {
 }
 
 type TeamSummary struct {
-	ID   int64
+	ID   uint64
 	Name string
 }
 
 type Team struct {
-	ID      int64
+	ID      uint64
 	Name    string
 	POC     string
 	Email   string
@@ -37,16 +37,16 @@ type Team struct {
 }
 
 type ScenarioSummary struct {
-	ID   int64
+	ID   uint64
 	Name string
 }
 
 type Scenario struct {
-	ID            int64
+	ID            uint64
 	Name          string
 	Description   string
 	Enabled       bool
-	HostTemplates map[int64][]int64
+	HostTemplates map[uint64][]uint64
 }
 
 type TeamScore struct {
@@ -56,7 +56,7 @@ type TeamScore struct {
 }
 
 type ScenarioHostScore struct {
-	ScenarioID int64
+	ScenarioID uint64
 	HostToken  string
 	Timestamp  int64
 	Score      int64
@@ -68,7 +68,7 @@ type ScenarioTimeline struct {
 }
 
 type ScenarioHosts struct {
-	ScenarioID   int64
+	ScenarioID   uint64
 	ScenarioName string
 	Hosts        []Host
 }

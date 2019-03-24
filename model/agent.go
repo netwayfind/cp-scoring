@@ -18,7 +18,7 @@ type CurrentHost interface {
 }
 
 type Host struct {
-	ID       int64
+	ID       uint64
 	Hostname string
 	OS       string
 }

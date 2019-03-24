@@ -240,7 +240,7 @@ func TestInsertScenarioScore(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
-	var readScenarioID int64
+	var readScenarioID uint64
 	var readHostToken string
 	var readTimestamp int64
 	var readScore int64
@@ -424,7 +424,7 @@ func TestInsertScenarioReport(t *testing.T) {
 	report := model.Report{Timestamp: 1500, Findings: findings}
 
 	// insert report without scenario and host token
-	err := backingStore.InsertScenarioReport(-1, "host-token", report)
+	err := backingStore.InsertScenarioReport(0, "host-token", report)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -448,7 +448,7 @@ func TestInsertScenarioReport(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
-	var readScenarioID int64
+	var readScenarioID uint64
 	var readHostToken string
 	var readTimestamp int64
 	var readReportBytes []byte
@@ -597,7 +597,7 @@ func TestSelectScenarioTimeline(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing data
-	timeline, err := backingStore.SelectScenarioTimeline(-1, "host-token1")
+	timeline, err := backingStore.SelectScenarioTimeline(0, "host-token1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -970,7 +970,7 @@ func TestInsertTeam(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
-	var readTeamID int64
+	var readTeamID uint64
 	var name string
 	var poc string
 	var email string
@@ -1029,7 +1029,7 @@ func TestSelectTeam(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing team
-	team, err := backingStore.SelectTeam(-1)
+	team, err := backingStore.SelectTeam(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1140,7 +1140,7 @@ func TestUpdateTeam(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing team
-	err := backingStore.UpdateTeam(-1, model.Team{Name: "team1"})
+	err := backingStore.UpdateTeam(0, model.Team{Name: "team1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1203,7 +1203,7 @@ func TestDeleteTeam(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing team
-	err := backingStore.DeleteTeam(-1)
+	err := backingStore.DeleteTeam(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1258,7 +1258,7 @@ func TestInsertHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
-	var readHostID int64
+	var readHostID uint64
 	var readHostname string
 	var readOS string
 	if rows.Next() {
@@ -1295,7 +1295,7 @@ func TestSelectHost(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing host
-	host, err := backingStore.SelectHost(-1)
+	host, err := backingStore.SelectHost(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1404,7 +1404,7 @@ func TestUpdateHost(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing host
-	err := backingStore.UpdateHost(-1, model.Host{Hostname: "host1"})
+	err := backingStore.UpdateHost(0, model.Host{Hostname: "host1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1461,7 +1461,7 @@ func TestDeleteHost(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing host
-	err := backingStore.DeleteHost(-1)
+	err := backingStore.DeleteHost(0)
 	if err != nil {
 		t.Fatal()
 	}
@@ -1544,7 +1544,7 @@ func TestInsertTeamHostToken(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// insert team host token without existing team or host token
-	err := backingStore.InsertTeamHostToken(-1, "hostname", "host-token", 1300)
+	err := backingStore.InsertTeamHostToken(0, "hostname", "host-token", 1300)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -1605,7 +1605,7 @@ func TestInsertTeamHostToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter = 0
-	var readTeamID int64
+	var readTeamID uint64
 	var hostToken string
 	var hostname string
 	var timestamp int64
@@ -1637,7 +1637,7 @@ func TestSelectHostTokens(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing host tokens
-	hostTokens, err := backingStore.SelectHostTokens(-1, "host1")
+	hostTokens, err := backingStore.SelectHostTokens(0, "host1")
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -1810,7 +1810,7 @@ func TestInsertTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
-	var readTemplateID int64
+	var readTemplateID uint64
 	var templateName string
 	var templateStateBytes []byte
 	var templateState model.State
@@ -1846,7 +1846,7 @@ func TestSelectTemplate(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing template
-	template, err := backingStore.SelectTemplate(-1)
+	template, err := backingStore.SelectTemplate(0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1925,7 +1925,7 @@ func TestUpdateTemplate(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing template
-	err := backingStore.UpdateTemplate(-1, model.Template{Name: "template1"})
+	err := backingStore.UpdateTemplate(0, model.Template{Name: "template1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1984,7 +1984,7 @@ func TestDeleteTemplate(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing template
-	err := backingStore.DeleteTemplate(-1)
+	err := backingStore.DeleteTemplate(0)
 	if err != nil {
 		t.Fatal(err)
 	}
