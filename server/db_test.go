@@ -19,9 +19,9 @@ var directDBConn *sql.DB
 
 func getTestBackingStore() (backingStore, error) {
 	if testDBObj == nil {
-		configFileBytes, err := ioutil.ReadFile("cp-config.test.conf")
+		configFileBytes, err := ioutil.ReadFile("cp-scoring.test.conf")
 		if err != nil {
-			log.Fatal("ERROR: unable to read config file;", err)
+			log.Fatal("ERROR: unable to read test config file;", err)
 		}
 		var sqlURL string
 		for _, line := range strings.Split(string(configFileBytes), "\n") {

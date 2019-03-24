@@ -53,6 +53,19 @@ To build [The Server] and [agents]:
 To create a bundle for deployment:
 1. `sh bundle.sh`
 
+## Tests
+
+The golang code has unit tests (*_test.go files) and integration tests with postgres. Unit tests are run in the `build.sh` script.
+
+The `cp-scoring\server\db_test.go` has integration tests for the persistent backing store. To run the integration tests:
+1. Start up a local postgres instance
+1. Create a file at `cp-scoring\server\cp-scoring.test.conf`
+   - Refer to the `cp-scoring.test.conf.example` file to set up connecting to the postgres instance.
+1. Open Terminal
+1. `go test github.com/sumwonyuno/cp-scoring/server --tags=integration`
+
+The UI code does not currently have automated tests.
+
 # Deploying and Running
 
 ## [The Server]

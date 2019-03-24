@@ -1,4 +1,4 @@
 node_modules/
-server/cp-config.test.conf
+server/cp-scoring.test.conf
 target/
 test_temp/
