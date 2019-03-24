@@ -6,7 +6,6 @@ class App extends React.Component {
   render() {
     // check for these in query params
     let teamKey = "";
-    let hostname = "";
     let hostToken = "";
     let query = window.location.search.substring(1);
     let params = query.split("&");
@@ -18,16 +17,13 @@ class App extends React.Component {
       if (param[0] === "team_key") {
         teamKey = param[1].trim();
       }
-      else if (param[0] == "hostname") {
-        hostname = param[1].trim();
-      }
       else if (param[0] == "host_token") {
         hostToken = param[1].trim();
       }
     }
     if (teamKey.length == 0) {
       return (
-        <AskTeamKey hostname={hostname} hostToken={hostToken} />
+        <AskTeamKey hostToken={hostToken} />
       );
     }
     return (
@@ -45,13 +41,12 @@ class AskTeamKey extends React.Component {
 
   render() {
     // default is to just show report for team
-    // if given host token and hostname, register team token with team
-    if (this.props.hostToken && this.props.hostname) {
+    // if given host token register team token with team
+    if (this.props.hostToken) {
       return (
         <React.Fragment>
         <form method="POST" action="/token/team">
           <input name="host_token" hidden value={this.props.hostToken}/>
-          <input name="hostname" hidden value={this.props.hostname}/>
           <label id="team_key">Enter team key:</label>
           <input name="team_key" />
           <button type="submit">Submit</button>
