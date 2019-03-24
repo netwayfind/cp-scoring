@@ -34,7 +34,7 @@ func (db dbObj) dbInit() {
 	db.createTable("templates", "CREATE TABLE IF NOT EXISTS templates(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, state JSONB NOT NULL)")
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id BIGSERIAL PRIMARY KEY, hostname VARCHAR UNIQUE NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
-	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, hostname VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB NOT NULL, FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
@@ -856,8 +856,8 @@ func (db dbObj) SelectTeamIDFromHostToken(hostToken string) (uint64, error) {
 	return teamID, nil
 }
 
-func (db dbObj) InsertTeamHostToken(teamID uint64, hostname string, hostToken string, timestamp int64) error {
-	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, hostname, host_token, timestamp) VALUES($1, $2, $3, $4)", teamID, hostname, hostToken, timestamp)
+func (db dbObj) InsertTeamHostToken(teamID uint64, hostToken string, timestamp int64) error {
+	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, host_token, timestamp) VALUES($1, $2, $3)", teamID, hostToken, timestamp)
 	if err != nil {
 		return err
 	}
@@ -868,7 +868,7 @@ func (db dbObj) InsertTeamHostToken(teamID uint64, hostname string, hostToken st
 func (db dbObj) SelectHostTokens(teamID uint64, hostname string) ([]string, error) {
 	hostTokens := make([]string, 0)
 
-	rows, err := db.dbConn.Query("SELECT host_token from team_host_tokens WHERE team_id=$1 AND hostname=$2 ORDER BY timestamp ASC", teamID, hostname)
+	rows, err := db.dbConn.Query("SELECT team_host_tokens.host_token from team_host_tokens, host_tokens WHERE team_host_tokens.team_id=$1 AND team_host_tokens.host_token=host_tokens.host_token AND host_tokens.hostname=$2 ORDER BY host_tokens.timestamp ASC", teamID, hostname)
 	if err != nil {
 		return hostTokens, err
 	}

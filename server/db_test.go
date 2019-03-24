@@ -303,19 +303,19 @@ func TestSelectLatestScenarioScores(t *testing.T) {
 		t.Fatal(err)
 	}
 	// insert sample team, host token mapping
-	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host1_1", 0)
+	err = backingStore.InsertTeamHostToken(team1ID, "host1_1", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host1_2", 0)
+	err = backingStore.InsertTeamHostToken(team1ID, "host1_2", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host2_1", 0)
+	err = backingStore.InsertTeamHostToken(team1ID, "host2_1", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host1_3", 0)
+	err = backingStore.InsertTeamHostToken(team2ID, "host1_3", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1544,7 +1544,7 @@ func TestInsertTeamHostToken(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// insert team host token without existing team or host token
-	err := backingStore.InsertTeamHostToken(0, "hostname", "host-token", 1300)
+	err := backingStore.InsertTeamHostToken(0, "host-token", 1300)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -1569,7 +1569,7 @@ func TestInsertTeamHostToken(t *testing.T) {
 	}
 
 	// insert team host token without existing host token
-	err = backingStore.InsertTeamHostToken(teamID, "hostname", "host-token", 1300)
+	err = backingStore.InsertTeamHostToken(teamID, "host-token", 1300)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -1594,7 +1594,7 @@ func TestInsertTeamHostToken(t *testing.T) {
 	}
 
 	// insert team host token
-	err = backingStore.InsertTeamHostToken(teamID, "hostname", "host-token", 1300)
+	err = backingStore.InsertTeamHostToken(teamID, "host-token", 1300)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1607,10 +1607,9 @@ func TestInsertTeamHostToken(t *testing.T) {
 	counter = 0
 	var readTeamID uint64
 	var hostToken string
-	var hostname string
 	var timestamp int64
 	for rows.Next() {
-		err = rows.Scan(&readTeamID, &hostToken, &hostname, &timestamp)
+		err = rows.Scan(&readTeamID, &hostToken, &timestamp)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1624,9 +1623,6 @@ func TestInsertTeamHostToken(t *testing.T) {
 	}
 	if hostToken != "host-token" {
 		t.Fatal("Unexpected host token")
-	}
-	if hostname != "hostname" {
-		t.Fatal("Unexpected hostname")
 	}
 	if timestamp != 1300 {
 		t.Fatal("Unexpected timestamp")
@@ -1670,19 +1666,19 @@ func TestSelectHostTokens(t *testing.T) {
 	}
 
 	// assign host tokens to teams
-	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1a", 401)
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token1a", 401)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1b", 400)
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token1b", 400)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host-token2", 400)
+	err = backingStore.InsertTeamHostToken(team2ID, "host-token2", 400)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host-token3", 400)
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token3", 400)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1760,15 +1756,15 @@ func TestSelectTeamIDFromHostToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	// set up team host tokens
-	err = backingStore.InsertTeamHostToken(team1ID, "host1", "host-token1a", 900)
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token1a", 900)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team2ID, "host1", "host-token1b", 900)
+	err = backingStore.InsertTeamHostToken(team2ID, "host-token1b", 900)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertTeamHostToken(team1ID, "host2", "host-token2", 900)
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token2", 900)
 	if err != nil {
 		t.Fatal(err)
 	}

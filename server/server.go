@@ -1303,11 +1303,6 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 		http.Error(w, "Host token missing", http.StatusBadRequest)
 		return
 	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		http.Error(w, "Hostname missing", http.StatusBadRequest)
-		return
-	}
 	teamKey := r.Form.Get("team_key")
 	if len(teamKey) == 0 {
 		http.Error(w, "Team key missing", http.StatusBadRequest)
@@ -1320,7 +1315,7 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = theServer.backingStore.InsertTeamHostToken(teamID, hostname, hostToken, timestamp)
+	err = theServer.backingStore.InsertTeamHostToken(teamID, hostToken, timestamp)
 	if err != nil {
 		log.Println("ERROR: unable to insert team host token;", err)
 		http.Error(w, "Internal server error. Try again later", http.StatusInternalServerError)

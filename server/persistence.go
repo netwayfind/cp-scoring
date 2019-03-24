@@ -46,7 +46,7 @@ type backingStore interface {
 	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)
 	SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error)
 	InsertHostToken(hostToken string, timestamp int64, hostname string, source string) error
-	InsertTeamHostToken(teamID uint64, hostname string, hostToken string, timestamp int64) error
+	InsertTeamHostToken(teamID uint64, hostToken string, timestamp int64) error
 	SelectHostTokens(teamID uint64, hostname string) ([]string, error)
 }
 
