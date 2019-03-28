@@ -2018,3 +2018,279 @@ func TestDeleteTemplate(t *testing.T) {
 		t.Fatal("Unexpected template count:", len(templates))
 	}
 }
+
+func TestInsertScenario(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{
+		Name:        "Test scenario",
+		Description: "description",
+		Enabled:     true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure scenario added
+	rows, err := directDBConn.Query("SELECT * FROM scenarios")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readScenarioID uint64
+	var name string
+	var description string
+	var enabled bool
+	for rows.Next() {
+		err = rows.Scan(&readScenarioID, &name, &description, &enabled)
+		counter++
+	}
+	if counter != 1 {
+		t.Fatal("Unexpected row count:", counter)
+	}
+	if readScenarioID != scenarioID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if name != "Test scenario" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if description != "description" {
+		t.Fatal("Unexpected description")
+	}
+	if enabled != true {
+		t.Fatal("Unexpected scenario enabled setting")
+	}
+}
+
+func TestSelectScenario(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing scenario
+	scenario, err := backingStore.SelectScenario(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != 0 {
+		t.Fatal("Unexpected scenario ID")
+	}
+
+	// add scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenario, err = backingStore.SelectScenario(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenarioID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenario.Name != "scenario" {
+		t.Fatal("Unexpected scenario name")
+	}
+}
+
+func TestSelectScenarios(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing scenarios (only enabled is true)
+	scenarios, err := backingStore.SelectScenarios(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+	// no existing scenarios (only enabled is false)
+	scenarios, err = backingStore.SelectScenarios(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+
+	// insert sample scenarios
+	scenario4ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario 4", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario3ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario 3", Enabled: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario2ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario 2", Enabled: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario1ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario 1", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// select all scenarios
+	scenarios, err = backingStore.SelectScenarios(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 4 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+	// should be ordered by scenario name
+	if scenarios[0].ID != scenario1ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[0].Name != "scenario 1" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenarios[1].ID != scenario2ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[1].Name != "scenario 2" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenarios[2].ID != scenario3ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[2].Name != "scenario 3" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenarios[3].ID != scenario4ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[3].Name != "scenario 4" {
+		t.Fatal("Unexpected scenario name")
+	}
+
+	// select all scenarios (enabled only)
+	scenarios, err = backingStore.SelectScenarios(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 2 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+	// should be ordered by scenario name
+	if scenarios[0].ID != scenario1ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[0].Name != "scenario 1" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenarios[1].ID != scenario4ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarios[1].Name != "scenario 4" {
+		t.Fatal("Unexpected scenario name")
+	}
+}
+
+func TestUpdateScenario(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no existing scenario
+	err := backingStore.UpdateScenario(0, model.Scenario{Name: "scenario"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have created any scenarios
+	scenarios, err := backingStore.SelectScenarios(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+
+	// add sample scenarios
+	scenario1ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario1", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario2ID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario2", Enabled: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// update scenario
+	err = backingStore.UpdateScenario(scenario2ID, model.Scenario{Name: "Scenario 2", Enabled: false})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check updates
+	// scenario1
+	scenario, err := backingStore.SelectScenario(scenario1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenario1ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenario.Name != "scenario1" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenario.Enabled != true {
+		t.Fatal("Unexpected scenario enabled setting")
+	}
+	// Scenario 2
+	scenario, err = backingStore.SelectScenario(scenario2ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenario2ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenario.Name != "Scenario 2" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenario.Enabled != false {
+		t.Fatal("Unexpected scenario enabled setting")
+	}
+}
+
+func TestDeleteScenario(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// no exsting scenario
+	err := backingStore.DeleteScenario(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// add sample scenario
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure scenario exists
+	scenario, err := backingStore.SelectScenario(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenarioID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenario.Name != "scenario" {
+		t.Fatal("Unexpected scenario name")
+	}
+
+	// delete scenario
+	err = backingStore.DeleteScenario(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure deleted
+	scenarios, err := backingStore.SelectScenarios(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarios) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+}
