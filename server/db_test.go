@@ -2074,21 +2074,104 @@ func TestSelectScenario(t *testing.T) {
 		t.Fatal("Unexpected scenario ID")
 	}
 
-	// add scenario
-	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario"})
+	// add scenarios
+	// enabled
+	scenario1 := model.Scenario{Name: "scenario1", Enabled: true}
+	scenario1ID, err := backingStore.InsertScenario(scenario1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// disabled
+	scenario2 := model.Scenario{Name: "scenario2", Enabled: false}
+	scenario2ID, err := backingStore.InsertScenario(scenario2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	scenario, err = backingStore.SelectScenario(scenarioID)
+	// get enabled
+	scenario, err = backingStore.SelectScenario(scenario1ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if scenario.ID != scenarioID {
+	if scenario.ID != scenario1ID {
 		t.Fatal("Unexpected scenario ID")
 	}
-	if scenario.Name != "scenario" {
+	if scenario.Name != "scenario1" {
 		t.Fatal("Unexpected scenario name")
+	}
+	if scenario.Enabled != true {
+		t.Fatal("Unexpected scenario enabled setting")
+	}
+	if len(scenario.HostTemplates) != 0 {
+		t.Fatal("Unexpected host template count:", len(scenario.HostTemplates))
+	}
+
+	// get disabled
+	scenario, err = backingStore.SelectScenario(scenario2ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenario2ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenario.Name != "scenario2" {
+		t.Fatal("Unexpected scenario name")
+	}
+	if scenario.Enabled != false {
+		t.Fatal("Unexpected scenario enabled setting")
+	}
+	if len(scenario.HostTemplates) != 0 {
+		t.Fatal("Unexpected host template count:", len(scenario.HostTemplates))
+	}
+
+	// add host templates to scenario
+	host := model.Host{Hostname: "host"}
+	hostID, err := backingStore.InsertHost(host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	template2 := model.Template{Name: "template2"}
+	template2ID, err := backingStore.InsertTemplate(template2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	template1 := model.Template{Name: "template1"}
+	template1ID, err := backingStore.InsertTemplate(template1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario1.HostTemplates = map[uint64][]uint64{
+		hostID: {template1ID, template2ID},
+	}
+	err = backingStore.UpdateScenario(scenario1ID, scenario1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// host templates should be present
+	scenario, err = backingStore.SelectScenario(scenario1ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenario.ID != scenario1ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if len(scenario.HostTemplates) != 1 {
+		t.Fatal("Unexpected host template count:", len(scenario.HostTemplates))
+	}
+	templates, present := scenario.HostTemplates[hostID]
+	if !present {
+		t.Fatal("Expected host to be in host templates")
+	}
+	if len(templates) != 2 {
+		t.Fatal("Unexpected template count")
+	}
+	// should be in template ID (insertion) order
+	if templates[0] != template2ID {
+		t.Fatal("Unexpected template ID")
+	}
+	if templates[1] != template1ID {
+		t.Fatal("Unexpected template ID")
 	}
 }
 
@@ -2292,5 +2375,356 @@ func TestDeleteScenario(t *testing.T) {
 	}
 	if len(scenarios) != 0 {
 		t.Fatal("Unexpected scenario count:", len(scenarios))
+	}
+}
+
+func TestSelectScenariosForHostname(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// non-existent hostname
+	scenarioIDs, err := backingStore.SelectScenariosForHostname("hostname")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioIDs) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarioIDs))
+	}
+
+	// add host
+	hostID, err := backingStore.InsertHost(model.Host{Hostname: "hostname"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// no scenarios yet
+	scenarioIDs, err = backingStore.SelectScenariosForHostname("hostname")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioIDs) != 0 {
+		t.Fatal("Unexpected scenario count:", len(scenarioIDs))
+	}
+
+	// add sample template
+	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// add sample scenarios
+	scenario1ID, err := backingStore.InsertScenario(model.Scenario{
+		Name:    "scenario1",
+		Enabled: false,
+		HostTemplates: map[uint64][]uint64{
+			hostID: []uint64{templateID},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario2ID, err := backingStore.InsertScenario(model.Scenario{
+		Name:    "scenario2",
+		Enabled: true,
+		HostTemplates: map[uint64][]uint64{
+			hostID: []uint64{templateID},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// make sure scenario host templates exist
+	rows, err := directDBConn.Query("SELECT * FROM hosts_templates")
+	if err != nil {
+		t.Fatal(err)
+	}
+	counter := 0
+	var readScenarioID uint64
+	var readHostID uint64
+	var readTemplateID uint64
+	for rows.Next() {
+		rows.Scan(&readScenarioID, &readHostID, &readTemplateID)
+		if counter == 0 {
+			if readScenarioID != scenario1ID {
+				t.Fatal("Unexpected scenario ID")
+			}
+		} else if counter == 1 {
+			if readScenarioID != scenario2ID {
+				t.Fatal("Unexpected scenario ID")
+			}
+		} else {
+			break
+		}
+		if readHostID != hostID {
+			t.Fatal("Unexpected host ID")
+		}
+		if readTemplateID != templateID {
+			t.Fatal("Unexpected template ID")
+		}
+		counter++
+	}
+	if counter != 2 {
+		t.Fatal("Unexpected host templates:", counter)
+	}
+
+	// check scenarios
+	scenarioIDs, err = backingStore.SelectScenariosForHostname("hostname")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioIDs) != 1 {
+		t.Fatal("Unexpected scenario count:", len(scenarioIDs))
+	}
+	// only scenario2 enabled
+	if scenarioIDs[0] != scenario2ID {
+		t.Fatal("Unexpected scenario ID")
+	}
+
+}
+
+func TestSelectTemplatesForHostname(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing exists
+	templates, err := backingStore.SelectTemplatesForHostname(0, "hostname")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+
+	// add host
+	host := model.Host{Hostname: "hostname"}
+	hostID, err := backingStore.InsertHost(host)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// add scenario, no templates
+	scenario := model.Scenario{Name: "scenario", Enabled: true}
+	scenarioID, err := backingStore.InsertScenario(scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any templates
+	templates, err = backingStore.SelectTemplatesForHostname(scenarioID, host.Hostname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+
+	// add template to scenario
+	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario.HostTemplates = map[uint64][]uint64{
+		hostID: {templateID},
+	}
+	err = backingStore.UpdateScenario(scenarioID, scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// scenario should have host templates
+	readScenario, err := backingStore.SelectScenario(scenarioID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if readScenario.ID != scenarioID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	readTemplates, present := readScenario.HostTemplates[hostID]
+	if !present {
+		t.Fatal("Expected ")
+	}
+	if len(readTemplates) != 1 {
+		t.Fatal("Unexpected template count:", len(readTemplates))
+	}
+	if readTemplates[0] != templateID {
+		t.Fatal("Unexpected template ID")
+	}
+
+	// should get template
+	templates, err = backingStore.SelectTemplatesForHostname(scenarioID, host.Hostname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 1 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+	if templates[0].ID != templateID {
+		t.Fatal("Unexpected template ID")
+	}
+	if templates[0].Name != "template" {
+		t.Fatal("Unexpected template name")
+	}
+
+	// disable scenario
+	scenario.Enabled = false
+	err = backingStore.UpdateScenario(scenarioID, scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should have no templates
+	templates, err = backingStore.SelectTemplatesForHostname(scenarioID, host.Hostname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(templates) != 0 {
+		t.Fatal("Unexpected template count:", len(templates))
+	}
+}
+
+func TestSelectTeamScenarioHosts(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing exists
+	scenarioHosts, err := backingStore.SelectTeamScenarioHosts(0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count")
+	}
+
+	// add team
+	team := model.Team{Name: "team", Enabled: true}
+	teamID, err := backingStore.InsertTeam(team)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should still have no scenario hosts
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count")
+	}
+
+	// add scenario
+	scenario := model.Scenario{Name: "scenario", Enabled: true}
+	scenarioID, err := backingStore.InsertScenario(scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should still have no scenario hosts
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count")
+	}
+
+	// add host
+	host := model.Host{Hostname: "host"}
+	hostID, err := backingStore.InsertHost(host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// add host token
+	err = backingStore.InsertHostToken("host-token", 100, host.Hostname, "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// assigned host token to team
+	err = backingStore.InsertTeamHostToken(teamID, "host-token", 101)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check, not yet added to scenario
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count")
+	}
+
+	// add host to scenario
+	template := model.Template{Name: "template"}
+	templateID, err := backingStore.InsertTemplate(template)
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenario.HostTemplates = map[uint64][]uint64{
+		hostID: {templateID},
+	}
+	err = backingStore.UpdateScenario(scenarioID, scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should have team scenario hosts
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 1 {
+		t.Fatal("Unexpected scenario host count:", len(scenarioHosts))
+	}
+	if scenarioHosts[0].ScenarioID != scenarioID {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if scenarioHosts[0].ScenarioName != scenario.Name {
+		t.Fatal("Unexpected scenario ID")
+	}
+	if len(scenarioHosts[0].Hosts) != 1 {
+		t.Fatal("Unexpected scenario host count:", len(scenarioHosts[0].Hosts))
+	}
+	if scenarioHosts[0].Hosts[0].ID != hostID {
+		t.Fatal("Unexpected host ID")
+	}
+	if scenarioHosts[0].Hosts[0].Hostname != host.Hostname {
+		t.Fatal("Unexpected hostname")
+	}
+
+	// disable scenario
+	scenario.Enabled = false
+	err = backingStore.UpdateScenario(scenarioID, scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any scenario hosts
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count:", len(scenarioHosts))
+	}
+
+	// re-enable scenario
+	scenario.Enabled = true
+	err = backingStore.UpdateScenario(scenarioID, scenario)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// disable team
+	team.Enabled = false
+	err = backingStore.UpdateTeam(teamID, team)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any scenario hosts
+	scenarioHosts, err = backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenarioHosts) != 0 {
+		t.Fatal("Unexpected scenario host count:", len(scenarioHosts))
 	}
 }

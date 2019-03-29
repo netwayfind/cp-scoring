@@ -395,7 +395,7 @@ func (db dbObj) SelectScenariosForHostname(hostname string) ([]uint64, error) {
 }
 
 func (db dbObj) SelectTemplatesForHostname(scenarioID uint64, hostname string) ([]model.Template, error) {
-	rows, err := db.dbConn.Query("SELECT templates.id, templates.name, templates.state FROM templates, hosts, hosts_templates WHERE hosts.hostname=$1 AND hosts_templates.scenario_id=$2 AND hosts_templates.host_id=hosts.id AND hosts_templates.template_id=templates.id", hostname, scenarioID)
+	rows, err := db.dbConn.Query("SELECT templates.id, templates.name, templates.state FROM templates, hosts, hosts_templates, scenarios WHERE scenarios.id=$1 AND scenarios.enabled=TRUE AND hosts.hostname=$2 AND hosts.id=hosts_templates.host_id AND hosts_templates.scenario_id=scenarios.id AND hosts_templates.template_id=templates.id", scenarioID, hostname)
 	if err != nil {
 		return nil, err
 	}
@@ -508,7 +508,7 @@ func (db dbObj) UpdateHost(id uint64, host model.Host) error {
 }
 
 func (db dbObj) SelectScenarioHostTemplates(scenarioID uint64) (map[uint64][]uint64, error) {
-	rows, err := db.dbConn.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=$1", scenarioID)
+	rows, err := db.dbConn.Query("SELECT host_id, template_id FROM hosts_templates WHERE scenario_id=$1 ORDER BY host_id ASC, template_id ASC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -776,7 +776,7 @@ func (db dbObj) InsertScenarioReport(scenarioID uint64, hostToken string, entry 
 
 func (db dbObj) SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error) {
 	scenarioHosts := make([]model.ScenarioHosts, 0)
-	rows, err := db.dbConn.Query("SELECT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM reports, scenarios, hosts, team_host_tokens WHERE team_host_tokens.team_id=$1 AND scenarios.enabled=TRUE AND reports.scenario_id=scenarios.id AND reports.host_token=team_host_tokens.host_token AND hosts.hostname=team_host_tokens.hostname", teamID)
+	rows, err := db.dbConn.Query("SELECT scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os FROM scenarios, hosts, host_tokens, team_host_tokens, hosts_templates, teams WHERE team_host_tokens.team_id=$1 AND team_host_tokens.host_token=host_tokens.host_token AND host_tokens.hostname=hosts.hostname AND scenarios.id=hosts_templates.scenario_id AND hosts_templates.host_id=hosts.id AND scenarios.enabled=TRUE AND teams.id=team_host_tokens.team_id AND teams.enabled=TRUE GROUP BY scenarios.name, scenarios.id, hosts.hostname, hosts.id, hosts.os", teamID)
 	if err != nil {
 		return scenarioHosts, err
 	}
