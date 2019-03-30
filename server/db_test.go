@@ -1722,6 +1722,21 @@ func TestSelectHostTokens(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected error")
 	}
+
+	// add duplicate host token
+	err = backingStore.InsertTeamHostToken(team1ID, "host-token1a", 900)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// same host tokens
+	hostTokens, err = backingStore.SelectHostTokens(team1ID, "host1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hostTokens) != 2 {
+		t.Fatal("Unexpected host tokens count:", len(hostTokens))
+	}
 }
 
 func TestSelectTeamIDFromHostToken(t *testing.T) {

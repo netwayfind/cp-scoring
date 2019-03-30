@@ -868,7 +868,7 @@ func (db dbObj) InsertTeamHostToken(teamID uint64, hostToken string, timestamp i
 func (db dbObj) SelectHostTokens(teamID uint64, hostname string) ([]string, error) {
 	hostTokens := make([]string, 0)
 
-	rows, err := db.dbConn.Query("SELECT team_host_tokens.host_token from team_host_tokens, host_tokens WHERE team_host_tokens.team_id=$1 AND team_host_tokens.host_token=host_tokens.host_token AND host_tokens.hostname=$2 ORDER BY host_tokens.timestamp ASC", teamID, hostname)
+	rows, err := db.dbConn.Query("SELECT team_host_tokens.host_token from team_host_tokens, host_tokens WHERE team_host_tokens.team_id=$1 AND team_host_tokens.host_token=host_tokens.host_token AND host_tokens.hostname=$2 GROUP BY team_host_tokens.host_token, host_tokens.timestamp ORDER BY host_tokens.timestamp ASC", teamID, hostname)
 	if err != nil {
 		return hostTokens, err
 	}
