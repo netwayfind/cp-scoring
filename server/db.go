@@ -655,19 +655,19 @@ func (db dbObj) UpdateScenario(id uint64, scenario model.Scenario) error {
 }
 
 func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error) {
-	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM (SELECT scores.host_token, MAX(scores.timestamp) AS latest_timestamp FROM scores WHERE scenario_id=$1 GROUP BY scores.host_token) AS latest, scores, team_host_tokens, teams WHERE latest.host_token=scores.host_token AND latest.latest_timestamp=scores.timestamp AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id", scenarioID)
+	rows, err := db.dbConn.Query("SELECT DISTINCT ON (name) name, SUM(score), MAX(timestamp) FROM (SELECT DISTINCT ON(team_hosts.name, team_hosts.hostname) team_hosts.name, team_hosts.hostname, host_scores.score, host_scores.timestamp FROM (SELECT teams.name, host_tokens.host_token, host_tokens.hostname FROM teams, host_tokens, team_host_tokens WHERE teams.id=team_host_tokens.team_id AND host_tokens.host_token=team_host_tokens.host_token GROUP BY teams.name, host_tokens.host_token) AS team_hosts, (SELECT DISTINCT ON (host_token) host_token, timestamp, score FROM scores WHERE scores.scenario_id=$1 ORDER BY host_token, timestamp DESC) AS host_scores WHERE host_scores.host_token=team_hosts.host_token ORDER BY team_hosts.name, team_hosts.hostname, host_scores.timestamp DESC) AS a GROUP BY name", scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var teamName string
-	var timestamp int64
 	var score int64
+	var timestamp int64
 	scores := make([]model.TeamScore, 0)
 
 	for rows.Next() {
-		err = rows.Scan(&teamName, &timestamp, &score)
+		err = rows.Scan(&teamName, &score, &timestamp)
 		if err != nil {
 			return nil, err
 		}
@@ -678,30 +678,7 @@ func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore
 		scores = append(scores, entry)
 	}
 
-	// combine scores into total scores
-	totalScoresMap := make(map[string]model.TeamScore)
-	teamNames := make([]string, 0)
-	for _, score := range scores {
-		storedScore, present := totalScoresMap[score.TeamName]
-		if !present {
-			totalScoresMap[score.TeamName] = score
-			storedScore = score
-			teamNames = append(teamNames, score.TeamName)
-			continue
-		}
-		storedScore.Score += score.Score
-		if score.Timestamp > storedScore.Timestamp {
-			storedScore.Timestamp = score.Timestamp
-		}
-		totalScoresMap[score.TeamName] = storedScore
-	}
-	totalScores := make([]model.TeamScore, len(teamNames))
-	for i, teamName := range teamNames {
-		storedScore, _ := totalScoresMap[teamName]
-		totalScores[i] = storedScore
-	}
-
-	return totalScores, nil
+	return scores, nil
 }
 
 func (db dbObj) SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error) {
