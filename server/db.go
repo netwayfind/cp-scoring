@@ -655,7 +655,7 @@ func (db dbObj) UpdateScenario(id uint64, scenario model.Scenario) error {
 }
 
 func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error) {
-	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM (SELECT scores.host_token, MAX(scores.timestamp) AS latest_timestamp FROM scores WHERE scenario_id=$1 GROUP BY scores.host_token) AS latest, scores, team_host_tokens, teams WHERE latest.host_token=scores.host_token AND latest.latest_timestamp=scores.timestamp AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id;", scenarioID)
+	rows, err := db.dbConn.Query("SELECT teams.name, scores.timestamp, scores.score FROM (SELECT scores.host_token, MAX(scores.timestamp) AS latest_timestamp FROM scores WHERE scenario_id=$1 GROUP BY scores.host_token) AS latest, scores, team_host_tokens, teams WHERE latest.host_token=scores.host_token AND latest.latest_timestamp=scores.timestamp AND scores.host_token=team_host_tokens.host_token AND teams.id=team_host_tokens.team_id", scenarioID)
 	if err != nil {
 		return nil, err
 	}
