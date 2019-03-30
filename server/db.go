@@ -376,7 +376,7 @@ func (db dbObj) DeleteTemplate(id uint64) error {
 }
 
 func (db dbObj) SelectScenariosForHostname(hostname string) ([]uint64, error) {
-	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=$1 AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=TRUE", hostname)
+	rows, err := db.dbConn.Query("SELECT scenarios.id FROM hosts, hosts_templates, scenarios WHERE hosts.hostname=$1 AND hosts_templates.host_id=hosts.id AND hosts_templates.scenario_id=scenarios.id AND scenarios.enabled=TRUE GROUP BY scenarios.id ORDER BY scenarios.id ASC", hostname)
 	if err != nil {
 		return nil, err
 	}

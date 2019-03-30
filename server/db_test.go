@@ -2405,8 +2405,12 @@ func TestSelectScenariosForHostname(t *testing.T) {
 		t.Fatal("Unexpected scenario count:", len(scenarioIDs))
 	}
 
-	// add sample template
-	templateID, err := backingStore.InsertTemplate(model.Template{Name: "template"})
+	// add sample templates
+	template1ID, err := backingStore.InsertTemplate(model.Template{Name: "template1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	template2ID, err := backingStore.InsertTemplate(model.Template{Name: "template2"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2416,7 +2420,7 @@ func TestSelectScenariosForHostname(t *testing.T) {
 		Name:    "scenario1",
 		Enabled: false,
 		HostTemplates: map[uint64][]uint64{
-			hostID: []uint64{templateID},
+			hostID: []uint64{template1ID, template2ID},
 		},
 	})
 	if err != nil {
@@ -2426,7 +2430,7 @@ func TestSelectScenariosForHostname(t *testing.T) {
 		Name:    "scenario2",
 		Enabled: true,
 		HostTemplates: map[uint64][]uint64{
-			hostID: []uint64{templateID},
+			hostID: []uint64{template1ID, template2ID},
 		},
 	})
 	if err != nil {
@@ -2434,7 +2438,7 @@ func TestSelectScenariosForHostname(t *testing.T) {
 	}
 
 	// make sure scenario host templates exist
-	rows, err := directDBConn.Query("SELECT * FROM hosts_templates")
+	rows, err := directDBConn.Query("SELECT * FROM hosts_templates ORDER BY scenario_id, host_id, template_id ASC")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2448,22 +2452,39 @@ func TestSelectScenariosForHostname(t *testing.T) {
 			if readScenarioID != scenario1ID {
 				t.Fatal("Unexpected scenario ID")
 			}
+			if readTemplateID != template1ID {
+				t.Fatal("Unexpected template ID")
+			}
 		} else if counter == 1 {
+			if readScenarioID != scenario1ID {
+				t.Fatal("Unexpected scenario ID")
+			}
+			if readTemplateID != template2ID {
+				t.Fatal("Unexpected template ID")
+			}
+		} else if counter == 2 {
 			if readScenarioID != scenario2ID {
 				t.Fatal("Unexpected scenario ID")
 			}
+			if readTemplateID != template1ID {
+				t.Fatal("Unexpected template ID")
+			}
+		} else if counter == 3 {
+			if readScenarioID != scenario2ID {
+				t.Fatal("Unexpected scenario ID")
+			}
+			if readTemplateID != template2ID {
+				t.Fatal("Unexpected template ID")
+			}
 		} else {
-			break
+			t.Fatal("Unexpected row")
 		}
 		if readHostID != hostID {
 			t.Fatal("Unexpected host ID")
 		}
-		if readTemplateID != templateID {
-			t.Fatal("Unexpected template ID")
-		}
 		counter++
 	}
-	if counter != 2 {
+	if counter != 4 {
 		t.Fatal("Unexpected host templates:", counter)
 	}
 
