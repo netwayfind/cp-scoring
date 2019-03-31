@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2019-03-30
+### Changed
+- updated UI dependencies
+- [#16](https://github.com/sumwonyuno/cp-scoring/issues/16) - use postgres for persistent backend, remove sqlite
+- [#17](https://github.com/sumwonyuno/cp-scoring/issues/17) - use configuration file instead of command line arguments
+- [#18](https://github.com/sumwonyuno/cp-scoring/issues/18) - include additional information with state, save state as JSONB
+- [#19](https://github.com/sumwonyuno/cp-scoring/issues/19) - use uint64 for id variables
+- [#20](https://github.com/sumwonyuno/cp-scoring/issues/20) - remove hostname from team_host_tokens
+
+### Fixed
+- [#15](https://github.com/sumwonyuno/cp-scoring/issues/15) - fix issue with UI not loading, use explicit react-plotly.js version
+
 ## [0.2.0] - 2019-02-24
 ### Added
 - [#12](https://github.com/sumwonyuno/cp-scoring/issues/12) [agents] support collecting state of IPv6 connections
