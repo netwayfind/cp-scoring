@@ -45,14 +45,24 @@ func diff(previous map[string]map[string]bool, current map[string]map[string]boo
 		sort.Strings(previousEntriesKeys)
 
 		// removed is in previous entries but not current entries
-		for h := range previousEntries {
+		for _, h := range previousEntriesKeys {
 			if _, present := entries[h]; !present {
 				change := Change{Type: "Removed", Key: key, Item: h}
 				changes = append(changes, change)
 			}
 		}
+
+		// sort keys
+		entriesKeys := make([]string, len(entries))
+		index = 0
+		for k := range entries {
+			entriesKeys[index] = k
+			index++
+		}
+		sort.Strings(entriesKeys)
+
 		// added is in current entries but not previous entries
-		for h := range entries {
+		for _, h := range entriesKeys {
 			if _, present := previousEntries[h]; !present {
 				change := Change{Type: "Added", Key: key, Item: h}
 				changes = append(changes, change)

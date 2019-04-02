@@ -214,9 +214,12 @@ func TestDiffState(t *testing.T) {
 	// test add entries
 	states = []model.State{
 		model.State{
-			Timestamp: 14,
-			Users:     []model.User{},
-			Groups:    map[string][]model.GroupMember{},
+			Timestamp:          14,
+			Users:              []model.User{},
+			Groups:             map[string][]model.GroupMember{},
+			Software:           []model.Software{},
+			Processes:          []model.Process{},
+			NetworkConnections: []model.NetworkConnection{},
 		},
 		model.State{
 			Timestamp: 15,
@@ -233,13 +236,33 @@ func TestDiffState(t *testing.T) {
 					},
 				},
 			},
+			Software: []model.Software{
+				model.Software{
+					Name:    "test-software",
+					Version: "0.1.0",
+				},
+			},
+			Processes: []model.Process{
+				model.Process{
+					PID:         5,
+					User:        "user",
+					CommandLine: "cmd 1 2 3",
+				},
+			},
+			NetworkConnections: []model.NetworkConnection{
+				model.NetworkConnection{
+					LocalAddress: "127.0.0.1",
+					LocalPort:    "80",
+					State:        model.NetworkConnectionListen,
+				},
+			},
 		},
 	}
 	changes, err = DiffStates(states)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(changes) != 3 {
+	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
 	// group name
@@ -249,7 +272,7 @@ func TestDiffState(t *testing.T) {
 	if changes[0].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Group\":\"Users\"}" {
+	if changes[0].Item != "{\"Group\":\"Users\",\"Member\":\"bob\"}" {
 		t.Fatal("Unexpected change item")
 	}
 	// group members
@@ -259,21 +282,63 @@ func TestDiffState(t *testing.T) {
 	if changes[1].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[1].Item != "{\"Group\":\"Users\",\"Member\":\"bob\"}" {
+	if changes[1].Item != "{\"Group\":\"Users\"}" {
 		t.Fatal("Unexpected change item")
 	}
-	// users
+	// network connections
 	if changes[2].Type != "Added" {
 		t.Fatal("Unexpected change type")
 	}
-	if changes[2].Key != "Users" {
+	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err := json.Marshal(states[1].Users[0])
+	expected, err := json.Marshal(states[1].NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
 	if changes[2].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// processes
+	if changes[3].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[3].Key != "Processes" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Processes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[3].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// software
+	if changes[4].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[4].Key != "Software" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Software[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[4].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// users
+	if changes[5].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[5].Key != "Users" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Users[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[5].Item != string(expected) {
 		t.Fatal("Unexpected change item")
 	}
 
@@ -295,6 +360,26 @@ func TestDiffState(t *testing.T) {
 				},
 				"Empty": []model.GroupMember{},
 			},
+			Software: []model.Software{
+				model.Software{
+					Name:    "test-software",
+					Version: "0.1.0",
+				},
+			},
+			Processes: []model.Process{
+				model.Process{
+					PID:         5,
+					User:        "user",
+					CommandLine: "cmd 1 2 3",
+				},
+			},
+			NetworkConnections: []model.NetworkConnection{
+				model.NetworkConnection{
+					LocalAddress: "127.0.0.1",
+					LocalPort:    "80",
+					State:        model.NetworkConnectionListen,
+				},
+			},
 		},
 		model.State{
 			Timestamp: 17,
@@ -302,13 +387,16 @@ func TestDiffState(t *testing.T) {
 			Groups: map[string][]model.GroupMember{
 				"Users": []model.GroupMember{},
 			},
+			Software:           []model.Software{},
+			Processes:          []model.Process{},
+			NetworkConnections: []model.NetworkConnection{},
 		},
 	}
 	changes, err = DiffStates(states)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(changes) != 3 {
+	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
 	// groups (Empty)
@@ -331,18 +419,60 @@ func TestDiffState(t *testing.T) {
 	if changes[1].Item != "{\"Group\":\"Users\",\"Member\":\"bob\"}" {
 		t.Fatal("Unexpected change item")
 	}
-	// users
+	// network connections
 	if changes[2].Type != "Removed" {
 		t.Fatal("Unexpected change type")
 	}
-	if changes[2].Key != "Users" {
+	if changes[2].Key != "Network Connections" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].NetworkConnections[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[2].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// processes
+	if changes[3].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[3].Key != "Processes" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].Processes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[3].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// software
+	if changes[4].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[4].Key != "Software" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].Software[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[4].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// users
+	if changes[5].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[5].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
 	expected, err = json.Marshal(states[0].Users[0])
 	if err != nil {
 		t.Fatal(err)
 	}
-	if changes[2].Item != string(expected) {
+	if changes[5].Item != string(expected) {
 		t.Fatal("Unexpected change item")
 	}
 
@@ -351,6 +481,10 @@ func TestDiffState(t *testing.T) {
 		model.State{
 			Timestamp: 18,
 			Users: []model.User{
+				model.User{
+					Name:          "alice",
+					AccountActive: true,
+				},
 				model.User{
 					Name:          "bob",
 					AccountActive: true,
@@ -363,10 +497,36 @@ func TestDiffState(t *testing.T) {
 					},
 				},
 			},
+			Software: []model.Software{
+				model.Software{
+					Name:    "test-software",
+					Version: "0.1.0",
+				},
+			},
+			Processes: []model.Process{
+				model.Process{
+					PID:         5,
+					User:        "user",
+					CommandLine: "cmd 1 2 3",
+				},
+			},
+			NetworkConnections: []model.NetworkConnection{
+				model.NetworkConnection{
+					LocalAddress:  "127.0.0.1",
+					LocalPort:     "45678",
+					RemoteAddress: "192.168.1.1",
+					RemotePort:    "443",
+					State:         model.NetworkConnectionEstablished,
+				},
+			},
 		},
 		model.State{
 			Timestamp: 19,
 			Users: []model.User{
+				model.User{
+					Name:          "alice",
+					AccountActive: true,
+				},
 				model.User{
 					Name:          "bob",
 					AccountActive: false,
@@ -375,8 +535,33 @@ func TestDiffState(t *testing.T) {
 			Groups: map[string][]model.GroupMember{
 				"Users": []model.GroupMember{
 					model.GroupMember{
+						Name: "alice",
+					},
+					model.GroupMember{
 						Name: "bob",
 					},
+				},
+			},
+			Software: []model.Software{
+				model.Software{
+					Name:    "test-software",
+					Version: "0.2.0",
+				},
+			},
+			Processes: []model.Process{
+				model.Process{
+					PID:         6,
+					User:        "user",
+					CommandLine: "cmd 1 2 3",
+				},
+			},
+			NetworkConnections: []model.NetworkConnection{
+				model.NetworkConnection{
+					LocalAddress:  "127.0.0.1",
+					LocalPort:     "46000",
+					RemoteAddress: "192.168.1.1",
+					RemotePort:    "443",
+					State:         model.NetworkConnectionEstablished,
 				},
 			},
 		},
@@ -385,35 +570,133 @@ func TestDiffState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(changes) != 2 {
+	if len(changes) != 9 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
-	// removed should be first
-	if changes[0].Type != "Removed" {
+	// groups
+	if changes[0].Type != "Added" {
 		t.Fatal("Unexpected change type")
 	}
-	if changes[0].Key != "Users" {
+	if changes[0].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Users[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[0].Item != string(expected) {
+	if changes[0].Item != "{\"Group\":\"Users\",\"Member\":\"alice\"}" {
 		t.Fatal("Unexpected change item")
 	}
-	// then added
-	if changes[1].Type != "Added" {
+	// network connections
+	// removed should be first
+	if changes[1].Type != "Removed" {
 		t.Fatal("Unexpected change type")
 	}
-	if changes[1].Key != "Users" {
+	if changes[1].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Users[0])
+	expected, err = json.Marshal(states[0].NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
 	if changes[1].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// then added
+	if changes[2].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[2].Key != "Network Connections" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].NetworkConnections[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[2].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// processes
+	// removed should be first
+	if changes[3].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[3].Key != "Processes" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].Processes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[3].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// then added
+	if changes[4].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[4].Key != "Processes" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Processes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[4].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// software
+	// removed should be first
+	if changes[5].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[5].Key != "Software" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].Software[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[5].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// then added
+	if changes[6].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[6].Key != "Software" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Software[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[6].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// users
+	// removed should be first
+	if changes[7].Type != "Removed" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[7].Key != "Users" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[0].Users[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[7].Item != string(expected) {
+		t.Fatal("Unexpected change item")
+	}
+	// then added
+	if changes[8].Type != "Added" {
+		t.Fatal("Unexpected change type")
+	}
+	if changes[8].Key != "Users" {
+		t.Fatal("Unexpected change key")
+	}
+	expected, err = json.Marshal(states[1].Users[1])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes[8].Item != string(expected) {
 		t.Fatal("Unexpected change item")
 	}
 }
