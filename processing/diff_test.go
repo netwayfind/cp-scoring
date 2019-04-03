@@ -8,40 +8,25 @@ import (
 )
 
 func TestDiffReport(t *testing.T) {
-	// no reports
-	reports := make([]model.Report, 0)
-	changes, err := DiffReports(reports)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(changes) > 0 {
-		t.Fatal("Unexpected changes")
-	}
-
-	// one empty report
-	reports = []model.Report{
-		model.Report{
-			Timestamp: 14,
-		},
-	}
-	changes, err = DiffReports(reports)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(changes) > 0 {
-		t.Fatal("Unexpected changes")
-	}
-
 	// empty reports
-	reports = []model.Report{
-		model.Report{
-			Timestamp: 14,
-		},
-		model.Report{
-			Timestamp: 15,
-		},
+	report1 := model.Report{}
+	report2 := model.Report{}
+	changes, err := DiffReports(report1, report2)
+	if err != nil {
+		t.Fatal(err)
 	}
-	changes, err = DiffReports(reports)
+	if len(changes) > 0 {
+		t.Fatal("Unexpected changes")
+	}
+
+	// no finding reports
+	report1 = model.Report{
+		Timestamp: 14,
+	}
+	report2 = model.Report{
+		Timestamp: 15,
+	}
+	changes, err = DiffReports(report1, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,23 +35,21 @@ func TestDiffReport(t *testing.T) {
 	}
 
 	// test add finding
-	reports = []model.Report{
-		model.Report{
-			Timestamp: 14,
-			Findings:  []model.Finding{},
-		},
-		model.Report{
-			Timestamp: 15,
-			Findings: []model.Finding{
-				model.Finding{
-					Message: "Test message",
-					Value:   1,
-					Show:    true,
-				},
+	report1 = model.Report{
+		Timestamp: 14,
+		Findings:  []model.Finding{},
+	}
+	report2 = model.Report{
+		Timestamp: 15,
+		Findings: []model.Finding{
+			model.Finding{
+				Message: "Test message",
+				Value:   1,
+				Show:    true,
 			},
 		},
 	}
-	changes, err = DiffReports(reports)
+	changes, err = DiffReports(report1, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,23 +67,21 @@ func TestDiffReport(t *testing.T) {
 	}
 
 	// test remove finding
-	reports = []model.Report{
-		model.Report{
-			Timestamp: 16,
-			Findings: []model.Finding{
-				model.Finding{
-					Message: "Test message",
-					Value:   1,
-					Show:    true,
-				},
+	report1 = model.Report{
+		Timestamp: 16,
+		Findings: []model.Finding{
+			model.Finding{
+				Message: "Test message",
+				Value:   1,
+				Show:    true,
 			},
 		},
-		model.Report{
-			Timestamp: 17,
-			Findings:  []model.Finding{},
-		},
 	}
-	changes, err = DiffReports(reports)
+	report2 = model.Report{
+		Timestamp: 17,
+		Findings:  []model.Finding{},
+	}
+	changes, err = DiffReports(report1, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,29 +99,27 @@ func TestDiffReport(t *testing.T) {
 	}
 
 	// test changed finding
-	reports = []model.Report{
-		model.Report{
-			Timestamp: 18,
-			Findings: []model.Finding{
-				model.Finding{
-					Message: "Test message",
-					Value:   1,
-					Show:    true,
-				},
-			},
-		},
-		model.Report{
-			Timestamp: 19,
-			Findings: []model.Finding{
-				model.Finding{
-					Message: "Test message",
-					Value:   0,
-					Show:    false,
-				},
+	report1 = model.Report{
+		Timestamp: 18,
+		Findings: []model.Finding{
+			model.Finding{
+				Message: "Test message",
+				Value:   1,
+				Show:    true,
 			},
 		},
 	}
-	changes, err = DiffReports(reports)
+	report2 = model.Report{
+		Timestamp: 19,
+		Findings: []model.Finding{
+			model.Finding{
+				Message: "Test message",
+				Value:   0,
+				Show:    false,
+			},
+		},
+	}
+	changes, err = DiffReports(report1, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -170,9 +149,10 @@ func TestDiffReport(t *testing.T) {
 }
 
 func TestDiffState(t *testing.T) {
-	// no states
-	states := make([]model.State, 0)
-	changes, err := DiffStates(states)
+	// empty reports
+	state1 := model.State{}
+	state2 := model.State{}
+	changes, err := DiffStates(state1, state2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,30 +160,14 @@ func TestDiffState(t *testing.T) {
 		t.Fatal("Unexpected changes")
 	}
 
-	// one empty report
-	states = []model.State{
-		model.State{
-			Timestamp: 14,
-		},
+	// empty state entries
+	state1 = model.State{
+		Timestamp: 14,
 	}
-	changes, err = DiffStates(states)
-	if err != nil {
-		t.Fatal(err)
+	state2 = model.State{
+		Timestamp: 15,
 	}
-	if len(changes) > 0 {
-		t.Fatal("Unexpected changes")
-	}
-
-	// empty states
-	states = []model.State{
-		model.State{
-			Timestamp: 14,
-		},
-		model.State{
-			Timestamp: 15,
-		},
-	}
-	changes, err = DiffStates(states)
+	changes, err = DiffStates(state1, state2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,53 +176,51 @@ func TestDiffState(t *testing.T) {
 	}
 
 	// test add entries
-	states = []model.State{
-		model.State{
-			Timestamp:          14,
-			Users:              []model.User{},
-			Groups:             map[string][]model.GroupMember{},
-			Software:           []model.Software{},
-			Processes:          []model.Process{},
-			NetworkConnections: []model.NetworkConnection{},
+	state1 = model.State{
+		Timestamp:          14,
+		Users:              []model.User{},
+		Groups:             map[string][]model.GroupMember{},
+		Software:           []model.Software{},
+		Processes:          []model.Process{},
+		NetworkConnections: []model.NetworkConnection{},
+	}
+	state2 = model.State{
+		Timestamp: 15,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
 		},
-		model.State{
-			Timestamp: 15,
-			Users: []model.User{
-				model.User{
-					Name:          "bob",
-					AccountActive: true,
+		Groups: map[string][]model.GroupMember{
+			"Users": []model.GroupMember{
+				model.GroupMember{
+					Name: "bob",
 				},
 			},
-			Groups: map[string][]model.GroupMember{
-				"Users": []model.GroupMember{
-					model.GroupMember{
-						Name: "bob",
-					},
-				},
+		},
+		Software: []model.Software{
+			model.Software{
+				Name:    "test-software",
+				Version: "0.1.0",
 			},
-			Software: []model.Software{
-				model.Software{
-					Name:    "test-software",
-					Version: "0.1.0",
-				},
+		},
+		Processes: []model.Process{
+			model.Process{
+				PID:         5,
+				User:        "user",
+				CommandLine: "cmd 1 2 3",
 			},
-			Processes: []model.Process{
-				model.Process{
-					PID:         5,
-					User:        "user",
-					CommandLine: "cmd 1 2 3",
-				},
-			},
-			NetworkConnections: []model.NetworkConnection{
-				model.NetworkConnection{
-					LocalAddress: "127.0.0.1",
-					LocalPort:    "80",
-					State:        model.NetworkConnectionListen,
-				},
+		},
+		NetworkConnections: []model.NetworkConnection{
+			model.NetworkConnection{
+				LocalAddress: "127.0.0.1",
+				LocalPort:    "80",
+				State:        model.NetworkConnectionListen,
 			},
 		},
 	}
-	changes, err = DiffStates(states)
+	changes, err = DiffStates(state1, state2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,7 +254,7 @@ func TestDiffState(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err := json.Marshal(states[1].NetworkConnections[0])
+	expected, err := json.Marshal(state2.NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -306,7 +268,7 @@ func TestDiffState(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Processes[0])
+	expected, err = json.Marshal(state2.Processes[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +282,7 @@ func TestDiffState(t *testing.T) {
 	if changes[4].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Software[0])
+	expected, err = json.Marshal(state2.Software[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +296,7 @@ func TestDiffState(t *testing.T) {
 	if changes[5].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Users[0])
+	expected, err = json.Marshal(state2.Users[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,56 +305,54 @@ func TestDiffState(t *testing.T) {
 	}
 
 	// test remove entries
-	states = []model.State{
-		model.State{
-			Timestamp: 16,
-			Users: []model.User{
-				model.User{
-					Name:          "bob",
-					AccountActive: true,
-				},
-			},
-			Groups: map[string][]model.GroupMember{
-				"Users": []model.GroupMember{
-					model.GroupMember{
-						Name: "bob",
-					},
-				},
-				"Empty": []model.GroupMember{},
-			},
-			Software: []model.Software{
-				model.Software{
-					Name:    "test-software",
-					Version: "0.1.0",
-				},
-			},
-			Processes: []model.Process{
-				model.Process{
-					PID:         5,
-					User:        "user",
-					CommandLine: "cmd 1 2 3",
-				},
-			},
-			NetworkConnections: []model.NetworkConnection{
-				model.NetworkConnection{
-					LocalAddress: "127.0.0.1",
-					LocalPort:    "80",
-					State:        model.NetworkConnectionListen,
-				},
+	state1 = model.State{
+		Timestamp: 16,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
 			},
 		},
-		model.State{
-			Timestamp: 17,
-			Users:     []model.User{},
-			Groups: map[string][]model.GroupMember{
-				"Users": []model.GroupMember{},
+		Groups: map[string][]model.GroupMember{
+			"Users": []model.GroupMember{
+				model.GroupMember{
+					Name: "bob",
+				},
 			},
-			Software:           []model.Software{},
-			Processes:          []model.Process{},
-			NetworkConnections: []model.NetworkConnection{},
+			"Empty": []model.GroupMember{},
+		},
+		Software: []model.Software{
+			model.Software{
+				Name:    "test-software",
+				Version: "0.1.0",
+			},
+		},
+		Processes: []model.Process{
+			model.Process{
+				PID:         5,
+				User:        "user",
+				CommandLine: "cmd 1 2 3",
+			},
+		},
+		NetworkConnections: []model.NetworkConnection{
+			model.NetworkConnection{
+				LocalAddress: "127.0.0.1",
+				LocalPort:    "80",
+				State:        model.NetworkConnectionListen,
+			},
 		},
 	}
-	changes, err = DiffStates(states)
+	state2 = model.State{
+		Timestamp: 17,
+		Users:     []model.User{},
+		Groups: map[string][]model.GroupMember{
+			"Users": []model.GroupMember{},
+		},
+		Software:           []model.Software{},
+		Processes:          []model.Process{},
+		NetworkConnections: []model.NetworkConnection{},
+	}
+	changes, err = DiffStates(state1, state2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -426,7 +386,7 @@ func TestDiffState(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].NetworkConnections[0])
+	expected, err = json.Marshal(state1.NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -440,7 +400,7 @@ func TestDiffState(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Processes[0])
+	expected, err = json.Marshal(state1.Processes[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -454,7 +414,7 @@ func TestDiffState(t *testing.T) {
 	if changes[4].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Software[0])
+	expected, err = json.Marshal(state1.Software[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -468,7 +428,7 @@ func TestDiffState(t *testing.T) {
 	if changes[5].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Users[0])
+	expected, err = json.Marshal(state1.Users[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -477,96 +437,94 @@ func TestDiffState(t *testing.T) {
 	}
 
 	// test changed entries
-	states = []model.State{
-		model.State{
-			Timestamp: 18,
-			Users: []model.User{
-				model.User{
-					Name:          "alice",
-					AccountActive: true,
-				},
-				model.User{
-					Name:          "bob",
-					AccountActive: true,
-				},
+	state1 = model.State{
+		Timestamp: 18,
+		Users: []model.User{
+			model.User{
+				Name:          "alice",
+				AccountActive: true,
 			},
-			Groups: map[string][]model.GroupMember{
-				"Users": []model.GroupMember{
-					model.GroupMember{
-						Name: "bob",
-					},
-				},
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
 			},
-			Software: []model.Software{
-				model.Software{
-					Name:    "test-software",
-					Version: "0.1.0",
-				},
-			},
-			Processes: []model.Process{
-				model.Process{
-					PID:         5,
-					User:        "user",
-					CommandLine: "cmd 1 2 3",
-				},
-			},
-			NetworkConnections: []model.NetworkConnection{
-				model.NetworkConnection{
-					LocalAddress:  "127.0.0.1",
-					LocalPort:     "45678",
-					RemoteAddress: "192.168.1.1",
-					RemotePort:    "443",
-					State:         model.NetworkConnectionEstablished,
+		},
+		Groups: map[string][]model.GroupMember{
+			"Users": []model.GroupMember{
+				model.GroupMember{
+					Name: "bob",
 				},
 			},
 		},
-		model.State{
-			Timestamp: 19,
-			Users: []model.User{
-				model.User{
-					Name:          "alice",
-					AccountActive: true,
-				},
-				model.User{
-					Name:          "bob",
-					AccountActive: false,
-				},
+		Software: []model.Software{
+			model.Software{
+				Name:    "test-software",
+				Version: "0.1.0",
 			},
-			Groups: map[string][]model.GroupMember{
-				"Users": []model.GroupMember{
-					model.GroupMember{
-						Name: "alice",
-					},
-					model.GroupMember{
-						Name: "bob",
-					},
-				},
+		},
+		Processes: []model.Process{
+			model.Process{
+				PID:         5,
+				User:        "user",
+				CommandLine: "cmd 1 2 3",
 			},
-			Software: []model.Software{
-				model.Software{
-					Name:    "test-software",
-					Version: "0.2.0",
-				},
-			},
-			Processes: []model.Process{
-				model.Process{
-					PID:         6,
-					User:        "user",
-					CommandLine: "cmd 1 2 3",
-				},
-			},
-			NetworkConnections: []model.NetworkConnection{
-				model.NetworkConnection{
-					LocalAddress:  "127.0.0.1",
-					LocalPort:     "46000",
-					RemoteAddress: "192.168.1.1",
-					RemotePort:    "443",
-					State:         model.NetworkConnectionEstablished,
-				},
+		},
+		NetworkConnections: []model.NetworkConnection{
+			model.NetworkConnection{
+				LocalAddress:  "127.0.0.1",
+				LocalPort:     "45678",
+				RemoteAddress: "192.168.1.1",
+				RemotePort:    "443",
+				State:         model.NetworkConnectionEstablished,
 			},
 		},
 	}
-	changes, err = DiffStates(states)
+	state2 = model.State{
+		Timestamp: 19,
+		Users: []model.User{
+			model.User{
+				Name:          "alice",
+				AccountActive: true,
+			},
+			model.User{
+				Name:          "bob",
+				AccountActive: false,
+			},
+		},
+		Groups: map[string][]model.GroupMember{
+			"Users": []model.GroupMember{
+				model.GroupMember{
+					Name: "alice",
+				},
+				model.GroupMember{
+					Name: "bob",
+				},
+			},
+		},
+		Software: []model.Software{
+			model.Software{
+				Name:    "test-software",
+				Version: "0.2.0",
+			},
+		},
+		Processes: []model.Process{
+			model.Process{
+				PID:         6,
+				User:        "user",
+				CommandLine: "cmd 1 2 3",
+			},
+		},
+		NetworkConnections: []model.NetworkConnection{
+			model.NetworkConnection{
+				LocalAddress:  "127.0.0.1",
+				LocalPort:     "46000",
+				RemoteAddress: "192.168.1.1",
+				RemotePort:    "443",
+				State:         model.NetworkConnectionEstablished,
+			},
+		},
+	}
+	changes, err = DiffStates(state1, state2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -591,7 +549,7 @@ func TestDiffState(t *testing.T) {
 	if changes[1].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].NetworkConnections[0])
+	expected, err = json.Marshal(state1.NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,7 +563,7 @@ func TestDiffState(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].NetworkConnections[0])
+	expected, err = json.Marshal(state2.NetworkConnections[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -620,7 +578,7 @@ func TestDiffState(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Processes[0])
+	expected, err = json.Marshal(state1.Processes[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,7 +592,7 @@ func TestDiffState(t *testing.T) {
 	if changes[4].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Processes[0])
+	expected, err = json.Marshal(state2.Processes[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -649,7 +607,7 @@ func TestDiffState(t *testing.T) {
 	if changes[5].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Software[0])
+	expected, err = json.Marshal(state1.Software[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -663,7 +621,7 @@ func TestDiffState(t *testing.T) {
 	if changes[6].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Software[0])
+	expected, err = json.Marshal(state2.Software[0])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -678,7 +636,7 @@ func TestDiffState(t *testing.T) {
 	if changes[7].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[0].Users[1])
+	expected, err = json.Marshal(state1.Users[1])
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -692,7 +650,7 @@ func TestDiffState(t *testing.T) {
 	if changes[8].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(states[1].Users[1])
+	expected, err = json.Marshal(state2.Users[1])
 	if err != nil {
 		t.Fatal(err)
 	}

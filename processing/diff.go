@@ -105,7 +105,7 @@ func doReportEntries(report model.Report) (map[string]map[string]bool, error) {
 	return entries, nil
 }
 
-func DiffReports(reports []model.Report) ([]Change, error) {
+func DiffReports(reports ...model.Report) ([]Change, error) {
 	changes := make([]Change, 0)
 
 	var previousEntries map[string]map[string]bool
@@ -207,7 +207,7 @@ func doStateEntries(state model.State) (map[string]map[string]bool, error) {
 	return entries, nil
 }
 
-func DiffStates(states []model.State) ([]Change, error) {
+func DiffStates(states ...model.State) ([]Change, error) {
 	changes := make([]Change, 0)
 
 	var previousEntries map[string]map[string]bool
