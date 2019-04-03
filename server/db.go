@@ -108,8 +108,12 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
-func (db dbObj) InsertState(timestamp int64, source string, hostToken string, state []byte) error {
-	_, err := db.dbInsert("INSERT INTO states(timestamp, source, host_token, state) VALUES($1, $2, $3, $4)", timestamp, source, hostToken, state)
+func (db dbObj) InsertState(timestamp int64, source string, hostToken string, state model.State) error {
+	b, err := json.Marshal(state)
+	if err != nil {
+		return err
+	}
+	_, err = db.dbInsert("INSERT INTO states(timestamp, source, host_token, state) VALUES($1, $2, $3, $4)", timestamp, source, hostToken, b)
 	return err
 }
 
@@ -926,6 +930,72 @@ func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, t
 		diffs = append(diffs, diff...)
 
 		prevReport = report
+	}
+
+	return diffs, nil
+}
+
+func (db dbObj) SelectStates(hostToken string, timeStart int64, timeEnd int64) ([]model.State, error) {
+	states := make([]model.State, 0)
+
+	rows, err := db.dbConn.Query("SELECT state FROM states WHERE host_token=$1 AND (state->>'Timestamp')::int >=$2 AND (state->>'Timestamp')::int <=$3 ORDER BY state->>'Timestamp' ASC", hostToken, timeStart, timeEnd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stateBytes []byte
+		err = rows.Scan(&stateBytes)
+		if err != nil {
+			return nil, err
+		}
+		var state model.State
+		err = json.Unmarshal(stateBytes, &state)
+		if err != nil {
+			return nil, err
+		}
+		states = append(states, state)
+	}
+
+	return states, nil
+}
+
+func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error) {
+	diffs := make([]processing.Change, 0)
+
+	rows, err := db.dbConn.Query("SELECT state FROM states WHERE host_token=$1 AND (state->>'Timestamp')::int >= $2 AND (state->>'Timestamp')::int <=$3 ORDER BY state->>'Timestamp' ASC", hostToken, timeStart, timeEnd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var prevState model.State
+	first := true
+	for rows.Next() {
+		var stateBytes []byte
+		err = rows.Scan(&stateBytes)
+		if err != nil {
+			return nil, err
+		}
+		var state model.State
+		err = json.Unmarshal(stateBytes, &state)
+		if err != nil {
+			return nil, err
+		}
+
+		if first {
+			prevState = state
+			first = false
+		}
+
+		diff, err := processing.DiffStates(prevState, state)
+		if err != nil {
+			return nil, err
+		}
+		diffs = append(diffs, diff...)
+
+		prevState = state
 	}
 
 	return diffs, nil

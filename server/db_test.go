@@ -133,13 +133,9 @@ func TestInsertState(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	state := model.State{Hostname: "test"}
-	stateBytes, err := json.Marshal(state)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// state, no existing host token
-	err = backingStore.InsertState(1000, "127.0.0.1", "host-token", stateBytes)
+	err := backingStore.InsertState(1000, "127.0.0.1", "host-token", state)
 	if err == nil {
 		t.Fatal("Expected error due to missing host token")
 	}
@@ -149,7 +145,7 @@ func TestInsertState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(1000, "127.0.0.1", "host-token", stateBytes)
+	err = backingStore.InsertState(1000, "127.0.0.1", "host-token", state)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3160,5 +3156,341 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+}
+
+func TestSelectStates(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	states, err := backingStore.SelectStates("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(states) != 0 {
+		t.Fatal("Unexpected state count:", len(states))
+	}
+
+	// add host and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any states
+	states, err = backingStore.SelectStates("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(states) != 0 {
+		t.Fatal("Unexpected state count:", len(states))
+	}
+
+	// add sample states
+	state1 := model.State{
+		Timestamp: 15,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
+		},
+	}
+	state2 := model.State{
+		Timestamp: 30,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
+		},
+	}
+	state3 := model.State{
+		Timestamp: 45,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: false,
+			},
+		},
+	}
+	state4 := model.State{
+		Timestamp: 60,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: false,
+			},
+		},
+	}
+	// insert out of order and same time
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should get states in order
+	states, err = backingStore.SelectStates("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(states) != 4 {
+		t.Fatal("Unexpected state count:", len(states))
+	}
+	if states[0].Timestamp != state1.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[0].Users) != len(state1.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[0].Users[0].AccountActive != state1.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+	if states[1].Timestamp != state2.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[1].Users) != len(state2.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[1].Users[0].AccountActive != state2.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+	if states[2].Timestamp != state3.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[2].Users) != len(state3.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[2].Users[0].AccountActive != state3.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+	if states[3].Timestamp != state4.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[3].Users) != len(state4.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[3].Users[0].AccountActive != state4.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+
+	// should only get states 2 and 3
+	states, err = backingStore.SelectStates("host-token", 30, 45)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(states) != 2 {
+		t.Fatal("Unexpected state count:", len(states))
+	}
+	if states[0].Timestamp != state2.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[0].Users) != len(state2.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[0].Users[0].AccountActive != state2.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+	if states[1].Timestamp != state3.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(states[1].Users) != len(state3.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if states[1].Users[0].AccountActive != state3.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+}
+
+func TestSelectStateDiffs(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	diffs, err := backingStore.SelectStateDiffs("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+
+	// add host and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any state diffs
+	diffs, err = backingStore.SelectStateDiffs("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+
+	// add sample states
+	state1 := model.State{
+		Timestamp: 15,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
+		},
+	}
+	state2 := model.State{
+		Timestamp: 30,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
+		},
+	}
+	state3 := model.State{
+		Timestamp: 45,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: false,
+			},
+		},
+	}
+	state4 := model.State{
+		Timestamp: 60,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: false,
+			},
+		},
+	}
+	// insert out of order and same time
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should get states diffs in order
+	diffs, err = backingStore.SelectStateDiffs("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 2 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+	if diffs[0].Type != "Removed" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[0].Key != "Users" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+		t.Fatal("Unexpected diff item")
+	}
+	if diffs[1].Type != "Added" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[1].Key != "Users" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+		t.Fatal("Unexpected diff item")
+	}
+
+	// nothing before state 1
+	diffs, err = backingStore.SelectStateDiffs("host-token", -100, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+
+	// no diff between state 1 and 2
+	diffs, err = backingStore.SelectStateDiffs("host-token", 15, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+
+	// diff between state 2 and 3
+	diffs, err = backingStore.SelectStateDiffs("host-token", 30, 45)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 2 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+	if diffs[0].Type != "Removed" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[0].Key != "Users" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+		t.Fatal("Unexpected diff item")
+	}
+	if diffs[1].Type != "Added" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[1].Key != "Users" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+		t.Fatal("Unexpected diff item")
+	}
+
+	// no diff between state 3 and 4
+	diffs, err = backingStore.SelectStateDiffs("host-token", 45, 60)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
+	}
+
+	// nothing after state 4
+	diffs, err = backingStore.SelectStateDiffs("host-token", 60, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected state diff count:", len(diffs))
 	}
 }

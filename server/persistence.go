@@ -9,7 +9,9 @@ import (
 )
 
 type backingStore interface {
-	InsertState(timestamp int64, source string, hostToken string, state []byte) error
+	InsertState(timestamp int64, source string, hostToken string, state model.State) error
+	SelectStates(hostToken string, timeStart int64, timeEnd int64) ([]model.State, error)
+	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
 	SelectAdmins() ([]string, error)
 	IsAdmin(username string) (bool, error)
 	SelectAdminPasswordHash(username string) (string, error)

@@ -164,13 +164,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	source := filenameTokens[1]
 
 	log.Println("Saving state")
-	stateJSONBytes, err := json.Marshal(state)
-	if err != nil {
-		log.Println("ERROR: cannot serialize state;")
-		// allow file to be deleted
-		return nil
-	}
-	err = theServer.backingStore.InsertState(timestamp, source, hostToken, stateJSONBytes)
+	err = theServer.backingStore.InsertState(timestamp, source, hostToken, state)
 	if err != nil {
 		log.Println("ERROR: cannot insert state;")
 		// allow file to be deleted
