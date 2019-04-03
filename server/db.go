@@ -7,6 +7,8 @@ import (
 	"log"
 	"strings"
 
+	"github.com/sumwonyuno/cp-scoring/processing"
+
 	_ "github.com/lib/pq"
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -861,4 +863,70 @@ func (db dbObj) SelectHostTokens(teamID uint64, hostname string) ([]string, erro
 	}
 
 	return hostTokens, nil
+}
+
+func (db dbObj) SelectScenarioReports(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.Report, error) {
+	reports := make([]model.Report, 0)
+
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 AND timestamp >=$3 AND timestamp <=$4 ORDER BY timestamp ASC", scenarioID, hostToken, timeStart, timeEnd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var reportBytes []byte
+		err = rows.Scan(&reportBytes)
+		if err != nil {
+			return nil, err
+		}
+		var report model.Report
+		err = json.Unmarshal(reportBytes, &report)
+		if err != nil {
+			return nil, err
+		}
+		reports = append(reports, report)
+	}
+
+	return reports, nil
+}
+
+func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error) {
+	diffs := make([]processing.Change, 0)
+
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 AND timestamp >=$3 AND timestamp <=$4 ORDER BY timestamp ASC", scenarioID, hostToken, timeStart, timeEnd)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var prevReport model.Report
+	first := true
+	for rows.Next() {
+		var reportBytes []byte
+		err = rows.Scan(&reportBytes)
+		if err != nil {
+			return nil, err
+		}
+		var report model.Report
+		err = json.Unmarshal(reportBytes, &report)
+		if err != nil {
+			return nil, err
+		}
+
+		if first {
+			prevReport = report
+			first = false
+		}
+
+		diff, err := processing.DiffReports(prevReport, report)
+		if err != nil {
+			return nil, err
+		}
+		diffs = append(diffs, diff...)
+
+		prevReport = report
+	}
+
+	return diffs, nil
 }

@@ -2810,3 +2810,355 @@ func TestSelectTeamScenarioHosts(t *testing.T) {
 		t.Fatal("Unexpected scenario host count:", len(scenarioHosts))
 	}
 }
+
+func TestSelectScenarioReports(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	reports, err := backingStore.SelectScenarioReports(0, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 0 {
+		t.Fatal("Unexpected report count:", len(reports))
+	}
+
+	// add scenario, host, and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any reports
+	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 0 {
+		t.Fatal("Unexpected report count:", len(reports))
+	}
+
+	// add sample reports
+	report1 := model.Report{
+		Timestamp: 15,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    false,
+				Value:   0,
+				Message: "no test",
+			},
+		},
+	}
+	report2 := model.Report{
+		Timestamp: 30,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    false,
+				Value:   0,
+				Message: "no test",
+			},
+		},
+	}
+	report3 := model.Report{
+		Timestamp: 45,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    true,
+				Value:   1,
+				Message: "test",
+			},
+		},
+	}
+	report4 := model.Report{
+		Timestamp: 60,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    true,
+				Value:   1,
+				Message: "test",
+			},
+		},
+	}
+	// insert out of order
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should get reports in order
+	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 4 {
+		t.Fatal("Unexpected report count:", len(reports))
+	}
+	if reports[0].Timestamp != report1.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[0].Findings) != len(report1.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[0].Findings[0].Message != report1.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+	if reports[1].Timestamp != report2.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[1].Findings) != len(report2.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[1].Findings[0].Message != report2.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+	if reports[2].Timestamp != report3.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[2].Findings) != len(report3.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[2].Findings[0].Message != report3.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+	if reports[3].Timestamp != report4.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[3].Findings) != len(report4.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[3].Findings[0].Message != report4.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+
+	// should only get reports 2 and 3
+	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 30, 45)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 2 {
+		t.Fatal("Unexpected report count:", len(reports))
+	}
+	if reports[0].Timestamp != report2.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[0].Findings) != len(report2.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[0].Findings[0].Message != report2.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+	if reports[1].Timestamp != report3.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(reports[1].Findings) != len(report3.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if reports[1].Findings[0].Message != report3.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+}
+
+func TestSelectScenarioReportDiffs(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	diffs, err := backingStore.SelectScenarioReportDiffs(0, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+
+	// add scenario, host, and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any report diffs
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+
+	// add sample reports
+	report1 := model.Report{
+		Timestamp: 15,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    false,
+				Value:   0,
+				Message: "no test",
+			},
+		},
+	}
+	report2 := model.Report{
+		Timestamp: 30,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    false,
+				Value:   0,
+				Message: "no test",
+			},
+		},
+	}
+	report3 := model.Report{
+		Timestamp: 45,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    true,
+				Value:   1,
+				Message: "test",
+			},
+		},
+	}
+	report4 := model.Report{
+		Timestamp: 60,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    true,
+				Value:   1,
+				Message: "test",
+			},
+		},
+	}
+	// insert out of order
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should get reports diffs in order
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 2 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+	if diffs[0].Type != "Removed" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[0].Key != "Findings" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+		t.Fatal("Unexpected diff item")
+	}
+	if diffs[1].Type != "Added" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[1].Key != "Findings" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+		t.Fatal("Unexpected diff item")
+	}
+
+	// nothing before report 1
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", -100, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+
+	// no diff between report 1 and 2
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 15, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+
+	// diff between report 2 and 3
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 30, 45)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 2 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+	if diffs[0].Type != "Removed" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[0].Key != "Findings" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+		t.Fatal("Unexpected diff item")
+	}
+	if diffs[1].Type != "Added" {
+		t.Fatal("Unexpected diff type")
+	}
+	if diffs[1].Key != "Findings" {
+		t.Fatal("Unexpected diff key")
+	}
+	if diffs[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+		t.Fatal("Unexpected diff item")
+	}
+
+	// no diff between report 3 and 4
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 45, 60)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+
+	// nothing after report 4
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 60, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(diffs) != 0 {
+		t.Fatal("Unexpected report diff count:", len(diffs))
+	}
+}

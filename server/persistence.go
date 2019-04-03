@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 
+	"github.com/sumwonyuno/cp-scoring/processing"
+
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
@@ -41,6 +43,8 @@ type backingStore interface {
 	DeleteScenario(scenarioID uint64) error
 	SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error)
 	InsertScenarioReport(scenarioID uint64, hostToken string, report model.Report) error
+	SelectScenarioReports(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.Report, error)
+	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
 	InsertScenarioScore(score model.ScenarioHostScore) error
 	SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error)
 	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)
