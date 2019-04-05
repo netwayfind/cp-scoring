@@ -1331,9 +1331,23 @@ func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
 		log.Println("Rejected scenario_id")
 		return
 	}
-	hostToken := r.Form.Get("host_token")
-	hostToken = strings.TrimSpace(hostToken)
-	if len(hostToken) == 0 {
+	teamIDStr := r.Form.Get("team_id")
+	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
+	if err != nil {
+		log.Println("Rejected team_id")
+		return
+	}
+	hostname := r.Form.Get("hostname")
+	if len(hostname) == 0 {
+		log.Println("Empty hostname")
+		return
+	}
+	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
+	if err != nil {
+		log.Println("Error for retrieving host token")
+		return
+	}
+	if len(hostTokens) == 0 {
 		log.Println("Empty host_token")
 		return
 	}
@@ -1350,14 +1364,18 @@ func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := theServer.backingStore.SelectScenarioReports(scenarioID, hostToken, timeStart, timeEnd)
-	if err != nil {
-		msg := "ERROR: cannot retrieve reports;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
+	var collected []model.Report
+	for _, hostToken := range hostTokens {
+		reports, err := theServer.backingStore.SelectScenarioReports(scenarioID, hostToken, timeStart, timeEnd)
+		if err != nil {
+			msg := "ERROR: cannot retrieve reports;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+		collected = append(collected, reports...)
 	}
-	b, err := json.Marshal(reports)
+	b, err := json.Marshal(collected)
 	if err != nil {
 		msg := "ERROR: cannot marshal reports;"
 		log.Println(msg, err)
