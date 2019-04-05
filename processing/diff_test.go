@@ -7,14 +7,174 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func TestDiffReport(t *testing.T) {
-	// empty reports
-	report1 := model.Report{}
-	report2 := model.Report{}
-	changes, err := DiffReports(report1, report2)
+func TestGetReportEntries(t *testing.T) {
+	// empty report
+	report := model.Report{}
+	entries, err := GetReportEntries(report)
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(entries) != 1 {
+		t.Fatal("Unexpected entry count:", len(entries))
+	}
+	findings, present := entries["Findings"]
+	if !present {
+		t.Fatal("Expected findings key")
+	}
+	if len(findings) != 0 {
+		t.Fatal("Unexpected findings count:", len(entries))
+	}
+
+	// sample report with findings
+	report = model.Report{
+		Timestamp: 15,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    true,
+				Value:   1,
+				Message: "test",
+			},
+		},
+	}
+	entries, err = GetReportEntries(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatal("Unexpected entry count:", len(entries))
+	}
+	if len(entries) != 1 {
+		t.Fatal("Unexpected entry count:", len(entries))
+	}
+	findings, present = entries["Findings"]
+	if !present {
+		t.Fatal("Expected findings key")
+	}
+	if len(findings) != 1 {
+		t.Fatal("Unexpected findings count:", len(entries))
+	}
+	if _, present = findings["{\"Value\":1,\"Show\":true,\"Message\":\"test\"}"]; !present {
+		t.Fatal("Did not find expected entry")
+	}
+}
+
+func TestGetStateEntries(t *testing.T) {
+	// empty state
+	state := model.State{}
+	entries, err := GetStateEntries(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 5 {
+		t.Fatal("Unexpected entry count:", len(entries))
+	}
+	users, present := entries["Users"]
+	if !present {
+		t.Fatal("Expected users key")
+	}
+	if len(users) != 0 {
+		t.Fatal("Unexpected users count:", len(users))
+	}
+	groups, present := entries["Groups"]
+	if !present {
+		t.Fatal("Expected groups key")
+	}
+	if len(groups) != 0 {
+		t.Fatal("Unexpected groups count:", len(groups))
+	}
+	software, present := entries["Software"]
+	if !present {
+		t.Fatal("Expected software key")
+	}
+	if len(software) != 0 {
+		t.Fatal("Unexpected software count:", len(software))
+	}
+	processes, present := entries["Processes"]
+	if !present {
+		t.Fatal("Expected processes key")
+	}
+	if len(processes) != 0 {
+		t.Fatal("Unexpected processes count:", len(processes))
+	}
+	conns, present := entries["Network Connections"]
+	if !present {
+		t.Fatal("Expected network connections key")
+	}
+	if len(conns) != 0 {
+		t.Fatal("Unexpected network connections count:", len(conns))
+	}
+
+	// sample state with software
+	state = model.State{
+		Timestamp: 15,
+		Software: []model.Software{
+			model.Software{
+				Name:    "test-software",
+				Version: "0.1.0",
+			},
+		},
+	}
+	entries, err = GetStateEntries(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 5 {
+		t.Fatal("Unexpected entry count:", len(entries))
+	}
+	users, present = entries["Users"]
+	if !present {
+		t.Fatal("Expected users key")
+	}
+	if len(users) != 0 {
+		t.Fatal("Unexpected users count:", len(users))
+	}
+	groups, present = entries["Groups"]
+	if !present {
+		t.Fatal("Expected groups key")
+	}
+	if len(groups) != 0 {
+		t.Fatal("Unexpected groups count:", len(groups))
+	}
+	software, present = entries["Software"]
+	if !present {
+		t.Fatal("Expected software key")
+	}
+	if len(software) != 1 {
+		t.Fatal("Unexpected software count:", len(software))
+	}
+	_, present = software["{\"Name\":\"test-software\",\"Version\":\"0.1.0\",\"ObjectState\":\"\"}"]
+	if !present {
+		t.Fatal("Did not find expected entry")
+	}
+	processes, present = entries["Processes"]
+	if !present {
+		t.Fatal("Expected processes key")
+	}
+	if len(processes) != 0 {
+		t.Fatal("Unexpected processes count:", len(processes))
+	}
+	conns, present = entries["Network Connections"]
+	if !present {
+		t.Fatal("Expected network connections key")
+	}
+	if len(conns) != 0 {
+		t.Fatal("Unexpected network connections count:", len(conns))
+	}
+}
+
+func TestDiffForReports(t *testing.T) {
+	// empty reports
+	report1 := model.Report{}
+	report2 := model.Report{}
+	report1Entries, err := GetReportEntries(report1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	report2Entries, err := GetReportEntries(report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes := Diff(report1Entries, report2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
 	}
@@ -26,10 +186,15 @@ func TestDiffReport(t *testing.T) {
 	report2 = model.Report{
 		Timestamp: 15,
 	}
-	changes, err = DiffReports(report1, report2)
+	report1Entries, err = GetReportEntries(report1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	report2Entries, err = GetReportEntries(report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(report1Entries, report2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
 	}
@@ -49,10 +214,15 @@ func TestDiffReport(t *testing.T) {
 			},
 		},
 	}
-	changes, err = DiffReports(report1, report2)
+	report1Entries, err = GetReportEntries(report1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	report2Entries, err = GetReportEntries(report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 1 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
@@ -81,10 +251,15 @@ func TestDiffReport(t *testing.T) {
 		Timestamp: 17,
 		Findings:  []model.Finding{},
 	}
-	changes, err = DiffReports(report1, report2)
+	report1Entries, err = GetReportEntries(report1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	report2Entries, err = GetReportEntries(report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 1 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
@@ -119,10 +294,15 @@ func TestDiffReport(t *testing.T) {
 			},
 		},
 	}
-	changes, err = DiffReports(report1, report2)
+	report1Entries, err = GetReportEntries(report1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	report2Entries, err = GetReportEntries(report2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 2 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
@@ -148,14 +328,19 @@ func TestDiffReport(t *testing.T) {
 	}
 }
 
-func TestDiffState(t *testing.T) {
+func TestDiffForStates(t *testing.T) {
 	// empty reports
 	state1 := model.State{}
 	state2 := model.State{}
-	changes, err := DiffStates(state1, state2)
+	state1Entries, err := GetStateEntries(state1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state2Entries, err := GetStateEntries(state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes := Diff(state1Entries, state2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
 	}
@@ -167,10 +352,15 @@ func TestDiffState(t *testing.T) {
 	state2 = model.State{
 		Timestamp: 15,
 	}
-	changes, err = DiffStates(state1, state2)
+	state1Entries, err = GetStateEntries(state1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state2Entries, err = GetStateEntries(state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(state1Entries, state2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
 	}
@@ -220,10 +410,15 @@ func TestDiffState(t *testing.T) {
 			},
 		},
 	}
-	changes, err = DiffStates(state1, state2)
+	state1Entries, err = GetStateEntries(state1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state2Entries, err = GetStateEntries(state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
@@ -352,10 +547,15 @@ func TestDiffState(t *testing.T) {
 		Processes:          []model.Process{},
 		NetworkConnections: []model.NetworkConnection{},
 	}
-	changes, err = DiffStates(state1, state2)
+	state1Entries, err = GetStateEntries(state1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state2Entries, err = GetStateEntries(state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
@@ -524,10 +724,15 @@ func TestDiffState(t *testing.T) {
 			},
 		},
 	}
-	changes, err = DiffStates(state1, state2)
+	state1Entries, err = GetStateEntries(state1)
 	if err != nil {
 		t.Fatal(err)
 	}
+	state2Entries, err = GetStateEntries(state2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 9 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}

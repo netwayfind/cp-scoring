@@ -14,7 +14,7 @@ type Change struct {
 	Item string
 }
 
-func diff(previous map[string]map[string]bool, current map[string]map[string]bool) []Change {
+func Diff(previous map[string]map[string]bool, current map[string]map[string]bool) []Change {
 	changes := make([]Change, 0)
 
 	// check keys in previous and current
@@ -88,7 +88,7 @@ func diff(previous map[string]map[string]bool, current map[string]map[string]boo
 	return changes
 }
 
-func doReportEntries(report model.Report) (map[string]map[string]bool, error) {
+func GetReportEntries(report model.Report) (map[string]map[string]bool, error) {
 	entries := make(map[string]map[string]bool)
 
 	// findings
@@ -105,33 +105,7 @@ func doReportEntries(report model.Report) (map[string]map[string]bool, error) {
 	return entries, nil
 }
 
-func DiffReports(reports ...model.Report) ([]Change, error) {
-	changes := make([]Change, 0)
-
-	var previousEntries map[string]map[string]bool
-	first := true
-	for _, report := range reports {
-		entries, err := doReportEntries(report)
-		if err != nil {
-			return nil, err
-		}
-
-		if first {
-			previousEntries = entries
-			first = false
-			continue
-		}
-
-		found := diff(previousEntries, entries)
-		changes = append(changes, found...)
-
-		previousEntries = entries
-	}
-
-	return changes, nil
-}
-
-func doStateEntries(state model.State) (map[string]map[string]bool, error) {
+func GetStateEntries(state model.State) (map[string]map[string]bool, error) {
 	entries := make(map[string]map[string]bool)
 
 	// users
@@ -205,30 +179,4 @@ func doStateEntries(state model.State) (map[string]map[string]bool, error) {
 	}
 
 	return entries, nil
-}
-
-func DiffStates(states ...model.State) ([]Change, error) {
-	changes := make([]Change, 0)
-
-	var previousEntries map[string]map[string]bool
-	first := true
-	for _, state := range states {
-		entries, err := doStateEntries(state)
-		if err != nil {
-			return nil, err
-		}
-
-		if first {
-			previousEntries = entries
-			first = false
-			continue
-		}
-
-		found := diff(previousEntries, entries)
-		changes = append(changes, found...)
-
-		previousEntries = entries
-	}
-
-	return changes, nil
 }
