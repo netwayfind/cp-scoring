@@ -10,7 +10,8 @@ import (
 
 type backingStore interface {
 	InsertState(timestamp int64, source string, hostToken string, state model.State) error
-	SelectStates(hostToken string, timeStart int64, timeEnd int64) ([]model.State, error)
+	SelectState(hostToken string, stateTimestamp int64) (model.State, error)
+	SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
 	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
 	SelectAdmins() ([]string, error)
 	IsAdmin(username string) (bool, error)
@@ -44,8 +45,9 @@ type backingStore interface {
 	UpdateScenario(scenarioID uint64, scenario model.Scenario) error
 	DeleteScenario(scenarioID uint64) error
 	SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error)
-	InsertScenarioReport(scenarioID uint64, hostToken string, report model.Report) error
-	SelectScenarioReports(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.Report, error)
+	InsertScenarioReport(scenarioID uint64, hostToken string, timestamp int64, report model.Report) error
+	SelectScenarioReport(scenarioID uint64, hostToken string, reportTimestamp int64) (model.Report, error)
+	SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
 	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
 	InsertScenarioScore(score model.ScenarioHostScore) error
 	SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error)

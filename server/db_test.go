@@ -466,7 +466,7 @@ func TestInsertScenarioReport(t *testing.T) {
 	report := model.Report{Timestamp: 1500, Findings: findings}
 
 	// insert report without scenario and host token
-	err := backingStore.InsertScenarioReport(0, "host-token", report)
+	err := backingStore.InsertScenarioReport(0, "host-token", 50, report)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -479,7 +479,7 @@ func TestInsertScenarioReport(t *testing.T) {
 	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
 
 	// insert sample report
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 1600, report)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -506,7 +506,7 @@ func TestInsertScenarioReport(t *testing.T) {
 		if readHostToken != "host-token" {
 			t.Fatal("Unexpected host token")
 		}
-		if readTimestamp != 1500 {
+		if readTimestamp != 1600 {
 			t.Fatal("Unexpected timestamp")
 		}
 		// check bytes can be turned into Report
@@ -575,15 +575,15 @@ func TestSelectLatestScenarioReport(t *testing.T) {
 	findings2 := append(make([]model.Finding, 0), model.Finding{Show: false, Message: "test2", Value: 0})
 	report2 := model.Report{Timestamp: 1200, Findings: findings2}
 
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", report1a)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", 1300, report1a)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", report1b)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token1", 1300, report1b)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token2", report2)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token2", 1300, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2807,16 +2807,13 @@ func TestSelectTeamScenarioHosts(t *testing.T) {
 	}
 }
 
-func TestSelectScenarioReports(t *testing.T) {
+func TestSelectScenarioReport(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// nothing set up
-	reports, err := backingStore.SelectScenarioReports(0, "host-token", 0, 100)
-	if err != nil {
+	report, err := backingStore.SelectScenarioReport(0, "host-token", 100)
+	if err == nil {
 		t.Fatal(err)
-	}
-	if len(reports) != 0 {
-		t.Fatal("Unexpected report count:", len(reports))
 	}
 
 	// add scenario, host, and host token
@@ -2834,12 +2831,76 @@ func TestSelectScenarioReports(t *testing.T) {
 	}
 
 	// should not have any reports
-	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 0, 100)
+	report, err = backingStore.SelectScenarioReport(scenarioID, "host-token", 100)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// add sample report
+	report1 := model.Report{
+		Timestamp: 100,
+		Findings: []model.Finding{
+			model.Finding{
+				Show:    false,
+				Value:   0,
+				Message: "no test",
+			},
+		},
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 110, report1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(reports) != 0 {
-		t.Fatal("Unexpected report count:", len(reports))
+
+	// should have report
+	report, err = backingStore.SelectScenarioReport(scenarioID, "host-token", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Timestamp != report1.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if len(report.Findings) != len(report1.Findings) {
+		t.Fatal("Unexpected report findings count")
+	}
+	if report.Findings[0].Message != report1.Findings[0].Message {
+		t.Fatal("Unexpected report finding message")
+	}
+}
+
+func TestSelectScenarioReportTimestamps(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	timestamps, err := backingStore.SelectScenarioReportTimestamps(0, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timestamps) != 0 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
+	}
+
+	// add scenario, host, and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any reports
+	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timestamps) != 0 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
 
 	// add sample reports
@@ -2883,94 +2944,76 @@ func TestSelectScenarioReports(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report3)
+	// insert out of order and different received timestamp
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 100, report3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report1)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report4)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report2)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get reports in order
-	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 0, 100)
+	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(reports) != 4 {
-		t.Fatal("Unexpected report count:", len(reports))
+	if len(timestamps) != 4 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
-	if reports[0].Timestamp != report1.Timestamp {
+	if timestamps[0].Document != report1.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[0].Findings) != len(report1.Findings) {
-		t.Fatal("Unexpected report findings count")
-	}
-	if reports[0].Findings[0].Message != report1.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
-	}
-	if reports[1].Timestamp != report2.Timestamp {
+	if timestamps[0].Received != 101 {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[1].Findings) != len(report2.Findings) {
-		t.Fatal("Unexpected report findings count")
-	}
-	if reports[1].Findings[0].Message != report2.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
-	}
-	if reports[2].Timestamp != report3.Timestamp {
+	if timestamps[1].Document != report2.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[2].Findings) != len(report3.Findings) {
-		t.Fatal("Unexpected report findings count")
-	}
-	if reports[2].Findings[0].Message != report3.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
-	}
-	if reports[3].Timestamp != report4.Timestamp {
+	if timestamps[1].Received != 103 {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[3].Findings) != len(report4.Findings) {
-		t.Fatal("Unexpected report findings count")
+	if timestamps[2].Document != report3.Timestamp {
+		t.Fatal("Unexpected report timestamp")
 	}
-	if reports[3].Findings[0].Message != report4.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
+	if timestamps[2].Received != 100 {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if timestamps[3].Document != report4.Timestamp {
+		t.Fatal("Unexpected report timestamp")
+	}
+	if timestamps[3].Received != 102 {
+		t.Fatal("Unexpected report timestamp")
 	}
 
 	// should only get reports 2 and 3
-	reports, err = backingStore.SelectScenarioReports(scenarioID, "host-token", 30, 45)
+	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 30, 45)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(reports) != 2 {
-		t.Fatal("Unexpected report count:", len(reports))
+	if len(timestamps) != 2 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
-	if reports[0].Timestamp != report2.Timestamp {
+	if timestamps[0].Document != report2.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[0].Findings) != len(report2.Findings) {
-		t.Fatal("Unexpected report findings count")
-	}
-	if reports[0].Findings[0].Message != report2.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
-	}
-	if reports[1].Timestamp != report3.Timestamp {
+	if timestamps[0].Received != 103 {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if len(reports[1].Findings) != len(report3.Findings) {
-		t.Fatal("Unexpected report findings count")
+	if timestamps[1].Document != report3.Timestamp {
+		t.Fatal("Unexpected report timestamp")
 	}
-	if reports[1].Findings[0].Message != report3.Findings[0].Message {
-		t.Fatal("Unexpected report finding message")
+	if timestamps[1].Received != 100 {
+		t.Fatal("Unexpected report timestamp")
 	}
 }
 
@@ -3050,20 +3093,20 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report3)
+	// insert out of order and different received timestamp
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report1)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report4)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", report2)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 104, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3159,16 +3202,13 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 }
 
-func TestSelectStates(t *testing.T) {
+func TestSelectState(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// nothing set up
-	states, err := backingStore.SelectStates("host-token", 0, 100)
-	if err != nil {
+	state, err := backingStore.SelectState("host-token", 100)
+	if err == nil {
 		t.Fatal(err)
-	}
-	if len(states) != 0 {
-		t.Fatal("Unexpected state count:", len(states))
 	}
 
 	// add host and host token
@@ -3182,12 +3222,71 @@ func TestSelectStates(t *testing.T) {
 	}
 
 	// should not have any states
-	states, err = backingStore.SelectStates("host-token", 0, 100)
+	state, err = backingStore.SelectState("host-token", 100)
+	if err == nil {
+		t.Fatal(err)
+	}
+
+	// add sample state
+	state1 := model.State{
+		Timestamp: 100,
+		Users: []model.User{
+			model.User{
+				Name:          "bob",
+				AccountActive: true,
+			},
+		},
+	}
+	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(states) != 0 {
-		t.Fatal("Unexpected state count:", len(states))
+
+	// should get state
+	state, err = backingStore.SelectState("host-token", 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if state.Timestamp != state1.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if len(state.Users) != len(state1.Users) {
+		t.Fatal("Unexpected state findings count")
+	}
+	if state.Users[0].AccountActive != state1.Users[0].AccountActive {
+		t.Fatal("Unexpected state finding message")
+	}
+}
+
+func TestSelectStateTimestamps(t *testing.T) {
+	backingStore := initBackingStore(t)
+
+	// nothing set up
+	timestamps, err := backingStore.SelectStateTimestamps("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timestamps) != 0 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
+	}
+
+	// add host and host token
+	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// should not have any states
+	timestamps, err = backingStore.SelectStateTimestamps("host-token", 0, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(timestamps) != 0 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
 
 	// add sample states
@@ -3227,94 +3326,76 @@ func TestSelectStates(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and same time
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state3)
+	// insert out of order and different received timestamp
+	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state1)
+	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state4)
+	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state2)
+	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get states in order
-	states, err = backingStore.SelectStates("host-token", 0, 100)
+	timestamps, err = backingStore.SelectStateTimestamps("host-token", 0, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(states) != 4 {
-		t.Fatal("Unexpected state count:", len(states))
+	if len(timestamps) != 4 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
-	if states[0].Timestamp != state1.Timestamp {
+	if timestamps[0].Document != state1.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[0].Users) != len(state1.Users) {
-		t.Fatal("Unexpected state findings count")
-	}
-	if states[0].Users[0].AccountActive != state1.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
-	}
-	if states[1].Timestamp != state2.Timestamp {
+	if timestamps[0].Received != 102 {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[1].Users) != len(state2.Users) {
-		t.Fatal("Unexpected state findings count")
-	}
-	if states[1].Users[0].AccountActive != state2.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
-	}
-	if states[2].Timestamp != state3.Timestamp {
+	if timestamps[1].Document != state2.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[2].Users) != len(state3.Users) {
-		t.Fatal("Unexpected state findings count")
-	}
-	if states[2].Users[0].AccountActive != state3.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
-	}
-	if states[3].Timestamp != state4.Timestamp {
+	if timestamps[1].Received != 104 {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[3].Users) != len(state4.Users) {
-		t.Fatal("Unexpected state findings count")
+	if timestamps[2].Document != state3.Timestamp {
+		t.Fatal("Unexpected state timestamp")
 	}
-	if states[3].Users[0].AccountActive != state4.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
+	if timestamps[2].Received != 101 {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if timestamps[3].Document != state4.Timestamp {
+		t.Fatal("Unexpected state timestamp")
+	}
+	if timestamps[3].Received != 103 {
+		t.Fatal("Unexpected state timestamp")
 	}
 
 	// should only get states 2 and 3
-	states, err = backingStore.SelectStates("host-token", 30, 45)
+	timestamps, err = backingStore.SelectStateTimestamps("host-token", 30, 45)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(states) != 2 {
-		t.Fatal("Unexpected state count:", len(states))
+	if len(timestamps) != 2 {
+		t.Fatal("Unexpected timestamps count:", len(timestamps))
 	}
-	if states[0].Timestamp != state2.Timestamp {
+	if timestamps[0].Document != state2.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[0].Users) != len(state2.Users) {
-		t.Fatal("Unexpected state findings count")
-	}
-	if states[0].Users[0].AccountActive != state2.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
-	}
-	if states[1].Timestamp != state3.Timestamp {
+	if timestamps[0].Received != 104 {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if len(states[1].Users) != len(state3.Users) {
-		t.Fatal("Unexpected state findings count")
+	if timestamps[1].Document != state3.Timestamp {
+		t.Fatal("Unexpected state timestamp")
 	}
-	if states[1].Users[0].AccountActive != state3.Users[0].AccountActive {
-		t.Fatal("Unexpected state finding message")
+	if timestamps[1].Received != 101 {
+		t.Fatal("Unexpected state timestamp")
 	}
 }
 
@@ -3386,20 +3467,20 @@ func TestSelectStateDiffs(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and same time
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state3)
+	// insert out of order and different received timestamp
+	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state1)
+	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state4)
+	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state4)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(100, "127.0.0.1", "host-token", state2)
+	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state2)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -203,7 +203,8 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 
 		log.Println("Saving report")
 		report.Timestamp = state.Timestamp
-		err = theServer.backingStore.InsertScenarioReport(scenarioID, hostToken, report)
+		currentTime := time.Now().Unix()
+		err = theServer.backingStore.InsertScenarioReport(scenarioID, hostToken, currentTime, report)
 		if err != nil {
 			log.Println("ERROR: cannot insert report;")
 			return err
@@ -1321,7 +1322,7 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("get reports")
 
 	r.ParseForm()
@@ -1351,29 +1352,23 @@ func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
 		log.Println("Empty host_token")
 		return
 	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	timestampStr := r.Form.Get("timestamp")
+	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
+		log.Println("Rejected timestamp")
 		return
 	}
 
 	var collected []model.Report
 	for _, hostToken := range hostTokens {
-		reports, err := theServer.backingStore.SelectScenarioReports(scenarioID, hostToken, timeStart, timeEnd)
+		report, err := theServer.backingStore.SelectScenarioReport(scenarioID, hostToken, timestamp)
 		if err != nil {
 			msg := "ERROR: cannot retrieve reports;"
 			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
 		}
-		collected = append(collected, reports...)
+		collected = append(collected, report)
 	}
 	b, err := json.Marshal(collected)
 	if err != nil {
@@ -1431,7 +1426,7 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 	w.Write(b)
 }
 
-func (theServer theServer) getStates(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getState(w http.ResponseWriter, r *http.Request) {
 	log.Println("get states")
 
 	r.ParseForm()
@@ -1441,29 +1436,23 @@ func (theServer theServer) getStates(w http.ResponseWriter, r *http.Request) {
 		log.Println("Empty host_token")
 		return
 	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	timestampStr := r.Form.Get("timestamp")
+	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
+		log.Println("Rejected timestamp")
 		return
 	}
 
-	states, err := theServer.backingStore.SelectStates(hostToken, timeStart, timeEnd)
+	state, err := theServer.backingStore.SelectState(hostToken, timestamp)
 	if err != nil {
-		msg := "ERROR: cannot retrieve states;"
+		msg := "ERROR: cannot retrieve state;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
 	}
-	b, err := json.Marshal(states)
+	b, err := json.Marshal(state)
 	if err != nil {
-		msg := "ERROR: cannot marshal states;"
+		msg := "ERROR: cannot marshal state;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
@@ -1688,9 +1677,9 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteScenario).Methods("DELETE")
 	analysisRouter := r.PathPrefix("/analysis").Subrouter()
 	analysisRouter.Use(theServer.middleware)
-	analysisRouter.HandleFunc("/reports", theServer.getReports).Methods("GET")
+	analysisRouter.HandleFunc("/reports", theServer.getReport).Methods("GET")
 	analysisRouter.HandleFunc("/reports/diff", theServer.getReportDiffs).Methods("GET")
-	analysisRouter.HandleFunc("/states", theServer.getStates).Methods("GET")
+	analysisRouter.HandleFunc("/states", theServer.getState).Methods("GET")
 	analysisRouter.HandleFunc("/states/diff", theServer.getStateDiffs).Methods("GET")
 	// no auth
 	scoresRouter := r.PathPrefix("/scores").Subrouter()

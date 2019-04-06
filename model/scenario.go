@@ -72,3 +72,8 @@ type ScenarioHosts struct {
 	ScenarioName string
 	Hosts        []Host
 }
+
+type TimestampDocumentAndReceived struct {
+	Document int64
+	Received int64
+}
