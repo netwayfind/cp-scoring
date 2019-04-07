@@ -12,7 +12,7 @@ type backingStore interface {
 	InsertState(timestamp int64, source string, hostToken string, state model.State) error
 	SelectState(hostToken string, stateTimestamp int64) (model.State, error)
 	SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
-	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
+	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
 	SelectAdmins() ([]string, error)
 	IsAdmin(username string) (bool, error)
 	SelectAdminPasswordHash(username string) (string, error)
@@ -48,7 +48,7 @@ type backingStore interface {
 	InsertScenarioReport(scenarioID uint64, hostToken string, timestamp int64, report model.Report) error
 	SelectScenarioReport(scenarioID uint64, hostToken string, reportTimestamp int64) (model.Report, error)
 	SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
-	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error)
+	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
 	InsertScenarioScore(score model.ScenarioHostScore) error
 	SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error)
 	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)

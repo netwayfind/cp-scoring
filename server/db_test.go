@@ -3116,25 +3116,31 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diffs) != 2 {
+	if len(diffs) != 1 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
-	if diffs[0].Type != "Removed" {
+	if diffs[0].Timestamp != 45 {
+		t.Fatal("Unexpected diff timestamp")
+	}
+	if len(diffs[0].Changes) != 2 {
+		t.Fatal("Unexpected diff change count:", len(diffs[0].Changes))
+	}
+	if diffs[0].Changes[0].Type != "Removed" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[0].Key != "Findings" {
+	if diffs[0].Changes[0].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+	if diffs[0].Changes[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
 		t.Fatal("Unexpected diff item")
 	}
-	if diffs[1].Type != "Added" {
+	if diffs[0].Changes[1].Type != "Added" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[1].Key != "Findings" {
+	if diffs[0].Changes[1].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+	if diffs[0].Changes[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3161,25 +3167,31 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diffs) != 2 {
+	if len(diffs) != 1 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
-	if diffs[0].Type != "Removed" {
+	if diffs[0].Timestamp != 45 {
+		t.Fatal("Unexpected diff timestamp")
+	}
+	if len(diffs[0].Changes) != 2 {
+		t.Fatal("Unexpected diff change count:", len(diffs[0].Changes))
+	}
+	if diffs[0].Changes[0].Type != "Removed" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[0].Key != "Findings" {
+	if diffs[0].Changes[0].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+	if diffs[0].Changes[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
 		t.Fatal("Unexpected diff item")
 	}
-	if diffs[1].Type != "Added" {
+	if diffs[0].Changes[1].Type != "Added" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[1].Key != "Findings" {
+	if diffs[0].Changes[1].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+	if diffs[0].Changes[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3490,25 +3502,31 @@ func TestSelectStateDiffs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diffs) != 2 {
+	if len(diffs) != 1 {
 		t.Fatal("Unexpected state diff count:", len(diffs))
 	}
-	if diffs[0].Type != "Removed" {
+	if diffs[0].Timestamp != 45 {
+		t.Fatal("Unexpected diff timestamp")
+	}
+	if len(diffs[0].Changes) != 2 {
+		t.Fatal("Unexpected diff change count:", len(diffs[0].Changes))
+	}
+	if diffs[0].Changes[0].Type != "Removed" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[0].Key != "Users" {
+	if diffs[0].Changes[0].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
 		t.Fatal("Unexpected diff item")
 	}
-	if diffs[1].Type != "Added" {
+	if diffs[0].Changes[1].Type != "Added" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[1].Key != "Users" {
+	if diffs[0].Changes[1].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3535,25 +3553,31 @@ func TestSelectStateDiffs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(diffs) != 2 {
+	if len(diffs) != 1 {
 		t.Fatal("Unexpected state diff count:", len(diffs))
 	}
-	if diffs[0].Type != "Removed" {
+	if diffs[0].Timestamp != 45 {
+		t.Fatal("Unexpected diff timestamp")
+	}
+	if len(diffs[0].Changes) != 2 {
+		t.Fatal("Unexpected diff change count:", len(diffs[0].Changes))
+	}
+	if diffs[0].Changes[0].Type != "Removed" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[0].Key != "Users" {
+	if diffs[0].Changes[0].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
 		t.Fatal("Unexpected diff item")
 	}
-	if diffs[1].Type != "Added" {
+	if diffs[0].Changes[1].Type != "Added" {
 		t.Fatal("Unexpected diff type")
 	}
-	if diffs[1].Key != "Users" {
+	if diffs[0].Changes[1].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
 		t.Fatal("Unexpected diff item")
 	}
 

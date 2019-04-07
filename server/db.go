@@ -925,14 +925,14 @@ func (db dbObj) SelectScenarioReportTimestamps(scenarioID uint64, hostToken stri
 	return timestamps, nil
 }
 
-func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error) {
+func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error) {
 	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 AND report->'Timestamp'>=$3 AND report->'Timestamp'<=$4 ORDER BY report->'Timestamp' ASC", scenarioID, hostToken, timeStart, timeEnd)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	changes := make([]processing.Change, 0)
+	diffs := make([]processing.DocumentDiff, 0)
 
 	var previousEntries map[string]map[string]bool
 	first := true
@@ -959,13 +959,19 @@ func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, t
 			continue
 		}
 
-		found := processing.Diff(previousEntries, entries)
-		changes = append(changes, found...)
+		changes := processing.Diff(previousEntries, entries)
+		if len(changes) > 0 {
+			diff := processing.DocumentDiff{
+				Timestamp: report.Timestamp,
+				Changes:   changes,
+			}
+			diffs = append(diffs, diff)
+		}
 
 		previousEntries = entries
 	}
 
-	return changes, nil
+	return diffs, nil
 }
 
 func (db dbObj) SelectState(hostToken string, stateTimestamp int64) (model.State, error) {
@@ -1024,14 +1030,15 @@ func (db dbObj) SelectStateTimestamps(hostToken string, timeStart int64, timeEnd
 	return timestamps, nil
 }
 
-func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.Change, error) {
+func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error) {
 	rows, err := db.dbConn.Query("SELECT state FROM states WHERE host_token=$1 AND state->'Timestamp'>=$2 AND state->'Timestamp'<=$3 ORDER BY state->'Timestamp' ASC", hostToken, timeStart, timeEnd)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	changes := make([]processing.Change, 0)
+	diffs := make([]processing.DocumentDiff, 0)
+
 	var previousEntries map[string]map[string]bool
 	first := true
 	for rows.Next() {
@@ -1057,11 +1064,17 @@ func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int6
 			continue
 		}
 
-		found := processing.Diff(previousEntries, entries)
-		changes = append(changes, found...)
+		changes := processing.Diff(previousEntries, entries)
+		if len(changes) > 0 {
+			diff := processing.DocumentDiff{
+				Timestamp: state.Timestamp,
+				Changes:   changes,
+			}
+			diffs = append(diffs, diff)
+		}
 
 		previousEntries = entries
 	}
 
-	return changes, nil
+	return diffs, nil
 }

@@ -1480,7 +1480,7 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	diffs := make(map[int][]processing.Change)
+	diffs := make(map[int][]processing.DocumentDiff)
 
 	for i, hostToken := range hostTokens {
 		ds, err := theServer.backingStore.SelectScenarioReportDiffs(scenarioID, hostToken, timeStart, timeEnd)
@@ -1639,7 +1639,7 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	diffs := make(map[int][]processing.Change)
+	diffs := make(map[int][]processing.DocumentDiff)
 
 	for i, hostToken := range hostTokens {
 		ds, err := theServer.backingStore.SelectStateDiffs(hostToken, timeStart, timeEnd)

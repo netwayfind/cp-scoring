@@ -14,6 +14,11 @@ type Change struct {
 	Item string
 }
 
+type DocumentDiff struct {
+	Timestamp int64
+	Changes   []Change
+}
+
 func Diff(previous map[string]map[string]bool, current map[string]map[string]bool) []Change {
 	changes := make([]Change, 0)
 
