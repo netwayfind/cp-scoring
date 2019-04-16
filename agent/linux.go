@@ -20,16 +20,16 @@ func (h hostLinux) GetUsers() ([]model.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	userMapEtcPasswd := parseEtcPasswd(bs)
+	usersEtcPasswd := parseEtcPasswd(bs)
 
 	// get other user information (sensitive)
 	bs, err = ioutil.ReadFile("/etc/shadow")
 	if err != nil {
 		return nil, err
 	}
-	userMapEtcShadow := parseEtcShadow(bs)
+	usersEtcShadow := parseEtcShadow(bs)
 
-	return mergeUserMaps(userMapEtcPasswd, userMapEtcShadow), nil
+	return mergeLinuxUsers(usersEtcPasswd, usersEtcShadow), nil
 }
 
 func (h hostLinux) GetGroups() (map[string][]model.GroupMember, error) {

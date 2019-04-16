@@ -38,7 +38,7 @@ func TestEtcPasswd(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not parse expected user")
 	}
-	user := users["root"]
+	user := users[0]
 	if user.Name != "root" {
 		t.Fatal("Unexpected user name")
 	}
@@ -52,14 +52,14 @@ func TestEtcPasswd(t *testing.T) {
 	if len(users) != 2 {
 		t.Fatal("Did not parse expected users")
 	}
-	user1 := users["root"]
+	user1 := users[0]
 	if user1.Name != "root" {
 		t.Fatal("Unexpected user name")
 	}
 	if user1.ID != "0" {
 		t.Fatal("Unexpected user ID")
 	}
-	user2 := users["user"]
+	user2 := users[1]
 	if user2.Name != "user" {
 		t.Fatal("Unexpected user name")
 	}
@@ -98,7 +98,7 @@ func TestEtcShadow(t *testing.T) {
 	if len(users) != 1 {
 		t.Fatal("Did not parse expected user")
 	}
-	user := users["root"]
+	user := users[0]
 	if user.AccountExpires != false {
 		t.Fatal("Account is expected to expire")
 	}
@@ -119,7 +119,7 @@ func TestEtcShadow(t *testing.T) {
 	if len(users) != 4 {
 		t.Fatal("Did not parse expected users")
 	}
-	user1 := users["user1"]
+	user1 := users[0]
 	if user1.AccountExpires != false {
 		t.Fatal("Account is expected to not expire")
 	}
@@ -133,7 +133,7 @@ func TestEtcShadow(t *testing.T) {
 	if user1.PasswordLastSet != 1382400000 {
 		t.Fatal("Account last password set not expected value")
 	}
-	user2 := users["user2"]
+	user2 := users[1]
 	if user2.AccountExpires != false {
 		t.Fatal("Account is expected to not expire")
 	}
@@ -147,7 +147,7 @@ func TestEtcShadow(t *testing.T) {
 	if user2.PasswordLastSet != 1424044800 {
 		t.Fatal("Account last password set not expected value")
 	}
-	user3 := users["user3"]
+	user3 := users[2]
 	if user3.AccountExpires != false {
 		t.Fatal("Account is expected to not expire")
 	}
@@ -161,7 +161,7 @@ func TestEtcShadow(t *testing.T) {
 	if user3.PasswordLastSet != 1424044800 {
 		t.Fatal("Account last password set not expected value")
 	}
-	user4 := users["user4"]
+	user4 := users[3]
 	if user4.AccountExpires != true {
 		t.Fatal("Account is expected to expire")
 	}
@@ -177,51 +177,79 @@ func TestEtcShadow(t *testing.T) {
 	}
 }
 
-func TestMergeUserMaps(t *testing.T) {
+func TestMergeLinuxUsers(t *testing.T) {
 	// empty maps
-	usersPasswd := make(map[string]model.User)
-	usersShadow := make(map[string]model.User)
+	usersPasswd := make([]model.User, 0)
+	usersShadow := make([]model.User, 0)
 
-	result := mergeUserMaps(usersPasswd, usersShadow)
+	result := mergeLinuxUsers(usersPasswd, usersShadow)
 	if len(result) != 0 {
 		t.Fatal("Expected no users")
 	}
 
 	// expected to have same users in both /etc/passwd and /etc/shadow
-	userPart1 := model.User{}
-	userPart1.Name = "bob"
-	userPart1.ID = "175"
-	usersPasswd[userPart1.Name] = userPart1
+	user1Part1 := model.User{}
+	user1Part1.Name = "bob"
+	user1Part1.ID = "175"
+	usersPasswd = append(usersPasswd, user1Part1)
+	user2Part1 := model.User{}
+	user2Part1.Name = "alice"
+	user2Part1.ID = "176"
+	usersPasswd = append(usersPasswd, user2Part1)
 
-	userPart2 := model.User{}
-	userPart2.Name = userPart1.Name
-	userPart2.AccountActive = true
-	userPart2.AccountExpires = false
-	userPart2.PasswordExpires = true
-	userPart2.PasswordLastSet = 1000
-	usersShadow[userPart2.Name] = userPart2
+	user1Part2 := model.User{}
+	user1Part2.Name = user1Part1.Name
+	user1Part2.AccountActive = true
+	user1Part2.AccountExpires = false
+	user1Part2.PasswordExpires = true
+	user1Part2.PasswordLastSet = 1000
+	usersShadow = append(usersShadow, user1Part2)
+	user2Part2 := model.User{}
+	user2Part2.Name = user2Part1.Name
+	user2Part2.AccountActive = true
+	user2Part2.AccountExpires = false
+	user2Part2.PasswordExpires = true
+	user2Part2.PasswordLastSet = 2000
+	usersShadow = append(usersShadow, user2Part2)
 
-	result = mergeUserMaps(usersPasswd, usersShadow)
-	if len(result) != 1 {
-		t.Fatal("Expected to have 1 user entry")
+	result = mergeLinuxUsers(usersPasswd, usersShadow)
+	if len(result) != 2 {
+		t.Fatal("Expected to have 2 user entries")
 	}
-	user := result[0]
-	if user.Name != "bob" {
+	if result[0].Name != "bob" {
 		t.Fatal("Expected user name is bob")
 	}
-	if user.ID != "175" {
+	if result[0].ID != "175" {
 		t.Fatal("Expected user ID is 175")
 	}
-	if user.AccountExpires != false {
+	if result[0].AccountExpires != false {
 		t.Fatal("Expected user account not to expire")
 	}
-	if user.AccountActive != true {
+	if result[0].AccountActive != true {
 		t.Fatal("Expected user is active")
 	}
-	if user.PasswordExpires != true {
+	if result[0].PasswordExpires != true {
 		t.Fatal("Expected user password to expire")
 	}
-	if user.PasswordLastSet != 1000 {
+	if result[0].PasswordLastSet != 1000 {
+		t.Fatal("Unexpected password last set value")
+	}
+	if result[1].Name != "alice" {
+		t.Fatal("Expected user name is bob")
+	}
+	if result[1].ID != "176" {
+		t.Fatal("Expected user ID is 175")
+	}
+	if result[1].AccountExpires != false {
+		t.Fatal("Expected user account not to expire")
+	}
+	if result[1].AccountActive != true {
+		t.Fatal("Expected user is active")
+	}
+	if result[1].PasswordExpires != true {
+		t.Fatal("Expected user password to expire")
+	}
+	if result[1].PasswordLastSet != 2000 {
 		t.Fatal("Unexpected password last set value")
 	}
 }

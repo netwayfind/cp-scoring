@@ -16,8 +16,8 @@ import (
 	"github.com/sumwonyuno/cp-scoring/model"
 )
 
-func parseEtcPasswd(bs []byte) map[string]model.User {
-	users := make(map[string]model.User)
+func parseEtcPasswd(bs []byte) []model.User {
+	users := make([]model.User, 0)
 	for _, line := range strings.Split(string(bs), "\n") {
 		tokens := strings.Split(line, ":")
 		if len(tokens) != 7 {
@@ -27,13 +27,13 @@ func parseEtcPasswd(bs []byte) map[string]model.User {
 		var entry model.User
 		entry.Name = username
 		entry.ID = id
-		users[username] = entry
+		users = append(users, entry)
 	}
 	return users
 }
 
-func parseEtcShadow(bs []byte) map[string]model.User {
-	users := make(map[string]model.User)
+func parseEtcShadow(bs []byte) []model.User {
+	users := make([]model.User, 0)
 	for _, line := range strings.Split(string(bs), "\n") {
 		tokens := strings.Split(line, ":")
 		if len(tokens) != 9 {
@@ -73,17 +73,24 @@ func parseEtcShadow(bs []byte) map[string]model.User {
 		}
 
 		// save changes
-		users[username] = entry
+		users = append(users, entry)
 	}
 	return users
 }
 
-func mergeUserMaps(userMapEtcPasswd map[string]model.User, userMapEtcShadow map[string]model.User) []model.User {
+func mergeLinuxUsers(usersEtcPasswd []model.User, usersEtcShadow []model.User) []model.User {
 	users := make([]model.User, 0)
 
+	// turn into map
+	usersMapEtcShadow := make(map[string]model.User)
+
+	for _, entry := range usersEtcShadow {
+		usersMapEtcShadow[entry.Name] = entry
+	}
+
 	// assume users exist in both /etc/passwd and /etc/shadow
-	for username, entry := range userMapEtcPasswd {
-		entryShadow := userMapEtcShadow[username]
+	for _, entry := range usersEtcPasswd {
+		entryShadow := usersMapEtcShadow[entry.Name]
 		// set settings from shadow into entry
 		entry.AccountActive = entryShadow.AccountActive
 		entry.AccountExpires = entryShadow.AccountExpires
