@@ -368,25 +368,25 @@ class AnalysisItem extends React.Component {
   }
   
   componentDidMount() {
-    this.getData();
+    this.getData(this.props);
   }
 
-  componentWillReceiveProps(_) {
-    this.getData();
+  componentWillReceiveProps(newProps) {
+    this.getData(newProps);
   }
 
-  getData() {
-    if (this.props.args === null || this.props.args === undefined) {
+  getData(props) {
+    if (props.args === null || props.args === undefined) {
       return;
     }
 
     let urlTimeline = null;
     let urlDiffs = null;
-    if (this.props.documentType === 'reports') {
+    if (props.documentType === 'reports') {
       urlTimeline = '/analysis/reports/timeline';
       urlDiffs = '/analysis/reports/diffs';
     }
-    else if (this.props.documentType === 'states') {
+    else if (props.documentType === 'states') {
       urlTimeline = '/analysis/states/timeline';
       urlDiffs = '/analysis/states/diffs';
     }
@@ -394,7 +394,7 @@ class AnalysisItem extends React.Component {
       return;
     }
 
-    let params = Object.entries(this.props.args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    let params = Object.entries(props.args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     urlTimeline = urlTimeline + '?' + params;
     urlDiffs = urlDiffs + '?' + params;
 
