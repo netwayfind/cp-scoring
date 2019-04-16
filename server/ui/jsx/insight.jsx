@@ -560,12 +560,35 @@ class AnalysisItem extends React.Component {
       let users = [];
       for (let i in this.state.selected.Users) {
         let user = this.state.selected.Users[i];
-        users.push(<li key={i}>{user.Name}</li>);
+        let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
+        users.push(<li key={i}>{user.ID} - {user.Name} - {user.AccountActive} - {user.AccountExpires} - {passwordLastSet} - {user.PasswordExpires}</li>);
       }
       let groups = [];
+      for (let group in this.state.selected.Groups) {
+        let members = this.state.selected.Groups[group];
+        if (members.length === 0) {
+          groups.push(<li key={group}>{group}</li>)
+        }
+        else {
+          let membersStr = members.map(member => member.Name).join(', ');
+          groups.push(<li key={group}>{group} - [{membersStr}]</li>);
+        }
+      }
       let software = [];
+      for (let i in this.state.selected.Software) {
+        let sw = this.state.selected.Software[i];
+        software.push(<li key={i}>{sw.Name} - {sw.Version}</li>);
+      }
       let processes = [];
+      for (let i in this.state.selected.Processes) {
+        let process = this.state.selected.Processes[i];
+        processes.push(<li key={i}>{process.PID} - {process.User} - {process.CommandLine}</li>);
+      }
       let conns = [];
+      for (let i in this.state.selected.NetworkConnections) {
+        let conn = this.state.selected.NetworkConnections[i];
+        conns.push(<li key={i}>{conn.Protocol} - {conn.LocalAddress}:{conn.LocalPort} - {conn.RemoteAddress}:{conn.RemotePort} - {conn.State}</li>);
+      }
       selected = (
         <React.Fragment>
           Time: {time}

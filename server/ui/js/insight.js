@@ -590,15 +590,56 @@ class AnalysisItem extends React.Component {
 
           for (let i in this.state.selected.Users) {
             let user = this.state.selected.Users[i];
+            let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
             users.push(React.createElement("li", {
               key: i
-            }, user.Name));
+            }, user.ID, " - ", user.Name, " - ", user.AccountActive, " - ", user.AccountExpires, " - ", passwordLastSet, " - ", user.PasswordExpires));
           }
 
           let groups = [];
+
+          for (let group in this.state.selected.Groups) {
+            let members = this.state.selected.Groups[group];
+
+            if (members.length === 0) {
+              groups.push(React.createElement("li", {
+                key: group
+              }, group));
+            } else {
+              let membersStr = members.map(member => member.Name).join(', ');
+              groups.push(React.createElement("li", {
+                key: group
+              }, group, " - [", membersStr, "]"));
+            }
+          }
+
           let software = [];
+
+          for (let i in this.state.selected.Software) {
+            let sw = this.state.selected.Software[i];
+            software.push(React.createElement("li", {
+              key: i
+            }, sw.Name, " - ", sw.Version));
+          }
+
           let processes = [];
+
+          for (let i in this.state.selected.Processes) {
+            let process = this.state.selected.Processes[i];
+            processes.push(React.createElement("li", {
+              key: i
+            }, process.PID, " - ", process.User, " - ", process.CommandLine));
+          }
+
           let conns = [];
+
+          for (let i in this.state.selected.NetworkConnections) {
+            let conn = this.state.selected.NetworkConnections[i];
+            conns.push(React.createElement("li", {
+              key: i
+            }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
+          }
+
           selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "OS: ", this.state.selected.OS, React.createElement("br", null), "Hostname: ", this.state.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
         }
 
