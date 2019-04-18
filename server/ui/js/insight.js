@@ -496,10 +496,19 @@ class AnalysisItem extends React.Component {
 
         return response.json();
       }).then(function (data) {
-        // choose first instance
-        this.setState({
-          selected: data[0]
-        });
+        if (data && Object.keys(data).length > 0) {
+          // choose first instance
+          for (let i in data) {
+            this.setState({
+              selected: data[i]
+            });
+            break;
+          }
+        } else {
+          this.setState({
+            selected: {}
+          });
+        }
       }.bind(this));
     }
 
@@ -547,101 +556,104 @@ class AnalysisItem extends React.Component {
       traces.push(trace);
     }
 
-    let selected = null; // diff
+    let selected = null;
 
-    if (this.state.selected.Changes != undefined) {
-      let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
-      let changes = [];
-
-      for (let i in this.state.selected.Changes) {
-        let change = this.state.selected.Changes[i];
-        changes.push(React.createElement("li", {
-          key: i
-        }, change.Type, " - ", change.Key, " - ", change.Item));
-      }
-
-      selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Changes:", React.createElement("ul", null, changes));
-    } // report
-    else if (this.props.documentType === 'reports') {
+    if (!this.state.selected) {
+      selected = React.createElement(React.Fragment, null, "No result");
+    } // diff
+    else if (this.state.selected.Changes != undefined) {
         let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
-        let findings = [];
+        let changes = [];
 
-        for (let i in this.state.selected.Findings) {
-          let finding = this.state.selected.Findings[i];
-          findings.push(React.createElement("li", {
+        for (let i in this.state.selected.Changes) {
+          let change = this.state.selected.Changes[i];
+          changes.push(React.createElement("li", {
             key: i
-          }, finding.Show, " - ", finding.Value, " - ", finding.Message));
+          }, change.Type, " - ", change.Key, " - ", change.Item));
         }
 
-        selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("ul", null, findings));
-      } // state
-      else if (this.props.documentType === 'states') {
+        selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Changes:", React.createElement("ul", null, changes));
+      } // report
+      else if (this.props.documentType === 'reports') {
           let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
-          let errors = [];
+          let findings = [];
 
-          for (let i in this.state.selected.Errors) {
-            let error = this.state.selected.Errors[i];
-            errors.push(React.createElement("li", {
+          for (let i in this.state.selected.Findings) {
+            let finding = this.state.selected.Findings[i];
+            findings.push(React.createElement("li", {
               key: i
-            }, error));
+            }, finding.Show, " - ", finding.Value, " - ", finding.Message));
           }
 
-          let users = [];
+          selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("ul", null, findings));
+        } // state
+        else if (this.props.documentType === 'states') {
+            let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
+            let errors = [];
 
-          for (let i in this.state.selected.Users) {
-            let user = this.state.selected.Users[i];
-            let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
-            users.push(React.createElement("li", {
-              key: i
-            }, user.ID, " - ", user.Name, " - ", user.AccountActive, " - ", user.AccountExpires, " - ", passwordLastSet, " - ", user.PasswordExpires));
-          }
-
-          let groups = [];
-
-          for (let group in this.state.selected.Groups) {
-            let members = this.state.selected.Groups[group];
-
-            if (members.length === 0) {
-              groups.push(React.createElement("li", {
-                key: group
-              }, group));
-            } else {
-              let membersStr = members.map(member => member.Name).join(', ');
-              groups.push(React.createElement("li", {
-                key: group
-              }, group, " - [", membersStr, "]"));
+            for (let i in this.state.selected.Errors) {
+              let error = this.state.selected.Errors[i];
+              errors.push(React.createElement("li", {
+                key: i
+              }, error));
             }
+
+            let users = [];
+
+            for (let i in this.state.selected.Users) {
+              let user = this.state.selected.Users[i];
+              let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
+              users.push(React.createElement("li", {
+                key: i
+              }, user.ID, " - ", user.Name, " - ", user.AccountActive, " - ", user.AccountExpires, " - ", passwordLastSet, " - ", user.PasswordExpires));
+            }
+
+            let groups = [];
+
+            for (let group in this.state.selected.Groups) {
+              let members = this.state.selected.Groups[group];
+
+              if (members.length === 0) {
+                groups.push(React.createElement("li", {
+                  key: group
+                }, group));
+              } else {
+                let membersStr = members.map(member => member.Name).join(', ');
+                groups.push(React.createElement("li", {
+                  key: group
+                }, group, " - [", membersStr, "]"));
+              }
+            }
+
+            let software = [];
+
+            for (let i in this.state.selected.Software) {
+              let sw = this.state.selected.Software[i];
+              software.push(React.createElement("li", {
+                key: i
+              }, sw.Name, " - ", sw.Version));
+            }
+
+            let processes = [];
+
+            for (let i in this.state.selected.Processes) {
+              let process = this.state.selected.Processes[i];
+              processes.push(React.createElement("li", {
+                key: i
+              }, process.PID, " - ", process.User, " - ", process.CommandLine));
+            }
+
+            let conns = [];
+
+            for (let i in this.state.selected.NetworkConnections) {
+              let conn = this.state.selected.NetworkConnections[i];
+              conns.push(React.createElement("li", {
+                key: i
+              }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
+            }
+
+            selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "OS: ", this.state.selected.OS, React.createElement("br", null), "Hostname: ", this.state.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
           }
-
-          let software = [];
-
-          for (let i in this.state.selected.Software) {
-            let sw = this.state.selected.Software[i];
-            software.push(React.createElement("li", {
-              key: i
-            }, sw.Name, " - ", sw.Version));
-          }
-
-          let processes = [];
-
-          for (let i in this.state.selected.Processes) {
-            let process = this.state.selected.Processes[i];
-            processes.push(React.createElement("li", {
-              key: i
-            }, process.PID, " - ", process.User, " - ", process.CommandLine));
-          }
-
-          let conns = [];
-
-          for (let i in this.state.selected.NetworkConnections) {
-            let conn = this.state.selected.NetworkConnections[i];
-            conns.push(React.createElement("li", {
-              key: i
-            }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
-          }
-
-          selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "OS: ", this.state.selected.OS, React.createElement("br", null), "Hostname: ", this.state.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
-        }
 
     return React.createElement(React.Fragment, null, "Timeline", React.createElement("ul", null, React.createElement(Plot, {
       data: traces,

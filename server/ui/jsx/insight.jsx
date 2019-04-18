@@ -461,8 +461,16 @@ class AnalysisItem extends React.Component {
         return response.json();
       })
       .then(function(data) {
-        // choose first instance
-        this.setState({selected: data[0]})
+        if (data && Object.keys(data).length > 0) {
+          // choose first instance
+          for (let i in data) {
+            this.setState({selected: data[i]})
+            break;
+          }
+        }
+        else {
+          this.setState({selected: {}})
+        }
       }.bind(this));
     }
 
@@ -511,8 +519,15 @@ class AnalysisItem extends React.Component {
     }
 
     let selected = null;
+    if (!this.state.selected) {
+      selected = (
+        <React.Fragment>
+          No result
+        </React.Fragment>
+      );
+    }
     // diff
-    if (this.state.selected.Changes != undefined) {
+    else if (this.state.selected.Changes != undefined) {
       let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
       let changes = [];
       for (let i in this.state.selected.Changes) {
