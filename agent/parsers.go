@@ -676,6 +676,11 @@ func parseWindowsSoftware(bs []byte) []model.Software {
 			continue
 		}
 
+		// don't add if empty name
+		if len(row[0]) == 0 {
+			continue
+		}
+
 		sw := model.Software{}
 		//DisplayName,DisplayVersion
 		sw.Name = row[0]

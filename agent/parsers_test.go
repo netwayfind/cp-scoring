@@ -1360,17 +1360,21 @@ func TestParseWindowsSoftwareBad(t *testing.T) {
 	if len(software) != 0 {
 		t.Fatal("Expected 0 software")
 	}
+
+	// empty name
+	bs = []byte(",")
+	software = parseWindowsSoftware(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
 }
 
 func TestParseWindowsSoftware(t *testing.T) {
 	// missing name
 	bs := []byte("1,2\r\n,2")
 	software := parseWindowsSoftware(bs)
-	if len(software) != 1 {
-		t.Fatal("Expected 1 software")
-	}
-	if len(software[0].Name) != 0 {
-		t.Fatal("Expected software name to be empty")
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
 	}
 
 	// missing version
