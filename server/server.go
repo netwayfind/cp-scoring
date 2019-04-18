@@ -1362,11 +1362,11 @@ func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
 	reports := make(map[int]model.Report)
 	for i, hostToken := range hostTokens {
 		report, err := theServer.backingStore.SelectScenarioReport(scenarioID, hostToken, timestamp)
+		// err is OK, just log
 		if err != nil {
-			msg := "ERROR: cannot retrieve reports;"
+			msg := "WARN: did not retrieve report;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
+			continue
 		}
 		reports[i] = report
 	}
@@ -1533,11 +1533,11 @@ func (theServer theServer) getStates(w http.ResponseWriter, r *http.Request) {
 
 	for i, hostToken := range hostTokens {
 		state, err := theServer.backingStore.SelectState(hostToken, timestamp)
+		// err is OK, just log
 		if err != nil {
-			msg := "ERROR: cannot retrieve state;"
+			msg := "WARN: did not retrieve state;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
-			return
+			continue
 		}
 		states[i] = state
 	}
