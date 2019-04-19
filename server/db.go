@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/rand"
 	"strings"
 
 	"github.com/sumwonyuno/cp-scoring/processing"
@@ -37,11 +38,11 @@ func (db dbObj) dbInit() {
 	db.createTable("hosts", "CREATE TABLE IF NOT EXISTS hosts(id BIGSERIAL PRIMARY KEY, hostname VARCHAR UNIQUE NOT NULL, os VARCHAR NOT NULL)")
 	db.createTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
 	db.createTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
-	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB NOT NULL, FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("states", "CREATE TABLE IF NOT EXISTS states(id VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, host_token VARCHAR NOT NULL, state JSONB NOT NULL, FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.createTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.createTable("hosts_templates", "CREATE TABLE IF NOT EXISTS hosts_templates(scenario_id INTEGER NOT NULL, host_id INTEGER NOT NULL, template_id INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(template_id) REFERENCES templates(id), FOREIGN KEY(host_id) REFERENCES hosts(id))")
 	db.createTable("scores", "CREATE TABLE IF NOT EXISTS scores(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, score INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
-	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, report JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.createTable("reports", "CREATE TABLE IF NOT EXISTS reports(id VARCHAR NOT NULL PRIMARY KEY, scenario_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, report JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 
 	log.Println("Finished setting up database")
 }
@@ -108,12 +109,23 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
+const chars = "0123456789abcdef"
+
+func getRandomID() string {
+	b := make([]byte, 64)
+	for i := range b {
+		b[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(b)
+}
+
 func (db dbObj) InsertState(timestamp int64, source string, hostToken string, state model.State) error {
 	b, err := json.Marshal(state)
 	if err != nil {
 		return err
 	}
-	_, err = db.dbInsert("INSERT INTO states(timestamp, source, host_token, state) VALUES($1, $2, $3, $4)", timestamp, source, hostToken, b)
+	id := getRandomID()
+	_, err = db.dbInsert("INSERT INTO states(id, timestamp, source, host_token, state) VALUES($1, $2, $3, $4, $5)", id, timestamp, source, hostToken, b)
 	return err
 }
 
@@ -749,7 +761,8 @@ func (db dbObj) InsertScenarioReport(scenarioID uint64, hostToken string, timest
 	if err != nil {
 		return err
 	}
-	_, err = db.dbInsert("INSERT INTO reports(scenario_id, host_token, timestamp, report) VALUES($1, $2, $3, $4)", scenarioID, hostToken, timestamp, b)
+	id := getRandomID()
+	_, err = db.dbInsert("INSERT INTO reports(id, scenario_id, host_token, timestamp, report) VALUES($1, $2, $3, $4, $5)", id, scenarioID, hostToken, timestamp, b)
 	if err != nil {
 		return err
 	}

@@ -154,15 +154,19 @@ func TestInsertState(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
+	var id string
 	var timestamp int64
 	var source string
 	var hostToken string
 	var readStateBytes []byte
 	var readState model.State
 	for rows.Next() {
-		err = rows.Scan(&timestamp, &source, &hostToken, &readStateBytes)
+		err = rows.Scan(&id, &timestamp, &source, &hostToken, &readStateBytes)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if len(id) == 0 {
+			t.Fatal("Missing id")
 		}
 		if timestamp != 1000 {
 			t.Fatal("Unexpected timestamp value")
@@ -490,15 +494,19 @@ func TestInsertScenarioReport(t *testing.T) {
 		t.Fatal(err)
 	}
 	counter := 0
+	var readID string
 	var readScenarioID uint64
 	var readHostToken string
 	var readTimestamp int64
 	var readReportBytes []byte
 	var readReport model.Report
 	for rows.Next() {
-		err = rows.Scan(&readScenarioID, &readHostToken, &readTimestamp, &readReportBytes)
+		err = rows.Scan(&readID, &readScenarioID, &readHostToken, &readTimestamp, &readReportBytes)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if len(readID) == 0 {
+			t.Fatal("Missing ID")
 		}
 		if readScenarioID != scenarioID {
 			t.Fatal("Unexpected scenario ID")
