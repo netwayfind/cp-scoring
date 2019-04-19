@@ -971,35 +971,35 @@ func TestParseWindowsProcessesBad(t *testing.T) {
 	}
 
 	// incorrect number
-	bs = []byte("1,2\r\n1,2")
+	bs = []byte("1,2,3\r\n1,2,3")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 0 {
 		t.Fatal("Expected 0 processes")
 	}
 
 	// incorrect number
-	bs = []byte("1,2,3,4\r\n1,2,3,4")
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 0 {
 		t.Fatal("Expected 0 processes")
 	}
 
 	// just header
-	bs = []byte("1,2,3")
+	bs = []byte("1,2,3,4")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 0 {
 		t.Fatal("Expected 0 processes")
 	}
 
 	// mismatch between header and row
-	bs = []byte("1,2,3\r\n1,2")
+	bs = []byte("1,2,3,4\r\n1,2,3")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 0 {
 		t.Fatal("Expected 0 processes")
 	}
 
 	// mismatch between header and later row
-	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
+	bs = []byte("1,2,3,4\r\n1,2,3,4\r\n1,2,3")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 0 {
 		t.Fatal("Expected 0 processes")
@@ -1008,7 +1008,7 @@ func TestParseWindowsProcessesBad(t *testing.T) {
 
 func TestParseWindowsProcesses(t *testing.T) {
 	// missing ID
-	bs := []byte("1,2,3\r\n,2,3")
+	bs := []byte("1,2,3,4\r\n,2,3,4")
 	processes := parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1018,7 +1018,7 @@ func TestParseWindowsProcesses(t *testing.T) {
 	}
 
 	// given ID
-	bs = []byte("1,2,3\r\n63,2,3")
+	bs = []byte("1,2,3,4\r\n63,2,3,4")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1028,7 +1028,7 @@ func TestParseWindowsProcesses(t *testing.T) {
 	}
 
 	// missing user
-	bs = []byte("1,2,3\r\n63,,3")
+	bs = []byte("1,2,3,4\r\n63,,3,4")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1038,7 +1038,7 @@ func TestParseWindowsProcesses(t *testing.T) {
 	}
 
 	// given user
-	bs = []byte("1,2,3\r\n63,user,3")
+	bs = []byte("1,2,3,4\r\n63,user,3,4")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1049,7 +1049,7 @@ func TestParseWindowsProcesses(t *testing.T) {
 
 	// given user with hostname
 	hostname, _ := os.Hostname()
-	bs = []byte("1,2,3\r\n63," + hostname + "\\user,3")
+	bs = []byte("1,2,3,4\r\n63," + hostname + "\\user,3,4")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1058,8 +1058,8 @@ func TestParseWindowsProcesses(t *testing.T) {
 		t.Fatal("Expected user name user")
 	}
 
-	// missing command line
-	bs = []byte("1,2,3\r\n63,user,")
+	// no name or path
+	bs = []byte("1,2,3,4\r\n63,user,,")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1068,8 +1068,18 @@ func TestParseWindowsProcesses(t *testing.T) {
 		t.Fatal("Expected empty command line")
 	}
 
-	// given command line
-	bs = []byte("1,2,3\r\n63,user,notepad.exe")
+	// missing path (fallback to name)
+	bs = []byte("1,2,3,4\r\n63,user,notepad,")
+	processes = parseWindowsProcesses(bs)
+	if len(processes) != 1 {
+		t.Fatal("Expected 1 process")
+	}
+	if processes[0].CommandLine != "notepad" {
+		t.Fatal("Expected command line")
+	}
+
+	// given path
+	bs = []byte("1,2,3,4\r\n63,user,notepad,notepad.exe")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 1 {
 		t.Fatal("Expected 1 process")
@@ -1079,7 +1089,7 @@ func TestParseWindowsProcesses(t *testing.T) {
 	}
 
 	// multiple processes
-	bs = []byte("1,2,3\r\n63,user,notepad.exe\r\n72,user,mspaint.exe")
+	bs = []byte("1,2,3,4\r\n63,user,notepad,notepad.exe\r\n72,user,paint,mspaint.exe")
 	processes = parseWindowsProcesses(bs)
 	if len(processes) != 2 {
 		t.Fatal("Expected 2 processes")

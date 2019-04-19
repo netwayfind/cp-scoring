@@ -566,13 +566,13 @@ func parseWindowsProcesses(bs []byte) []model.Process {
 			continue
 		}
 
-		// must have exactly 3 columns, or else ignore line
-		if len(row) != 3 {
+		// must have exactly 4 columns, or else ignore line
+		if len(row) != 4 {
 			continue
 		}
 
 		process := model.Process{}
-		// ID,Username,Path
+		// ID,Username,Name,Path
 		pid, _ := strconv.ParseInt(row[0], 10, 64)
 		process.PID = pid
 		// local account, remove hostname
@@ -581,7 +581,12 @@ func parseWindowsProcesses(bs []byte) []model.Process {
 			user = user[len(hostname)+1:]
 		}
 		process.User = user
-		process.CommandLine = row[2]
+		// prefer path, but use name if path empty
+		if len(row[3]) > 0 {
+			process.CommandLine = row[3]
+		} else {
+			process.CommandLine = row[2]
+		}
 		processes = append(processes, process)
 	}
 
