@@ -10,7 +10,7 @@ import (
 
 type backingStore interface {
 	InsertState(timestamp int64, source string, hostToken string, state model.State) error
-	SelectState(hostToken string, stateTimestamp int64) (model.State, error)
+	SelectState(id string) (model.State, error)
 	SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
 	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
 	SelectAdmins() ([]string, error)
@@ -46,7 +46,7 @@ type backingStore interface {
 	DeleteScenario(scenarioID uint64) error
 	SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error)
 	InsertScenarioReport(scenarioID uint64, hostToken string, timestamp int64, report model.Report) error
-	SelectScenarioReport(scenarioID uint64, hostToken string, reportTimestamp int64) (model.Report, error)
+	SelectScenarioReport(id string) (model.Report, error)
 	SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
 	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
 	InsertScenarioScore(score model.ScenarioHostScore) error

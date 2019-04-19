@@ -1322,57 +1322,26 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
-func (theServer theServer) getReports(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("get reports")
 
 	r.ParseForm()
-	scenarioIDStr := r.Form.Get("scenario_id")
-	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected scenario_id")
-		return
-	}
-	teamIDStr := r.Form.Get("team_id")
-	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected team_id")
-		return
-	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
+	id := r.Form.Get("id")
+	if len(id) == 0 {
 		log.Println("Empty hostname")
 		return
 	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
-		return
-	}
-	if len(hostTokens) == 0 {
-		log.Println("Empty host_token")
-		return
-	}
-	timestampStr := r.Form.Get("timestamp")
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected timestamp")
-		return
-	}
 
-	reports := make(map[int]model.Report)
-	for i, hostToken := range hostTokens {
-		report, err := theServer.backingStore.SelectScenarioReport(scenarioID, hostToken, timestamp)
-		// err is OK, just log
-		if err != nil {
-			msg := "WARN: did not retrieve report;"
-			log.Println(msg, err)
-			continue
-		}
-		reports[i] = report
-	}
-	b, err := json.Marshal(reports)
+	report, err := theServer.backingStore.SelectScenarioReport(id)
 	if err != nil {
-		msg := "ERROR: cannot marshal reports;"
+		msg := "ERROR: did not retrieve report;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(report)
+	if err != nil {
+		msg := "ERROR: cannot marshal report;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
@@ -1502,48 +1471,26 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 	w.Write(b)
 }
 
-func (theServer theServer) getStates(w http.ResponseWriter, r *http.Request) {
+func (theServer theServer) getState(w http.ResponseWriter, r *http.Request) {
 	log.Println("get states")
 
 	r.ParseForm()
-	teamIDStr := r.Form.Get("team_id")
-	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected team_id")
-		return
-	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		log.Println("Empty hostname")
-		return
-	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
-		return
-	}
-	timestampStr := r.Form.Get("timestamp")
-	timestamp, err := strconv.ParseInt(timestampStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected timestamp")
+	id := r.Form.Get("id")
+	if len(id) == 0 {
+		log.Println("Empty id")
 		return
 	}
 
-	states := make(map[int]model.State)
-
-	for i, hostToken := range hostTokens {
-		state, err := theServer.backingStore.SelectState(hostToken, timestamp)
-		// err is OK, just log
-		if err != nil {
-			msg := "WARN: did not retrieve state;"
-			log.Println(msg, err)
-			continue
-		}
-		states[i] = state
-	}
-	b, err := json.Marshal(states)
+	state, err := theServer.backingStore.SelectState(id)
 	if err != nil {
-		msg := "ERROR: cannot marshal states;"
+		msg := "ERROR: did not retrieve state;"
+		log.Println(msg, err)
+		w.Write([]byte(msg))
+		return
+	}
+	b, err := json.Marshal(state)
+	if err != nil {
+		msg := "ERROR: cannot marshal state;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
 		return
@@ -1838,10 +1785,10 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteScenario).Methods("DELETE")
 	analysisRouter := r.PathPrefix("/analysis").Subrouter()
 	analysisRouter.Use(theServer.middleware)
-	analysisRouter.HandleFunc("/reports", theServer.getReports).Methods("GET")
+	analysisRouter.HandleFunc("/reports", theServer.getReport).Methods("GET")
 	analysisRouter.HandleFunc("/reports/timeline", theServer.getReportTimeline).Methods("GET")
 	analysisRouter.HandleFunc("/reports/diffs", theServer.getReportDiffs).Methods("GET")
-	analysisRouter.HandleFunc("/states", theServer.getStates).Methods("GET")
+	analysisRouter.HandleFunc("/states", theServer.getState).Methods("GET")
 	analysisRouter.HandleFunc("/states/timeline", theServer.getStateTimeline).Methods("GET")
 	analysisRouter.HandleFunc("/states/diffs", theServer.getStateDiffs).Methods("GET")
 	// no auth

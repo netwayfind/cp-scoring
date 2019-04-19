@@ -2819,7 +2819,7 @@ func TestSelectScenarioReport(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// nothing set up
-	report, err := backingStore.SelectScenarioReport(0, "host-token", 100)
+	report, err := backingStore.SelectScenarioReport("id")
 	if err == nil {
 		t.Fatal(err)
 	}
@@ -2835,12 +2835,6 @@ func TestSelectScenarioReport(t *testing.T) {
 	}
 	scenarioID, err := backingStore.InsertScenario(model.Scenario{Name: "scenario1"})
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	// should not have any reports
-	report, err = backingStore.SelectScenarioReport(scenarioID, "host-token", 100)
-	if err == nil {
 		t.Fatal(err)
 	}
 
@@ -2861,7 +2855,15 @@ func TestSelectScenarioReport(t *testing.T) {
 	}
 
 	// should have report
-	report, err = backingStore.SelectScenarioReport(scenarioID, "host-token", 100)
+	reports, err := backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 100, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(reports) != 1 {
+		t.Fatal("Unexpected report count:", len(reports))
+	}
+
+	report, err = backingStore.SelectScenarioReport(reports[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3226,7 +3228,7 @@ func TestSelectState(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// nothing set up
-	state, err := backingStore.SelectState("host-token", 100)
+	state, err := backingStore.SelectState("test")
 	if err == nil {
 		t.Fatal(err)
 	}
@@ -3238,12 +3240,6 @@ func TestSelectState(t *testing.T) {
 	}
 	err = backingStore.InsertHostToken("host-token", 0, "host1", "127.0.0.1")
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	// should not have any states
-	state, err = backingStore.SelectState("host-token", 100)
-	if err == nil {
 		t.Fatal(err)
 	}
 
@@ -3263,7 +3259,15 @@ func TestSelectState(t *testing.T) {
 	}
 
 	// should get state
-	state, err = backingStore.SelectState("host-token", 100)
+	states, err := backingStore.SelectStateTimestamps("host-token", 100, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(states) != 1 {
+		t.Fatal("Unexpected state count:", len(states))
+	}
+
+	state, err = backingStore.SelectState(states[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}

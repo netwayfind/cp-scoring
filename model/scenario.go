@@ -74,6 +74,7 @@ type ScenarioHosts struct {
 }
 
 type TimestampDocumentAndReceived struct {
+	ID       string
 	Document int64
 	Received int64
 }

@@ -882,10 +882,10 @@ func (db dbObj) SelectHostTokens(teamID uint64, hostname string) ([]string, erro
 	return hostTokens, nil
 }
 
-func (db dbObj) SelectScenarioReport(scenarioID uint64, hostToken string, reportTimestamp int64) (model.Report, error) {
+func (db dbObj) SelectScenarioReport(id string) (model.Report, error) {
 	var report model.Report
 
-	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE scenario_id=$1 AND host_token=$2 AND report->'Timestamp'=$3", scenarioID, hostToken, reportTimestamp)
+	rows, err := db.dbConn.Query("SELECT report FROM reports WHERE id=$1", id)
 	if err != nil {
 		return report, err
 	}
@@ -913,7 +913,7 @@ func (db dbObj) SelectScenarioReport(scenarioID uint64, hostToken string, report
 }
 
 func (db dbObj) SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error) {
-	rows, err := db.dbConn.Query("SELECT report->'Timestamp', timestamp FROM reports WHERE scenario_id=$1 AND host_token=$2 AND report->'Timestamp'>=$3 AND report->'Timestamp'<=$4 ORDER BY report->'Timestamp' ASC", scenarioID, hostToken, timeStart, timeEnd)
+	rows, err := db.dbConn.Query("SELECT id, report->'Timestamp', timestamp FROM reports WHERE scenario_id=$1 AND host_token=$2 AND report->'Timestamp'>=$3 AND report->'Timestamp'<=$4 ORDER BY report->'Timestamp' ASC", scenarioID, hostToken, timeStart, timeEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -922,13 +922,15 @@ func (db dbObj) SelectScenarioReportTimestamps(scenarioID uint64, hostToken stri
 	timestamps := make([]model.TimestampDocumentAndReceived, 0)
 
 	for rows.Next() {
+		var id string
 		var document int64
 		var received int64
-		err = rows.Scan(&document, &received)
+		err = rows.Scan(&id, &document, &received)
 		if err != nil {
 			return nil, err
 		}
 		entry := model.TimestampDocumentAndReceived{
+			ID:       id,
 			Document: document,
 			Received: received,
 		}
@@ -987,10 +989,10 @@ func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, t
 	return diffs, nil
 }
 
-func (db dbObj) SelectState(hostToken string, stateTimestamp int64) (model.State, error) {
+func (db dbObj) SelectState(id string) (model.State, error) {
 	var state model.State
 
-	rows, err := db.dbConn.Query("SELECT state FROM states WHERE host_token=$1 AND state->'Timestamp'=$2", hostToken, stateTimestamp)
+	rows, err := db.dbConn.Query("SELECT state FROM states WHERE id=$1", id)
 	if err != nil {
 		return state, err
 	}
@@ -1018,7 +1020,7 @@ func (db dbObj) SelectState(hostToken string, stateTimestamp int64) (model.State
 }
 
 func (db dbObj) SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error) {
-	rows, err := db.dbConn.Query("SELECT state->'Timestamp', timestamp FROM states WHERE host_token=$1 AND state->'Timestamp'>=$2 AND state->'Timestamp'<=$3 ORDER BY state->'Timestamp' ASC", hostToken, timeStart, timeEnd)
+	rows, err := db.dbConn.Query("SELECT id, state->'Timestamp', timestamp FROM states WHERE host_token=$1 AND state->'Timestamp'>=$2 AND state->'Timestamp'<=$3 ORDER BY state->'Timestamp' ASC", hostToken, timeStart, timeEnd)
 	if err != nil {
 		return nil, err
 	}
@@ -1027,13 +1029,15 @@ func (db dbObj) SelectStateTimestamps(hostToken string, timeStart int64, timeEnd
 	timestamps := make([]model.TimestampDocumentAndReceived, 0)
 
 	for rows.Next() {
+		var id string
 		var document int64
 		var received int64
-		err = rows.Scan(&document, &received)
+		err = rows.Scan(&id, &document, &received)
 		if err != nil {
 			return nil, err
 		}
 		entry := model.TimestampDocumentAndReceived{
+			ID:       id,
 			Document: document,
 			Received: received,
 		}
