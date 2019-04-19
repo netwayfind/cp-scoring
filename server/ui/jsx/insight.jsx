@@ -442,14 +442,22 @@ class AnalysisItem extends React.Component {
         selected: this.state.diffs[0][i]
       });
     } else if (type.endsWith('(reports)') || type.endsWith('(states)')) {
-      // get report/state
-      let args = {...this.props.args};
-      delete args['time_start'];
-      delete args['time_end'];
-      args['timestamp'] = Math.trunc(plotlyEvent.points[0].data.x[i] / 1000);
+      let timestamp = Math.trunc(plotlyEvent.points[0].data.x[i] / 1000.0);
+      // get report/state ID that matches timestamp and position
+      let id = null;
+      for (let j in this.state.timeline) {
+        if (this.state.timeline[j].length <= i) {
+          continue;
+        }
+        if (this.state.timeline[j][i].Document === timestamp) {
+          id = this.state.timeline[j][i].ID;
+        }
+      }
+      if (id === null) {
+        return false;
+      }
 
-      let params = Object.entries(args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-      let url = '/analysis/' + this.props.documentType + '?' + params;
+      let url = '/analysis/' + this.props.documentType + '?id=' + id;
       
       fetch(url, {
         credentials: 'same-origin',
@@ -461,16 +469,7 @@ class AnalysisItem extends React.Component {
         return response.json();
       })
       .then(function(data) {
-        if (data && Object.keys(data).length > 0) {
-          // choose first instance
-          for (let i in data) {
-            this.setState({selected: data[i]})
-            break;
-          }
-        }
-        else {
-          this.setState({selected: {}})
-        }
+        this.setState({selected: data});
       }.bind(this));
     }
 

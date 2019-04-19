@@ -1,9 +1,5 @@
 'use strict';
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 const Plot = createPlotlyComponent(Plotly);
 
 class App extends React.Component {
@@ -479,14 +475,25 @@ class AnalysisItem extends React.Component {
         selected: this.state.diffs[0][i]
       });
     } else if (type.endsWith('(reports)') || type.endsWith('(states)')) {
-      // get report/state
-      let args = _objectSpread({}, this.props.args);
+      let timestamp = Math.trunc(plotlyEvent.points[0].data.x[i] / 1000.0); // get report/state ID that matches timestamp and position
 
-      delete args['time_start'];
-      delete args['time_end'];
-      args['timestamp'] = Math.trunc(plotlyEvent.points[0].data.x[i] / 1000);
-      let params = Object.entries(args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-      let url = '/analysis/' + this.props.documentType + '?' + params;
+      let id = null;
+
+      for (let j in this.state.timeline) {
+        if (this.state.timeline[j].length <= i) {
+          continue;
+        }
+
+        if (this.state.timeline[j][i].Document === timestamp) {
+          id = this.state.timeline[j][i].ID;
+        }
+      }
+
+      if (id === null) {
+        return false;
+      }
+
+      let url = '/analysis/' + this.props.documentType + '?id=' + id;
       fetch(url, {
         credentials: 'same-origin'
       }).then(function (response) {
@@ -496,19 +503,9 @@ class AnalysisItem extends React.Component {
 
         return response.json();
       }).then(function (data) {
-        if (data && Object.keys(data).length > 0) {
-          // choose first instance
-          for (let i in data) {
-            this.setState({
-              selected: data[i]
-            });
-            break;
-          }
-        } else {
-          this.setState({
-            selected: {}
-          });
-        }
+        this.setState({
+          selected: data
+        });
       }.bind(this));
     }
 
