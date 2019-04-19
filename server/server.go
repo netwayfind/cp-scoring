@@ -1837,7 +1837,7 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteScenario).Methods("DELETE")
 	analysisRouter := r.PathPrefix("/analysis").Subrouter()
-	// analysisRouter.Use(theServer.middleware)
+	analysisRouter.Use(theServer.middleware)
 	analysisRouter.HandleFunc("/reports", theServer.getReports).Methods("GET")
 	analysisRouter.HandleFunc("/reports/timeline", theServer.getReportTimeline).Methods("GET")
 	analysisRouter.HandleFunc("/reports/diffs", theServer.getReportDiffs).Methods("GET")
