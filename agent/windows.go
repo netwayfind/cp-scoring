@@ -86,19 +86,31 @@ func (host hostWindows) GetProcesses() ([]model.Process, error) {
 }
 
 func (host hostWindows) GetSoftware() ([]model.Software, error) {
+	found := make([]model.Software, 0)
+
 	// check two locations for software in registry
 	loc1, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*", "DisplayName,DisplayVersion")
 	if err != nil {
 		return nil, err
 	}
-	sw1 := parseWindowsSoftware(loc1)
+	sw := parseWindowsSoftware(loc1)
+	found = append(found, sw...)
 	loc2, err := powershellCsv("Get-ItemProperty HKLM:SOFTWARE\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*", "DisplayName,DisplayVersion")
 	if err != nil {
 		return nil, err
 	}
-	sw2 := parseWindowsSoftware(loc2)
+	sw = parseWindowsSoftware(loc2)
+	found = append(found, sw...)
 
-	return append(sw1, sw2...), nil
+	// also collect windows features/roles
+	loc3, err := powershellCsv("Get-WindowsFeature | Where-Object {$_.Installed -match 'True'}", "Name")
+	if err != nil {
+		return nil, err
+	}
+	sw = parseWindowsFeatures(loc3)
+	found = append(found, sw...)
+
+	return found, nil
 }
 
 func (host hostWindows) GetNetworkConnections() ([]model.NetworkConnection, error) {

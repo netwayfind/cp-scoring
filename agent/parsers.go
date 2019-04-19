@@ -697,6 +697,39 @@ func parseWindowsSoftware(bs []byte) []model.Software {
 	return software
 }
 
+func parseWindowsFeatures(bs []byte) []model.Software {
+	software := make([]model.Software, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return software
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 1 column, or else ignore line
+		if len(row) != 1 {
+			continue
+		}
+
+		// don't add if empty name
+		if len(row[0]) == 0 {
+			continue
+		}
+
+		sw := model.Software{}
+		sw.Name = row[0]
+
+		software = append(software, sw)
+	}
+
+	return software
+}
+
 func parsePowerShellVersion(bs []byte) string {
 	r := csv.NewReader(bytes.NewReader(bs))
 	records, err := r.ReadAll()

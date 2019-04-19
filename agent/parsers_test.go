@@ -1430,6 +1430,61 @@ func TestParseWindowsSoftware(t *testing.T) {
 	}
 }
 
+func TestParseWindowsFeaturesBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	software := parseWindowsFeatures(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// just header
+	bs = []byte("1")
+	software = parseWindowsFeatures(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1\r\n")
+	software = parseWindowsFeatures(bs)
+	if len(software) != 0 {
+		t.Fatal("Expected 0 software")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1\r\n1\r\n")
+	software = parseWindowsFeatures(bs)
+	if len(software) != 1 {
+		t.Fatal("Expected 1 software")
+	}
+}
+
+func TestParseWindowsFeatures(t *testing.T) {
+	// one feature
+	bs := []byte("1\r\npowershell")
+	software := parseWindowsFeatures(bs)
+	if len(software) != 1 {
+		t.Fatal("Expected 1 software")
+	}
+	if software[0].Name != "powershell" {
+		t.Fatal("Unexpected feature")
+	}
+
+	// multiple features
+	bs = []byte("1\r\npowershell\r\nftp")
+	software = parseWindowsFeatures(bs)
+	if len(software) != 2 {
+		t.Fatal("Expected 2 software")
+	}
+	if software[0].Name != "powershell" {
+		t.Fatal("Unexpected feature")
+	}
+	if software[1].Name != "ftp" {
+		t.Fatal("Unexpected feature")
+	}
+}
+
 func TestFromHexStringPort(t *testing.T) {
 	// empty string
 	s, err := fromHexStringPort("")
