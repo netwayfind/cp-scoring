@@ -51,9 +51,8 @@ class App extends React.Component {
     }.bind(this));
   }
 
-  analysisRequestCallback(documentType, args) {
+  analysisRequestCallback(args) {
     this.setState({
-      documentType: documentType,
       args: args
     })
   }
@@ -79,7 +78,7 @@ class App extends React.Component {
           <Analysis requestCallback={this.analysisRequestCallback.bind(this)}/>
         </div>
         <div className="content">
-          <AnalysisItem documentType={this.state.documentType} args={this.state.args}/>
+          <AnalysisItem args={this.state.args}/>
         </div>
       </div>
     );
@@ -91,21 +90,16 @@ class Analysis extends React.Component {
     super(props);
 
     this.state = {
-      documentType: "",
       scenarios: [],
       scenarioID: 0,
       teams: [],
       teamID: 0,
-      hosts: [],
-      hostname: "",
       timeStart: Date.now() * 1000,
       timeEnd: Date.now() * 1000
     }
 
-    this.selectDocumentTypeCallback = this.selectDocumentTypeCallback.bind(this);
     this.selectScenarioCallback = this.selectScenarioCallback.bind(this);
     this.selectTeamCallback = this.selectTeamCallback.bind(this);
-    this.selectHostCallback = this.selectHostCallback.bind(this);
     this.selectTimeStartCallback = this.selectTimeStartCallback.bind(this);
     this.selectTimeEndCallback = this.selectTimeEndCallback.bind(this);
     this.updateTime = this.updateTime.bind(this);
@@ -118,14 +112,6 @@ class Analysis extends React.Component {
 
   componentWillReceiveProps(_) {
     this.populateSelectors();
-  }
-
-  selectDocumentTypeCallback(event) {
-    event.preventDefault();
-
-    this.setState({
-      documentType: event.target.value
-    })
   }
 
   selectScenarioCallback(event) {
@@ -141,14 +127,6 @@ class Analysis extends React.Component {
 
     this.setState({
       teamID: event.target.value
-    })
-  }
-
-  selectHostCallback(event) {
-    event.preventDefault();
-
-    this.setState({
-      hostname: event.target.value
     })
   }
 
@@ -236,39 +214,19 @@ class Analysis extends React.Component {
     .then(function(data) {
       this.setState({teams: data})
     }.bind(this));
-
-    fetch('/hosts', {
-      credentials: 'same-origin'
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      return response.json();
-    })
-    .then(function(data) {
-      this.setState({hosts: data})
-    }.bind(this));
   }
 
   submit() {
     let args = {
       'scenario_id': this.state.scenarioID,
       'team_id': this.state.teamID,
-      'hostname': this.state.hostname,
       'time_start': this.state.timeStart,
       'time_end': this.state.timeEnd,
     }
-    this.props.requestCallback(this.state.documentType, args);
+    this.props.requestCallback(args);
   }
 
   render() {
-    // form document type options
-    let documentTypeOptions = [];
-    documentTypeOptions.push(<option key="-1" value=""></option>);
-    documentTypeOptions.push(<option key="0" value="reports">Reports</option>);
-    documentTypeOptions.push(<option key="1" value="states">States</option>);
-
     // form scenario options
     let scenarioOptions = [];
     scenarioOptions.push(<option key="-1" value=""></option>);
@@ -283,14 +241,6 @@ class Analysis extends React.Component {
     for (let i in this.state.teams) {
       let team = this.state.teams[i];
       teamOptions.push(<option key={i} value={team.ID}>{team.Name}</option>);
-    }
-
-    // form host options
-    let hostOptions = [];
-    hostOptions.push(<option key="-1" value=""></option>);
-    for (let i in this.state.hosts) {
-      let host = this.state.hosts[i];
-      hostOptions.push(<option key={i} value={host.Hostname}>{host.Hostname}</option>);
     }
 
     // form time start
@@ -320,11 +270,6 @@ class Analysis extends React.Component {
 
     return (
       <React.Fragment>
-        <label name="type">Document Type</label>
-        <select value={this.state.documentType} onChange={this.selectDocumentTypeCallback}>
-          {documentTypeOptions}
-        </select>
-        <br />
         <label name="scenarios">Scenarios</label>
         <select value={this.state.scenarioID} onChange={this.selectScenarioCallback}>
           {scenarioOptions}
@@ -333,11 +278,6 @@ class Analysis extends React.Component {
         <label name="teams">Teams</label>
         <select value={this.state.teamID} onChange={this.selectTeamCallback}>
           {teamOptions}
-        </select>
-        <br />
-        <label name="hosts">Hosts</label>
-        <select value={this.state.hostname} onChange={this.selectHostCallback}>
-          {hostOptions}
         </select>
         <br />
         <label name="timeStart">Time start</label>
@@ -359,8 +299,10 @@ class AnalysisItem extends React.Component {
     super(props);
 
     this.state = {
-      timeline: {},
-      diffs: {},
+      reportTimeline: {},
+      reportDiffs: {},
+      stateTimeline: {},
+      stateDiffs: {},
       selected: {}
     }
 
@@ -382,47 +324,43 @@ class AnalysisItem extends React.Component {
 
     let urlTimeline = null;
     let urlDiffs = null;
-    if (props.documentType === 'reports') {
-      urlTimeline = '/analysis/reports/timeline';
-      urlDiffs = '/analysis/reports/diffs';
-    }
-    else if (props.documentType === 'states') {
-      urlTimeline = '/analysis/states/timeline';
-      urlDiffs = '/analysis/states/diffs';
-    }
-    else {
-      return;
-    }
 
     let params = Object.entries(props.args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     urlTimeline = urlTimeline + '?' + params;
     urlDiffs = urlDiffs + '?' + params;
 
-    fetch(urlTimeline, {
+    let requestReports = fetch('/analysis/reports/timeline?' + params, {
       credentials: 'same-origin',
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    });
+    let requestReportDiffs = fetch('/analysis/reports/diffs?' + params, {
+      credentials: 'same-origin',
+    });
+    let requestStates = fetch('/analysis/states/timeline?' + params, {
+      credentials: 'same-origin',
+    });
+    let requestStateDiffs = fetch('/analysis/states/diffs?' + params, {
+      credentials: 'same-origin',
+    });
+    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs])
+    .then(function(responses) {
+      let j = [];
+      for (let r in responses) {
+        let response = responses[r];
+        if (response.status >= 400) {
+          throw new Error("Bad response from server");
+        }
+        j.push(response.json());
       }
-      return response.json();
+      return Promise.all(j);
     })
     .then(function(data) {
-      this.setState({timeline: data})
-    }.bind(this));
-
-    fetch(urlDiffs, {
-      credentials: 'same-origin',
-    })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      return response.json();
-    })
-    .then(function(data) {
-      this.setState({diffs: data})
-    }.bind(this));
+      this.setState({
+        reportTimeline: data[0],
+        reportDiffs: data[1],
+        stateTimeline: data[2],
+        stateDiffs: data[3],
+      });
+    }.bind(this)); 
   }
 
   plotClick(plotlyEvent) {
@@ -431,33 +369,72 @@ class AnalysisItem extends React.Component {
       return;
     }
 
-    let i = plotlyEvent.points[0].pointIndex;
-    
+    let index = plotlyEvent.points[0].pointIndex;
+    let timestamp = Math.trunc(plotlyEvent.points[0].data.x[index] / 1000);
 
     let type = plotlyEvent.points[0].y;
-    if (type.endsWith('(diff)')) {
-      // diffs should have been previously retrieved
-      this.setState({
-        // choose first instance
-        selected: this.state.diffs[0][i]
-      });
-    } else if (type.endsWith('(reports)') || type.endsWith('(states)')) {
-      let timestamp = Math.trunc(plotlyEvent.points[0].data.x[i] / 1000.0);
-      // get report/state ID that matches timestamp and position
-      let id = null;
-      for (let j in this.state.timeline) {
-        if (this.state.timeline[j].length <= i) {
-          continue;
-        }
-        if (this.state.timeline[j][i].Document === timestamp) {
-          id = this.state.timeline[j][i].ID;
-        }
+    if (type.endsWith('(report diff)') || type.endsWith('(state diff)')) {
+      let diffs = null;
+      if (type.endsWith('(report diff)')) {
+        diffs = this.state.reportDiffs;
       }
-      if (id === null) {
+      else if (type.endsWith('(state diff)')) {
+        diffs = this.state.stateDiffs;
+      }
+      else {
         return false;
       }
 
-      let url = '/analysis/' + this.props.documentType + '?id=' + id;
+      // find diff that matches timestamp
+      let selected = null;
+      for (let i in diffs) {
+        if (diffs[i].length <= index) {
+          continue
+        }
+        if (diffs[i][index].Timestamp != timestamp) {
+          continue
+        }
+        selected = diffs[i][index];
+      }
+
+      if (selected === null) {
+        selected = {}
+      }
+      this.setState({
+        selected: selected
+      });
+    }
+    else if (type.endsWith('(reports)') || type.endsWith('(states)')) {
+      let documentType = null;
+      let timeline = null;
+      if (type.endsWith('(reports)')) {
+        documentType = 'reports';
+        timeline = this.state.reportTimeline;
+      }
+      else if (type.endsWith('(states)')) {
+        documentType = 'states';
+        timeline = this.state.stateTimeline;
+      }
+      else {
+        return false;
+      }
+
+      // get report/state ID that matches timestamp and position
+      let id = null;
+      for (let i in timeline) {
+        if (timeline[i].length <= index) {
+          continue;
+        }
+        if (timeline[i][index].Document === timestamp) {
+          id = timeline[i][index].ID;
+        }
+      }
+      if (id === null) {
+        this.setState({selected: {}});
+        return false;
+      }
+
+      let url = '/analysis/' + documentType + '?id=' + id;
       
       fetch(url, {
         credentials: 'same-origin',
@@ -492,9 +469,10 @@ class AnalysisItem extends React.Component {
     }
     let traces = [];
 
-    let name = this.props.args.hostname + ' (' + this.props.documentType + ')';
-    for (let i in this.state.timeline) {
-      let hostInstance = this.state.timeline[i];
+    // states
+    let name = '(states)';
+    for (let i in this.state.stateTimeline) {
+      let hostInstance = this.state.stateTimeline[i];
       let trace = {
         name: name,
         mode: 'markers',
@@ -504,10 +482,36 @@ class AnalysisItem extends React.Component {
       traces.push(trace);
     }
 
-    // plot diffs
-    name = this.props.args.hostname + ' (diff)';
-    for (let i in this.state.diffs) {
-      let hostInstance = this.state.diffs[i];
+    // state diffs
+    name = '(state diff)';
+    for (let i in this.state.stateDiffs) {
+      let hostInstance = this.state.stateDiffs[i];
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(diff => diff.Timestamp * 1000),
+        y: hostInstance.map(_ => name)
+      }
+      traces.push(trace)
+    }
+
+    // reports
+    name = '(reports)';
+    for (let i in this.state.reportTimeline) {
+      let hostInstance = this.state.reportTimeline[i];
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(document => document.Document * 1000),
+        y: hostInstance.map(_ => name)
+      }
+      traces.push(trace);
+    }
+
+    // reports diffs
+    name = '(report diff)';
+    for (let i in this.state.reportDiffs) {
+      let hostInstance = this.state.reportDiffs[i];
       let trace = {
         name: name,
         mode: 'markers',
@@ -545,7 +549,7 @@ class AnalysisItem extends React.Component {
       );
     }
     // report
-    else if (this.props.documentType === 'reports') {
+    else if (this.state.selected.Findings != undefined) {
       let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
       let findings = [];
       for (let i in this.state.selected.Findings) {
@@ -564,7 +568,7 @@ class AnalysisItem extends React.Component {
       );
     }
     // state
-    else if (this.props.documentType === 'states') {
+    else if (this.state.selected.Users != undefined) {
       let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
       let errors = [];
       for (let i in this.state.selected.Errors) {

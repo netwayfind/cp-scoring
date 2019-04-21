@@ -1365,15 +1365,30 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 		log.Println("Rejected team_id")
 		return
 	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		log.Println("Empty hostname")
+	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		log.Println("Reject team ID for scenario hosts")
 		return
 	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
+	var hosts []model.Host
+	for _, scenarioHost := range scenarioHosts {
+		if scenarioID != scenarioHost.ScenarioID {
+			continue
+		}
+		hosts = scenarioHost.Hosts
+	}
+	if hosts == nil || len(hosts) == 0 {
+		log.Println("No hosts for scenario and team")
 		return
+	}
+	hostTokens := make([]string, 0)
+	for _, host := range hosts {
+		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
+		if err != nil {
+			log.Println("Error for retrieving host token")
+			return
+		}
+		hostTokens = append(hostTokens, hts...)
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1426,15 +1441,30 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		log.Println("Rejected team_id")
 		return
 	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		log.Println("Empty hostname")
+	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		log.Println("Reject team ID for scenario hosts")
 		return
 	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
+	var hosts []model.Host
+	for _, scenarioHost := range scenarioHosts {
+		if scenarioID != scenarioHost.ScenarioID {
+			continue
+		}
+		hosts = scenarioHost.Hosts
+	}
+	if hosts == nil || len(hosts) == 0 {
+		log.Println("No hosts for scenario and team")
 		return
+	}
+	hostTokens := make([]string, 0)
+	for _, host := range hosts {
+		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
+		if err != nil {
+			log.Println("Error for retrieving host token")
+			return
+		}
+		hostTokens = append(hostTokens, hts...)
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1502,21 +1532,42 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 	log.Println("get state timeline")
 
 	r.ParseForm()
+	scenarioIDStr := r.Form.Get("scenario_id")
+	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
+	if err != nil {
+		log.Println("Rejected scenario_id")
+		return
+	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
 		log.Println("Rejected team_id")
 		return
 	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		log.Println("Empty hostname")
+	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		log.Println("Reject team ID for scenario hosts")
 		return
 	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
+	var hosts []model.Host
+	for _, scenarioHost := range scenarioHosts {
+		if scenarioID != scenarioHost.ScenarioID {
+			continue
+		}
+		hosts = scenarioHost.Hosts
+	}
+	if hosts == nil || len(hosts) == 0 {
+		log.Println("No hosts for scenario and team")
 		return
+	}
+	hostTokens := make([]string, 0)
+	for _, host := range hosts {
+		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
+		if err != nil {
+			log.Println("Error for retrieving host token")
+			return
+		}
+		hostTokens = append(hostTokens, hts...)
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1557,21 +1608,42 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 	log.Println("get state diffs")
 
 	r.ParseForm()
+	scenarioIDStr := r.Form.Get("scenario_id")
+	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
+	if err != nil {
+		log.Println("Rejected scenario_id")
+		return
+	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
 		log.Println("Rejected team_id")
 		return
 	}
-	hostname := r.Form.Get("hostname")
-	if len(hostname) == 0 {
-		log.Println("Empty hostname")
+	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
+	if err != nil {
+		log.Println("Reject team ID for scenario hosts")
 		return
 	}
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		log.Println("Error for retrieving host token")
+	var hosts []model.Host
+	for _, scenarioHost := range scenarioHosts {
+		if scenarioID != scenarioHost.ScenarioID {
+			continue
+		}
+		hosts = scenarioHost.Hosts
+	}
+	if hosts == nil || len(hosts) == 0 {
+		log.Println("No hosts for scenario and team")
 		return
+	}
+	hostTokens := make([]string, 0)
+	for _, host := range hosts {
+		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
+		if err != nil {
+			log.Println("Error for retrieving host token")
+			return
+		}
+		hostTokens = append(hostTokens, hts...)
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
