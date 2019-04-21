@@ -133,13 +133,13 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	var stateSubmission model.StateSubmission
 	err = json.Unmarshal(fileBytes, &stateSubmission)
 	if err != nil {
-		log.Println("ERROR: cannot unmarshal state submission;")
+		log.Println("ERROR: cannot unmarshal state submission;", err)
 		// allow file to be deleted
 		return nil
 	}
 	state, err := processing.FromBytes(stateSubmission.StateBytes, entities)
 	if err != nil {
-		log.Println("ERROR: cannot unmarshal state;")
+		log.Println("ERROR: cannot unmarshal state;", err)
 		// allow file to be deleted
 		return nil
 	}
@@ -157,7 +157,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	filenameTokens := strings.Split(filename, "_")
 	timestamp, err := strconv.ParseInt(filenameTokens[0], 10, 64)
 	if err != nil {
-		log.Println("ERROR: Unable to parse temporary file name")
+		log.Println("ERROR: Unable to parse temporary file name", err)
 		// allow file to be deleted
 		return nil
 	}
@@ -166,7 +166,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	log.Println("Saving state")
 	err = theServer.backingStore.InsertState(timestamp, source, hostToken, state)
 	if err != nil {
-		log.Println("ERROR: cannot insert state;")
+		log.Println("ERROR: cannot insert state;", err)
 		// allow file to be deleted
 		return nil
 	}
@@ -174,7 +174,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 	log.Println("Getting scenarios")
 	scenarioIDs, err := theServer.backingStore.SelectScenariosForHostname(state.Hostname)
 	if err != nil {
-		log.Println("ERROR: cannot get scenario IDs;")
+		log.Println("ERROR: cannot get scenario IDs;", err)
 		return err
 	}
 	if len(scenarioIDs) == 0 {
@@ -188,7 +188,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 		log.Println("Getting scenario templates")
 		templates, err := theServer.backingStore.SelectTemplatesForHostname(scenarioID, state.Hostname)
 		if err != nil {
-			log.Println("ERROR: cannot get templates;")
+			log.Println("ERROR: cannot get templates;", err)
 			return err
 		}
 		log.Println(fmt.Sprintf("Found template count: %d", len(templates)))
@@ -206,7 +206,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 		currentTime := time.Now().Unix()
 		err = theServer.backingStore.InsertScenarioReport(scenarioID, hostToken, currentTime, report)
 		if err != nil {
-			log.Println("ERROR: cannot insert report;")
+			log.Println("ERROR: cannot insert report;", err)
 			return err
 		}
 
@@ -223,7 +223,7 @@ func (theServer theServer) auditFile(fileStr string, entities openpgp.EntityList
 		scoreEntry.Score = score
 		err = theServer.backingStore.InsertScenarioScore(scoreEntry)
 		if err != nil {
-			log.Println("ERROR: cannot insert scenario score;")
+			log.Println("ERROR: cannot insert scenario score;", err)
 			return err
 		}
 	}
