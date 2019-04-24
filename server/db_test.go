@@ -2855,7 +2855,7 @@ func TestSelectScenarioReport(t *testing.T) {
 	}
 
 	// should have report
-	reports, err := backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 100, 100)
+	reports, err := backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 110, 110)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2954,26 +2954,26 @@ func TestSelectScenarioReportTimestamps(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and different received timestamp
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 100, report3)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// insert different received timestamp
 	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report4)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report2)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 104, report4)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get reports in order
-	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 0, 100)
+	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 101, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2989,24 +2989,24 @@ func TestSelectScenarioReportTimestamps(t *testing.T) {
 	if timestamps[1].Document != report2.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if timestamps[1].Received != 103 {
+	if timestamps[1].Received != 102 {
 		t.Fatal("Unexpected report timestamp")
 	}
 	if timestamps[2].Document != report3.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if timestamps[2].Received != 100 {
+	if timestamps[2].Received != 103 {
 		t.Fatal("Unexpected report timestamp")
 	}
 	if timestamps[3].Document != report4.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if timestamps[3].Received != 102 {
+	if timestamps[3].Received != 104 {
 		t.Fatal("Unexpected report timestamp")
 	}
 
 	// should only get reports 2 and 3
-	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 30, 45)
+	timestamps, err = backingStore.SelectScenarioReportTimestamps(scenarioID, "host-token", 102, 103)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3016,13 +3016,13 @@ func TestSelectScenarioReportTimestamps(t *testing.T) {
 	if timestamps[0].Document != report2.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if timestamps[0].Received != 103 {
+	if timestamps[0].Received != 102 {
 		t.Fatal("Unexpected report timestamp")
 	}
 	if timestamps[1].Document != report3.Timestamp {
 		t.Fatal("Unexpected report timestamp")
 	}
-	if timestamps[1].Received != 100 {
+	if timestamps[1].Received != 103 {
 		t.Fatal("Unexpected report timestamp")
 	}
 }
@@ -3103,26 +3103,26 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and different received timestamp
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report3)
+	// insert different received timestamp
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report1)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 102, report2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report4)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 103, report3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 104, report2)
+	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 104, report4)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get reports diffs in order
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 0, 100)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3155,7 +3155,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// nothing before report 1
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", -100, 0)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", -100, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3164,7 +3164,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// no diff between report 1 and 2
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 15, 30)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 102)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3173,7 +3173,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// diff between report 2 and 3
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 30, 45)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 102, 103)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3206,7 +3206,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// no diff between report 3 and 4
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 45, 60)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 103, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3215,7 +3215,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// nothing after report 4
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 60, 100)
+	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 105, 200)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3259,7 +3259,7 @@ func TestSelectState(t *testing.T) {
 	}
 
 	// should get state
-	states, err := backingStore.SelectStateTimestamps("host-token", 100, 100)
+	states, err := backingStore.SelectStateTimestamps("host-token", 101, 101)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3350,26 +3350,26 @@ func TestSelectStateTimestamps(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and different received timestamp
-	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state3)
+	// insert different received timestamp
+	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state1)
+	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state4)
+	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state2)
+	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state4)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get states in order
-	timestamps, err = backingStore.SelectStateTimestamps("host-token", 0, 100)
+	timestamps, err = backingStore.SelectStateTimestamps("host-token", 101, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3379,30 +3379,30 @@ func TestSelectStateTimestamps(t *testing.T) {
 	if timestamps[0].Document != state1.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[0].Received != 102 {
+	if timestamps[0].Received != 101 {
 		t.Fatal("Unexpected state timestamp")
 	}
 	if timestamps[1].Document != state2.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[1].Received != 104 {
+	if timestamps[1].Received != 102 {
 		t.Fatal("Unexpected state timestamp")
 	}
 	if timestamps[2].Document != state3.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[2].Received != 101 {
+	if timestamps[2].Received != 103 {
 		t.Fatal("Unexpected state timestamp")
 	}
 	if timestamps[3].Document != state4.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[3].Received != 103 {
+	if timestamps[3].Received != 104 {
 		t.Fatal("Unexpected state timestamp")
 	}
 
 	// should only get states 2 and 3
-	timestamps, err = backingStore.SelectStateTimestamps("host-token", 30, 45)
+	timestamps, err = backingStore.SelectStateTimestamps("host-token", 102, 103)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3412,13 +3412,13 @@ func TestSelectStateTimestamps(t *testing.T) {
 	if timestamps[0].Document != state2.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[0].Received != 104 {
+	if timestamps[0].Received != 102 {
 		t.Fatal("Unexpected state timestamp")
 	}
 	if timestamps[1].Document != state3.Timestamp {
 		t.Fatal("Unexpected state timestamp")
 	}
-	if timestamps[1].Received != 101 {
+	if timestamps[1].Received != 103 {
 		t.Fatal("Unexpected state timestamp")
 	}
 }
@@ -3491,26 +3491,26 @@ func TestSelectStateDiffs(t *testing.T) {
 			},
 		},
 	}
-	// insert out of order and different received timestamp
-	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state3)
+	// insert different received timestamp
+	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state1)
+	err = backingStore.InsertState(102, "127.0.0.1", "host-token", state2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state4)
+	err = backingStore.InsertState(103, "127.0.0.1", "host-token", state3)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state2)
+	err = backingStore.InsertState(104, "127.0.0.1", "host-token", state4)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// should get states diffs in order
-	diffs, err = backingStore.SelectStateDiffs("host-token", 0, 100)
+	diffs, err = backingStore.SelectStateDiffs("host-token", 101, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3543,7 +3543,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// nothing before state 1
-	diffs, err = backingStore.SelectStateDiffs("host-token", -100, 0)
+	diffs, err = backingStore.SelectStateDiffs("host-token", -100, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3552,7 +3552,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// no diff between state 1 and 2
-	diffs, err = backingStore.SelectStateDiffs("host-token", 15, 30)
+	diffs, err = backingStore.SelectStateDiffs("host-token", 101, 102)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3561,7 +3561,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// diff between state 2 and 3
-	diffs, err = backingStore.SelectStateDiffs("host-token", 30, 45)
+	diffs, err = backingStore.SelectStateDiffs("host-token", 102, 103)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3594,7 +3594,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// no diff between state 3 and 4
-	diffs, err = backingStore.SelectStateDiffs("host-token", 45, 60)
+	diffs, err = backingStore.SelectStateDiffs("host-token", 103, 104)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3603,7 +3603,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// nothing after state 4
-	diffs, err = backingStore.SelectStateDiffs("host-token", 60, 100)
+	diffs, err = backingStore.SelectStateDiffs("host-token", 195, 200)
 	if err != nil {
 		t.Fatal(err)
 	}
