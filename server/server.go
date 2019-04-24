@@ -1381,6 +1381,7 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 		log.Println("No hosts for scenario and team")
 		return
 	}
+	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
 	for _, host := range hosts {
 		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
@@ -1389,6 +1390,9 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		hostTokens = append(hostTokens, hts...)
+		for _, ht := range hts {
+			hostnames[ht] = host.Hostname
+		}
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1403,7 +1407,7 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	timestamps := make(map[int][]model.TimestampDocumentAndReceived)
+	timestamps := make(map[string][]model.TimestampDocumentAndReceived)
 
 	for i, hostToken := range hostTokens {
 		ts, err := theServer.backingStore.SelectScenarioReportTimestamps(scenarioID, hostToken, timeStart, timeEnd)
@@ -1413,7 +1417,8 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 			w.Write([]byte(msg))
 			return
 		}
-		timestamps[i] = ts
+		hostname := hostnames[hostToken]
+		timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
 	}
 	b, err := json.Marshal(timestamps)
 	if err != nil {
@@ -1457,6 +1462,7 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		log.Println("No hosts for scenario and team")
 		return
 	}
+	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
 	for _, host := range hosts {
 		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
@@ -1465,6 +1471,9 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 			return
 		}
 		hostTokens = append(hostTokens, hts...)
+		for _, ht := range hts {
+			hostnames[ht] = host.Hostname
+		}
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1479,7 +1488,7 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	diffs := make(map[int][]processing.DocumentDiff)
+	diffs := make(map[string][]processing.DocumentDiff)
 
 	for i, hostToken := range hostTokens {
 		ds, err := theServer.backingStore.SelectScenarioReportDiffs(scenarioID, hostToken, timeStart, timeEnd)
@@ -1489,7 +1498,8 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 			w.Write([]byte(msg))
 			return
 		}
-		diffs[i] = ds
+		hostname := hostnames[hostToken]
+		diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
 	}
 	b, err := json.Marshal(diffs)
 	if err != nil {
@@ -1560,6 +1570,7 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 		log.Println("No hosts for scenario and team")
 		return
 	}
+	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
 	for _, host := range hosts {
 		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
@@ -1568,6 +1579,9 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 			return
 		}
 		hostTokens = append(hostTokens, hts...)
+		for _, ht := range hts {
+			hostnames[ht] = host.Hostname
+		}
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1582,7 +1596,7 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	timestamps := make(map[int][]model.TimestampDocumentAndReceived)
+	timestamps := make(map[string][]model.TimestampDocumentAndReceived)
 
 	for i, hostToken := range hostTokens {
 		ts, err := theServer.backingStore.SelectStateTimestamps(hostToken, timeStart, timeEnd)
@@ -1592,7 +1606,8 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 			w.Write([]byte(msg))
 			return
 		}
-		timestamps[i] = ts
+		hostname := hostnames[hostToken]
+		timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
 	}
 	b, err := json.Marshal(timestamps)
 	if err != nil {
@@ -1636,6 +1651,7 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		log.Println("No hosts for scenario and team")
 		return
 	}
+	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
 	for _, host := range hosts {
 		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
@@ -1644,6 +1660,9 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		hostTokens = append(hostTokens, hts...)
+		for _, ht := range hts {
+			hostnames[ht] = host.Hostname
+		}
 	}
 	timeStartStr := r.Form.Get("time_start")
 	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
@@ -1658,7 +1677,7 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	diffs := make(map[int][]processing.DocumentDiff)
+	diffs := make(map[string][]processing.DocumentDiff)
 
 	for i, hostToken := range hostTokens {
 		ds, err := theServer.backingStore.SelectStateDiffs(hostToken, timeStart, timeEnd)
@@ -1668,7 +1687,8 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 			w.Write([]byte(msg))
 			return
 		}
-		diffs[i] = ds
+		hostname := hostnames[hostToken]
+		diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
 	}
 	b, err := json.Marshal(diffs)
 	if err != nil {

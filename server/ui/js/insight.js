@@ -394,12 +394,12 @@ class AnalysisItem extends React.Component {
     let timestamp = Math.trunc(plotlyEvent.points[0].data.x[index] / 1000);
     let type = plotlyEvent.points[0].y;
 
-    if (type.endsWith('(report diff)') || type.endsWith('(state diff)')) {
+    if (type.endsWith('(reports diff)') || type.endsWith('(states diff)')) {
       let diffs = null;
 
-      if (type.endsWith('(report diff)')) {
+      if (type.endsWith('(reports diff)')) {
         diffs = this.state.reportDiffs;
-      } else if (type.endsWith('(state diff)')) {
+      } else if (type.endsWith('(states diff)')) {
         diffs = this.state.stateDiffs;
       } else {
         return false;
@@ -490,15 +490,15 @@ class AnalysisItem extends React.Component {
         type: 'date'
       },
       yaxis: {
-        autorange: 'reversed'
+        autorange: 'reversed',
+        visible: false
       }
     };
     let traces = []; // states
 
-    let name = '(states)';
-
     for (let i in this.state.stateTimeline) {
       let hostInstance = this.state.stateTimeline[i];
+      let name = i + ' (states)';
       let trace = {
         name: name,
         mode: 'markers',
@@ -509,10 +509,9 @@ class AnalysisItem extends React.Component {
     } // state diffs
 
 
-    name = '(state diff)';
-
     for (let i in this.state.stateDiffs) {
       let hostInstance = this.state.stateDiffs[i];
+      let name = i + ' (states diff)';
       let trace = {
         name: name,
         mode: 'markers',
@@ -523,10 +522,9 @@ class AnalysisItem extends React.Component {
     } // reports
 
 
-    name = '(reports)';
-
     for (let i in this.state.reportTimeline) {
       let hostInstance = this.state.reportTimeline[i];
+      let name = i + ' (reports)';
       let trace = {
         name: name,
         mode: 'markers',
@@ -537,10 +535,9 @@ class AnalysisItem extends React.Component {
     } // reports diffs
 
 
-    name = '(report diff)';
-
     for (let i in this.state.reportDiffs) {
       let hostInstance = this.state.reportDiffs[i];
+      let name = i + ' (reports diff)';
       let trace = {
         name: name,
         mode: 'markers',
@@ -548,8 +545,20 @@ class AnalysisItem extends React.Component {
         y: hostInstance.map(_ => name)
       };
       traces.push(trace);
-    }
+    } // sort traces by name
 
+
+    traces.sort(function (a, b) {
+      if (a.name < b.name) {
+        return -1;
+      }
+
+      if (a.name > b.name) {
+        return 1;
+      }
+
+      return 0;
+    });
     let selected = null;
 
     if (!this.state.selected) {
