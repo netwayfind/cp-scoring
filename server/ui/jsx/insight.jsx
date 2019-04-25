@@ -373,12 +373,12 @@ class AnalysisItem extends React.Component {
     let timestamp = Math.trunc(plotlyEvent.points[0].data.x[index] / 1000);
 
     let type = plotlyEvent.points[0].y;
-    if (type.endsWith('(reports diff)') || type.endsWith('(states diff)')) {
+    if (type.endsWith('reports diff') || type.endsWith('states diff')) {
       let diffs = null;
-      if (type.endsWith('(reports diff)')) {
+      if (type.endsWith('reports diff')) {
         diffs = this.state.reportDiffs;
       }
-      else if (type.endsWith('(states diff)')) {
+      else if (type.endsWith('states diff')) {
         diffs = this.state.stateDiffs;
       }
       else {
@@ -404,14 +404,14 @@ class AnalysisItem extends React.Component {
         selected: selected
       });
     }
-    else if (type.endsWith('(reports)') || type.endsWith('(states)')) {
+    else if (type.endsWith('reports') || type.endsWith('states')) {
       let documentType = null;
       let timeline = null;
-      if (type.endsWith('(reports)')) {
+      if (type.endsWith('reports')) {
         documentType = 'reports';
         timeline = this.state.reportTimeline;
       }
-      else if (type.endsWith('(states)')) {
+      else if (type.endsWith('states')) {
         documentType = 'states';
         timeline = this.state.stateTimeline;
       }
@@ -473,7 +473,7 @@ class AnalysisItem extends React.Component {
     // states
     for (let i in this.state.stateTimeline) {
       let hostInstance = this.state.stateTimeline[i];
-      let name = i + ' (states)';
+      let name = i + ' - A.states';
       let trace = {
         name: name,
         mode: 'markers',
@@ -486,20 +486,20 @@ class AnalysisItem extends React.Component {
     // state diffs
     for (let i in this.state.stateDiffs) {
       let hostInstance = this.state.stateDiffs[i];
-      let name = i + ' (states diff)';
+      let name = i + ' - B.states diff';
       let trace = {
         name: name,
         mode: 'markers',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
         y: hostInstance.map(_ => name)
       }
-      traces.push(trace)
+      traces.push(trace);
     }
 
     // reports
     for (let i in this.state.reportTimeline) {
       let hostInstance = this.state.reportTimeline[i];
-      let name = i + ' (reports)';
+      let name = i + ' - C.reports';
       let trace = {
         name: name,
         mode: 'markers',
@@ -512,14 +512,14 @@ class AnalysisItem extends React.Component {
     // reports diffs
     for (let i in this.state.reportDiffs) {
       let hostInstance = this.state.reportDiffs[i];
-      let name = i + ' (reports diff)';
+      let name = i + ' - D.reports diff';
       let trace = {
         name: name,
         mode: 'markers',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
         y: hostInstance.map(_ => name)
       }
-      traces.push(trace)
+      traces.push(trace);
     }
 
     // sort traces by name
