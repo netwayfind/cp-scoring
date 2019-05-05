@@ -11,6 +11,7 @@ class App extends React.Component {
     };
     this.authCallback = this.authCallback.bind(this);
     this.logout = this.logout.bind(this);
+    this.analysisRequestCallback = this.analysisRequestCallback.bind(this);
   }
 
   authCallback(statusCode) {
@@ -73,18 +74,19 @@ class App extends React.Component {
       onClick: this.logout
     }, "Logout")), React.createElement("div", {
       className: "toc"
-    }, React.createElement(Analysis, {
-      requestCallback: this.analysisRequestCallback.bind(this)
+    }, React.createElement(AnalysisConfig, {
+      requestCallback: this.analysisRequestCallback
     })), React.createElement("div", {
       className: "content"
-    }, React.createElement(AnalysisItem, {
-      args: this.state.args
+    }, React.createElement(AnalysisResults, {
+      args: this.state.args,
+      selectedCallback: this.analysisSelectedCallback
     })));
   }
 
 }
 
-class Analysis extends React.Component {
+class AnalysisConfig extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -104,10 +106,6 @@ class Analysis extends React.Component {
   }
 
   componentDidMount() {
-    this.populateSelectors();
-  }
-
-  componentWillReceiveProps(_) {
     this.populateSelectors();
   }
 
@@ -222,7 +220,41 @@ class Analysis extends React.Component {
       'time_start': this.state.timeStart,
       'time_end': this.state.timeEnd
     };
-    this.props.requestCallback(args);
+    let params = Object.entries(args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    let requestReports = fetch('/analysis/reports/timeline?' + params, {
+      credentials: 'same-origin'
+    });
+    let requestReportDiffs = fetch('/analysis/reports/diffs?' + params, {
+      credentials: 'same-origin'
+    });
+    let requestStates = fetch('/analysis/states/timeline?' + params, {
+      credentials: 'same-origin'
+    });
+    let requestStateDiffs = fetch('/analysis/states/diffs?' + params, {
+      credentials: 'same-origin'
+    });
+    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs]).then(function (responses) {
+      let j = [];
+
+      for (let r in responses) {
+        let response = responses[r];
+
+        if (response.status >= 400) {
+          throw new Error("Bad response from server");
+        }
+
+        j.push(response.json());
+      }
+
+      return Promise.all(j);
+    }).then(function (data) {
+      this.props.requestCallback({
+        reportTimeline: data[0],
+        reportDiffs: data[1],
+        stateTimeline: data[2],
+        stateDiffs: data[3]
+      });
+    }.bind(this));
   }
 
   render() {
@@ -317,77 +349,111 @@ class Analysis extends React.Component {
 
 }
 
-class AnalysisItem extends React.Component {
+class AnalysisResults extends React.Component {
   constructor(props) {
     super(props);
+    let config = {
+      displaylogo: false
+    };
+    let layout = {
+      hovermode: 'closest',
+      xaxis: {
+        type: 'date'
+      },
+      yaxis: {
+        autorange: 'reversed',
+        visible: false
+      }
+    };
     this.state = {
-      reportTimeline: {},
-      reportDiffs: {},
-      stateTimeline: {},
-      stateDiffs: {},
+      config: config,
+      layout: layout,
+      traces: [],
       selected: {}
     };
     this.plotClick = this.plotClick.bind(this);
   }
 
-  componentDidMount() {
-    this.getData(this.props);
-  }
-
   componentWillReceiveProps(newProps) {
-    this.getData(newProps);
-  }
+    let traces = []; // states
 
-  getData(props) {
-    if (props.args === null || props.args === undefined) {
-      return;
-    }
+    for (let i in newProps.args.stateTimeline) {
+      let hostInstance = newProps.args.stateTimeline[i];
+      let name = i + ' - A.states';
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(document => document.Document * 1000),
+        y: hostInstance.map(_ => name)
+      };
+      traces.push(trace);
+    } // state diffs
 
-    let urlTimeline = null;
-    let urlDiffs = null;
-    let params = Object.entries(props.args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
-    urlTimeline = urlTimeline + '?' + params;
-    urlDiffs = urlDiffs + '?' + params;
-    let requestReports = fetch('/analysis/reports/timeline?' + params, {
-      credentials: 'same-origin'
-    });
-    let requestReportDiffs = fetch('/analysis/reports/diffs?' + params, {
-      credentials: 'same-origin'
-    });
-    let requestStates = fetch('/analysis/states/timeline?' + params, {
-      credentials: 'same-origin'
-    });
-    let requestStateDiffs = fetch('/analysis/states/diffs?' + params, {
-      credentials: 'same-origin'
-    });
-    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs]).then(function (responses) {
-      let j = [];
 
-      for (let r in responses) {
-        let response = responses[r];
+    for (let i in newProps.args.stateDiffs) {
+      let hostInstance = newProps.args.stateDiffs[i];
+      let name = i + ' - B.states diff';
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(diff => diff.Timestamp * 1000),
+        y: hostInstance.map(_ => name)
+      };
+      traces.push(trace);
+    } // reports
 
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
-        }
 
-        j.push(response.json());
+    for (let i in newProps.args.reportTimeline) {
+      let hostInstance = newProps.args.reportTimeline[i];
+      let name = i + ' - C.reports';
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(document => document.Document * 1000),
+        y: hostInstance.map(_ => name)
+      };
+      traces.push(trace);
+    } // reports diffs
+
+
+    for (let i in newProps.args.reportDiffs) {
+      let hostInstance = newProps.args.reportDiffs[i];
+      let name = i + ' - D.reports diff';
+      let trace = {
+        name: name,
+        mode: 'markers',
+        x: hostInstance.map(diff => diff.Timestamp * 1000),
+        y: hostInstance.map(_ => name)
+      };
+      traces.push(trace);
+    } // sort traces by name
+
+
+    traces.sort(function (a, b) {
+      if (a.name < b.name) {
+        return -1;
       }
 
-      return Promise.all(j);
-    }).then(function (data) {
-      this.setState({
-        reportTimeline: data[0],
-        reportDiffs: data[1],
-        stateTimeline: data[2],
-        stateDiffs: data[3]
-      });
-    }.bind(this));
+      if (a.name > b.name) {
+        return 1;
+      }
+
+      return 0;
+    });
+    this.setState({
+      reportTimeline: newProps.args.reportTimeline,
+      reportDiffs: newProps.args.reportDiffs,
+      stateTimeline: newProps.args.stateTimeline,
+      stateDiffs: newProps.args.stateDiffs,
+      traces: traces
+    });
   }
 
   plotClick(plotlyEvent) {
-    // only accept left click
+    plotlyEvent.event.preventDefault(); // only accept left click
+
     if (plotlyEvent.event.buttons != 1) {
-      return;
+      return false;
     }
 
     let index = plotlyEvent.points[0].pointIndex;
@@ -481,95 +547,35 @@ class AnalysisItem extends React.Component {
   }
 
   render() {
-    let config = {
-      displaylogo: false
-    };
-    let layout = {
-      hovermode: 'closest',
-      xaxis: {
-        type: 'date'
-      },
-      yaxis: {
-        autorange: 'reversed',
-        visible: false
-      }
-    };
-    let traces = []; // states
+    return React.createElement(React.Fragment, null, "Timeline", React.createElement("br", null), React.createElement(Plot, {
+      data: this.state.traces,
+      layout: this.state.layout,
+      config: this.state.config,
+      onClick: this.plotClick
+    }), React.createElement("br", null), "Selected", React.createElement("br", null), React.createElement(AnalysisSelected, {
+      selected: this.state.selected
+    }));
+  }
 
-    for (let i in this.state.stateTimeline) {
-      let hostInstance = this.state.stateTimeline[i];
-      let name = i + ' - A.states';
-      let trace = {
-        name: name,
-        mode: 'markers',
-        x: hostInstance.map(document => document.Document * 1000),
-        y: hostInstance.map(_ => name)
-      };
-      traces.push(trace);
-    } // state diffs
+}
 
+class AnalysisSelected extends React.Component {
+  constructor(props) {
+    super(props);
+  }
 
-    for (let i in this.state.stateDiffs) {
-      let hostInstance = this.state.stateDiffs[i];
-      let name = i + ' - B.states diff';
-      let trace = {
-        name: name,
-        mode: 'markers',
-        x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name)
-      };
-      traces.push(trace);
-    } // reports
-
-
-    for (let i in this.state.reportTimeline) {
-      let hostInstance = this.state.reportTimeline[i];
-      let name = i + ' - C.reports';
-      let trace = {
-        name: name,
-        mode: 'markers',
-        x: hostInstance.map(document => document.Document * 1000),
-        y: hostInstance.map(_ => name)
-      };
-      traces.push(trace);
-    } // reports diffs
-
-
-    for (let i in this.state.reportDiffs) {
-      let hostInstance = this.state.reportDiffs[i];
-      let name = i + ' - D.reports diff';
-      let trace = {
-        name: name,
-        mode: 'markers',
-        x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name)
-      };
-      traces.push(trace);
-    } // sort traces by name
-
-
-    traces.sort(function (a, b) {
-      if (a.name < b.name) {
-        return -1;
-      }
-
-      if (a.name > b.name) {
-        return 1;
-      }
-
-      return 0;
-    });
+  render() {
     let selected = null;
 
-    if (!this.state.selected) {
+    if (!this.props.selected) {
       selected = React.createElement(React.Fragment, null, "No result");
     } // diff
-    else if (this.state.selected.Changes != undefined) {
-        let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
+    else if (this.props.selected.Changes != undefined) {
+        let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
         let changes = [];
 
-        for (let i in this.state.selected.Changes) {
-          let change = this.state.selected.Changes[i];
+        for (let i in this.props.selected.Changes) {
+          let change = this.props.selected.Changes[i];
           changes.push(React.createElement("li", {
             key: i
           }, change.Type, " - ", change.Key, " - ", change.Item));
@@ -577,12 +583,12 @@ class AnalysisItem extends React.Component {
 
         selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Changes:", React.createElement("ul", null, changes));
       } // report
-      else if (this.state.selected.Findings != undefined) {
-          let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
+      else if (this.props.selected.Findings != undefined) {
+          let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
           let findings = [];
 
-          for (let i in this.state.selected.Findings) {
-            let finding = this.state.selected.Findings[i];
+          for (let i in this.props.selected.Findings) {
+            let finding = this.props.selected.Findings[i];
             findings.push(React.createElement("li", {
               key: i
             }, finding.Show, " - ", finding.Value, " - ", finding.Message));
@@ -590,12 +596,12 @@ class AnalysisItem extends React.Component {
 
           selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("ul", null, findings));
         } // state
-        else if (this.state.selected.Users != undefined) {
-            let time = new Date(this.state.selected.Timestamp * 1000).toLocaleString();
+        else if (this.props.selected.Users != undefined) {
+            let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
             let errors = [];
 
-            for (let i in this.state.selected.Errors) {
-              let error = this.state.selected.Errors[i];
+            for (let i in this.props.selected.Errors) {
+              let error = this.props.selected.Errors[i];
               errors.push(React.createElement("li", {
                 key: i
               }, error));
@@ -603,8 +609,8 @@ class AnalysisItem extends React.Component {
 
             let users = [];
 
-            for (let i in this.state.selected.Users) {
-              let user = this.state.selected.Users[i];
+            for (let i in this.props.selected.Users) {
+              let user = this.props.selected.Users[i];
               let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
               users.push(React.createElement("li", {
                 key: i
@@ -613,8 +619,8 @@ class AnalysisItem extends React.Component {
 
             let groups = [];
 
-            for (let group in this.state.selected.Groups) {
-              let members = this.state.selected.Groups[group];
+            for (let group in this.props.selected.Groups) {
+              let members = this.props.selected.Groups[group];
 
               if (members.length === 0) {
                 groups.push(React.createElement("li", {
@@ -630,8 +636,8 @@ class AnalysisItem extends React.Component {
 
             let software = [];
 
-            for (let i in this.state.selected.Software) {
-              let sw = this.state.selected.Software[i];
+            for (let i in this.props.selected.Software) {
+              let sw = this.props.selected.Software[i];
               software.push(React.createElement("li", {
                 key: i
               }, sw.Name, " - ", sw.Version));
@@ -639,8 +645,8 @@ class AnalysisItem extends React.Component {
 
             let processes = [];
 
-            for (let i in this.state.selected.Processes) {
-              let process = this.state.selected.Processes[i];
+            for (let i in this.props.selected.Processes) {
+              let process = this.props.selected.Processes[i];
               processes.push(React.createElement("li", {
                 key: i
               }, process.PID, " - ", process.User, " - ", process.CommandLine));
@@ -648,22 +654,17 @@ class AnalysisItem extends React.Component {
 
             let conns = [];
 
-            for (let i in this.state.selected.NetworkConnections) {
-              let conn = this.state.selected.NetworkConnections[i];
+            for (let i in this.props.selected.NetworkConnections) {
+              let conn = this.props.selected.NetworkConnections[i];
               conns.push(React.createElement("li", {
                 key: i
               }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
             }
 
-            selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "OS: ", this.state.selected.OS, React.createElement("br", null), "Hostname: ", this.state.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
+            selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
           }
 
-    return React.createElement(React.Fragment, null, "Timeline", React.createElement("ul", null, React.createElement(Plot, {
-      data: traces,
-      layout: layout,
-      config: config,
-      onClick: this.plotClick
-    })), React.createElement("p", null), "Selected", React.createElement("ul", null, selected));
+    return selected;
   }
 
 }
