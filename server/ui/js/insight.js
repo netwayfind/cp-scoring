@@ -397,7 +397,10 @@ class AnalysisResults extends React.Component {
         name: name,
         mode: 'markers',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name)
+        y: hostInstance.map(_ => name),
+        marker: {
+          size: hostInstance.map(diff => diff.Changes.length)
+        }
       };
       traces.push(trace);
     } // reports
@@ -423,7 +426,10 @@ class AnalysisResults extends React.Component {
         name: name,
         mode: 'markers',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name)
+        y: hostInstance.map(_ => name),
+        marker: {
+          size: hostInstance.map(diff => diff.Changes.length)
+        }
       };
       traces.push(trace);
     } // sort traces by name
