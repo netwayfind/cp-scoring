@@ -906,13 +906,25 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		return
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
+	var teamID uint64
 	teamKey := r.FormValue("team_key")
-	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
-	if err != nil {
-		msg := "ERROR: cannot retrieve team id;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
+	if len(teamKey) > 0 {
+		teamID, err = theServer.backingStore.SelectTeamIDForKey(teamKey)
+		if err != nil {
+			msg := "ERROR: cannot retrieve team id;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+	} else {
+		teamIDStr := r.FormValue("team_id")
+		teamID, err = strconv.ParseUint(teamIDStr, 10, 64)
+		if err != nil {
+			msg := "ERROR: cannot parse team id;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	hostname := r.FormValue("hostname")
@@ -923,9 +935,31 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		w.Write([]byte(msg))
 		return
 	}
+	var timeStart int64
+	timeStartStr := r.Form.Get("time_start")
+	if len(timeStartStr) > 0 {
+		timeStart, err = strconv.ParseInt(timeStartStr, 10, 64)
+		if err != nil {
+			log.Println("Rejected time_start")
+			return
+		}
+	} else {
+		timeStart = 0
+	}
+	var timeEnd int64
+	timeEndStr := r.Form.Get("time_end")
+	if len(timeEndStr) > 0 {
+		timeEnd, err = strconv.ParseInt(timeEndStr, 10, 64)
+		if err != nil {
+			log.Println("Rejected time_end")
+			return
+		}
+	} else {
+		timeEnd = time.Now().Unix()
+	}
 	timelines := make([]model.ScenarioTimeline, 0)
 	for _, hostToken := range hostTokens {
-		timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, hostToken)
+		timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, hostToken, timeStart, timeEnd)
 		if err != nil {
 			msg := "ERROR: cannot retrieve scenario timeline for team;"
 			log.Println(msg, err)

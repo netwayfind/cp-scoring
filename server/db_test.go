@@ -647,7 +647,7 @@ func TestSelectScenarioTimeline(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// no existing data
-	timeline, err := backingStore.SelectScenarioTimeline(0, "host-token1")
+	timeline, err := backingStore.SelectScenarioTimeline(0, "host-token1", 0, 2000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -674,7 +674,7 @@ func TestSelectScenarioTimeline(t *testing.T) {
 	}
 
 	// no existing scores
-	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1")
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1", 0, 2000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -733,7 +733,7 @@ func TestSelectScenarioTimeline(t *testing.T) {
 	}
 
 	// check host token 1
-	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1")
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1", 0, 2000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -744,8 +744,20 @@ func TestSelectScenarioTimeline(t *testing.T) {
 		t.Fatal("Unexpected score values")
 	}
 
+	// check subset
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token1", 1360, 1420)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(timeline.Timestamps, []int64{1360, 1420}) {
+		t.Fatal("Unexpected timestamp values")
+	}
+	if !reflect.DeepEqual(timeline.Scores, []int64{14, 15}) {
+		t.Fatal("Unexpected score values")
+	}
+
 	// check host token 2
-	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token2")
+	timeline, err = backingStore.SelectScenarioTimeline(scenarioID, "host-token2", 0, 2000)
 	if err != nil {
 		t.Fatal(err)
 	}

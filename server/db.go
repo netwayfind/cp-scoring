@@ -699,12 +699,12 @@ func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore
 	return scores, nil
 }
 
-func (db dbObj) SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error) {
+func (db dbObj) SelectScenarioTimeline(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) (model.ScenarioTimeline, error) {
 	var timeline model.ScenarioTimeline
 	timeline.Timestamps = make([]int64, 0)
 	timeline.Scores = make([]int64, 0)
 
-	rows, err := db.dbConn.Query("SELECT timestamp, score FROM scores WHERE scenario_id=$1 AND host_token=$2 ORDER BY timestamp ASC", scenarioID, hostToken)
+	rows, err := db.dbConn.Query("SELECT timestamp, score FROM scores WHERE scenario_id=$1 AND host_token=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp ASC", scenarioID, hostToken, timeStart, timeEnd)
 	if err != nil {
 		return timeline, err
 	}

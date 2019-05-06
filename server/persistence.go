@@ -50,7 +50,7 @@ type backingStore interface {
 	SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
 	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
 	InsertScenarioScore(score model.ScenarioHostScore) error
-	SelectScenarioTimeline(scenarioID uint64, hostToken string) (model.ScenarioTimeline, error)
+	SelectScenarioTimeline(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) (model.ScenarioTimeline, error)
 	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)
 	SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error)
 	InsertHostToken(hostToken string, timestamp int64, hostname string, source string) error
