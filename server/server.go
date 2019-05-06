@@ -928,6 +928,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
 	var hostTokens []string
+	hostnames := make(map[string]string)
 	hostname := r.FormValue("hostname")
 	if hostname == "*" {
 		// get all hosts
@@ -952,6 +953,9 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 					w.Write([]byte(msg))
 					return
 				}
+				for _, ht := range hts {
+					hostnames[ht] = h.Hostname
+				}
 				hostTokens = append(hostTokens, hts...)
 			}
 		}
@@ -964,6 +968,9 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 			log.Println(msg, err)
 			w.Write([]byte(msg))
 			return
+		}
+		for _, ht := range hostTokens {
+			hostnames[ht] = hostname
 		}
 	}
 	var timeStart int64
@@ -988,8 +995,8 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	} else {
 		timeEnd = time.Now().Unix()
 	}
-	timelines := make([]model.ScenarioTimeline, 0)
-	for _, hostToken := range hostTokens {
+	timelines := make(map[string]model.ScenarioTimeline)
+	for i, hostToken := range hostTokens {
 		timeline, err := theServer.backingStore.SelectScenarioTimeline(scenarioID, hostToken, timeStart, timeEnd)
 		if err != nil {
 			msg := "ERROR: cannot retrieve scenario timeline for team;"
@@ -997,7 +1004,8 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 			w.Write([]byte(msg))
 			return
 		}
-		timelines = append(timelines, timeline)
+		hostname = hostnames[hostToken]
+		timelines[fmt.Sprintf("%d - %s", i, hostname)] = timeline
 	}
 	out, err := json.Marshal(timelines)
 	if err != nil {
