@@ -235,7 +235,10 @@ class AnalysisConfig extends React.Component {
     let requestStateDiffs = fetch('/analysis/states/diffs?' + params, {
       credentials: 'same-origin',
     });
-    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs])
+    let requestScores = fetch('/reports/scenario/' + this.state.scenarioID + '/timeline?hostname=*&' + params, {
+      credentials: 'same-origin',
+    });
+    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs, requestScores])
     .then(function(responses) {
       let j = [];
       for (let r in responses) {
@@ -252,7 +255,8 @@ class AnalysisConfig extends React.Component {
         reportTimeline: data[0],
         reportDiffs: data[1],
         stateTimeline: data[2],
-        stateDiffs: data[3]
+        stateDiffs: data[3],
+        scores: data[4]
       });
     }.bind(this)); 
   }
@@ -339,8 +343,12 @@ class AnalysisResults extends React.Component {
         type: 'date'
       },
       yaxis: {
+        domain: [0.30, 1],
         autorange: 'reversed',
         visible: false
+      },
+      yaxis2: {
+        domain: [0, 0.20]
       }
     }
 
@@ -415,6 +423,21 @@ class AnalysisResults extends React.Component {
       traces.push(trace);
     }
 
+    // scores
+    for (let i in newProps.args.scores) {
+      let hostInstance = newProps.args.scores[i];
+      let name = i + ' - E.scores';
+      let trace = {
+        name: name,
+        mode: 'markers',
+        fill: 'tozeroy',
+        x: hostInstance.Timestamps.map(timestamp => timestamp * 1000),
+        y: hostInstance.Scores,
+        yaxis: 'y2'
+      }
+      traces.push(trace);
+    }
+
     // sort traces by name
     traces.sort(function(a, b) {
       if (a.name < b.name) {
@@ -445,9 +468,10 @@ class AnalysisResults extends React.Component {
 
     let index = plotlyEvent.points[0].pointIndex;
     let timestamp = Math.trunc(plotlyEvent.points[0].data.x[index] / 1000);
-
     let type = plotlyEvent.points[0].y;
-    if (type.endsWith('reports diff') || type.endsWith('states diff')) {
+    if (typeof(type) != 'string') {
+    }
+    else if (type.endsWith('reports diff') || type.endsWith('states diff')) {
       let diffs = null;
       if (type.endsWith('reports diff')) {
         diffs = this.state.reportDiffs;
