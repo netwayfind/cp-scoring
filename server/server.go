@@ -927,13 +927,44 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		}
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+	var hostTokens []string
 	hostname := r.FormValue("hostname")
-	hostTokens, err := theServer.backingStore.SelectHostTokens(teamID, hostname)
-	if err != nil {
-		msg := "ERROR: cannot retrieve host token;"
-		log.Println(msg, err)
-		w.Write([]byte(msg))
-		return
+	if hostname == "*" {
+		// get all hosts
+		log.Println("All hosts")
+		hosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
+		if err != nil {
+			msg := "ERROR: cannot get all hosts;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
+		hostTokens = make([]string, 0)
+		for _, entry := range hosts {
+			if entry.ScenarioID != scenarioID {
+				continue
+			}
+			for _, h := range entry.Hosts {
+				hts, err := theServer.backingStore.SelectHostTokens(teamID, h.Hostname)
+				if err != nil {
+					msg := "ERROR: cannot retrieve host token;"
+					log.Println(msg, err)
+					w.Write([]byte(msg))
+					return
+				}
+				hostTokens = append(hostTokens, hts...)
+			}
+		}
+	} else {
+		// get specific host
+		log.Println(fmt.Sprintf("Hostname: %s", hostname))
+		hostTokens, err = theServer.backingStore.SelectHostTokens(teamID, hostname)
+		if err != nil {
+			msg := "ERROR: cannot retrieve host token;"
+			log.Println(msg, err)
+			w.Write([]byte(msg))
+			return
+		}
 	}
 	var timeStart int64
 	timeStartStr := r.Form.Get("time_start")
