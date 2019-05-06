@@ -339,15 +339,19 @@ class AnalysisResults extends React.Component {
 
     let layout = {
       hovermode: 'closest',
+      barmode: 'stack',
       xaxis: {
         type: 'date'
       },
       yaxis: {
-        domain: [0.30, 1],
+        domain: [0.60, 1],
         autorange: 'reversed',
         visible: false
       },
       yaxis2: {
+        domain: [0.30, 0.50]
+      },
+      yaxis3: {
         domain: [0, 0.20]
       }
     }
@@ -384,12 +388,10 @@ class AnalysisResults extends React.Component {
       let name = i + ' - B.states diff';
       let trace = {
         name: name,
-        mode: 'markers',
+        type: 'bar',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name),
-        marker: {
-          size: hostInstance.map(diff => diff.Changes.length),
-        }
+        y: hostInstance.map(diff => diff.Changes.length),
+        yaxis: 'y2'
       }
       traces.push(trace);
     }
@@ -413,12 +415,10 @@ class AnalysisResults extends React.Component {
       let name = i + ' - D.reports diff';
       let trace = {
         name: name,
-        mode: 'markers',
+        type: 'bar',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
-        y: hostInstance.map(_ => name),
-        marker: {
-          size: hostInstance.map(diff => diff.Changes.length),
-        }
+        y: hostInstance.map(diff => diff.Changes.length),
+        yaxis: 'y2'
       }
       traces.push(trace);
     }
@@ -433,7 +433,7 @@ class AnalysisResults extends React.Component {
         fill: 'tozeroy',
         x: hostInstance.Timestamps.map(timestamp => timestamp * 1000),
         y: hostInstance.Scores,
-        yaxis: 'y2'
+        yaxis: 'y3'
       }
       traces.push(trace);
     }
@@ -468,10 +468,8 @@ class AnalysisResults extends React.Component {
 
     let index = plotlyEvent.points[0].pointIndex;
     let timestamp = Math.trunc(plotlyEvent.points[0].data.x[index] / 1000);
-    let type = plotlyEvent.points[0].y;
-    if (typeof(type) != 'string') {
-    }
-    else if (type.endsWith('reports diff') || type.endsWith('states diff')) {
+    let type = plotlyEvent.points[0].data.name;
+    if (type.endsWith('reports diff') || type.endsWith('states diff')) {
       let diffs = null;
       if (type.endsWith('reports diff')) {
         diffs = this.state.reportDiffs;
