@@ -367,7 +367,6 @@ class AnalysisResults extends React.Component {
       },
       yaxis: {
         domain: [0.60, 1],
-        autorange: 'reversed',
         visible: false
       },
       yaxis2: {
@@ -468,7 +467,9 @@ class AnalysisResults extends React.Component {
       }
 
       return 0;
-    });
+    }); // reverse traces to go from top to bottom in legend
+
+    traces.reverse();
     this.setState({
       reportTimeline: newProps.args.reportTimeline,
       reportDiffs: newProps.args.reportDiffs,
