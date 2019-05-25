@@ -14,7 +14,8 @@ class App extends React.Component {
       lastUpdatedTeams: 0,
       lastUpdatedHosts: 0,
       lastUpdatedTemplates: 0,
-      lastUpdatedScenarios: 0
+      lastUpdatedScenarios: 0,
+      lastUpdatedAdministrators: 0
     };
     this.authCallback = this.authCallback.bind(this);
     this.setPage = this.setPage.bind(this);
@@ -104,6 +105,12 @@ class App extends React.Component {
     });
   }
 
+  updateAdministratorCallback() {
+    this.setState({
+      lastUpdatedAdministrators: Date.now()
+    });
+  }
+
   render() {
     if (!this.state.authenticated) {
       return React.createElement("div", {
@@ -149,6 +156,14 @@ class App extends React.Component {
         id: this.state.id,
         updateCallback: this.updateScenarioCallback.bind(this)
       });
+    } else if (this.state.page == "administrators") {
+      page = React.createElement(Administrators, {
+        lastUpdated: this.state.lastUpdatedAdministrators
+      });
+      content = React.createElement(AdministratorEntry, {
+        username: this.state.id,
+        updateCallback: this.updateAdministratorCallback.bind(this)
+      });
     }
 
     return React.createElement("div", {
@@ -169,14 +184,168 @@ class App extends React.Component {
     }, "Templates"), React.createElement("a", {
       className: "nav-button",
       href: "#scenarios"
-    }, "Scenarios"), React.createElement("button", {
-      className: "right",
+    }, "Scenarios"), React.createElement("a", {
+      className: "nav-button",
+      href: "#administrators"
+    }, "Administrators"), React.createElement("div", {
+      className: "right"
+    }, React.createElement("button", {
       onClick: this.logout
-    }, "Logout")), React.createElement("div", {
+    }, "Logout"))), React.createElement("div", {
       className: "toc"
     }, page), React.createElement("div", {
       className: "content"
     }, content));
+  }
+
+}
+
+class Administrators extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      administrators: []
+    };
+  }
+
+  componentDidMount() {
+    this.populateAdministrators();
+  }
+
+  componentWillReceiveProps(_) {
+    this.populateAdministrators();
+  }
+
+  populateAdministrators() {
+    var url = '/admins';
+    fetch(url, {
+      credentials: 'same-origin'
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      return response.json();
+    }).then(function (data) {
+      this.setState({
+        administrators: data
+      });
+    }.bind(this));
+  }
+
+  render() {
+    let rows = [];
+
+    for (let i = 0; i < this.state.administrators.length; i++) {
+      let administrator = this.state.administrators[i];
+      rows.push(React.createElement("li", {
+        key: i
+      }, React.createElement("a", {
+        href: "#administrators/" + administrator
+      }, administrator)));
+    }
+
+    return React.createElement("div", {
+      className: "Admins"
+    }, React.createElement("strong", null, "Administrators"), React.createElement("ul", null, rows));
+  }
+
+}
+
+class AdministratorEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: {}
+    };
+  }
+
+  componentDidMount() {
+    if (this.props.username) {
+      this.setState({
+        user: {
+          Username: this.props.username
+        }
+      });
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.username != nextProps.username) {
+      this.setState({
+        user: {
+          Username: nextProps.username
+        }
+      });
+    }
+  }
+
+  newAdministrator() {
+    window.location.href = "#administrators";
+    this.setState({
+      user: {
+        Username: "",
+        Password: ""
+      }
+    });
+  }
+
+  updateAdministrator(event) {
+    let value = event.target.value;
+    this.setState({
+      user: _objectSpread({}, this.state.user, {
+        [event.target.name]: value
+      })
+    });
+  }
+
+  saveAdministrator(event) {
+    event.preventDefault();
+    var url = "/admins";
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.user)
+    }).then(function (response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+
+      this.props.updateCallback();
+      let username = this.state.user.Username;
+
+      if (username != undefined && username != null) {
+        window.location.href = "#administrators/" + username;
+      }
+    }.bind(this));
+  }
+
+  render() {
+    let content = null;
+
+    if (Object.entries(this.state.user).length != 0) {
+      content = React.createElement("form", {
+        onChange: this.updateAdministrator.bind(this),
+        onSubmit: this.saveAdministrator.bind(this)
+      }, React.createElement(Item, {
+        name: "Username",
+        value: this.state.user.Username || ""
+      }), React.createElement(Item, {
+        name: "Password",
+        type: "password",
+        value: this.state.user.Password
+      }), React.createElement("p", null), React.createElement("button", {
+        type: "submit"
+      }, "Submit"));
+    }
+
+    return React.createElement(React.Fragment, null, React.createElement("button", {
+      type: "button",
+      onClick: this.newAdministrator.bind(this)
+    }, "New Administrator"), React.createElement("hr", null), content);
   }
 
 }

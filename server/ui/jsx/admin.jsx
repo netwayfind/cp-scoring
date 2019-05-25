@@ -10,7 +10,8 @@ class App extends React.Component {
       lastUpdatedTeams: 0,
       lastUpdatedHosts: 0,
       lastUpdatedTemplates: 0,
-      lastUpdatedScenarios: 0
+      lastUpdatedScenarios: 0,
+      lastUpdatedAdministrators: 0
     }
 
     this.authCallback = this.authCallback.bind(this);
@@ -103,6 +104,12 @@ class App extends React.Component {
     })
   }
 
+  updateAdministratorCallback() {
+    this.setState({
+      lastUpdatedAdministrators: Date.now()
+    })
+  }
+
   render() {
     if (!this.state.authenticated) {
       return (
@@ -131,6 +138,10 @@ class App extends React.Component {
       page = (<Scenarios lastUpdated={this.state.lastUpdatedScenarios}/>);
       content = (<ScenarioEntry id={this.state.id} updateCallback={this.updateScenarioCallback.bind(this)}/>);
     }
+    else if (this.state.page == "administrators") {
+      page = (<Administrators lastUpdated={this.state.lastUpdatedAdministrators}/>);
+      content = (<AdministratorEntry username={this.state.id} updateCallback={this.updateAdministratorCallback.bind(this)}/>);
+    }
 
     return (
       <div className="App">
@@ -142,7 +153,10 @@ class App extends React.Component {
           <a className="nav-button" href="#hosts">Hosts</a>
           <a className="nav-button" href="#templates">Templates</a>
           <a className="nav-button" href="#scenarios">Scenarios</a>
-          <button className="right" onClick={this.logout}>Logout</button>
+          <a className="nav-button" href="#administrators">Administrators</a>
+          <div className="right">
+            <button onClick={this.logout}>Logout</button>
+          </div>
         </div>
         <div className="toc">
           {page}
@@ -151,6 +165,157 @@ class App extends React.Component {
           {content}
         </div>
       </div>
+    );
+  }
+}
+
+class Administrators extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      administrators: []
+    }
+  }
+
+  componentDidMount() {
+    this.populateAdministrators();
+  }
+
+  componentWillReceiveProps(_) {
+    this.populateAdministrators();
+  }
+
+  populateAdministrators() {
+    var url = '/admins';
+  
+    fetch(url, {
+      credentials: 'same-origin'
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      return response.json();
+    })
+    .then(function(data) {
+      this.setState({
+        administrators: data
+      });
+    }.bind(this));
+  }
+
+  render() {
+    let rows = [];
+    for (let i = 0; i < this.state.administrators.length; i++) {
+      let administrator = this.state.administrators[i];
+      rows.push(
+        <li key={i}>
+          <a href={"#administrators/" + administrator}>{administrator}</a>
+        </li>
+      );
+    }
+
+    return (
+      <div className="Admins">
+        <strong>Administrators</strong>
+        <ul>{rows}</ul>
+      </div>
+    );
+  }
+}
+
+class AdministratorEntry extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      user: {}
+    }
+  }
+
+  componentDidMount() {
+    if (this.props.username) {
+      this.setState({
+        user: {
+          Username: this.props.username
+        }
+      });
+    }
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (this.props.username != nextProps.username) {
+      this.setState({
+        user: {
+          Username: nextProps.username
+        }
+      });
+    }
+  }
+
+  newAdministrator() {
+    window.location.href = "#administrators";
+    this.setState({
+      user: {
+        Username: "",
+        Password: ""
+      }
+    });
+  }
+
+  updateAdministrator(event) {
+    let value = event.target.value;
+    this.setState({
+      user: {
+        ...this.state.user,
+        [event.target.name]: value
+      }
+    })
+  }
+
+  saveAdministrator(event) {
+    event.preventDefault();
+
+    var url = "/admins";
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(this.state.user)
+    })
+    .then(function(response) {
+      if (response.status >= 400) {
+        throw new Error("Bad response from server");
+      }
+      this.props.updateCallback();
+      let username = this.state.user.Username;
+      if (username != undefined && username != null) {
+        window.location.href = "#administrators/" + username;
+      }
+    }.bind(this));
+  }
+
+  render() {
+    let content = null;
+    if (Object.entries(this.state.user).length != 0) {
+      content = (
+        <form onChange={this.updateAdministrator.bind(this)} onSubmit={this.saveAdministrator.bind(this)}>
+          <Item name="Username" value={this.state.user.Username || ""} />
+          <Item name="Password" type="password" value={this.state.user.Password} />
+          <p />
+          <button type="submit">Submit</button>
+        </form>
+      );
+    }
+    
+    return (
+      <React.Fragment>
+        <button type="button" onClick={this.newAdministrator.bind(this)}>New Administrator</button>
+        <hr />
+        {content}
+      </React.Fragment>
     );
   }
 }
