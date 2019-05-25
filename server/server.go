@@ -240,14 +240,14 @@ func (theServer theServer) getHosts(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve hosts;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(hosts)
 	if err != nil {
 		msg := "ERROR: cannot marshal hosts;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -262,7 +262,7 @@ func (theServer theServer) getHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
@@ -270,14 +270,21 @@ func (theServer theServer) getHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if host.ID == 0 {
+		msg := "ERROR: host not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
 	out, err := json.Marshal(host)
 	if err != nil {
 		msg := "ERROR: cannot marshal host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -290,7 +297,7 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -299,7 +306,7 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -307,7 +314,7 @@ func (theServer theServer) newHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot insert host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -327,25 +334,41 @@ func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check host exists
+	host, err := theServer.backingStore.SelectHost(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve host;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if host.ID == 0 {
+		msg := "ERROR: host not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	var host model.Host
+	host = model.Host{}
 	err = json.Unmarshal(body, &host)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -353,7 +376,7 @@ func (theServer theServer) editHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot update host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -371,15 +394,32 @@ func (theServer theServer) deleteHost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse host id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// make sure host exists
+	host, err := theServer.backingStore.SelectHost(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve host;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if host.ID == 0 {
+		msg := "ERROR: host not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
 	err = theServer.backingStore.DeleteHost(id)
 	if err != nil {
 		msg := "ERROR: cannot delete host;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 }
