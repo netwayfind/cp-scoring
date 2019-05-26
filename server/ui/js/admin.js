@@ -200,6 +200,23 @@ class App extends React.Component {
 
 }
 
+class Error extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    if (this.props.message === null) {
+      return null;
+    }
+
+    return React.createElement("div", {
+      class: "error"
+    }, this.props.message);
+  }
+
+}
+
 class Administrators extends React.Component {
   constructor(props) {
     super(props);
@@ -849,6 +866,7 @@ class Hosts extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       hosts: []
     };
   }
@@ -865,16 +883,21 @@ class Hosts extends React.Component {
     var url = '/hosts';
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          hosts: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        hosts: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -892,7 +915,9 @@ class Hosts extends React.Component {
 
     return React.createElement("div", {
       className: "Hosts"
-    }, React.createElement("strong", null, "Hosts"), React.createElement("ul", null, rows));
+    }, React.createElement("strong", null, "Hosts"), React.createElement(Error, {
+      message: this.state.error
+    }), React.createElement("ul", null, rows));
   }
 
 }
@@ -901,6 +926,7 @@ class HostEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       host: {}
     };
   }
@@ -916,13 +942,14 @@ class HostEntry extends React.Component {
   }
 
   newHost() {
-    window.location.href = "#hosts";
     this.setState({
+      error: null,
       host: {
         Hostname: "",
         OS: ""
       }
     });
+    window.location.href = "#hosts";
   }
 
   getHost(id) {
@@ -933,16 +960,21 @@ class HostEntry extends React.Component {
     let url = "/hosts/" + id;
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          host: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        host: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -975,19 +1007,27 @@ class HostEntry extends React.Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(this.state.host)
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
 
-      this.props.updateCallback();
-
-      if (this.state.host.ID === null || this.state.host.ID === undefined) {
-        // for new hosts, response should be host ID
-        response.text().then(function (id) {
+        if (this.state.host.ID === null || this.state.host.ID === undefined) {
+          // for new hosts, response should be host ID
+          let id = await response.text();
           window.location.href = "#hosts/" + id;
-        });
+        }
+
+        return {
+          error: null
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -996,16 +1036,22 @@ class HostEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin',
       method: 'DELETE'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#hosts";
+        return {
+          error: null,
+          host: {}
+        };
       }
 
-      this.props.updateCallback();
-      this.setState({
-        host: {}
-      });
-      window.location.href = "#hosts";
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1013,7 +1059,7 @@ class HostEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.host).length != 0) {
-      content = React.createElement(React.Fragment, null, React.createElement("form", {
+      content = React.createElement("form", {
         onChange: this.updateHost.bind(this),
         onSubmit: this.saveHost.bind(this)
       }, React.createElement("label", {
@@ -1036,13 +1082,15 @@ class HostEntry extends React.Component {
         type: "button",
         disabled: !this.state.host.ID,
         onClick: this.deleteHost.bind(this, this.state.host.ID)
-      }, "Delete"))));
+      }, "Delete")));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newHost.bind(this)
-    }, "New Host"), React.createElement("hr", null), content);
+    }, "New Host"), React.createElement("hr", null), React.createElement(Error, {
+      message: this.state.error
+    }), content);
   }
 
 }

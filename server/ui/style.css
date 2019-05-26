@@ -51,3 +51,10 @@ a:visited {
     height: 30px;
     border-bottom: 1px solid black;
 }
+
+.error {
+    margin: 5px;
+    padding: 5px;
+    border: 2px solid red;
+    border-radius: 5px;
+}
