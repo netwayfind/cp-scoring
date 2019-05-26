@@ -432,14 +432,14 @@ func (theServer theServer) getTeams(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve teams;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(teams)
 	if err != nil {
 		msg := "ERROR: cannot marshal teams;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -454,7 +454,7 @@ func (theServer theServer) getTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
@@ -462,14 +462,21 @@ func (theServer theServer) getTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if team.ID == 0 {
+		msg := "ERROR: team not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
 	out, err := json.Marshal(team)
 	if err != nil {
 		msg := "ERROR: cannot marshal team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -482,7 +489,7 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -491,7 +498,7 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -499,7 +506,7 @@ func (theServer theServer) newTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot insert team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -519,25 +526,41 @@ func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check team exists
+	team, err := theServer.backingStore.SelectTeam(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if team.ID == 0 {
+		msg := "ERROR: team not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	var team model.Team
+	team = model.Team{}
 	err = json.Unmarshal(body, &team)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -545,7 +568,7 @@ func (theServer theServer) editTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot update team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -563,15 +586,32 @@ func (theServer theServer) deleteTeam(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// make sure team exists
+	team, err := theServer.backingStore.SelectTeam(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve team;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if team.ID == 0 {
+		msg := "ERROR: team not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
 	err = theServer.backingStore.DeleteTeam(id)
 	if err != nil {
 		msg := "ERROR: cannot delete team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 }
