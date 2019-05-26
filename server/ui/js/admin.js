@@ -382,6 +382,7 @@ class Teams extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       teams: []
     };
   }
@@ -398,16 +399,21 @@ class Teams extends React.Component {
     var url = '/teams';
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          teams: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        teams: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -425,7 +431,9 @@ class Teams extends React.Component {
 
     return React.createElement("div", {
       className: "Teams"
-    }, React.createElement("strong", null, "Teams"), React.createElement("ul", null, rows));
+    }, React.createElement("strong", null, "Teams"), React.createElement(Error, {
+      message: this.state.error
+    }), React.createElement("ul", null, rows));
   }
 
 }
@@ -434,6 +442,7 @@ class TeamEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       team: {}
     };
     this.getTeam = this.getTeam.bind(this);
@@ -476,16 +485,21 @@ class TeamEntry extends React.Component {
     let url = "/teams/" + id;
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          team: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        team: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -508,16 +522,22 @@ class TeamEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin',
       method: 'DELETE'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#teams";
+        return {
+          error: null,
+          team: {}
+        };
       }
 
-      this.props.updateCallback();
-      this.setState({
-        team: {}
-      });
-      window.location.href = "#teams";
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -536,19 +556,27 @@ class TeamEntry extends React.Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(this.state.team)
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
 
-      this.props.updateCallback();
-
-      if (this.state.team.ID === null || this.state.team.ID === undefined) {
-        // for new teams, response should be team ID
-        response.text().then(function (id) {
+        if (this.state.team.ID === null || this.state.team.ID === undefined) {
+          // for new teams, response should be team ID
+          let id = await response.text();
           window.location.href = "#teams/" + id;
-        });
+        }
+
+        return {
+          error: null
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -565,7 +593,7 @@ class TeamEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.team).length != 0) {
-      content = React.createElement(React.Fragment, null, React.createElement("form", {
+      content = React.createElement("form", {
         onChange: this.updateTeam.bind(this),
         onSubmit: this.saveTeam.bind(this)
       }, React.createElement("label", {
@@ -597,13 +625,15 @@ class TeamEntry extends React.Component {
         type: "button",
         disabled: !this.state.team.ID,
         onClick: this.deleteTeam.bind(this, this.state.team.ID)
-      }, "Delete"))));
+      }, "Delete")));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newTeam.bind(this)
-    }, "New Team"), React.createElement("hr", null), content);
+    }, "New Team"), React.createElement("hr", null), React.createElement(Error, {
+      message: this.state.error
+    }), content);
   }
 
 }
