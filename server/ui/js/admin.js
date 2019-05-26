@@ -118,13 +118,20 @@ class App extends React.Component {
       }, React.createElement(Login, {
         callback: this.authCallback
       }));
-    } // default page is empty
+    } // reset links to available
 
+
+    let classes_teams = ["nav-button"];
+    let classes_hosts = ["nav-button"];
+    let classes_templates = ["nav-button"];
+    let classes_scenarios = ["nav-button"];
+    let classes_administrators = ["nav-button"]; // default page is empty
 
     let page = React.createElement(React.Fragment, null);
     let content = React.createElement(React.Fragment, null);
 
     if (this.state.page == "teams") {
+      classes_teams.push("nav-button-selected");
       page = React.createElement(Teams, {
         lastUpdated: this.state.lastUpdatedTeams
       });
@@ -133,6 +140,7 @@ class App extends React.Component {
         updateCallback: this.updateTeamCallback.bind(this)
       });
     } else if (this.state.page == "hosts") {
+      classes_hosts.push("nav-button-selected");
       page = React.createElement(Hosts, {
         lastUpdated: this.state.lastUpdatedHosts
       });
@@ -141,6 +149,7 @@ class App extends React.Component {
         updateCallback: this.updateHostCallback.bind(this)
       });
     } else if (this.state.page == "templates") {
+      classes_templates.push("nav-button-selected");
       page = React.createElement(Templates, {
         lastUpdated: this.state.lastUpdatedTemplates
       });
@@ -149,6 +158,7 @@ class App extends React.Component {
         updateCallback: this.updateTemplateCallback.bind(this)
       });
     } else if (this.state.page == "scenarios") {
+      classes_scenarios.push("nav-button-selected");
       page = React.createElement(Scenarios, {
         lastUpdated: this.state.lastUpdatedScenarios
       });
@@ -157,6 +167,7 @@ class App extends React.Component {
         updateCallback: this.updateScenarioCallback.bind(this)
       });
     } else if (this.state.page == "administrators") {
+      classes_administrators.push("nav-button-selected");
       page = React.createElement(Administrators, {
         lastUpdated: this.state.lastUpdatedAdministrators
       });
@@ -173,19 +184,19 @@ class App extends React.Component {
     }, React.createElement("h1", null, "cp-scoring")), React.createElement("div", {
       className: "navbar"
     }, React.createElement("a", {
-      className: "nav-button",
+      className: classes_teams.join(" "),
       href: "#teams"
     }, "Teams"), React.createElement("a", {
-      className: "nav-button",
+      className: classes_hosts.join(" "),
       href: "#hosts"
     }, "Hosts"), React.createElement("a", {
-      className: "nav-button",
+      className: classes_templates.join(" "),
       href: "#templates"
     }, "Templates"), React.createElement("a", {
-      className: "nav-button",
+      className: classes_scenarios.join(" "),
       href: "#scenarios"
     }, "Scenarios"), React.createElement("a", {
-      className: "nav-button",
+      className: classes_administrators.join(" "),
       href: "#administrators"
     }, "Administrators"), React.createElement("div", {
       className: "right"

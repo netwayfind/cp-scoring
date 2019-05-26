@@ -119,26 +119,38 @@ class App extends React.Component {
       );
     }
 
+    // reset links to available
+    let classes_teams = ["nav-button"];
+    let classes_hosts = ["nav-button"];
+    let classes_templates = ["nav-button"];
+    let classes_scenarios = ["nav-button"];
+    let classes_administrators = ["nav-button"];
+
     // default page is empty
     let page = (<React.Fragment></React.Fragment>)
     let content = (<React.Fragment></React.Fragment>)
     if (this.state.page == "teams") {
+      classes_teams.push("nav-button-selected");
       page = (<Teams lastUpdated={this.state.lastUpdatedTeams}/>);
       content = (<TeamEntry id={this.state.id} updateCallback={this.updateTeamCallback.bind(this)}/>);
     }
     else if (this.state.page == "hosts") {
+      classes_hosts.push("nav-button-selected");
       page = (<Hosts lastUpdated={this.state.lastUpdatedHosts}/>);
       content = (<HostEntry id={this.state.id} updateCallback={this.updateHostCallback.bind(this)}/>);
     }
     else if (this.state.page == "templates") {
+      classes_templates.push("nav-button-selected");
       page = (<Templates lastUpdated={this.state.lastUpdatedTemplates}/>);
       content = (<TemplateEntry id={this.state.id} updateCallback={this.updateTemplateCallback.bind(this)}/>);
     }
     else if (this.state.page == "scenarios") {
+      classes_scenarios.push("nav-button-selected");
       page = (<Scenarios lastUpdated={this.state.lastUpdatedScenarios}/>);
       content = (<ScenarioEntry id={this.state.id} updateCallback={this.updateScenarioCallback.bind(this)}/>);
     }
     else if (this.state.page == "administrators") {
+      classes_administrators.push("nav-button-selected");
       page = (<Administrators lastUpdated={this.state.lastUpdatedAdministrators}/>);
       content = (<AdministratorEntry username={this.state.id} updateCallback={this.updateAdministratorCallback.bind(this)}/>);
     }
@@ -149,11 +161,11 @@ class App extends React.Component {
           <h1>cp-scoring</h1>
         </div>
         <div className="navbar">
-          <a className="nav-button" href="#teams">Teams</a>
-          <a className="nav-button" href="#hosts">Hosts</a>
-          <a className="nav-button" href="#templates">Templates</a>
-          <a className="nav-button" href="#scenarios">Scenarios</a>
-          <a className="nav-button" href="#administrators">Administrators</a>
+          <a className={classes_teams.join(" ")} href="#teams">Teams</a>
+          <a className={classes_hosts.join(" ")} href="#hosts">Hosts</a>
+          <a className={classes_templates.join(" ")} href="#templates">Templates</a>
+          <a className={classes_scenarios.join(" ")} href="#scenarios">Scenarios</a>
+          <a className={classes_administrators.join(" ")} href="#administrators">Administrators</a>
           <div className="right">
             <button onClick={this.logout}>Logout</button>
           </div>

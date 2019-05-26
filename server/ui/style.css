@@ -45,6 +45,12 @@ a:visited {
     margin: 5px;
     padding-left: 5px;
     padding-right: 5px;
+    text-decoration: none;
+}
+
+.nav-button-selected {
+    text-decoration: underline;
+    pointer-events: none;
 }
 
 .navbar {
