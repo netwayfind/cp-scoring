@@ -133,7 +133,8 @@ class App extends React.Component {
     if (this.state.page == "teams") {
       classes_teams.push("nav-button-selected");
       page = React.createElement(Teams, {
-        lastUpdated: this.state.lastUpdatedTeams
+        lastUpdated: this.state.lastUpdatedTeams,
+        selected: this.state.id
       });
       content = React.createElement(TeamEntry, {
         id: this.state.id,
@@ -448,16 +449,36 @@ class Teams extends React.Component {
     super(props);
     this.state = {
       error: null,
+      selected: null,
       teams: []
     };
+    this.saveSelected = this.saveSelected.bind(this);
   }
 
   componentDidMount() {
     this.populateTeams();
+    this.saveSelected(this.props.selected);
   }
 
-  componentWillReceiveProps(_) {
+  componentWillReceiveProps(newProps) {
     this.populateTeams();
+    this.saveSelected(newProps.selected);
+  }
+
+  saveSelected(selected) {
+    if (selected === undefined || selected === null) {
+      this.setState({
+        selected: null
+      });
+    } else {
+      let i = parseInt(selected, 10);
+
+      if (!isNaN(i)) {
+        this.setState({
+          selected: i
+        });
+      }
+    }
   }
 
   populateTeams() {
@@ -487,9 +508,16 @@ class Teams extends React.Component {
 
     for (let i = 0; i < this.state.teams.length; i++) {
       let team = this.state.teams[i];
+      let classes = ["nav-button"];
+
+      if (team.ID === this.state.selected) {
+        classes.push("nav-button-selected");
+      }
+
       rows.push(React.createElement("li", {
         key: team.ID
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#teams/" + team.ID
       }, "[", team.ID, "] ", team.Name)));
     }

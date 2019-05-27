@@ -131,7 +131,7 @@ class App extends React.Component {
     let content = (<React.Fragment></React.Fragment>)
     if (this.state.page == "teams") {
       classes_teams.push("nav-button-selected");
-      page = (<Teams lastUpdated={this.state.lastUpdatedTeams}/>);
+      page = (<Teams lastUpdated={this.state.lastUpdatedTeams} selected={this.state.id}/>);
       content = (<TeamEntry id={this.state.id} updateCallback={this.updateTeamCallback.bind(this)}/>);
     }
     else if (this.state.page == "hosts") {
@@ -409,18 +409,40 @@ class AdministratorEntry extends React.Component {
 class Teams extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
       error: null,
+      selected: null,
       teams: []
     }
+
+    this.saveSelected = this.saveSelected.bind(this);
   }
 
   componentDidMount() {
     this.populateTeams();
+    this.saveSelected(this.props.selected);
   }
 
-  componentWillReceiveProps(_) {
+  componentWillReceiveProps(newProps) {
     this.populateTeams();
+    this.saveSelected(newProps.selected);
+  }
+
+  saveSelected(selected) {
+    if (selected === undefined || selected === null) {
+      this.setState({
+        selected: null
+      });
+    }
+    else {
+      let i = parseInt(selected, 10);
+      if (!isNaN(i)) {
+        this.setState({
+          selected: i
+        });
+      }
+    }
   }
 
   populateTeams() {
@@ -451,9 +473,13 @@ class Teams extends React.Component {
     let rows = [];
     for (let i = 0; i < this.state.teams.length; i++) {
       let team = this.state.teams[i];
+      let classes = ["nav-button"];
+      if (team.ID === this.state.selected) {
+        classes.push("nav-button-selected");
+      }
       rows.push(
         <li key={team.ID}>
-          <a href={"#teams/" + team.ID}>[{team.ID}] {team.Name}</a>
+          <a className={classes.join(" ")} href={"#teams/" + team.ID}>[{team.ID}] {team.Name}</a>
         </li>
       );
     }
