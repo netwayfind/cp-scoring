@@ -49,6 +49,7 @@ a:visited {
 }
 
 .nav-button-selected {
+    font-weight: bold;
     text-decoration: underline;
     pointer-events: none;
 }
