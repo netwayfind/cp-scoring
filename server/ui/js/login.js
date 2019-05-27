@@ -10,7 +10,7 @@ class Login extends React.Component {
     this.state = {
       username: "",
       password: "",
-      messages: ""
+      error: null
     };
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -38,21 +38,28 @@ class Login extends React.Component {
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: "username=" + this.state.username + "&password=" + this.state.password
-    }).then(function (response) {
+    }).then(async function (response) {
       this.props.callback(response.status);
 
-      if (response.status >= 400) {
-        this.setState({
-          messages: "Rejected login. Try again."
-        });
+      if (response.status === 200) {
+        return {
+          error: null
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
   render() {
     return React.createElement("div", {
       className: "login"
-    }, this.state.messages, React.createElement("form", {
+    }, React.createElement("form", {
       onChange: this.handleChange,
       onSubmit: this.handleSubmit
     }, React.createElement("label", {
@@ -68,7 +75,9 @@ class Login extends React.Component {
       required: "required"
     }), React.createElement("br", null), React.createElement("button", {
       type: "submit"
-    }, "Submit")));
+    }, "Submit")), React.createElement(Error, {
+      message: this.state.error
+    }));
   }
 
 }

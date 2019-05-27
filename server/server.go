@@ -1311,7 +1311,6 @@ func (theServer theServer) getAdmins(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve admins;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -1361,7 +1360,7 @@ func (theServer theServer) authAdmin(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, cookie)
 		return
 	}
-	msg := "User authenticated failed"
+	msg := "User authentication failed"
 	log.Println(msg)
 	http.Error(w, msg, http.StatusUnauthorized)
 }
