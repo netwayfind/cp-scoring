@@ -624,14 +624,14 @@ func (theServer theServer) getTemplates(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot retrieve templates;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(templates)
 	if err != nil {
 		msg := "ERROR: cannot marshal templates;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -646,7 +646,7 @@ func (theServer theServer) getTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
@@ -654,14 +654,21 @@ func (theServer theServer) getTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if template.ID == 0 {
+		msg := "ERROR: template not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
 	out, err := json.Marshal(template)
 	if err != nil {
 		msg := "ERROR: cannot marshal template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -674,7 +681,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -683,7 +690,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -691,7 +698,7 @@ func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot insert template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -711,25 +718,41 @@ func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check template exists
+	template, err := theServer.backingStore.SelectTemplate(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve template;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if template.ID == 0 {
+		msg := "ERROR: template not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	var template model.Template
+	template = model.Template{}
 	err = json.Unmarshal(body, &template)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -737,7 +760,7 @@ func (theServer theServer) editTemplate(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot update template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -755,15 +778,32 @@ func (theServer theServer) deleteTemplate(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		msg := "ERROR: cannot parse template id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check template exists
+	template, err := theServer.backingStore.SelectTemplate(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve template;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if template.ID == 0 {
+		msg := "ERROR: template not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
 	err = theServer.backingStore.DeleteTemplate(id)
 	if err != nil {
 		msg := "ERROR: cannot delete template;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 }
