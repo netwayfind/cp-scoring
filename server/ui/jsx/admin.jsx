@@ -203,6 +203,7 @@ class Administrators extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       administrators: []
     }
   }
@@ -221,16 +222,21 @@ class Administrators extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          administrators: data
+        }
       }
-      return response.json();
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({
-        administrators: data
-      });
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -248,6 +254,7 @@ class Administrators extends React.Component {
     return (
       <div className="Admins">
         <strong>Administrators</strong>
+        <Error message={this.state.error} />
         <ul>{rows}</ul>
       </div>
     );
@@ -258,6 +265,7 @@ class AdministratorEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       user: {}
     }
   }
@@ -266,7 +274,8 @@ class AdministratorEntry extends React.Component {
     if (this.props.username) {
       this.setState({
         user: {
-          Username: this.props.username
+          Username: this.props.username,
+          Password: ""
         }
       });
     }
@@ -276,20 +285,21 @@ class AdministratorEntry extends React.Component {
     if (this.props.username != nextProps.username) {
       this.setState({
         user: {
-          Username: nextProps.username
+          Username: nextProps.username,
+          Password: ""
         }
       });
     }
   }
 
   newAdministrator() {
-    window.location.href = "#administrators";
     this.setState({
       user: {
         Username: "",
         Password: ""
       }
     });
+    window.location.href = "#administrators";
   }
 
   updateAdministrator(event) {
@@ -306,6 +316,10 @@ class AdministratorEntry extends React.Component {
     event.preventDefault();
 
     var url = "/admins";
+    // for updating existing user
+    if (this.props.username != null) {
+      url += "/" + this.props.username;
+    }
 
     fetch(url, {
       credentials: 'same-origin',
@@ -315,27 +329,68 @@ class AdministratorEntry extends React.Component {
       },
       body: JSON.stringify(this.state.user)
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        let username = this.state.user.Username;
+        if (username != undefined && username != null) {
+          window.location.href = "#administrators/" + username;
+        }
+        return {
+          error: null
+        }
       }
-      this.props.updateCallback();
-      let username = this.state.user.Username;
-      if (username != undefined && username != null) {
-        window.location.href = "#administrators/" + username;
+      let text = await response.text();
+      return {
+        error: text
       }
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
+    }.bind(this));;
+  }
+
+  deleteAdministrator(username) {
+    var url = "/admins/" + username;
+
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'DELETE'
+    })
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#administrators";
+        return {
+          error: null,
+          user: {}
+        };
+      }
+      let text = await response.text();
+      return {
+        error: text
+      }
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
   render() {
     let content = null;
     if (Object.entries(this.state.user).length != 0) {
+      // disable change existing user name
+      let existingUser = true;
+      if (this.props.username === null) {
+        existingUser = false;
+      }
       content = (
         <form onChange={this.updateAdministrator.bind(this)} onSubmit={this.saveAdministrator.bind(this)}>
-          <Item name="Username" value={this.state.user.Username || ""} />
+          <Item name="Username" value={this.state.user.Username || ""} disabled={existingUser}/>
           <Item name="Password" type="password" value={this.state.user.Password} />
           <p />
           <button type="submit">Submit</button>
+          <button class="right" type="button" disabled={!this.state.user.Username} onClick={this.deleteAdministrator.bind(this, this.state.user.Username)}>Delete</button>
         </form>
       );
     }
@@ -344,6 +399,7 @@ class AdministratorEntry extends React.Component {
       <React.Fragment>
         <button type="button" onClick={this.newAdministrator.bind(this)}>New Administrator</button>
         <hr />
+        <Error message={this.state.error} />
         {content}
       </React.Fragment>
     );
@@ -2048,7 +2104,7 @@ class Item extends React.Component {
     return (
       <div>
         <label htmlFor={this.props.name}>{this.props.name}</label>
-        <input name={this.props.name} type={this.props.type} value={this.props.value} checked={this.props.checked}></input>
+        <input name={this.props.name} type={this.props.type} value={this.props.value} checked={this.props.checked} disabled={this.props.disabled}></input>
       </div>
     )
   }

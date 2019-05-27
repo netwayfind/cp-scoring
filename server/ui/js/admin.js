@@ -232,6 +232,7 @@ class Administrators extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       administrators: []
     };
   }
@@ -248,16 +249,21 @@ class Administrators extends React.Component {
     var url = '/admins';
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          administrators: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        administrators: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -275,7 +281,9 @@ class Administrators extends React.Component {
 
     return React.createElement("div", {
       className: "Admins"
-    }, React.createElement("strong", null, "Administrators"), React.createElement("ul", null, rows));
+    }, React.createElement("strong", null, "Administrators"), React.createElement(Error, {
+      message: this.state.error
+    }), React.createElement("ul", null, rows));
   }
 
 }
@@ -284,6 +292,7 @@ class AdministratorEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       user: {}
     };
   }
@@ -292,7 +301,8 @@ class AdministratorEntry extends React.Component {
     if (this.props.username) {
       this.setState({
         user: {
-          Username: this.props.username
+          Username: this.props.username,
+          Password: ""
         }
       });
     }
@@ -302,20 +312,21 @@ class AdministratorEntry extends React.Component {
     if (this.props.username != nextProps.username) {
       this.setState({
         user: {
-          Username: nextProps.username
+          Username: nextProps.username,
+          Password: ""
         }
       });
     }
   }
 
   newAdministrator() {
-    window.location.href = "#administrators";
     this.setState({
       user: {
         Username: "",
         Password: ""
       }
     });
+    window.location.href = "#administrators";
   }
 
   updateAdministrator(event) {
@@ -329,7 +340,12 @@ class AdministratorEntry extends React.Component {
 
   saveAdministrator(event) {
     event.preventDefault();
-    var url = "/admins";
+    var url = "/admins"; // for updating existing user
+
+    if (this.props.username != null) {
+      url += "/" + this.props.username;
+    }
+
     fetch(url, {
       credentials: 'same-origin',
       method: 'POST',
@@ -337,17 +353,51 @@ class AdministratorEntry extends React.Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(this.state.user)
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        let username = this.state.user.Username;
+
+        if (username != undefined && username != null) {
+          window.location.href = "#administrators/" + username;
+        }
+
+        return {
+          error: null
+        };
       }
 
-      this.props.updateCallback();
-      let username = this.state.user.Username;
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
+    }.bind(this));
+    ;
+  }
 
-      if (username != undefined && username != null) {
-        window.location.href = "#administrators/" + username;
+  deleteAdministrator(username) {
+    var url = "/admins/" + username;
+    fetch(url, {
+      credentials: 'same-origin',
+      method: 'DELETE'
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#administrators";
+        return {
+          error: null,
+          user: {}
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -355,25 +405,40 @@ class AdministratorEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.user).length != 0) {
+      // disable change existing user name
+      let existingUser = true;
+
+      if (this.props.username === null) {
+        existingUser = false;
+      }
+
       content = React.createElement("form", {
         onChange: this.updateAdministrator.bind(this),
         onSubmit: this.saveAdministrator.bind(this)
       }, React.createElement(Item, {
         name: "Username",
-        value: this.state.user.Username || ""
+        value: this.state.user.Username || "",
+        disabled: existingUser
       }), React.createElement(Item, {
         name: "Password",
         type: "password",
         value: this.state.user.Password
       }), React.createElement("p", null), React.createElement("button", {
         type: "submit"
-      }, "Submit"));
+      }, "Submit"), React.createElement("button", {
+        class: "right",
+        type: "button",
+        disabled: !this.state.user.Username,
+        onClick: this.deleteAdministrator.bind(this, this.state.user.Username)
+      }, "Delete"));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newAdministrator.bind(this)
-    }, "New Administrator"), React.createElement("hr", null), content);
+    }, "New Administrator"), React.createElement("hr", null), React.createElement(Error, {
+      message: this.state.error
+    }), content);
   }
 
 }
@@ -2074,7 +2139,8 @@ class Item extends React.Component {
       name: this.props.name,
       type: this.props.type,
       value: this.props.value,
-      checked: this.props.checked
+      checked: this.props.checked,
+      disabled: this.props.disabled
     }));
   }
 
