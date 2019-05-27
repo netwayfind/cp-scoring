@@ -1008,14 +1008,14 @@ func (theServer theServer) getScenariosForScoreboard(w http.ResponseWriter, r *h
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenarios;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(scenarios)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenarios;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1031,7 +1031,7 @@ func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", id))
@@ -1039,14 +1039,14 @@ func (theServer theServer) getScenarioScores(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario scores;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	out, err := json.Marshal(scores)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario scores;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
