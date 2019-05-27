@@ -229,33 +229,53 @@ class Error extends React.Component {
 
 }
 
-class Administrators extends React.Component {
+class Listing extends React.Component {
   constructor(props) {
     super(props);
+    this.itemUrl = props.itemUrl;
     this.state = {
       error: null,
-      administrators: []
+      selected: null,
+      items: []
     };
+    this.saveSelected = this.saveSelected.bind(this);
   }
 
   componentDidMount() {
-    this.populateAdministrators();
+    this.populate();
+    this.saveSelected(this.props.selected);
   }
 
-  componentWillReceiveProps(_) {
-    this.populateAdministrators();
+  componentWillReceiveProps(newProps) {
+    this.populate();
+    this.saveSelected(newProps.selected);
   }
 
-  populateAdministrators() {
-    var url = '/admins';
-    fetch(url, {
+  saveSelected(selected) {
+    if (selected === undefined || selected === null) {
+      this.setState({
+        selected: null
+      });
+    } else {
+      let i = parseInt(selected, 10);
+
+      if (!isNaN(i)) {
+        this.setState({
+          selected: i
+        });
+      }
+    }
+  }
+
+  populate() {
+    fetch(this.itemUrl, {
       credentials: 'same-origin'
     }).then(async function (response) {
       if (response.status === 200) {
         let data = await response.json();
         return {
           error: null,
-          administrators: data
+          items: data
         };
       }
 
@@ -268,11 +288,19 @@ class Administrators extends React.Component {
     }.bind(this));
   }
 
+}
+
+class Administrators extends Listing {
+  constructor(props) {
+    props.itemUrl = "/admins";
+    super(props);
+  }
+
   render() {
     let rows = [];
 
-    for (let i = 0; i < this.state.administrators.length; i++) {
-      let administrator = this.state.administrators[i];
+    for (let i = 0; i < this.state.items.length; i++) {
+      let administrator = this.state.items[i];
       rows.push(React.createElement("li", {
         key: i
       }, React.createElement("a", {
@@ -444,70 +472,17 @@ class AdministratorEntry extends React.Component {
 
 }
 
-class Teams extends React.Component {
+class Teams extends Listing {
   constructor(props) {
+    props.itemUrl = "/teams";
     super(props);
-    this.state = {
-      error: null,
-      selected: null,
-      teams: []
-    };
-    this.saveSelected = this.saveSelected.bind(this);
-  }
-
-  componentDidMount() {
-    this.populateTeams();
-    this.saveSelected(this.props.selected);
-  }
-
-  componentWillReceiveProps(newProps) {
-    this.populateTeams();
-    this.saveSelected(newProps.selected);
-  }
-
-  saveSelected(selected) {
-    if (selected === undefined || selected === null) {
-      this.setState({
-        selected: null
-      });
-    } else {
-      let i = parseInt(selected, 10);
-
-      if (!isNaN(i)) {
-        this.setState({
-          selected: i
-        });
-      }
-    }
-  }
-
-  populateTeams() {
-    var url = '/teams';
-    fetch(url, {
-      credentials: 'same-origin'
-    }).then(async function (response) {
-      if (response.status === 200) {
-        let data = await response.json();
-        return {
-          error: null,
-          teams: data
-        };
-      }
-
-      let text = await response.text();
-      return {
-        error: text
-      };
-    }).then(function (s) {
-      this.setState(s);
-    }.bind(this));
   }
 
   render() {
     let rows = [];
 
-    for (let i = 0; i < this.state.teams.length; i++) {
-      let team = this.state.teams[i];
+    for (let i = 0; i < this.state.items.length; i++) {
+      let team = this.state.items[i];
       let classes = ["nav-button"];
 
       if (team.ID === this.state.selected) {
@@ -731,50 +706,17 @@ class TeamEntry extends React.Component {
 
 }
 
-class Scenarios extends React.Component {
+class Scenarios extends Listing {
   constructor(props) {
+    props.itemUrl = "/scenarios";
     super(props);
-    this.state = {
-      error: null,
-      scenarios: []
-    };
-  }
-
-  componentDidMount() {
-    this.populateScenarios();
-  }
-
-  componentWillReceiveProps(_) {
-    this.populateScenarios();
-  }
-
-  populateScenarios() {
-    var url = '/scenarios';
-    fetch(url, {
-      credentials: 'same-origin'
-    }).then(async function (response) {
-      if (response.status === 200) {
-        let data = await response.json();
-        return {
-          error: null,
-          scenarios: data
-        };
-      }
-
-      let text = await response.text();
-      return {
-        error: text
-      };
-    }).then(function (s) {
-      this.setState(s);
-    }.bind(this));
   }
 
   render() {
     let rows = [];
 
-    for (let i = 0; i < this.state.scenarios.length; i++) {
-      let scenario = this.state.scenarios[i];
+    for (let i = 0; i < this.state.items.length; i++) {
+      let scenario = this.state.items[i];
       rows.push(React.createElement("li", {
         key: scenario.ID
       }, React.createElement("a", {
@@ -1032,50 +974,17 @@ class ScenarioEntry extends React.Component {
 
 }
 
-class Hosts extends React.Component {
+class Hosts extends Listing {
   constructor(props) {
+    props.itemUrl = "/hosts";
     super(props);
-    this.state = {
-      error: null,
-      hosts: []
-    };
-  }
-
-  componentDidMount() {
-    this.populateHosts();
-  }
-
-  componentWillReceiveProps(_) {
-    this.populateHosts();
-  }
-
-  populateHosts() {
-    var url = '/hosts';
-    fetch(url, {
-      credentials: 'same-origin'
-    }).then(async function (response) {
-      if (response.status === 200) {
-        let data = await response.json();
-        return {
-          error: null,
-          hosts: data
-        };
-      }
-
-      let text = await response.text();
-      return {
-        error: text
-      };
-    }).then(function (s) {
-      this.setState(s);
-    }.bind(this));
   }
 
   render() {
     let rows = [];
 
-    for (let i = 0; i < this.state.hosts.length; i++) {
-      let host = this.state.hosts[i];
+    for (let i = 0; i < this.state.items.length; i++) {
+      let host = this.state.items[i];
       rows.push(React.createElement("li", {
         key: host.ID
       }, React.createElement("a", {
@@ -1265,50 +1174,17 @@ class HostEntry extends React.Component {
 
 }
 
-class Templates extends React.Component {
-  constructor() {
-    super();
-    this.state = {
-      error: null,
-      templates: []
-    };
-  }
-
-  componentDidMount() {
-    this.populateTemplates();
-  }
-
-  componentWillReceiveProps(_) {
-    this.populateTemplates();
-  }
-
-  populateTemplates() {
-    var url = "/templates";
-    fetch(url, {
-      credentials: 'same-origin'
-    }).then(async function (response) {
-      if (response.status === 200) {
-        let data = await response.json();
-        return {
-          error: null,
-          templates: data
-        };
-      }
-
-      let text = await response.text();
-      return {
-        error: text
-      };
-    }).then(function (s) {
-      this.setState(s);
-    }.bind(this));
+class Templates extends Listing {
+  constructor(props) {
+    props.itemUrl = "/templates";
+    super(props);
   }
 
   render() {
     let rows = [];
 
-    for (let i = 0; i < this.state.templates.length; i++) {
-      let template = this.state.templates[i];
+    for (let i = 0; i < this.state.items.length; i++) {
+      let template = this.state.items[i];
       rows.push(React.createElement("li", {
         key: template.ID
       }, React.createElement("a", {
