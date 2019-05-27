@@ -15,6 +15,7 @@ class Scoreboard extends React.Component {
     this.state = {
       error: null,
       scenarios: [],
+      selectedScenarioID: null,
       selectedScenarioName: null,
       scores: []
     };
@@ -43,6 +44,7 @@ class Scoreboard extends React.Component {
         let data = await response.json();
         return {
           error: null,
+          selectedScenarioID: id,
           selectedScenarioName: name,
           scores: data
         };
@@ -102,9 +104,16 @@ class Scoreboard extends React.Component {
 
     for (let i in this.state.scenarios) {
       let entry = this.state.scenarios[i];
+      let classes = ["nav-button"];
+
+      if (this.state.selectedScenarioID === entry.ID) {
+        classes.push("nav-button-selected");
+      }
+
       scenarios.push(React.createElement("li", {
         id: i
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#",
         onClick: () => {
           this.populateScores(entry.ID);
