@@ -143,7 +143,8 @@ class App extends React.Component {
     } else if (this.state.page == "hosts") {
       classes_hosts.push("nav-button-selected");
       page = React.createElement(Hosts, {
-        lastUpdated: this.state.lastUpdatedHosts
+        lastUpdated: this.state.lastUpdatedHosts,
+        selected: this.state.id
       });
       content = React.createElement(HostEntry, {
         id: this.state.id,
@@ -152,7 +153,8 @@ class App extends React.Component {
     } else if (this.state.page == "templates") {
       classes_templates.push("nav-button-selected");
       page = React.createElement(Templates, {
-        lastUpdated: this.state.lastUpdatedTemplates
+        lastUpdated: this.state.lastUpdatedTemplates,
+        selected: this.state.id
       });
       content = React.createElement(TemplateEntry, {
         id: this.state.id,
@@ -161,7 +163,8 @@ class App extends React.Component {
     } else if (this.state.page == "scenarios") {
       classes_scenarios.push("nav-button-selected");
       page = React.createElement(Scenarios, {
-        lastUpdated: this.state.lastUpdatedScenarios
+        lastUpdated: this.state.lastUpdatedScenarios,
+        selected: this.state.id
       });
       content = React.createElement(ScenarioEntry, {
         id: this.state.id,
@@ -170,7 +173,8 @@ class App extends React.Component {
     } else if (this.state.page == "administrators") {
       classes_administrators.push("nav-button-selected");
       page = React.createElement(Administrators, {
-        lastUpdated: this.state.lastUpdatedAdministrators
+        lastUpdated: this.state.lastUpdatedAdministrators,
+        selected: this.state.id
       });
       content = React.createElement(AdministratorEntry, {
         username: this.state.id,
@@ -252,19 +256,9 @@ class Listing extends React.Component {
   }
 
   saveSelected(selected) {
-    if (selected === undefined || selected === null) {
-      this.setState({
-        selected: null
-      });
-    } else {
-      let i = parseInt(selected, 10);
-
-      if (!isNaN(i)) {
-        this.setState({
-          selected: i
-        });
-      }
-    }
+    this.setState({
+      selected: selected
+    });
   }
 
   populate() {
@@ -301,9 +295,16 @@ class Administrators extends Listing {
 
     for (let i = 0; i < this.state.items.length; i++) {
       let administrator = this.state.items[i];
+      let classes = ["nav-button"];
+
+      if (this.state.selected === administrator) {
+        classes.push("nav-button-selected");
+      }
+
       rows.push(React.createElement("li", {
         key: i
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#administrators/" + administrator
       }, administrator)));
     }
@@ -485,7 +486,7 @@ class Teams extends Listing {
       let team = this.state.items[i];
       let classes = ["nav-button"];
 
-      if (team.ID === this.state.selected) {
+      if (this.state.selected === team.ID.toString()) {
         classes.push("nav-button-selected");
       }
 
@@ -717,9 +718,16 @@ class Scenarios extends Listing {
 
     for (let i = 0; i < this.state.items.length; i++) {
       let scenario = this.state.items[i];
+      let classes = ["nav-button"];
+
+      if (this.state.selected === scenario.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
+
       rows.push(React.createElement("li", {
         key: scenario.ID
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#scenarios/" + scenario.ID
       }, scenario.Name)));
     }
@@ -985,9 +993,16 @@ class Hosts extends Listing {
 
     for (let i = 0; i < this.state.items.length; i++) {
       let host = this.state.items[i];
+      let classes = ["nav-button"];
+
+      if (this.state.selected === host.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
+
       rows.push(React.createElement("li", {
         key: host.ID
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#hosts/" + host.ID
       }, host.Hostname, " - ", host.OS)));
     }
@@ -1185,9 +1200,16 @@ class Templates extends Listing {
 
     for (let i = 0; i < this.state.items.length; i++) {
       let template = this.state.items[i];
+      let classes = ["nav-button"];
+
+      if (this.state.selected === template.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
+
       rows.push(React.createElement("li", {
         key: template.ID
       }, React.createElement("a", {
+        className: classes.join(" "),
         href: "#templates/" + template.ID
       }, template.Name)));
     }

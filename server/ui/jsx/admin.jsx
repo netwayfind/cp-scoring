@@ -136,22 +136,22 @@ class App extends React.Component {
     }
     else if (this.state.page == "hosts") {
       classes_hosts.push("nav-button-selected");
-      page = (<Hosts lastUpdated={this.state.lastUpdatedHosts}/>);
+      page = (<Hosts lastUpdated={this.state.lastUpdatedHosts} selected={this.state.id}/>);
       content = (<HostEntry id={this.state.id} updateCallback={this.updateHostCallback.bind(this)}/>);
     }
     else if (this.state.page == "templates") {
       classes_templates.push("nav-button-selected");
-      page = (<Templates lastUpdated={this.state.lastUpdatedTemplates}/>);
+      page = (<Templates lastUpdated={this.state.lastUpdatedTemplates} selected={this.state.id}/>);
       content = (<TemplateEntry id={this.state.id} updateCallback={this.updateTemplateCallback.bind(this)}/>);
     }
     else if (this.state.page == "scenarios") {
       classes_scenarios.push("nav-button-selected");
-      page = (<Scenarios lastUpdated={this.state.lastUpdatedScenarios}/>);
+      page = (<Scenarios lastUpdated={this.state.lastUpdatedScenarios} selected={this.state.id}/>);
       content = (<ScenarioEntry id={this.state.id} updateCallback={this.updateScenarioCallback.bind(this)}/>);
     }
     else if (this.state.page == "administrators") {
       classes_administrators.push("nav-button-selected");
-      page = (<Administrators lastUpdated={this.state.lastUpdatedAdministrators}/>);
+      page = (<Administrators lastUpdated={this.state.lastUpdatedAdministrators} selected={this.state.id}/>);
       content = (<AdministratorEntry username={this.state.id} updateCallback={this.updateAdministratorCallback.bind(this)}/>);
     }
 
@@ -225,19 +225,9 @@ class Listing extends React.Component {
   }
 
   saveSelected(selected) {
-    if (selected === undefined || selected === null) {
-      this.setState({
-        selected: null
-      });
-    }
-    else {
-      let i = parseInt(selected, 10);
-      if (!isNaN(i)) {
-        this.setState({
-          selected: i
-        });
-      }
-    }
+    this.setState({
+      selected: selected
+    });
   }
 
   populate() {
@@ -273,9 +263,13 @@ class Administrators extends Listing {
     let rows = [];
     for (let i = 0; i < this.state.items.length; i++) {
       let administrator = this.state.items[i];
+      let classes = ["nav-button"];
+      if (this.state.selected === administrator) {
+        classes.push("nav-button-selected");
+      }
       rows.push(
         <li key={i}>
-          <a href={"#administrators/" + administrator}>{administrator}</a>
+          <a className={classes.join(" ")} href={"#administrators/" + administrator}>{administrator}</a>
         </li>
       );
     }
@@ -446,7 +440,7 @@ class Teams extends Listing {
     for (let i = 0; i < this.state.items.length; i++) {
       let team = this.state.items[i];
       let classes = ["nav-button"];
-      if (team.ID === this.state.selected) {
+      if (this.state.selected === team.ID.toString()) {
         classes.push("nav-button-selected");
       }
       rows.push(
@@ -672,9 +666,13 @@ class Scenarios extends Listing {
     let rows = [];
     for (let i = 0; i < this.state.items.length; i++) {
       let scenario = this.state.items[i];
+      let classes = ["nav-button"];
+      if (this.state.selected === scenario.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
       rows.push(
         <li key={scenario.ID}>
-          <a href={"#scenarios/" + scenario.ID}>{scenario.Name}</a>
+          <a className={classes.join(" ")} href={"#scenarios/" + scenario.ID}>{scenario.Name}</a>
         </li>
       );
     }
@@ -927,9 +925,13 @@ class Hosts extends Listing {
     let rows = [];
     for (let i = 0; i < this.state.items.length; i++) {
       let host = this.state.items[i];
+      let classes = ["nav-button"];
+      if (this.state.selected === host.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
       rows.push(
         <li key={host.ID}>
-          <a href={"#hosts/" + host.ID}>{host.Hostname} - {host.OS}</a>
+          <a className={classes.join(" ")} href={"#hosts/" + host.ID}>{host.Hostname} - {host.OS}</a>
         </li>
       );
     }
@@ -1118,9 +1120,13 @@ class Templates extends Listing {
     let rows = [];
     for (let i = 0; i < this.state.items.length; i++) {
       let template = this.state.items[i];
+      let classes = ["nav-button"];
+      if (this.state.selected === template.ID.toString()) {
+        classes.push("nav-button-selected");
+      }
       rows.push(
         <li key={template.ID}>
-          <a href={"#templates/" + template.ID}>{template.Name}</a>
+          <a className={classes.join(" ")} href={"#templates/" + template.ID}>{template.Name}</a>
         </li>
       );
     }
