@@ -1534,26 +1534,32 @@ func (theServer theServer) postTeamHostToken(w http.ResponseWriter, r *http.Requ
 	timestamp := time.Now().Unix()
 	r.ParseForm()
 	hostToken := r.Form.Get("host_token")
-	if len(hostToken) == 0 {
-		http.Error(w, "Host token missing", http.StatusBadRequest)
+	if len(hostToken) == 0 || hostToken == "null" {
+		msg := "ERROR: Host token missing"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamKey := r.Form.Get("team_key")
-	if len(teamKey) == 0 {
-		http.Error(w, "Team key missing", http.StatusBadRequest)
+	if len(teamKey) == 0 || teamKey == "null" {
+		msg := "ERROR: Team key missing"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
 	if err != nil {
-		log.Println("Could not get team id;", err)
-		http.Error(w, "Team not found", http.StatusBadRequest)
+		msg := "ERROR: Could not get team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusUnauthorized)
 		return
 	}
 
 	err = theServer.backingStore.InsertTeamHostToken(teamID, hostToken, timestamp)
 	if err != nil {
-		log.Println("ERROR: unable to insert team host token;", err)
-		http.Error(w, "Internal server error. Try again later", http.StatusInternalServerError)
+		msg := "ERROR: unable to insert team host token;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
