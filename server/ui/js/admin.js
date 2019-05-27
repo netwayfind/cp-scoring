@@ -1176,6 +1176,7 @@ class Templates extends React.Component {
   constructor() {
     super();
     this.state = {
+      error: null,
       templates: []
     };
   }
@@ -1192,16 +1193,21 @@ class Templates extends React.Component {
     var url = "/templates";
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          templates: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        templates: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1219,7 +1225,9 @@ class Templates extends React.Component {
 
     return React.createElement("div", {
       className: "Templates"
-    }, React.createElement("strong", null, "Templates"), React.createElement("ul", null, rows));
+    }, React.createElement("strong", null, "Templates"), React.createElement(Error, {
+      message: this.state.error
+    }), React.createElement("ul", null, rows));
   }
 
 }
@@ -1228,6 +1236,7 @@ class TemplateEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       template: {}
     };
   }
@@ -1245,13 +1254,13 @@ class TemplateEntry extends React.Component {
   }
 
   newTemplate() {
-    window.location.href = "#templates";
     this.setState({
       template: {
         Name: "",
         State: {}
       }
     });
+    window.location.href = "#templates";
   }
 
   getTemplate(id) {
@@ -1262,16 +1271,21 @@ class TemplateEntry extends React.Component {
     let url = "/templates/" + id;
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          template: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        template: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1304,19 +1318,27 @@ class TemplateEntry extends React.Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(this.state.template)
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
 
-      this.props.updateCallback();
-
-      if (this.state.template.ID === null || this.state.template.ID === undefined) {
-        // for new templates, response should be template ID
-        response.text().then(function (id) {
+        if (this.state.template.ID === null || this.state.template.ID === undefined) {
+          // for new templates, response should be template ID
+          let id = await response.text();
           window.location.href = "#templates/" + id;
-        });
+        }
+
+        return {
+          error: null
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1325,18 +1347,22 @@ class TemplateEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin',
       method: 'DELETE'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#templates";
+        return {
+          error: null,
+          template: {}
+        };
       }
 
-      this.props.updateCallback();
-      this.setState({
-        template: {
-          State: {}
-        }
-      });
-      window.location.href = "#templates";
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1356,7 +1382,7 @@ class TemplateEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.template).length != 0) {
-      content = React.createElement(React.Fragment, null, React.createElement("form", {
+      content = React.createElement("form", {
         onChange: this.updateTemplate.bind(this),
         onSubmit: this.saveTemplate.bind(this)
       }, React.createElement("label", {
@@ -1390,13 +1416,15 @@ class TemplateEntry extends React.Component {
         type: "button",
         disabled: !this.state.template.ID,
         onClick: this.deleteTemplate.bind(this, this.state.template.ID)
-      }, "Delete"))));
+      }, "Delete")));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newTemplate.bind(this)
-    }, "New Template"), React.createElement("hr", null), content);
+    }, "New Template"), React.createElement("hr", null), React.createElement(Error, {
+      message: this.state.error
+    }), content);
   }
 
 }

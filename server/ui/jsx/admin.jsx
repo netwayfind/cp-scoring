@@ -1128,6 +1128,7 @@ class Templates extends React.Component {
   constructor() {
     super();
     this.state = {
+      error: null,
       templates: []
     };
   }
@@ -1146,16 +1147,21 @@ class Templates extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          templates: data
+        }
       }
-      return response.json();
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({
-        templates: data
-      })
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1173,6 +1179,7 @@ class Templates extends React.Component {
     return (
       <div className="Templates">
         <strong>Templates</strong>
+        <Error message={this.state.error} />
         <ul>{rows}</ul>
       </div>
     );
@@ -1183,6 +1190,7 @@ class TemplateEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       template: {}
     }
   }
@@ -1200,13 +1208,13 @@ class TemplateEntry extends React.Component {
   }
 
   newTemplate() {
-    window.location.href = "#templates";
     this.setState({
       template: {
         Name: "",
         State: {}
       }
     });
+    window.location.href = "#templates";
   }
 
   getTemplate(id) {
@@ -1219,16 +1227,21 @@ class TemplateEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          template: data
+        }
       }
-      return response.json()
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({
-        template: data
-      });
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1261,17 +1274,25 @@ class TemplateEntry extends React.Component {
       },
       body: JSON.stringify(this.state.template)
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.updateCallback();
-      if (this.state.template.ID === null || this.state.template.ID === undefined) {
-        // for new templates, response should be template ID
-        response.text().then(function(id) {
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        if (this.state.template.ID === null || this.state.template.ID === undefined) {
+          // for new templates, response should be template ID
+          let id = await response.text();
           window.location.href = "#templates/" + id;
-        });
+        }
+        return {
+          error: null
+        };
       }
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1282,17 +1303,22 @@ class TemplateEntry extends React.Component {
       credentials: 'same-origin',
       method: 'DELETE'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#templates";
+        return {
+          error: null,
+          template: {}
+        };
       }
-      this.props.updateCallback();
-      this.setState({
-        template: {
-          State: {}
-        }
-      })
-      window.location.href = "#templates";
+      let text = await response.text();
+      return {
+        error: text
+      }
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -1313,22 +1339,20 @@ class TemplateEntry extends React.Component {
     let content = null;
     if (Object.entries(this.state.template).length != 0) {
       content = (
-        <React.Fragment>
-          <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveTemplate.bind(this)}>
-            <label htmlFor="ID">ID</label>
-            <input disabled value={this.state.template.ID || ""}/>
-            <Item name="Name" type="text" value={this.state.template.Name}/>
-            <Users users={this.state.template.State.Users} callback={this.handleCallback.bind(this)}/>
-            <Groups groups={this.state.template.State.Groups} callback={this.handleCallback.bind(this)}/>
-            <Processes processes={this.state.template.State.Processes} callback={this.handleCallback.bind(this)}/>
-            <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
-            <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
-            <div>
-              <button type="submit">Save</button>
-              <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
-            </div>
-          </form>
-        </React.Fragment>
+        <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveTemplate.bind(this)}>
+          <label htmlFor="ID">ID</label>
+          <input disabled value={this.state.template.ID || ""}/>
+          <Item name="Name" type="text" value={this.state.template.Name}/>
+          <Users users={this.state.template.State.Users} callback={this.handleCallback.bind(this)}/>
+          <Groups groups={this.state.template.State.Groups} callback={this.handleCallback.bind(this)}/>
+          <Processes processes={this.state.template.State.Processes} callback={this.handleCallback.bind(this)}/>
+          <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
+          <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
+          <div>
+            <button type="submit">Save</button>
+            <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
+          </div>
+        </form>
       );
     }
 
@@ -1336,6 +1360,7 @@ class TemplateEntry extends React.Component {
       <React.Fragment>
         <button type="button" onClick={this.newTemplate.bind(this)}>New Template</button>
         <hr />
+        <Error message={this.state.error} />
         {content}
       </React.Fragment>
     );
