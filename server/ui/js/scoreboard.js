@@ -13,6 +13,7 @@ class Scoreboard extends React.Component {
   constructor() {
     super();
     this.state = {
+      error: null,
       scenarios: [],
       selectedScenarioName: null,
       scores: []
@@ -37,32 +38,42 @@ class Scoreboard extends React.Component {
       }
     }
 
-    fetch(url).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    fetch(url).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          selectedScenarioName: name,
+          scores: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        selectedScenarioName: name,
-        scores: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
   getScenarios() {
     let url = '/scores/scenarios';
-    fetch(url).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    fetch(url).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenarios: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        scenarios: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -121,7 +132,9 @@ class Scoreboard extends React.Component {
     }, React.createElement("h4", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
       className: "content",
       id: "content"
-    }, content));
+    }, React.createElement(Error, {
+      message: this.state.error
+    }), content));
   }
 
 }

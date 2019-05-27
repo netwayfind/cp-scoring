@@ -14,6 +14,7 @@ class Scoreboard extends React.Component {
   constructor() {
     super();
     this.state = {
+      error: null,
       scenarios: [],
       selectedScenarioName: null,
       scores: []
@@ -38,17 +39,22 @@ class Scoreboard extends React.Component {
     }
   
     fetch(url)
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          selectedScenarioName: name,
+          scores: data
+        }
       }
-      return response.json();
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({
-        selectedScenarioName: name,
-        scores: data
-      });
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -56,14 +62,21 @@ class Scoreboard extends React.Component {
     let url = '/scores/scenarios';
     
     fetch(url)
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenarios: data
+        }
       }
-      return response.json();
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({scenarios: data})
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -130,6 +143,7 @@ class Scoreboard extends React.Component {
           </ul>
         </div>
         <div className="content" id="content">
+          <Error message={this.state.error} />
           {content}
         </div>
       </React.Fragment>
