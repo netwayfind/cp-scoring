@@ -1062,7 +1062,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
@@ -1073,7 +1073,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		if err != nil {
 			msg := "ERROR: cannot retrieve team id;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
 	} else {
@@ -1082,7 +1082,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		if err != nil {
 			msg := "ERROR: cannot parse team id;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
 	}
@@ -1097,7 +1097,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		if err != nil {
 			msg := "ERROR: cannot get all hosts;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		hostTokens = make([]string, 0)
@@ -1110,7 +1110,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 				if err != nil {
 					msg := "ERROR: cannot retrieve host token;"
 					log.Println(msg, err)
-					w.Write([]byte(msg))
+					http.Error(w, msg, http.StatusNotFound)
 					return
 				}
 				for _, ht := range hts {
@@ -1126,7 +1126,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		if err != nil {
 			msg := "ERROR: cannot retrieve host token;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusNotFound)
 			return
 		}
 		for _, ht := range hostTokens {
@@ -1138,7 +1138,9 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if len(timeStartStr) > 0 {
 		timeStart, err = strconv.ParseInt(timeStartStr, 10, 64)
 		if err != nil {
-			log.Println("Rejected time_start")
+			msg := "ERROR: rejected time_start;"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -1149,7 +1151,9 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if len(timeEndStr) > 0 {
 		timeEnd, err = strconv.ParseInt(timeEndStr, 10, 64)
 		if err != nil {
-			log.Println("Rejected time_end")
+			msg := "ERROR: rejected time_end;"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusBadRequest)
 			return
 		}
 	} else {
@@ -1161,7 +1165,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 		if err != nil {
 			msg := "ERROR: cannot retrieve scenario timeline for team;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		hostname = hostnames[hostToken]
@@ -1171,7 +1175,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario timeline for team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -1187,7 +1191,7 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(fmt.Sprintf("Scenario ID: %d", scenarioID))
@@ -1196,7 +1200,7 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	if err != nil {
 		msg := "ERROR: cannot retrieve team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusUnauthorized)
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
@@ -1205,7 +1209,7 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	if err != nil {
 		msg := "ERROR: cannot retrieve host token;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
 	// only take latest host token
@@ -1214,7 +1218,7 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario report for team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	// take out findings to not show
@@ -1229,7 +1233,7 @@ func (theServer theServer) getScenarioScoresReport(w http.ResponseWriter, r *htt
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario report for team;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -1243,7 +1247,7 @@ func (theServer theServer) getTeamScenarioHosts(w http.ResponseWriter, r *http.R
 	if err != nil {
 		msg := "ERROR: cannot retrieve team id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusUnauthorized)
 		return
 	}
 	log.Println(fmt.Sprintf("Team ID: %d", teamID))
@@ -1251,14 +1255,14 @@ func (theServer theServer) getTeamScenarioHosts(w http.ResponseWriter, r *http.R
 	if err != nil {
 		msg := "ERROR: cannot retrieve team scenario hosts;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	out, err := json.Marshal(scenarioHosts)
 	if err != nil {
 		msg := "ERROR: cannot marshal team scenario hosts;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -1503,7 +1507,9 @@ func (theServer theServer) getNewHostToken(w http.ResponseWriter, r *http.Reques
 	hostname := r.Form.Get("hostname")
 	hostname = strings.TrimSpace(hostname)
 	if len(hostname) == 0 {
-		log.Println("Empty hostname")
+		msg := "Empty hostname"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -1515,6 +1521,7 @@ func (theServer theServer) getNewHostToken(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		msg := "ERROR: unable to get host token;"
 		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
