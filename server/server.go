@@ -816,14 +816,14 @@ func (theServer theServer) getScenarios(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenarios;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(scenarios)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenarios;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -838,7 +838,7 @@ func (theServer theServer) getScenario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
@@ -846,14 +846,21 @@ func (theServer theServer) getScenario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if scenario.ID == 0 {
+		msg := "ERROR: scenario not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
 		return
 	}
 	out, err := json.Marshal(scenario)
 	if err != nil {
 		msg := "ERROR: cannot marshal scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(out)
@@ -866,7 +873,7 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -875,7 +882,7 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -883,7 +890,7 @@ func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot insert scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -903,25 +910,41 @@ func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check scenario exists
+	scenario, err := theServer.backingStore.SelectScenario(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if scenario.ID == 0 {
+		msg := "ERROR: scenario not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
-	var scenario model.Scenario
+	scenario = model.Scenario{}
 	err = json.Unmarshal(body, &scenario)
 	if err != nil {
 		msg := "ERROR: cannot unmarshal scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -929,7 +952,7 @@ func (theServer theServer) editScenario(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		msg := "ERROR: cannot update scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -947,15 +970,32 @@ func (theServer theServer) deleteScenario(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		msg := "ERROR: cannot parse scenario id;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	log.Println(id)
+
+	// check scenario exists
+	scenario, err := theServer.backingStore.SelectScenario(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if scenario.ID == 0 {
+		msg := "ERROR: scenario not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+
 	err = theServer.backingStore.DeleteScenario(id)
 	if err != nil {
 		msg := "ERROR: cannot delete scenario;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 }
