@@ -1,8 +1,21 @@
 'use strict';
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+class Error extends React.Component {
+  constructor(props) {
+    super(props);
+  }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+  render() {
+    if (this.props.message === null) {
+      return null;
+    }
+
+    return React.createElement("div", {
+      class: "error"
+    }, this.props.message);
+  }
+
+}
 
 class Login extends React.Component {
   constructor() {
@@ -18,9 +31,9 @@ class Login extends React.Component {
 
   handleChange(event) {
     let value = event.target.value;
-    this.setState(_objectSpread({}, this.state.credentials, {
+    this.setState({
       [event.target.name]: value
-    }));
+    });
   }
 
   handleSubmit(event) {

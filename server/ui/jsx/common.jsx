@@ -1,5 +1,23 @@
 'use strict';
 
+class Error extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    if (this.props.message === null) {
+      return null;
+    }
+
+    return (
+      <div class="error">
+        {this.props.message}
+      </div>
+    )
+  }
+}
+
 class Login extends React.Component {
   constructor() {
     super();
@@ -16,7 +34,6 @@ class Login extends React.Component {
   handleChange(event) {
     let value = event.target.value;
     this.setState({
-      ...this.state.credentials,
       [event.target.name]: value
     });
   }
