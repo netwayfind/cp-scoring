@@ -1312,13 +1312,14 @@ func (theServer theServer) getAdmins(w http.ResponseWriter, r *http.Request) {
 		msg := "ERROR: cannot retrieve admins;"
 		log.Println(msg, err)
 		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(admins)
 	if err != nil {
 		msg := "ERROR: cannot marshal admins;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1342,7 +1343,7 @@ func (theServer theServer) authAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot authenticate admin;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	if checkPasswordHash(password, storedPasswordHash) {
@@ -1377,7 +1378,7 @@ func (theServer theServer) newAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -1386,13 +1387,13 @@ func (theServer theServer) newAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal credentials;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	if len(creds.Username) == 0 || len(creds.Password) == 0 {
 		msg := "ERROR: invalid username or password;"
 		log.Println(msg)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -1401,14 +1402,14 @@ func (theServer theServer) newAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot generate password hash;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	err = theServer.backingStore.InsertAdmin(creds.Username, passwordHash)
 	if err != nil {
 		msg := "ERROR: cannot insert admin;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -1428,7 +1429,7 @@ func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot retrieve body;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -1437,13 +1438,13 @@ func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot unmarshal credentials;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	if len(username) == 0 || len(creds.Password) == 0 {
 		msg := "ERROR: invalid username or password;"
 		log.Println(msg)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -1451,7 +1452,7 @@ func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot generate password hash;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -1459,7 +1460,7 @@ func (theServer theServer) editAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot update admin;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -1477,7 +1478,7 @@ func (theServer theServer) deleteAdmin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "ERROR: cannot delete admin;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
