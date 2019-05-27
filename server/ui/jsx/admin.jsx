@@ -612,6 +612,7 @@ class Scenarios extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenarios: []
     }
   }
@@ -630,14 +631,21 @@ class Scenarios extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenarios: data
+        }
       }
-      return response.json();
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({scenarios: data})
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -655,6 +663,7 @@ class Scenarios extends React.Component {
     return (
       <div className="Scenarios">
         <strong>Scenarios</strong>
+        <Error message={this.state.error} />
         <ul>{rows}</ul>
       </div>
     );
@@ -665,6 +674,7 @@ class ScenarioEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenario: {}
     }
   }
@@ -682,7 +692,6 @@ class ScenarioEntry extends React.Component {
   }
 
   newScenario() {
-    window.location.href = "#scenarios";
     this.setState({
       scenario: {
         Name: "",
@@ -691,6 +700,7 @@ class ScenarioEntry extends React.Component {
         HostTemplates: {}
       }
     });
+    window.location.href = "#scenarios";
   }
 
   getScenario(id) {
@@ -703,16 +713,21 @@ class ScenarioEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenario: data
+        }
       }
-      return response.json()
+      let text = await response.text();
+      return {
+        error: text
+      }
     })
-    .then(function(data) {
-      this.setState({
-        scenario: data
-      });
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -745,17 +760,25 @@ class ScenarioEntry extends React.Component {
       },
       body: JSON.stringify(this.state.scenario)
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
-      this.props.updateCallback();
-      if (this.state.scenario.ID === null || this.state.scenario.ID === undefined) {
-        // for new scenarios, response should be scenario ID
-        response.text().then(function(id) {
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        if (this.state.scenario.ID === null || this.state.scenario.ID === undefined) {
+          // for new scenarios, response should be scenario ID
+          let id = await response.text();
           window.location.href = "#scenarios/" + id;
-        });
+        }
+        return {
+          error: null
+        };
       }
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -766,15 +789,22 @@ class ScenarioEntry extends React.Component {
       credentials: 'same-origin',
       method: 'DELETE'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#scenarios";
+        return {
+          error: null,
+          scenario: {}
+        };
       }
-      this.props.updateCallback();
-      this.setState({
-        scenario: {}
-      })
-      window.location.href = "#scenarios";
+      let text = await response.text();
+      return {
+        error: text
+      }
+    }.bind(this))
+    .then(function(s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -793,21 +823,23 @@ class ScenarioEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        let items = data.map(function(host) {
+          return {
+            ID: host.ID,
+            Display: host.Hostname
+          }
+        });
+        callback(items);
+        return;
       }
-      return response.json()
-    }.bind(this))
-    .then(function(data) {
-      let items = data.map(function(host) {
-        return {
-          ID: host.ID,
-          Display: host.Hostname
-        }
+      let text = await response.text();
+      this.setState({
+        error: text
       });
-      callback(items);
-    });
+    }.bind(this));
   };
 
   listItems(callback) {
@@ -816,42 +848,42 @@ class ScenarioEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin'
     })
-    .then(function(response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    .then(async function(response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        let items = data.map(function(template) {
+          return {
+            ID: template.ID,
+            Display: template.Name
+          }
+        });
+        callback(items);
+        return;
       }
-      return response.json()
-    }.bind(this))
-    .then(function(data) {
-      let items = data.map(function(template) {
-        return {
-          ID: template.ID,
-          Display: template.Name
-        }
+      let text = await response.text();
+      this.setState({
+        error: text
       });
-      callback(items);
-    });
+    }.bind(this));
   };
 
   render() {
     let content = null;
     if (Object.entries(this.state.scenario).length != 0) {
       content = (
-        <React.Fragment>
-          <form onChange={this.updateScenario.bind(this)} onSubmit={this.saveScenario.bind(this)}>
-            <label htmlFor="ID">ID</label>
-            <input disabled value={this.state.scenario.ID || ""}/>
-            <Item name="Name" value={this.state.scenario.Name}/>
-            <Item name="Description" value={this.state.scenario.Description}/>
-            <Item name="Enabled" type="checkbox" checked={!!this.state.scenario.Enabled}/>
-            <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" value={this.state.scenario.HostTemplates} callback={this.handleCallback.bind(this)} mapItems={this.mapItems} listItems={this.listItems}/>
-            <br />
-            <div>
-              <button type="submit">Save</button>
-              <button class="right" type="button" disabled={!this.state.scenario.ID} onClick={this.deleteScenario.bind(this, this.state.scenario.ID)}>Delete</button>
-            </div>
-          </form>
-        </React.Fragment>
+        <form onChange={this.updateScenario.bind(this)} onSubmit={this.saveScenario.bind(this)}>
+          <label htmlFor="ID">ID</label>
+          <input disabled value={this.state.scenario.ID || ""}/>
+          <Item name="Name" value={this.state.scenario.Name}/>
+          <Item name="Description" value={this.state.scenario.Description}/>
+          <Item name="Enabled" type="checkbox" checked={!!this.state.scenario.Enabled}/>
+          <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" value={this.state.scenario.HostTemplates} callback={this.handleCallback.bind(this)} mapItems={this.mapItems} listItems={this.listItems}/>
+          <br />
+          <div>
+            <button type="submit">Save</button>
+            <button class="right" type="button" disabled={!this.state.scenario.ID} onClick={this.deleteScenario.bind(this, this.state.scenario.ID)}>Delete</button>
+          </div>
+        </form>
       );
     }
 
@@ -859,6 +891,7 @@ class ScenarioEntry extends React.Component {
       <React.Fragment>
         <button onClick={this.newScenario.bind(this)}>New Scenario</button>
         <hr />
+        <Error message={this.state.error} />
         {content}
       </React.Fragment>
     )

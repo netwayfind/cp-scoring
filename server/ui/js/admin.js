@@ -465,7 +465,6 @@ class TeamEntry extends React.Component {
   }
 
   newTeam() {
-    window.location.href = "#teams";
     this.setState({
       team: {
         Name: "",
@@ -475,6 +474,7 @@ class TeamEntry extends React.Component {
         Key: TeamEntry.newKey()
       }
     });
+    window.location.href = "#teams";
   }
 
   getTeam(id) {
@@ -642,6 +642,7 @@ class Scenarios extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenarios: []
     };
   }
@@ -658,16 +659,21 @@ class Scenarios extends React.Component {
     var url = '/scenarios';
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenarios: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        scenarios: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -685,7 +691,9 @@ class Scenarios extends React.Component {
 
     return React.createElement("div", {
       className: "Scenarios"
-    }, React.createElement("strong", null, "Scenarios"), React.createElement("ul", null, rows));
+    }, React.createElement("strong", null, "Scenarios"), React.createElement(Error, {
+      message: this.state.error
+    }), React.createElement("ul", null, rows));
   }
 
 }
@@ -694,6 +702,7 @@ class ScenarioEntry extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenario: {}
     };
   }
@@ -711,7 +720,6 @@ class ScenarioEntry extends React.Component {
   }
 
   newScenario() {
-    window.location.href = "#scenarios";
     this.setState({
       scenario: {
         Name: "",
@@ -720,6 +728,7 @@ class ScenarioEntry extends React.Component {
         HostTemplates: {}
       }
     });
+    window.location.href = "#scenarios";
   }
 
   getScenario(id) {
@@ -730,16 +739,21 @@ class ScenarioEntry extends React.Component {
     let url = "/scenarios/" + id;
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenario: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        scenario: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -772,19 +786,27 @@ class ScenarioEntry extends React.Component {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(this.state.scenario)
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
-      }
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
 
-      this.props.updateCallback();
-
-      if (this.state.scenario.ID === null || this.state.scenario.ID === undefined) {
-        // for new scenarios, response should be scenario ID
-        response.text().then(function (id) {
+        if (this.state.scenario.ID === null || this.state.scenario.ID === undefined) {
+          // for new scenarios, response should be scenario ID
+          let id = await response.text();
           window.location.href = "#scenarios/" + id;
-        });
+        }
+
+        return {
+          error: null
+        };
       }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -793,16 +815,22 @@ class ScenarioEntry extends React.Component {
     fetch(url, {
       credentials: 'same-origin',
       method: 'DELETE'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        this.props.updateCallback();
+        window.location.href = "#scenarios";
+        return {
+          error: null,
+          scenario: {}
+        };
       }
 
-      this.props.updateCallback();
-      this.setState({
-        scenario: {}
-      });
-      window.location.href = "#scenarios";
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -818,49 +846,55 @@ class ScenarioEntry extends React.Component {
     var url = "/hosts";
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        let items = data.map(function (host) {
+          return {
+            ID: host.ID,
+            Display: host.Hostname
+          };
+        });
+        callback(items);
+        return;
       }
 
-      return response.json();
-    }.bind(this)).then(function (data) {
-      let items = data.map(function (host) {
-        return {
-          ID: host.ID,
-          Display: host.Hostname
-        };
+      let text = await response.text();
+      this.setState({
+        error: text
       });
-      callback(items);
-    });
+    }.bind(this));
   }
 
   listItems(callback) {
     var url = "/templates";
     fetch(url, {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        let items = data.map(function (template) {
+          return {
+            ID: template.ID,
+            Display: template.Name
+          };
+        });
+        callback(items);
+        return;
       }
 
-      return response.json();
-    }.bind(this)).then(function (data) {
-      let items = data.map(function (template) {
-        return {
-          ID: template.ID,
-          Display: template.Name
-        };
+      let text = await response.text();
+      this.setState({
+        error: text
       });
-      callback(items);
-    });
+    }.bind(this));
   }
 
   render() {
     let content = null;
 
     if (Object.entries(this.state.scenario).length != 0) {
-      content = React.createElement(React.Fragment, null, React.createElement("form", {
+      content = React.createElement("form", {
         onChange: this.updateScenario.bind(this),
         onSubmit: this.saveScenario.bind(this)
       }, React.createElement("label", {
@@ -893,12 +927,14 @@ class ScenarioEntry extends React.Component {
         type: "button",
         disabled: !this.state.scenario.ID,
         onClick: this.deleteScenario.bind(this, this.state.scenario.ID)
-      }, "Delete"))));
+      }, "Delete")));
     }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       onClick: this.newScenario.bind(this)
-    }, "New Scenario"), React.createElement("hr", null), content);
+    }, "New Scenario"), React.createElement("hr", null), React.createElement(Error, {
+      message: this.state.error
+    }), content);
   }
 
 }
