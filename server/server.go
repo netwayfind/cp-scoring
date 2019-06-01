@@ -1946,6 +1946,29 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 	w.Write(b)
 }
 
+func (theServer theServer) checkValidTeamKey(w http.ResponseWriter, r *http.Request) {
+	log.Println("check valid team key")
+
+	r.ParseForm()
+	teamKey := r.Form.Get("team_key")
+	if len(teamKey) == 0 || teamKey == "null" {
+		msg := "ERROR: Team key missing"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	teamID, err := theServer.backingStore.SelectTeamIDForKey(teamKey)
+	if err != nil {
+		msg := "ERROR: Could not get team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusUnauthorized)
+		return
+	}
+
+	// should be valid team key
+	log.Println(fmt.Sprintf("Team ID: %d", teamID))
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -2133,6 +2156,9 @@ func main() {
 	scoresRouter := r.PathPrefix("/scores").Subrouter()
 	scoresRouter.HandleFunc("/scenarios", theServer.getScenariosForScoreboard).Methods("GET")
 	scoresRouter.HandleFunc("/scenario/{id:[0-9]+}", theServer.getScenarioScores).Methods("GET")
+	teamKeyRouter := r.PathPrefix("/team_key").Subrouter()
+	teamKeyRouter.HandleFunc("", theServer.checkValidTeamKey).Methods("POST")
+	teamKeyRouter.HandleFunc("/", theServer.checkValidTeamKey).Methods("POST")
 	reportRouter := r.PathPrefix("/reports").Subrouter()
 	// using team key as auth
 	reportRouter.HandleFunc("", theServer.getTeamScenarioHosts).Methods("GET")
