@@ -1138,7 +1138,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if len(timeStartStr) > 0 {
 		timeStart, err = strconv.ParseInt(timeStartStr, 10, 64)
 		if err != nil {
-			msg := "ERROR: rejected time_start;"
+			msg := "ERROR: cannot parse time start;"
 			log.Println(msg, err)
 			http.Error(w, msg, http.StatusBadRequest)
 			return
@@ -1151,7 +1151,7 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 	if len(timeEndStr) > 0 {
 		timeEnd, err = strconv.ParseInt(timeEndStr, 10, 64)
 		if err != nil {
-			msg := "ERROR: rejected time_end;"
+			msg := "ERROR: cannot parse time end;"
 			log.Println(msg, err)
 			http.Error(w, msg, http.StatusBadRequest)
 			return
@@ -1168,8 +1168,10 @@ func (theServer theServer) getScenarioScoresTimeline(w http.ResponseWriter, r *h
 			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		hostname = hostnames[hostToken]
-		timelines[fmt.Sprintf("%d - %s", i, hostname)] = timeline
+		if len(timeline.Timestamps) > 0 && len(timeline.Scores) > 0 {
+			hostname = hostnames[hostToken]
+			timelines[fmt.Sprintf("%d - %s", i, hostname)] = timeline
+		}
 	}
 	out, err := json.Marshal(timelines)
 	if err != nil {
@@ -1574,22 +1576,30 @@ func (theServer theServer) getReport(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	id := r.Form.Get("id")
 	if len(id) == 0 {
-		log.Println("Empty hostname")
+		msg := "ERROR: empty id"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	report, err := theServer.backingStore.SelectScenarioReport(id)
 	if err != nil {
-		msg := "ERROR: did not retrieve report;"
+		if err.Error() == "report not found" {
+			msg := "ERROR: report not found"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusNotFound)
+			return
+		}
+		msg := "ERROR: could not retrieve report;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(report)
 	if err != nil {
 		msg := "ERROR: cannot marshal report;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1602,18 +1612,41 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 	scenarioIDStr := r.Form.Get("scenario_id")
 	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected scenario_id")
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected team_id")
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+	timeStartStr := r.Form.Get("time_start")
+	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: no start time selected"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	timeEndStr := r.Form.Get("time_end")
+	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: no end time selected"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
 	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
 	if err != nil {
-		log.Println("Reject team ID for scenario hosts")
+		msg := "ERROR: invalid team ID for scenario hosts"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	var hosts []model.Host
@@ -1624,33 +1657,28 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 		hosts = scenarioHost.Hosts
 	}
 	if hosts == nil || len(hosts) == 0 {
-		log.Println("No hosts for scenario and team")
-		return
+		log.Println("No hosts found for scenario and team")
 	}
 	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
 	for _, host := range hosts {
 		hts, err := theServer.backingStore.SelectHostTokens(teamID, host.Hostname)
 		if err != nil {
-			log.Println("Error for retrieving host token")
+			if err.Error() == "No host token found" {
+				msg := "ERROR: no host token found"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusNotFound)
+				return
+			}
+			msg := "ERROR: cannot retrieve host token"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		hostTokens = append(hostTokens, hts...)
 		for _, ht := range hts {
 			hostnames[ht] = host.Hostname
 		}
-	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
-		return
 	}
 
 	timestamps := make(map[string][]model.TimestampDocumentAndReceived)
@@ -1660,17 +1688,19 @@ func (theServer theServer) getReportTimeline(w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			msg := "ERROR: cannot retrieve report timestamps;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		hostname := hostnames[hostToken]
-		timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
+		if len(ts) > 0 {
+			hostname := hostnames[hostToken]
+			timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
+		}
 	}
 	b, err := json.Marshal(timestamps)
 	if err != nil {
 		msg := "ERROR: cannot marshal report timestamps;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1683,15 +1713,36 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 	scenarioIDStr := r.Form.Get("scenario_id")
 	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected scenario_id")
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected team_id")
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+	timeStartStr := r.Form.Get("time_start")
+	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	timeEndStr := r.Form.Get("time_end")
+	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
 	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
 	if err != nil {
 		log.Println("Reject team ID for scenario hosts")
@@ -1705,8 +1756,7 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		hosts = scenarioHost.Hosts
 	}
 	if hosts == nil || len(hosts) == 0 {
-		log.Println("No hosts for scenario and team")
-		return
+		log.Println("No hosts found for scenario and team")
 	}
 	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
@@ -1721,18 +1771,6 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 			hostnames[ht] = host.Hostname
 		}
 	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
-		return
-	}
 
 	diffs := make(map[string][]processing.DocumentDiff)
 
@@ -1741,17 +1779,19 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		if err != nil {
 			msg := "ERROR: cannot retrieve report diffs;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		hostname := hostnames[hostToken]
-		diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		if len(ds) > 0 {
+			hostname := hostnames[hostToken]
+			diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		}
 	}
 	b, err := json.Marshal(diffs)
 	if err != nil {
 		msg := "ERROR: cannot marshal report diffs;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1763,22 +1803,30 @@ func (theServer theServer) getState(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	id := r.Form.Get("id")
 	if len(id) == 0 {
-		log.Println("Empty id")
+		msg := "ERROR: empty id"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	state, err := theServer.backingStore.SelectState(id)
 	if err != nil {
-		msg := "ERROR: did not retrieve state;"
+		if err.Error() == "state not found" {
+			msg := "ERROR: state not found;"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusNotFound)
+			return
+		}
+		msg := "ERROR: count not retrieve state;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	b, err := json.Marshal(state)
 	if err != nil {
 		msg := "ERROR: cannot marshal state;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1791,15 +1839,36 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 	scenarioIDStr := r.Form.Get("scenario_id")
 	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected scenario_id")
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected team_id")
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+	timeStartStr := r.Form.Get("time_start")
+	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	timeEndStr := r.Form.Get("time_end")
+	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
 	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
 	if err != nil {
 		log.Println("Reject team ID for scenario hosts")
@@ -1813,8 +1882,7 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 		hosts = scenarioHost.Hosts
 	}
 	if hosts == nil || len(hosts) == 0 {
-		log.Println("No hosts for scenario and team")
-		return
+		log.Println("No hosts found for scenario and team")
 	}
 	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
@@ -1829,18 +1897,6 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 			hostnames[ht] = host.Hostname
 		}
 	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
-		return
-	}
 
 	timestamps := make(map[string][]model.TimestampDocumentAndReceived)
 
@@ -1849,17 +1905,19 @@ func (theServer theServer) getStateTimeline(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			msg := "ERROR: cannot retrieve state timestamps;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		hostname := hostnames[hostToken]
-		timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
+		if len(ts) > 0 {
+			hostname := hostnames[hostToken]
+			timestamps[fmt.Sprintf("%d - %s", i, hostname)] = ts
+		}
 	}
 	b, err := json.Marshal(timestamps)
 	if err != nil {
 		msg := "ERROR: cannot marshal state timestamps;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
@@ -1872,15 +1930,36 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 	scenarioIDStr := r.Form.Get("scenario_id")
 	scenarioID, err := strconv.ParseUint(scenarioIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected scenario_id")
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 	teamIDStr := r.Form.Get("team_id")
 	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
 	if err != nil {
-		log.Println("Rejected team_id")
+		msg := "ERROR: cannot parse team id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+	timeStartStr := r.Form.Get("time_start")
+	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	timeEndStr := r.Form.Get("time_end")
+	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse time start;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
 	scenarioHosts, err := theServer.backingStore.SelectTeamScenarioHosts(teamID)
 	if err != nil {
 		log.Println("Reject team ID for scenario hosts")
@@ -1894,8 +1973,7 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		hosts = scenarioHost.Hosts
 	}
 	if hosts == nil || len(hosts) == 0 {
-		log.Println("No hosts for scenario and team")
-		return
+		log.Println("No hosts found for scenario and team")
 	}
 	hostnames := make(map[string]string)
 	hostTokens := make([]string, 0)
@@ -1910,18 +1988,6 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 			hostnames[ht] = host.Hostname
 		}
 	}
-	timeStartStr := r.Form.Get("time_start")
-	timeStart, err := strconv.ParseInt(timeStartStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_start")
-		return
-	}
-	timeEndStr := r.Form.Get("time_end")
-	timeEnd, err := strconv.ParseInt(timeEndStr, 10, 64)
-	if err != nil {
-		log.Println("Rejected time_end")
-		return
-	}
 
 	diffs := make(map[string][]processing.DocumentDiff)
 
@@ -1930,17 +1996,19 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			msg := "ERROR: cannot retrieve state diffs;"
 			log.Println(msg, err)
-			w.Write([]byte(msg))
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
-		hostname := hostnames[hostToken]
-		diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		if len(ds) > 0 {
+			hostname := hostnames[hostToken]
+			diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		}
 	}
 	b, err := json.Marshal(diffs)
 	if err != nil {
 		msg := "ERROR: cannot marshal state diffs;"
 		log.Println(msg, err)
-		w.Write([]byte(msg))
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	w.Write(b)
