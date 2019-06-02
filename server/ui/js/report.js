@@ -42,39 +42,114 @@ class App extends React.Component {
 class AskTeamKey extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      error: null,
+      team_key: null
+    };
+    this.handleChange = this.handleChange.bind(this);
+    this.registerHostToken = this.registerHostToken.bind(this);
+    this.submit = this.submit.bind(this);
+  }
+
+  handleChange(event) {
+    let value = event.target.value;
+    this.setState({
+      [event.target.name]: value
+    });
+  }
+
+  registerHostToken(hostToken, teamKey) {
+    return new Promise(function (resolve, reject) {
+      fetch("/token/team", {
+        credentials: 'same-origin',
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: "team_key=" + teamKey + "&host_token=" + hostToken
+      }).then(async function (response) {
+        let r = null;
+
+        if (response.status === 200) {
+          window.location = "/ui/report?team_key=" + teamKey;
+        } else if (response.status === 301) {
+          window.location = window.url;
+        } else if (response.status === 400) {
+          r = {
+            error: "Team key required"
+          };
+        } else if (response.status === 401) {
+          r = {
+            error: "Invalid team key"
+          };
+        } else {
+          r = {
+            error: await response.text()
+          };
+        }
+
+        resolve(r);
+      });
+    });
+  }
+
+  submit(event) {
+    event.preventDefault();
+    let hostToken = this.props.hostToken;
+    let teamKey = this.state.team_key; // check team key valid
+
+    fetch("/team_key", {
+      credentials: "same-origin",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: "team_key=" + teamKey
+    }).then(async function (response) {
+      if (response.status === 200) {
+        // register host token with team
+        if (hostToken != undefined && hostToken != null && hostToken.length > 0) {
+          return await this.registerHostToken(hostToken, teamKey);
+        } else {
+          window.location = "/ui/report?team_key=" + teamKey;
+          return {};
+        }
+      } else if (response.status === 400) {
+        return {
+          error: "Team key required"
+        };
+      } else if (response.status === 401) {
+        return {
+          error: "Invalid team key"
+        };
+      }
+
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }.bind(this)).then(function (s) {
+      this.setState(s);
+    }.bind(this));
   }
 
   render() {
-    // default is to just show report for team
-    // if given host token register team token with team
-    if (this.props.hostToken) {
-      return React.createElement(React.Fragment, null, React.createElement("form", {
-        method: "POST",
-        action: "/token/team"
-      }, React.createElement("input", {
-        name: "host_token",
-        hidden: true,
-        value: this.props.hostToken
-      }), React.createElement("label", {
-        id: "team_key"
-      }, "Enter team key:"), React.createElement("input", {
-        name: "team_key"
-      }), React.createElement("button", {
-        type: "submit"
-      }, "Submit")));
-    } // otherwise, just set team key
-    else {
-        return React.createElement(React.Fragment, null, React.createElement("form", {
-          method: "GET",
-          action: "/ui/report"
-        }, React.createElement("label", {
-          id: "team_key"
-        }, "Enter team key:"), React.createElement("input", {
-          name: "team_key"
-        }), React.createElement("button", {
-          type: "submit"
-        }, "Submit")));
-      }
+    return React.createElement(React.Fragment, null, React.createElement("form", {
+      onChange: this.handleChange,
+      onSubmit: event => this.submit(event)
+    }, React.createElement("input", {
+      name: "host_token",
+      hidden: true,
+      value: this.props.hostToken
+    }), React.createElement("label", {
+      id: "team_key"
+    }, "Enter team key:"), React.createElement("input", {
+      name: "team_key"
+    }), React.createElement("button", {
+      type: "submit"
+    }, "Submit")), React.createElement(Error, {
+      message: this.state.error
+    }));
   }
 
 }
@@ -83,6 +158,7 @@ class ScoreTimeline extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenarioName: "",
       hostname: "",
       timelines: [],
@@ -99,18 +175,23 @@ class ScoreTimeline extends React.Component {
     }
 
     let url = "/reports?team_key=" + teamKey;
-    fetch(url).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    fetch(url).then(async function (response) {
+      if (response.status === 200) {
+        let data = response.json();
+        return {
+          error: null,
+          scenarioHosts: data
+        };
+      } else if (response.status === 401) {
+        window.location = "/ui/report";
       }
 
-      return response.json();
-    }).then(function (data) {
-      if (data) {
-        this.setState({
-          scenarioHosts: data
-        });
-      }
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -288,7 +369,9 @@ class ScoreTimeline extends React.Component {
     }, React.createElement("h4", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
       className: "content",
       id: "content"
-    }, content));
+    }, React.createElement(Error, {
+      message: this.state.error
+    }), content));
   }
 
 }
