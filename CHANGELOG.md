@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2019-06-02
+### Added
+- [#21](https://github.com/sumwonyuno/cp-scoring/issues/21) - added insight UI to show states, reports, and diffs for scenarios and teams. Various changes to support this.
+- [#25](https://github.com/sumwonyuno/cp-scoring/issues/25) - include Windows features/roles to software list
+- [#2](https://github.com/sumwonyuno/cp-scoring/issues/2) - added administrators page on admin UI, allowing password change.
+
+### Changed
+- [#23](https://github.com/sumwonyuno/cp-scoring/issues/23) - Windows processes don't collect user (permissions issue); may fix later. Use executable path where available, fallback to process name.
+- [#28](https://github.com/sumwonyuno/cp-scoring/issues/28) - clickable links are not underlined. Selected links are bolded, underlined, and not clickable.
+
+### Fixed
+- [#22](https://github.com/sumwonyuno/cp-scoring/issues/22) - sort Linux users in order of /etc/passwd
+- [#24](https://github.com/sumwonyuno/cp-scoring/issues/24) - skip collecting software with empty name on Windows
+- [#27](https://github.com/sumwonyuno/cp-scoring/issues/27) - API and UI error handling improvements
+
 ## [0.3.0] - 2019-03-30
 ### Changed
 - updated UI dependencies
