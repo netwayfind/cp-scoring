@@ -90,12 +90,13 @@ class AnalysisConfig extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
       scenarios: [],
-      scenarioID: 0,
+      scenarioID: null,
       teams: [],
-      teamID: 0,
-      timeStart: Date.now() * 1000,
-      timeEnd: Date.now() * 1000
+      teamID: null,
+      timeStart: Date.now(),
+      timeEnd: Date.now()
     };
     this.selectScenarioCallback = this.selectScenarioCallback.bind(this);
     this.selectTeamCallback = this.selectTeamCallback.bind(this);
@@ -150,7 +151,7 @@ class AnalysisConfig extends React.Component {
   }
 
   updateTime(event, original) {
-    let current = new Date(Math.trunc(original * 1000));
+    let current = new Date(Math.trunc(original));
 
     if (event.target.type === "date") {
       let parts = event.target.value.split("-");
@@ -175,7 +176,7 @@ class AnalysisConfig extends React.Component {
       current.setSeconds(parts[2]);
     }
 
-    let value = Math.trunc(current.getTime() / 1000);
+    let value = Math.trunc(current.getTime());
 
     if (Number.isNaN(value)) {
       return null;
@@ -187,29 +188,39 @@ class AnalysisConfig extends React.Component {
   populateSelectors() {
     fetch('/scenarios', {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          scenarios: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        scenarios: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
     fetch('/teams', {
       credentials: 'same-origin'
-    }).then(function (response) {
-      if (response.status >= 400) {
-        throw new Error("Bad response from server");
+    }).then(async function (response) {
+      if (response.status === 200) {
+        let data = await response.json();
+        return {
+          error: null,
+          teams: data
+        };
       }
 
-      return response.json();
-    }).then(function (data) {
-      this.setState({
-        teams: data
-      });
+      let text = await response.text();
+      return {
+        error: text
+      };
+    }).then(function (s) {
+      this.setState(s);
     }.bind(this));
   }
 
@@ -217,8 +228,8 @@ class AnalysisConfig extends React.Component {
     let args = {
       'scenario_id': this.state.scenarioID,
       'team_id': this.state.teamID,
-      'time_start': this.state.timeStart,
-      'time_end': this.state.timeEnd
+      'time_start': Math.trunc(this.state.timeStart / 1000),
+      'time_end': Math.trunc(this.state.timeEnd / 1000)
     };
     let params = Object.entries(args).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
     let requestReports = fetch('/analysis/reports/timeline?' + params, {
@@ -236,21 +247,64 @@ class AnalysisConfig extends React.Component {
     let requestScores = fetch('/reports/scenario/' + this.state.scenarioID + '/timeline?hostname=*&' + params, {
       credentials: 'same-origin'
     });
-    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs, requestScores]).then(function (responses) {
+    this.setState({
+      error: "Running query..."
+    });
+    this.props.requestCallback({
+      reportTimeline: null,
+      reportDiffs: null,
+      stateTimeline: null,
+      stateDiffs: null,
+      scores: null
+    });
+    Promise.all([requestReports, requestReportDiffs, requestStates, requestStateDiffs, requestScores]).then(async function (responses) {
       let j = [];
+      let errors = [];
 
       for (let r in responses) {
         let response = responses[r];
 
         if (response.status >= 400) {
-          throw new Error("Bad response from server");
+          errors.push((await response.text()));
         }
 
-        j.push(response.json());
+        j.push((await response.json()));
+      }
+
+      if (errors.length === 0) {
+        this.setState({
+          error: null
+        });
+      } else {
+        this.setState({
+          error: errors.join(", ")
+        });
       }
 
       return Promise.all(j);
-    }).then(function (data) {
+    }.bind(this)).then(function (data) {
+      let error = null;
+
+      if (data != undefined && data != null && data.length > 0) {
+        let emptyData = true;
+
+        for (let i = 0; i < data.length; i++) {
+          let entry = data[i];
+
+          if (entry != undefined && entry != null && Object.keys(entry).length > 0) {
+            emptyData = false;
+            break;
+          }
+        }
+
+        if (emptyData) {
+          error = "No data found";
+        }
+      }
+
+      this.setState({
+        error: error
+      });
       this.props.requestCallback({
         reportTimeline: data[0],
         reportDiffs: data[1],
@@ -293,7 +347,7 @@ class AnalysisConfig extends React.Component {
     } // form time start
 
 
-    let d = new Date(this.state.timeStart * 1000);
+    let d = new Date(this.state.timeStart);
     let startDate = ("000" + d.getFullYear()).slice(-4);
     startDate += "-";
     startDate += ("0" + (d.getMonth() + 1)).slice(-2);
@@ -305,7 +359,7 @@ class AnalysisConfig extends React.Component {
     startTime += ":";
     startTime += ("000" + d.getSeconds()).slice(-2); // form time end
 
-    d = new Date(this.state.timeEnd * 1000);
+    d = new Date(this.state.timeEnd);
     let endDate = ("000" + d.getFullYear()).slice(-4);
     endDate += "-";
     endDate += ("0" + (d.getMonth() + 1)).slice(-2);
@@ -348,7 +402,9 @@ class AnalysisConfig extends React.Component {
       onChange: this.selectTimeEndCallback
     }), React.createElement("p", null), React.createElement("button", {
       onClick: this.submit
-    }, "Submit"));
+    }, "Submit"), React.createElement(Error, {
+      message: this.state.error
+    }));
   }
 
 }
@@ -377,6 +433,7 @@ class AnalysisResults extends React.Component {
       }
     };
     this.state = {
+      error: null,
       config: config,
       layout: layout,
       traces: [],
@@ -471,6 +528,7 @@ class AnalysisResults extends React.Component {
 
     traces.reverse();
     this.setState({
+      error: null,
       reportTimeline: newProps.args.reportTimeline,
       reportDiffs: newProps.args.reportDiffs,
       stateTimeline: newProps.args.stateTimeline,
@@ -560,16 +618,21 @@ class AnalysisResults extends React.Component {
       let url = '/analysis/' + documentType + '?id=' + id;
       fetch(url, {
         credentials: 'same-origin'
-      }).then(function (response) {
-        if (response.status >= 400) {
-          throw new Error("Bad response from server");
+      }).then(async function (response) {
+        if (response.status === 200) {
+          let data = await response.json();
+          return {
+            error: null,
+            selected: data
+          };
         }
 
-        return response.json();
-      }).then(function (data) {
-        this.setState({
-          selected: data
-        });
+        let text = await response.text();
+        return {
+          error: text
+        };
+      }).then(function (s) {
+        this.setState(s);
       }.bind(this));
     }
 
@@ -577,7 +640,9 @@ class AnalysisResults extends React.Component {
   }
 
   render() {
-    return React.createElement(React.Fragment, null, "Timeline", React.createElement("br", null), React.createElement(Plot, {
+    return React.createElement(React.Fragment, null, React.createElement(Error, {
+      message: this.state.error
+    }), "Timeline", React.createElement("br", null), React.createElement(Plot, {
       data: this.state.traces,
       layout: this.state.layout,
       config: this.state.config,
