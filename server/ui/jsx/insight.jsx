@@ -653,7 +653,7 @@ class AnalysisSelected extends React.Component {
       let changes = [];
       for (let i in this.props.selected.Changes) {
         let change = this.props.selected.Changes[i];
-        changes.push(<li key={i}>{change.Type} - {change.Key} - {change.Item}</li>)
+        changes.push(<li key={i}>{change.Type} - {change.Key} - {JSON.stringify(change.Item)}</li>)
       }
       selected = (
         <React.Fragment>

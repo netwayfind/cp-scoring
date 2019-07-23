@@ -673,7 +673,7 @@ class AnalysisSelected extends React.Component {
           let change = this.props.selected.Changes[i];
           changes.push(React.createElement("li", {
             key: i
-          }, change.Type, " - ", change.Key, " - ", change.Item));
+          }, change.Type, " - ", change.Key, " - ", JSON.stringify(change.Item)));
         }
 
         selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Changes:", React.createElement("ul", null, changes));

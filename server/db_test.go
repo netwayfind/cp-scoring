@@ -3075,45 +3075,41 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// add sample reports
+	finding1 := model.Finding{
+		Show:    false,
+		Value:   0,
+		Message: "no test",
+	}
 	report1 := model.Report{
 		Timestamp: 15,
-		Findings: []model.Finding{
-			model.Finding{
-				Show:    false,
-				Value:   0,
-				Message: "no test",
-			},
-		},
+		Findings:  []model.Finding{finding1},
+	}
+	finding2 := model.Finding{
+		Show:    false,
+		Value:   0,
+		Message: "no test",
 	}
 	report2 := model.Report{
 		Timestamp: 30,
-		Findings: []model.Finding{
-			model.Finding{
-				Show:    false,
-				Value:   0,
-				Message: "no test",
-			},
-		},
+		Findings:  []model.Finding{finding2},
+	}
+	finding3 := model.Finding{
+		Show:    true,
+		Value:   1,
+		Message: "test",
 	}
 	report3 := model.Report{
 		Timestamp: 45,
-		Findings: []model.Finding{
-			model.Finding{
-				Show:    true,
-				Value:   1,
-				Message: "test",
-			},
-		},
+		Findings:  []model.Finding{finding3},
+	}
+	finding4 := model.Finding{
+		Show:    true,
+		Value:   1,
+		Message: "test",
 	}
 	report4 := model.Report{
 		Timestamp: 60,
-		Findings: []model.Finding{
-			model.Finding{
-				Show:    true,
-				Value:   1,
-				Message: "test",
-			},
-		},
+		Findings:  []model.Finding{finding4},
 	}
 	// insert different received timestamp
 	err = backingStore.InsertScenarioReport(scenarioID, "host-token", 101, report1)
@@ -3153,7 +3149,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if diffs[0].Changes[0].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+	if diffs[0].Changes[0].Item != finding2 {
 		t.Fatal("Unexpected diff item")
 	}
 	if diffs[0].Changes[1].Type != "Added" {
@@ -3162,7 +3158,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if diffs[0].Changes[1].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+	if diffs[0].Changes[1].Item != finding3 {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3204,7 +3200,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if diffs[0].Changes[0].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[0].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"no test\"}" {
+	if diffs[0].Changes[0].Item != finding2 {
 		t.Fatal("Unexpected diff item")
 	}
 	if diffs[0].Changes[1].Type != "Added" {
@@ -3213,7 +3209,7 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	if diffs[0].Changes[1].Key != "Findings" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[1].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"test\"}" {
+	if diffs[0].Changes[1].Item != finding3 {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3467,41 +3463,37 @@ func TestSelectStateDiffs(t *testing.T) {
 	}
 
 	// add sample states
+	user1 := model.User{
+		Name:          "bob",
+		AccountActive: true,
+	}
 	state1 := model.State{
 		Timestamp: 15,
-		Users: []model.User{
-			model.User{
-				Name:          "bob",
-				AccountActive: true,
-			},
-		},
+		Users:     []model.User{user1},
+	}
+	user2 := model.User{
+		Name:          "bob",
+		AccountActive: true,
 	}
 	state2 := model.State{
 		Timestamp: 30,
-		Users: []model.User{
-			model.User{
-				Name:          "bob",
-				AccountActive: true,
-			},
-		},
+		Users:     []model.User{user2},
+	}
+	user3 := model.User{
+		Name:          "bob",
+		AccountActive: false,
 	}
 	state3 := model.State{
 		Timestamp: 45,
-		Users: []model.User{
-			model.User{
-				Name:          "bob",
-				AccountActive: false,
-			},
-		},
+		Users:     []model.User{user3},
+	}
+	user4 := model.User{
+		Name:          "bob",
+		AccountActive: false,
 	}
 	state4 := model.State{
 		Timestamp: 60,
-		Users: []model.User{
-			model.User{
-				Name:          "bob",
-				AccountActive: false,
-			},
-		},
+		Users:     []model.User{user4},
 	}
 	// insert different received timestamp
 	err = backingStore.InsertState(101, "127.0.0.1", "host-token", state1)
@@ -3541,7 +3533,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	if diffs[0].Changes[0].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[0].Item != user2 {
 		t.Fatal("Unexpected diff item")
 	}
 	if diffs[0].Changes[1].Type != "Added" {
@@ -3550,7 +3542,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	if diffs[0].Changes[1].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[1].Item != user3 {
 		t.Fatal("Unexpected diff item")
 	}
 
@@ -3592,7 +3584,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	if diffs[0].Changes[0].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[0].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":true,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[0].Item != user2 {
 		t.Fatal("Unexpected diff item")
 	}
 	if diffs[0].Changes[1].Type != "Added" {
@@ -3601,7 +3593,7 @@ func TestSelectStateDiffs(t *testing.T) {
 	if diffs[0].Changes[1].Key != "Users" {
 		t.Fatal("Unexpected diff key")
 	}
-	if diffs[0].Changes[1].Item != "{\"Name\":\"bob\",\"ID\":\"\",\"ObjectState\":\"\",\"AccountActive\":false,\"AccountExpires\":false,\"PasswordLastSet\":0,\"PasswordExpires\":false}" {
+	if diffs[0].Changes[1].Item != user3 {
 		t.Fatal("Unexpected diff item")
 	}
 

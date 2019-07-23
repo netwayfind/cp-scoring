@@ -949,7 +949,7 @@ func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, t
 
 	diffs := make([]processing.DocumentDiff, 0)
 
-	var previousEntries map[string]map[string]bool
+	var previousEntries map[string]map[string]interface{}
 	first := true
 	for rows.Next() {
 		var reportBytes []byte
@@ -963,10 +963,7 @@ func (db dbObj) SelectScenarioReportDiffs(scenarioID uint64, hostToken string, t
 			return nil, err
 		}
 
-		entries, err := processing.GetReportEntries(report)
-		if err != nil {
-			return nil, err
-		}
+		entries := processing.GetReportEntries(report)
 
 		if first {
 			previousEntries = entries
@@ -1056,7 +1053,7 @@ func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int6
 
 	diffs := make([]processing.DocumentDiff, 0)
 
-	var previousEntries map[string]map[string]bool
+	var previousEntries map[string]map[string]interface{}
 	first := true
 	for rows.Next() {
 		var stateBytes []byte
@@ -1070,10 +1067,7 @@ func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int6
 			return nil, err
 		}
 
-		entries, err := processing.GetStateEntries(state)
-		if err != nil {
-			return nil, err
-		}
+		entries := processing.GetStateEntries(state)
 
 		if first {
 			previousEntries = entries
