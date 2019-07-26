@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -2038,6 +2039,9 @@ func (theServer theServer) checkValidTeamKey(w http.ResponseWriter, r *http.Requ
 }
 
 func main() {
+	// set seed
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	ex, err := os.Executable()
 	if err != nil {
 		log.Fatal("ERROR: unable to get executable", err)
