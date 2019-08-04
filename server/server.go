@@ -1480,6 +1480,20 @@ func (theServer theServer) deleteAdmin(w http.ResponseWriter, r *http.Request) {
 
 	username := vars["username"]
 	log.Println("username: " + username)
+
+	// get current user
+	cookie, _ := r.Cookie(cookieName)
+	currentUsername, _ := theServer.userTokens[cookie.Value]
+
+	// cannot delete current user
+	// this should also catch deleting last admin (self)
+	if username == currentUsername {
+		msg := "ERROR: cannot delete current user"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
 	err := theServer.backingStore.DeleteAdmin(username)
 	if err != nil {
 		msg := "ERROR: cannot delete admin;"
