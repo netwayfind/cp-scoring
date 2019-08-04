@@ -179,7 +179,7 @@ class ScoreTimeline extends React.Component {
     fetch(url)
     .then(async function(response) {
       if (response.status === 200) {
-        let data = response.json();
+        let data = await response.json();
         return {
           error: null,
           scenarioHosts: data
@@ -210,11 +210,11 @@ class ScoreTimeline extends React.Component {
 
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
     fetch(url)
-    .then(function(response) {
+    .then(async function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      return response.json();
+      return await response.json();
     })
     .then(function(data) {
       if (data) {
@@ -237,11 +237,11 @@ class ScoreTimeline extends React.Component {
 
     url = '/reports/scenario/' + scenarioID + '?team_key=' + teamKey + '&hostname=' + hostname;  
     fetch(url)
-    .then(function(response) {
+    .then(async function(response) {
       if (response.status >= 400) {
         throw new Error("Bad response from server");
       }
-      return response.json();
+      return await response.json();
     })
     .then(function(data) {
       this.setState({
