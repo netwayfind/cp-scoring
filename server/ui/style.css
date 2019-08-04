@@ -65,3 +65,9 @@ a:visited {
     border: 2px solid red;
     border-radius: 5px;
 }
+
+.analysisSelected {
+    min-height: 300px;
+    height: 300px;
+    overflow: auto;
+}

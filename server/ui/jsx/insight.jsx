@@ -394,6 +394,7 @@ class AnalysisResults extends React.Component {
     }
 
     let layout = {
+      height: 300,
       hovermode: 'closest',
       barmode: 'stack',
       xaxis: {
@@ -626,8 +627,9 @@ class AnalysisResults extends React.Component {
         <Plot data={this.state.traces} layout={this.state.layout} config={this.state.config} onClick={this.plotClick}/>
         <br />
         Selected
-        <br />
-        <AnalysisSelected selected={this.state.selected}/>
+        <div className="analysisSelected">
+          <AnalysisSelected selected={this.state.selected}/>
+        </div>
       </React.Fragment>
     );
   }

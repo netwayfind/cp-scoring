@@ -416,6 +416,7 @@ class AnalysisResults extends React.Component {
       displaylogo: false
     };
     let layout = {
+      height: 300,
       hovermode: 'closest',
       barmode: 'stack',
       xaxis: {
@@ -647,9 +648,11 @@ class AnalysisResults extends React.Component {
       layout: this.state.layout,
       config: this.state.config,
       onClick: this.plotClick
-    }), React.createElement("br", null), "Selected", React.createElement("br", null), React.createElement(AnalysisSelected, {
+    }), React.createElement("br", null), "Selected", React.createElement("div", {
+      className: "analysisSelected"
+    }, React.createElement(AnalysisSelected, {
       selected: this.state.selected
-    }));
+    })));
   }
 
 }
