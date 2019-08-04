@@ -12,7 +12,7 @@ type backingStore interface {
 	InsertState(timestamp int64, source string, hostToken string, state model.State) error
 	SelectState(id string) (model.State, error)
 	SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
-	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error)
+	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64, out chan processing.DocumentDiff) error
 	SelectAdmins() ([]string, error)
 	IsAdmin(username string) (bool, error)
 	SelectAdminPasswordHash(username string) (string, error)

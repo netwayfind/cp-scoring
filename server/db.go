@@ -1044,14 +1044,12 @@ func (db dbObj) SelectStateTimestamps(hostToken string, timeStart int64, timeEnd
 	return timestamps, nil
 }
 
-func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64) ([]processing.DocumentDiff, error) {
+func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64, out chan processing.DocumentDiff) error {
 	rows, err := db.dbConn.Query("SELECT state FROM states WHERE host_token=$1 AND timestamp>=$2 AND timestamp<=$3 ORDER BY state->'Timestamp' ASC", hostToken, timeStart, timeEnd)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
-
-	diffs := make([]processing.DocumentDiff, 0)
 
 	var previousEntries map[string]map[string]interface{}
 	first := true
@@ -1059,12 +1057,12 @@ func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int6
 		var stateBytes []byte
 		err = rows.Scan(&stateBytes)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		var state model.State
 		err = json.Unmarshal(stateBytes, &state)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		entries := processing.GetStateEntries(state)
@@ -1081,11 +1079,12 @@ func (db dbObj) SelectStateDiffs(hostToken string, timeStart int64, timeEnd int6
 				Timestamp: state.Timestamp,
 				Changes:   changes,
 			}
-			diffs = append(diffs, diff)
+			out <- diff
 		}
 
 		previousEntries = entries
 	}
+	close(out)
 
-	return diffs, nil
+	return nil
 }

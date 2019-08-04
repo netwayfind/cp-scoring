@@ -1990,29 +1990,47 @@ func (theServer theServer) getStateDiffs(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	diffs := make(map[string][]processing.DocumentDiff)
+	w.Write([]byte("{"))
 
+	firstHostToken := true
 	for i, hostToken := range hostTokens {
-		ds, err := theServer.backingStore.SelectStateDiffs(hostToken, timeStart, timeEnd)
-		if err != nil {
-			msg := "ERROR: cannot retrieve state diffs;"
-			log.Println(msg, err)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
+		if firstHostToken {
+			firstHostToken = false
+		} else {
+			w.Write([]byte(","))
 		}
-		if len(ds) > 0 {
-			hostname := hostnames[hostToken]
-			diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		w.Write([]byte(fmt.Sprintf("\"%d - %s\": [", i, hostnames[hostToken])))
+		out := make(chan processing.DocumentDiff)
+		go func() {
+			err := theServer.backingStore.SelectStateDiffs(hostToken, timeStart, timeEnd, out)
+			if err != nil {
+				msg := "ERROR: cannot retrieve state diffs;"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+		}()
+
+		firstOut := true
+		for diff := range out {
+			if firstOut {
+				firstOut = false
+			} else {
+				w.Write([]byte(","))
+			}
+			b, err := json.Marshal(diff)
+			if err != nil {
+				msg := "ERROR: cannot marshall state diffs;"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+			w.Write(b)
 		}
+		w.Write([]byte("]"))
+
 	}
-	b, err := json.Marshal(diffs)
-	if err != nil {
-		msg := "ERROR: cannot marshal state diffs;"
-		log.Println(msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-	w.Write(b)
+	w.Write([]byte("}"))
 }
 
 func (theServer theServer) checkValidTeamKey(w http.ResponseWriter, r *http.Request) {
