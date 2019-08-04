@@ -3044,16 +3044,23 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	backingStore := initBackingStore(t)
 
 	// nothing set up
-	diffs, err := backingStore.SelectScenarioReportDiffs(0, "host-token", 0, 100)
-	if err != nil {
-		t.Fatal(err)
+	out := make(chan processing.DocumentDiff)
+	go func() {
+		err := backingStore.SelectScenarioReportDiffs(0, "host-token", 0, 100, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs := make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
 
 	// add scenario, host, and host token
-	_, err = backingStore.InsertHost(model.Host{Hostname: "host1"})
+	_, err := backingStore.InsertHost(model.Host{Hostname: "host1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3067,9 +3074,16 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// should not have any report diffs
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 0, 100)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 0, 100, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
@@ -3131,9 +3145,16 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// should get reports diffs in order
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 104)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 104, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 1 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
@@ -3164,27 +3185,48 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// nothing before report 1
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", -100, 100)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", -100, 100, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
 
 	// no diff between report 1 and 2
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 102)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 101, 102, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
 
 	// diff between report 2 and 3
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 102, 103)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 102, 103, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 1 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
@@ -3215,18 +3257,32 @@ func TestSelectScenarioReportDiffs(t *testing.T) {
 	}
 
 	// no diff between report 3 and 4
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 103, 104)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 103, 104, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))
 	}
 
 	// nothing after report 4
-	diffs, err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 105, 200)
-	if err != nil {
-		t.Fatal(err)
+	out = make(chan processing.DocumentDiff)
+	go func() {
+		err = backingStore.SelectScenarioReportDiffs(scenarioID, "host-token", 105, 200, out)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	diffs = make([]processing.DocumentDiff, 0)
+	for o := range out {
+		diffs = append(diffs, o)
 	}
 	if len(diffs) != 0 {
 		t.Fatal("Unexpected report diff count:", len(diffs))

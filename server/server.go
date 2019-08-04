@@ -1773,29 +1773,46 @@ func (theServer theServer) getReportDiffs(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	diffs := make(map[string][]processing.DocumentDiff)
+	w.Write([]byte("{"))
 
+	firstHostToken := true
 	for i, hostToken := range hostTokens {
-		ds, err := theServer.backingStore.SelectScenarioReportDiffs(scenarioID, hostToken, timeStart, timeEnd)
-		if err != nil {
-			msg := "ERROR: cannot retrieve report diffs;"
-			log.Println(msg, err)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
+		if firstHostToken {
+			firstHostToken = false
+		} else {
+			w.Write([]byte(","))
 		}
-		if len(ds) > 0 {
-			hostname := hostnames[hostToken]
-			diffs[fmt.Sprintf("%d - %s", i, hostname)] = ds
+		out := make(chan processing.DocumentDiff)
+		w.Write([]byte(fmt.Sprintf("\"%d - %s\": [", i, hostnames[hostToken])))
+		go func() {
+			err := theServer.backingStore.SelectScenarioReportDiffs(scenarioID, hostToken, timeStart, timeEnd, out)
+			if err != nil {
+				msg := "ERROR: cannot retrieve report diffs;"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+		}()
+
+		firstOut := true
+		for diff := range out {
+			if firstOut {
+				firstOut = false
+			} else {
+				w.Write([]byte(","))
+			}
+			b, err := json.Marshal(diff)
+			if err != nil {
+				msg := "ERROR: cannot marshall report diffs;"
+				log.Println(msg, err)
+				http.Error(w, msg, http.StatusInternalServerError)
+				return
+			}
+			w.Write(b)
 		}
+		w.Write([]byte("]"))
 	}
-	b, err := json.Marshal(diffs)
-	if err != nil {
-		msg := "ERROR: cannot marshal report diffs;"
-		log.Println(msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
-	}
-	w.Write(b)
+	w.Write([]byte("}"))
 }
 
 func (theServer theServer) getState(w http.ResponseWriter, r *http.Request) {
