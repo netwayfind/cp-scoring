@@ -15,6 +15,7 @@ go get golang.org/x/crypto/openpgp
 go get golang.org/x/crypto/openpgp/armor
 go get golang.org/x/crypto/ripemd160
 go get golang.org/x/sys/windows/registry
+go get github.com/cnf/structhash
 
 VERSION=$(cat $SCRIPTDIR/VERSION)
 echo "Setting to version $VERSION"

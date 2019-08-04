@@ -1,8 +1,9 @@
 package processing
 
 import (
-	"encoding/json"
 	"testing"
+
+	"github.com/cnf/structhash"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -10,10 +11,7 @@ import (
 func TestGetReportEntries(t *testing.T) {
 	// empty report
 	report := model.Report{}
-	entries, err := GetReportEntries(report)
-	if err != nil {
-		t.Fatal(err)
-	}
+	entries := GetReportEntries(report)
 	if len(entries) != 1 {
 		t.Fatal("Unexpected entry count:", len(entries))
 	}
@@ -26,20 +24,16 @@ func TestGetReportEntries(t *testing.T) {
 	}
 
 	// sample report with findings
+	finding := model.Finding{
+		Show:    true,
+		Value:   1,
+		Message: "test",
+	}
 	report = model.Report{
 		Timestamp: 15,
-		Findings: []model.Finding{
-			model.Finding{
-				Show:    true,
-				Value:   1,
-				Message: "test",
-			},
-		},
+		Findings:  []model.Finding{finding},
 	}
-	entries, err = GetReportEntries(report)
-	if err != nil {
-		t.Fatal(err)
-	}
+	entries = GetReportEntries(report)
 	if len(entries) != 1 {
 		t.Fatal("Unexpected entry count:", len(entries))
 	}
@@ -53,7 +47,7 @@ func TestGetReportEntries(t *testing.T) {
 	if len(findings) != 1 {
 		t.Fatal("Unexpected findings count:", len(entries))
 	}
-	if _, present = findings["{\"Value\":1,\"Show\":true,\"Message\":\"test\"}"]; !present {
+	if _, present = findings[string(structhash.Sha1(finding, 1))]; !present {
 		t.Fatal("Did not find expected entry")
 	}
 }
@@ -61,10 +55,7 @@ func TestGetReportEntries(t *testing.T) {
 func TestGetStateEntries(t *testing.T) {
 	// empty state
 	state := model.State{}
-	entries, err := GetStateEntries(state)
-	if err != nil {
-		t.Fatal(err)
-	}
+	entries := GetStateEntries(state)
 	if len(entries) != 5 {
 		t.Fatal("Unexpected entry count:", len(entries))
 	}
@@ -105,19 +96,15 @@ func TestGetStateEntries(t *testing.T) {
 	}
 
 	// sample state with software
+	sw := model.Software{
+		Name:    "test-software",
+		Version: "0.1.0",
+	}
 	state = model.State{
 		Timestamp: 15,
-		Software: []model.Software{
-			model.Software{
-				Name:    "test-software",
-				Version: "0.1.0",
-			},
-		},
+		Software:  []model.Software{sw},
 	}
-	entries, err = GetStateEntries(state)
-	if err != nil {
-		t.Fatal(err)
-	}
+	entries = GetStateEntries(state)
 	if len(entries) != 5 {
 		t.Fatal("Unexpected entry count:", len(entries))
 	}
@@ -142,7 +129,7 @@ func TestGetStateEntries(t *testing.T) {
 	if len(software) != 1 {
 		t.Fatal("Unexpected software count:", len(software))
 	}
-	_, present = software["{\"Name\":\"test-software\",\"Version\":\"0.1.0\",\"ObjectState\":\"\"}"]
+	_, present = software[string(structhash.Sha1(sw, 1))]
 	if !present {
 		t.Fatal("Did not find expected entry")
 	}
@@ -166,14 +153,8 @@ func TestDiffForReports(t *testing.T) {
 	// empty reports
 	report1 := model.Report{}
 	report2 := model.Report{}
-	report1Entries, err := GetReportEntries(report1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	report2Entries, err := GetReportEntries(report2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	report1Entries := GetReportEntries(report1)
+	report2Entries := GetReportEntries(report2)
 	changes := Diff(report1Entries, report2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
@@ -186,14 +167,8 @@ func TestDiffForReports(t *testing.T) {
 	report2 = model.Report{
 		Timestamp: 15,
 	}
-	report1Entries, err = GetReportEntries(report1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	report2Entries, err = GetReportEntries(report2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	report1Entries = GetReportEntries(report1)
+	report2Entries = GetReportEntries(report2)
 	changes = Diff(report1Entries, report2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
@@ -204,24 +179,17 @@ func TestDiffForReports(t *testing.T) {
 		Timestamp: 14,
 		Findings:  []model.Finding{},
 	}
+	finding := model.Finding{
+		Message: "Test message",
+		Value:   1,
+		Show:    true,
+	}
 	report2 = model.Report{
 		Timestamp: 15,
-		Findings: []model.Finding{
-			model.Finding{
-				Message: "Test message",
-				Value:   1,
-				Show:    true,
-			},
-		},
+		Findings:  []model.Finding{finding},
 	}
-	report1Entries, err = GetReportEntries(report1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	report2Entries, err = GetReportEntries(report2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	report1Entries = GetReportEntries(report1)
+	report2Entries = GetReportEntries(report2)
 	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 1 {
 		t.Fatal("Unexpected number of changes:", len(changes))
@@ -232,33 +200,26 @@ func TestDiffForReports(t *testing.T) {
 	if changes[0].Key != "Findings" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"Test message\"}" {
+	if changes[0].Item != finding {
 		t.Fatal("Unexpected change item")
 	}
 
 	// test remove finding
+	finding = model.Finding{
+		Message: "Test message",
+		Value:   1,
+		Show:    true,
+	}
 	report1 = model.Report{
 		Timestamp: 16,
-		Findings: []model.Finding{
-			model.Finding{
-				Message: "Test message",
-				Value:   1,
-				Show:    true,
-			},
-		},
+		Findings:  []model.Finding{finding},
 	}
 	report2 = model.Report{
 		Timestamp: 17,
 		Findings:  []model.Finding{},
 	}
-	report1Entries, err = GetReportEntries(report1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	report2Entries, err = GetReportEntries(report2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	report1Entries = GetReportEntries(report1)
+	report2Entries = GetReportEntries(report2)
 	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 1 {
 		t.Fatal("Unexpected number of changes:", len(changes))
@@ -269,39 +230,31 @@ func TestDiffForReports(t *testing.T) {
 	if changes[0].Key != "Findings" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"Test message\"}" {
+	if changes[0].Item != finding {
 		t.Fatal("Unexpected change item")
 	}
 
 	// test changed finding
+	finding1 := model.Finding{
+		Message: "Test message",
+		Value:   1,
+		Show:    true,
+	}
 	report1 = model.Report{
 		Timestamp: 18,
-		Findings: []model.Finding{
-			model.Finding{
-				Message: "Test message",
-				Value:   1,
-				Show:    true,
-			},
-		},
+		Findings:  []model.Finding{finding1},
+	}
+	finding2 := model.Finding{
+		Message: "Test message",
+		Value:   0,
+		Show:    false,
 	}
 	report2 = model.Report{
 		Timestamp: 19,
-		Findings: []model.Finding{
-			model.Finding{
-				Message: "Test message",
-				Value:   0,
-				Show:    false,
-			},
-		},
+		Findings:  []model.Finding{finding2},
 	}
-	report1Entries, err = GetReportEntries(report1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	report2Entries, err = GetReportEntries(report2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	report1Entries = GetReportEntries(report1)
+	report2Entries = GetReportEntries(report2)
 	changes = Diff(report1Entries, report2Entries)
 	if len(changes) != 2 {
 		t.Fatal("Unexpected number of changes:", len(changes))
@@ -313,7 +266,7 @@ func TestDiffForReports(t *testing.T) {
 	if changes[0].Key != "Findings" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Value\":1,\"Show\":true,\"Message\":\"Test message\"}" {
+	if changes[0].Item != finding1 {
 		t.Fatal("Unexpected change item")
 	}
 	// then added
@@ -323,7 +276,7 @@ func TestDiffForReports(t *testing.T) {
 	if changes[1].Key != "Findings" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[1].Item != "{\"Value\":0,\"Show\":false,\"Message\":\"Test message\"}" {
+	if changes[1].Item != finding2 {
 		t.Fatal("Unexpected change item")
 	}
 }
@@ -332,14 +285,8 @@ func TestDiffForStates(t *testing.T) {
 	// empty reports
 	state1 := model.State{}
 	state2 := model.State{}
-	state1Entries, err := GetStateEntries(state1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state2Entries, err := GetStateEntries(state2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	state1Entries := GetStateEntries(state1)
+	state2Entries := GetStateEntries(state2)
 	changes := Diff(state1Entries, state2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
@@ -352,14 +299,8 @@ func TestDiffForStates(t *testing.T) {
 	state2 = model.State{
 		Timestamp: 15,
 	}
-	state1Entries, err = GetStateEntries(state1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state2Entries, err = GetStateEntries(state2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	state1Entries = GetStateEntries(state1)
+	state2Entries = GetStateEntries(state2)
 	changes = Diff(state1Entries, state2Entries)
 	if len(changes) > 0 {
 		t.Fatal("Unexpected changes")
@@ -410,36 +351,34 @@ func TestDiffForStates(t *testing.T) {
 			},
 		},
 	}
-	state1Entries, err = GetStateEntries(state1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state2Entries, err = GetStateEntries(state2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	state1Entries = GetStateEntries(state1)
+	state2Entries = GetStateEntries(state2)
 	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
-	// group name
+	// group members
 	if changes[0].Type != "Added" {
 		t.Fatal("Unexpected change type")
 	}
 	if changes[0].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Group\":\"Users\",\"Member\":\"bob\"}" {
+	entry := groupMemberEntry{
+		Group:  "Users",
+		Member: "bob",
+	}
+	if changes[0].Item != entry {
 		t.Fatal("Unexpected change item")
 	}
-	// group members
+	// group
 	if changes[1].Type != "Added" {
 		t.Fatal("Unexpected change type")
 	}
 	if changes[1].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[1].Item != "{\"Group\":\"Users\"}" {
+	if changes[1].Item != "Users" {
 		t.Fatal("Unexpected change item")
 	}
 	// network connections
@@ -449,11 +388,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err := json.Marshal(state2.NetworkConnections[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[2].Item != string(expected) {
+	if changes[2].Item != state2.NetworkConnections[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// processes
@@ -463,11 +398,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Processes[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[3].Item != string(expected) {
+	if changes[3].Item != state2.Processes[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// software
@@ -477,11 +408,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[4].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Software[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[4].Item != string(expected) {
+	if changes[4].Item != state2.Software[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// users
@@ -491,11 +418,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[5].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Users[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[5].Item != string(expected) {
+	if changes[5].Item != state2.Users[0] {
 		t.Fatal("Unexpected change item")
 	}
 
@@ -547,36 +470,34 @@ func TestDiffForStates(t *testing.T) {
 		Processes:          []model.Process{},
 		NetworkConnections: []model.NetworkConnection{},
 	}
-	state1Entries, err = GetStateEntries(state1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state2Entries, err = GetStateEntries(state2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	state1Entries = GetStateEntries(state1)
+	state2Entries = GetStateEntries(state2)
 	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 6 {
 		t.Fatal("Unexpected number of changes:", len(changes))
 	}
-	// groups (Empty)
+	// groups (Users)
 	if changes[0].Type != "Removed" {
 		t.Fatal("Unexpected change type")
 	}
 	if changes[0].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Group\":\"Empty\"}" {
+	item := groupMemberEntry{
+		Group:  "Users",
+		Member: "bob",
+	}
+	if changes[0].Item != item {
 		t.Fatal("Unexpected change item")
 	}
-	// groups (Users)
+	// groups (Empty)
 	if changes[1].Type != "Removed" {
 		t.Fatal("Unexpected change type")
 	}
 	if changes[1].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[1].Item != "{\"Group\":\"Users\",\"Member\":\"bob\"}" {
+	if changes[1].Item != "Empty" {
 		t.Fatal("Unexpected change item")
 	}
 	// network connections
@@ -586,11 +507,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.NetworkConnections[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[2].Item != string(expected) {
+	if changes[2].Item != state1.NetworkConnections[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// processes
@@ -600,11 +517,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Processes[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[3].Item != string(expected) {
+	if changes[3].Item != state1.Processes[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// software
@@ -614,11 +527,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[4].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Software[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[4].Item != string(expected) {
+	if changes[4].Item != state1.Software[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// users
@@ -628,11 +537,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[5].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Users[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[5].Item != string(expected) {
+	if changes[5].Item != state1.Users[0] {
 		t.Fatal("Unexpected change item")
 	}
 
@@ -724,14 +629,8 @@ func TestDiffForStates(t *testing.T) {
 			},
 		},
 	}
-	state1Entries, err = GetStateEntries(state1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	state2Entries, err = GetStateEntries(state2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	state1Entries = GetStateEntries(state1)
+	state2Entries = GetStateEntries(state2)
 	changes = Diff(state1Entries, state2Entries)
 	if len(changes) != 9 {
 		t.Fatal("Unexpected number of changes:", len(changes))
@@ -743,7 +642,11 @@ func TestDiffForStates(t *testing.T) {
 	if changes[0].Key != "Groups" {
 		t.Fatal("Unexpected change key")
 	}
-	if changes[0].Item != "{\"Group\":\"Users\",\"Member\":\"alice\"}" {
+	item = groupMemberEntry{
+		Group:  "Users",
+		Member: "alice",
+	}
+	if changes[0].Item != item {
 		t.Fatal("Unexpected change item")
 	}
 	// network connections
@@ -754,11 +657,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[1].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.NetworkConnections[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[1].Item != string(expected) {
+	if changes[1].Item != state1.NetworkConnections[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// then added
@@ -768,11 +667,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[2].Key != "Network Connections" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.NetworkConnections[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[2].Item != string(expected) {
+	if changes[2].Item != state2.NetworkConnections[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// processes
@@ -783,11 +678,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[3].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Processes[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[3].Item != string(expected) {
+	if changes[3].Item != state1.Processes[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// then added
@@ -797,11 +688,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[4].Key != "Processes" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Processes[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[4].Item != string(expected) {
+	if changes[4].Item != state2.Processes[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// software
@@ -812,11 +699,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[5].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Software[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[5].Item != string(expected) {
+	if changes[5].Item != state1.Software[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// then added
@@ -826,11 +709,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[6].Key != "Software" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Software[0])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[6].Item != string(expected) {
+	if changes[6].Item != state2.Software[0] {
 		t.Fatal("Unexpected change item")
 	}
 	// users
@@ -841,11 +720,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[7].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state1.Users[1])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[7].Item != string(expected) {
+	if changes[7].Item != state1.Users[1] {
 		t.Fatal("Unexpected change item")
 	}
 	// then added
@@ -855,11 +730,7 @@ func TestDiffForStates(t *testing.T) {
 	if changes[8].Key != "Users" {
 		t.Fatal("Unexpected change key")
 	}
-	expected, err = json.Marshal(state2.Users[1])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if changes[8].Item != string(expected) {
+	if changes[8].Item != state2.Users[1] {
 		t.Fatal("Unexpected change item")
 	}
 }
