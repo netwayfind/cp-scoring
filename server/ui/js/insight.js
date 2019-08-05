@@ -416,21 +416,21 @@ class AnalysisResults extends React.Component {
       displaylogo: false
     };
     let layout = {
-      height: 300,
+      height: 450,
       hovermode: 'closest',
       barmode: 'stack',
       xaxis: {
         type: 'date'
       },
       yaxis: {
-        domain: [0.60, 1],
+        domain: [0.70, 1],
         visible: false
       },
       yaxis2: {
-        domain: [0.30, 0.50]
+        domain: [0.25, 0.60]
       },
       yaxis3: {
-        domain: [0, 0.20]
+        domain: [0, 0.15]
       }
     };
     this.state = {
@@ -464,7 +464,7 @@ class AnalysisResults extends React.Component {
       let name = i + ' - B.states diff';
       let trace = {
         name: name,
-        type: 'bar',
+        type: 'markers+lines',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
         y: hostInstance.map(diff => diff.Changes.length),
         yaxis: 'y2'
@@ -491,7 +491,7 @@ class AnalysisResults extends React.Component {
       let name = i + ' - D.reports diff';
       let trace = {
         name: name,
-        type: 'bar',
+        type: 'markers+lines',
         x: hostInstance.map(diff => diff.Timestamp * 1000),
         y: hostInstance.map(diff => diff.Changes.length),
         yaxis: 'y2'
