@@ -675,6 +675,77 @@ func (theServer theServer) getTemplate(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+type templateFromState struct {
+	TemplateName string
+	StateID      string
+}
+
+func (theServer theServer) newTemplateFromState(w http.ResponseWriter, r *http.Request) {
+	log.Println("new template from state")
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		msg := "ERROR: cannot retrieve body;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	tfs := templateFromState{}
+	err = json.Unmarshal(body, &tfs)
+	if err != nil {
+		msg := "ERROR: cannot unmarshal body;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	if len(tfs.TemplateName) == 0 {
+		msg := "ERROR: empty template name"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	if len(tfs.StateID) == 0 {
+		msg := "ERROR: empty state id"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	state, err := theServer.backingStore.SelectState(tfs.StateID)
+	if err != nil {
+		if err.Error() == "state not found" {
+			msg := "ERROR: state not found;"
+			log.Println(msg, err)
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
+		msg := "ERROR: count not retrieve state;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	template := model.Template{
+		Name:  tfs.TemplateName,
+		State: state,
+	}
+	id, err := theServer.backingStore.InsertTemplate(template)
+	if err != nil {
+		msg := "ERROR: cannot insert template;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	idStr := strconv.FormatUint(id, 10)
+
+	// new template
+	log.Println("Saved template " + idStr)
+	w.Write([]byte(idStr))
+}
+
 func (theServer theServer) newTemplate(w http.ResponseWriter, r *http.Request) {
 	log.Println("new template")
 
@@ -2244,6 +2315,7 @@ func main() {
 	templatesRouter.HandleFunc("/", theServer.getTemplates).Methods("GET")
 	templatesRouter.HandleFunc("", theServer.newTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/", theServer.newTemplate).Methods("POST")
+	templatesRouter.HandleFunc("/state", theServer.newTemplateFromState).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.getTemplate).Methods("GET")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.editTemplate).Methods("POST")
 	templatesRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteTemplate).Methods("DELETE")
