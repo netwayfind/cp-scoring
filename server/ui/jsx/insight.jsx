@@ -600,6 +600,10 @@ class AnalysisResults extends React.Component {
       .then(async function(response) {
         if (response.status === 200) {
           let data = await response.json();
+          // add state ID for state
+          if (documentType === "states") {
+            data["StateID"] = id;
+          }
           return {
             error: null,
             selected: data
@@ -729,6 +733,8 @@ class AnalysisSelected extends React.Component {
       }
       selected = (
         <React.Fragment>
+          State ID: {this.props.selected.StateID}
+          <br />
           Time: {time}
           <br />
           OS: {this.props.selected.OS}
