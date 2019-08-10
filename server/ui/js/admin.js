@@ -1237,6 +1237,16 @@ class TemplateEntry extends React.Component {
     window.location.href = "#templates";
   }
 
+  newTemplateFromState() {
+    this.setState({
+      template: {
+        TemplateName: "",
+        StateID: ""
+      }
+    });
+    window.location.href = "#templates";
+  }
+
   getTemplate(id) {
     if (id === null || id === undefined) {
       return;
@@ -1277,9 +1287,16 @@ class TemplateEntry extends React.Component {
     });
   }
 
-  saveTemplate(event) {
+  saveRegularTemplate(event) {
+    this.saveTemplate(event, "/templates");
+  }
+
+  saveStateTemplate(event) {
+    this.saveTemplate(event, "/templates/state");
+  }
+
+  saveTemplate(event, url) {
     event.preventDefault();
-    var url = "/templates";
 
     if (this.state.template.ID != null) {
       url += "/" + this.state.template.ID;
@@ -1353,50 +1370,71 @@ class TemplateEntry extends React.Component {
   }
 
   render() {
-    let content = null;
+    let content = null; // template from state
 
-    if (Object.entries(this.state.template).length != 0) {
+    if (this.state.template.StateID != undefined) {
       content = React.createElement("form", {
         onChange: this.updateTemplate.bind(this),
-        onSubmit: this.saveTemplate.bind(this)
+        onSubmit: this.saveStateTemplate.bind(this)
       }, React.createElement("label", {
-        htmlFor: "ID"
-      }, "ID"), React.createElement("input", {
-        disabled: true,
-        value: this.state.template.ID || ""
-      }), React.createElement(Item, {
-        name: "Name",
-        type: "text",
-        value: this.state.template.Name
-      }), React.createElement(Users, {
-        users: this.state.template.State.Users,
-        callback: this.handleCallback.bind(this)
-      }), React.createElement(Groups, {
-        groups: this.state.template.State.Groups,
-        callback: this.handleCallback.bind(this)
-      }), React.createElement(Processes, {
-        processes: this.state.template.State.Processes,
-        callback: this.handleCallback.bind(this)
-      }), React.createElement(Software, {
-        software: this.state.template.State.Software,
-        callback: this.handleCallback.bind(this)
-      }), React.createElement(NetworkConnections, {
-        conns: this.state.template.State.NetworkConnections,
-        callback: this.handleCallback.bind(this)
+        htmlFor: "TemplateName"
+      }, "Template Name"), React.createElement("input", {
+        name: "TemplateName",
+        value: this.state.template.TemplateName || ""
+      }), React.createElement("br", null), React.createElement("label", {
+        htmlFor: "StateID"
+      }, "State ID"), React.createElement("input", {
+        name: "StateID",
+        value: this.state.template.StateID || ""
       }), React.createElement("div", null, React.createElement("button", {
         type: "submit"
-      }, "Save"), React.createElement("button", {
-        class: "right",
-        type: "button",
-        disabled: !this.state.template.ID,
-        onClick: this.deleteTemplate.bind(this, this.state.template.ID)
-      }, "Delete")));
-    }
+      }, "Save")));
+    } // regular template
+    else if (Object.entries(this.state.template).length != 0) {
+        content = React.createElement("form", {
+          onChange: this.updateTemplate.bind(this),
+          onSubmit: this.saveRegularTemplate.bind(this)
+        }, React.createElement("label", {
+          htmlFor: "ID"
+        }, "ID"), React.createElement("input", {
+          disabled: true,
+          value: this.state.template.ID || ""
+        }), React.createElement(Item, {
+          name: "Name",
+          type: "text",
+          value: this.state.template.Name
+        }), React.createElement(Users, {
+          users: this.state.template.State.Users,
+          callback: this.handleCallback.bind(this)
+        }), React.createElement(Groups, {
+          groups: this.state.template.State.Groups,
+          callback: this.handleCallback.bind(this)
+        }), React.createElement(Processes, {
+          processes: this.state.template.State.Processes,
+          callback: this.handleCallback.bind(this)
+        }), React.createElement(Software, {
+          software: this.state.template.State.Software,
+          callback: this.handleCallback.bind(this)
+        }), React.createElement(NetworkConnections, {
+          conns: this.state.template.State.NetworkConnections,
+          callback: this.handleCallback.bind(this)
+        }), React.createElement("div", null, React.createElement("button", {
+          type: "submit"
+        }, "Save"), React.createElement("button", {
+          class: "right",
+          type: "button",
+          disabled: !this.state.template.ID,
+          onClick: this.deleteTemplate.bind(this, this.state.template.ID)
+        }, "Delete")));
+      }
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newTemplate.bind(this)
-    }, "New Template"), React.createElement("hr", null), React.createElement(Error, {
+    }, "New Template"), React.createElement("button", {
+      type: "button",
+      onClick: this.newTemplateFromState.bind(this)
+    }, "From State"), React.createElement("hr", null), React.createElement(Error, {
       message: this.state.error
     }), content);
   }

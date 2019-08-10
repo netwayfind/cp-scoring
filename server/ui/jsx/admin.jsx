@@ -1154,6 +1154,16 @@ class TemplateEntry extends React.Component {
     window.location.href = "#templates";
   }
 
+  newTemplateFromState() {
+    this.setState({
+      template: {
+        TemplateName: "",
+        StateID: ""
+      }
+    });
+    window.location.href = "#templates";
+  }
+
   getTemplate(id) {
     if (id === null || id === undefined) {
       return;
@@ -1195,10 +1205,17 @@ class TemplateEntry extends React.Component {
     })
   }
 
-  saveTemplate(event) {
+  saveRegularTemplate(event) {
+    this.saveTemplate(event, "/templates")
+  }
+
+  saveStateTemplate(event) {
+    this.saveTemplate(event, "/templates/state")
+  }
+
+  saveTemplate(event, url) {
     event.preventDefault();
 
-    var url = "/templates";
     if (this.state.template.ID != null) {
       url += "/" + this.state.template.ID;
     }
@@ -1274,9 +1291,25 @@ class TemplateEntry extends React.Component {
 
   render() {
     let content = null;
-    if (Object.entries(this.state.template).length != 0) {
+    // template from state
+    if (this.state.template.StateID != undefined) {
       content = (
-        <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveTemplate.bind(this)}>
+        <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveStateTemplate.bind(this)}>
+          <label htmlFor="TemplateName">Template Name</label>
+          <input name="TemplateName" value={this.state.template.TemplateName || ""}/>
+          <br />
+          <label htmlFor="StateID">State ID</label>
+          <input name="StateID" value={this.state.template.StateID || ""}/>
+          <div>
+            <button type="submit">Save</button>
+          </div>
+        </form>
+      )
+    }
+    // regular template
+    else if (Object.entries(this.state.template).length != 0) {
+      content = (
+        <form onChange={this.updateTemplate.bind(this)} onSubmit={this.saveRegularTemplate.bind(this)}>
           <label htmlFor="ID">ID</label>
           <input disabled value={this.state.template.ID || ""}/>
           <Item name="Name" type="text" value={this.state.template.Name}/>
@@ -1296,6 +1329,7 @@ class TemplateEntry extends React.Component {
     return (
       <React.Fragment>
         <button type="button" onClick={this.newTemplate.bind(this)}>New Template</button>
+        <button type="button" onClick={this.newTemplateFromState.bind(this)}>From State</button>
         <hr />
         <Error message={this.state.error} />
         {content}
