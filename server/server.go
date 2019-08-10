@@ -938,6 +938,36 @@ func (theServer theServer) getScenario(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+func (theServer theServer) getScenarioDesc(w http.ResponseWriter, r *http.Request) {
+	log.Println("get scenario description")
+
+	// parse out uint64 id
+	// remove /scenarioDesc/ from URL
+	id, err := strconv.ParseUint(r.URL.Path[14:], 10, 64)
+	if err != nil {
+		msg := "ERROR: cannot parse scenario id;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	log.Println(id)
+	scenario, err := theServer.backingStore.SelectScenario(id)
+	if err != nil {
+		msg := "ERROR: cannot retrieve scenario;"
+		log.Println(msg, err)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+	// result with ID 0 means not found
+	if scenario.ID == 0 {
+		msg := "ERROR: scenario not found"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	}
+	w.Write([]byte(scenario.Description))
+}
+
 func (theServer theServer) newScenario(w http.ResponseWriter, r *http.Request) {
 	log.Println("new scenario")
 
@@ -2337,6 +2367,9 @@ func main() {
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.getScenario).Methods("GET")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.editScenario).Methods("POST")
 	scenariosRouter.HandleFunc("/{id:[0-9]+}", theServer.deleteScenario).Methods("DELETE")
+	// no auth
+	scenarioDescRouter := r.PathPrefix("/scenarioDesc").Subrouter()
+	scenarioDescRouter.HandleFunc("/{id:[0-9]+}", theServer.getScenarioDesc).Methods("GET")
 	analysisRouter := r.PathPrefix("/analysis").Subrouter()
 	analysisRouter.Use(theServer.middleware)
 	analysisRouter.HandleFunc("/reports", theServer.getReport).Methods("GET")
