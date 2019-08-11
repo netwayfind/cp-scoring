@@ -118,19 +118,13 @@ func TestCreateLinkReport(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// empty path
-	err := createLinkReport("https://localhost:8443", path.Join(tempDir, ""), "")
+	err := createLinkReport("https://localhost:8443", path.Join(tempDir, ""))
 	if err == nil {
 		t.Fatal("Expected error for empty string report path")
 	}
 
-	// empty host token
-	err = createLinkReport("https://localhost:8443", path.Join(tempDir, "report.html"), "")
-	if err != nil {
-		t.Fatal("Unexpected error;", err)
-	}
-
-	// non-empty host token
-	err = createLinkReport("https://localhost:8443", path.Join(tempDir, "report.html"), "host_token")
+	// valid
+	err = createLinkReport("https://localhost:8443", path.Join(tempDir, "report.html"))
 	if err != nil {
 		t.Fatal("Unexpected error;", err)
 	}

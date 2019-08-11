@@ -6,7 +6,6 @@ class App extends React.Component {
   render() {
     // check for these in query params
     let teamKey = "";
-    let hostToken = "";
     let query = window.location.search.substring(1);
     let params = query.split("&");
     for (let i = 0; i < params.length; i++) {
@@ -17,13 +16,10 @@ class App extends React.Component {
       if (param[0] === "team_key") {
         teamKey = param[1].trim();
       }
-      else if (param[0] == "host_token") {
-        hostToken = param[1].trim();
-      }
     }
     if (teamKey.length == 0) {
       return (
-        <AskTeamKey hostToken={hostToken} />
+        <AskTeamKey />
       );
     }
     return (
@@ -44,7 +40,6 @@ class AskTeamKey extends React.Component {
     }
 
     this.handleChange = this.handleChange.bind(this);
-    this.registerHostToken = this.registerHostToken.bind(this);
     this.submit = this.submit.bind(this);
   }
 
@@ -55,48 +50,9 @@ class AskTeamKey extends React.Component {
     });
   }
 
-  registerHostToken(hostToken, teamKey) {
-    return new Promise(function(resolve, reject) {
-      fetch("/token/team", {
-        credentials: 'same-origin',
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: "team_key=" + teamKey + "&host_token=" + hostToken
-      })
-      .then(async function(response) {
-        let r = null;
-        if (response.status === 200) {
-          window.location = "/ui/report?team_key=" + teamKey;
-        }
-        else if (response.status === 301) {
-          window.location = window.url;
-        }
-        else if (response.status === 400) {
-          r = {
-            error: "Team key required"
-          }
-        }
-        else if (response.status === 401) {
-          r = {
-            error: "Invalid team key"
-          }
-        }
-        else {
-          r = {
-            error: await response.text()
-          }
-        }
-        resolve(r);
-      });
-    });
-  }
-
   submit(event) {
     event.preventDefault();
 
-    let hostToken = this.props.hostToken;
     let teamKey = this.state.team_key;
 
     // check team key valid
@@ -110,14 +66,8 @@ class AskTeamKey extends React.Component {
     })
     .then(async function(response) {
       if (response.status === 200) {
-        // register host token with team
-        if (hostToken != undefined && hostToken != null && hostToken.length > 0) {
-          return await this.registerHostToken(hostToken, teamKey);
-        }
-        else {
-          window.location = "/ui/report?team_key=" + teamKey;
-          return {}
-        }
+        window.location = "/ui/report?team_key=" + teamKey;
+        return {}
       }
       else if (response.status === 400) {
         return {
@@ -143,7 +93,6 @@ class AskTeamKey extends React.Component {
     return (
       <React.Fragment>
         <form onChange={this.handleChange} onSubmit={event => this.submit(event)}>
-          <input name="host_token" hidden value={this.props.hostToken}/>
           <label id="team_key">Enter team key:</label>
           <input name="team_key" />
           <button type="submit">Submit</button>

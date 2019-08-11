@@ -188,29 +188,9 @@ func createLinkScoreboard(serverURL string, linkScoreboard string) error {
 	return nil
 }
 
-func createLinkReport(serverURL string, linkReport string, hostToken string) error {
-	var s string
-	// if have host token, then connected
-	if len(hostToken) > 0 {
-		u, err := url.Parse(serverURL)
-		if err != nil {
-			return err
-		}
-		u.Path = "/ui/report"
-		params := url.Values{}
-		params.Add("host_token", hostToken)
-		u.RawQuery = params.Encode()
-		s = "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + u.String() + "\"></head><body><a href=\"" + u.String() + "\">Report</a></body></html>"
-	} else {
-		// refresh page every 30 seconds
-		s = "<html><head><meta http-equiv=\"refresh\" content=\"10\"/></head><body>" +
-			"Cannot connect to server, check Internet connection to <a href=\"" + serverURL + "\">" + serverURL + "</a>" +
-			"<p />" +
-			"This page will automatically refresh." +
-			"<br>" +
-			"Last check: " + time.Now().Format("Jan 2 2006 15:04:05 MST") +
-			"</body></html>"
-	}
+func createLinkReport(serverURL string, linkReport string) error {
+	url := serverURL + "/ui/report"
+	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Report</a></body></html>"
 	err := ioutil.WriteFile(linkReport, []byte(s), 0644)
 	if err != nil {
 		log.Println("ERROR: unable to save report link file")
@@ -322,7 +302,7 @@ func main() {
 		serverURL = strings.TrimRight(serverURL, "/")
 		downloadServerFiles(serverURL, serverURLFile, serverPubFile, serverCrtFile)
 		createLinkScoreboard(serverURL, linkScoreboard)
-		createLinkReport(serverURL, linkReport, "")
+		createLinkReport(serverURL, linkReport)
 		os.Exit(0)
 	}
 
@@ -387,11 +367,6 @@ func main() {
 			// get host token if not set yet
 			if len(hostToken) == 0 {
 				hostToken = getHostToken(hostTokenURL, hostTokenFile, hostname, transport)
-				err := os.Remove(linkReport)
-				if err != nil {
-					log.Println("WARN: cannot remove report file;", err)
-				}
-				createLinkReport(serverURL, linkReport, hostToken)
 			}
 			sendState(dataDir, serverURL, transport, hostToken)
 			nextTime = nextTime.Add(10 * time.Second)
