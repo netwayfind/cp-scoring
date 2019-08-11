@@ -258,6 +258,17 @@ func installThis() {
 	host.Install()
 }
 
+func getScenarioDesc(serverURL string, id string, outFile string) {
+	url := serverURL + "/ui/scenarioDesc#" + id
+	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Scenario Description</a></body></html>"
+	err := ioutil.WriteFile(outFile, []byte(s), 0644)
+	if err != nil {
+		log.Println("ERROR: unable to save scenario description file")
+		return
+	}
+	log.Println("Wrote to scenario description file")
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -271,15 +282,18 @@ func main() {
 	hostTokenFile := path.Join(dir, "host_token")
 	linkScoreboard := path.Join(dir, "scoreboard.html")
 	linkReport := path.Join(dir, "report.html")
+	scenarioDesc := path.Join(dir, "README.html")
 	dataDir := path.Join(dir, "data")
 
 	var serverURL string
 	var install bool
 	var askVersion bool
+	var scenarioID string
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.BoolVar(&install, "install", false, "install to this computer")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
+	flag.StringVar(&scenarioID, "scenarioID", "", "get description for scenario with given ID")
 	flag.Parse()
 
 	if install {
@@ -289,6 +303,15 @@ func main() {
 
 	if askVersion {
 		log.Println("Version: " + version)
+		os.Exit(0)
+	}
+
+	if len(scenarioID) > 0 {
+		serverURL, err = getServerURL(serverURLFile)
+		if err != nil {
+			log.Fatalln("ERROR: could not get server URL;", err)
+		}
+		getScenarioDesc(serverURL, scenarioID, scenarioDesc)
 		os.Exit(0)
 	}
 
