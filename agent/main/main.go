@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -134,6 +135,16 @@ func downloadServerFiles(serverURL string, serverURLFile string, serverPubKeyFil
 	}
 }
 
+func readHostTokenFile(hostTokenFile string) string {
+	// get host token file from file
+	tokenBytes, err := ioutil.ReadFile(hostTokenFile)
+	if err != nil {
+		log.Println("ERROR: unable to read host token file;", err)
+		return ""
+	}
+	return string(tokenBytes)
+}
+
 func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, transport *http.Transport) string {
 	// if host token file doesn't exist, get new host token and save it
 	if _, err := os.Stat(hostTokenFile); os.IsNotExist(err) {
@@ -167,13 +178,7 @@ func getHostToken(hostTokenURL string, hostTokenFile string, hostname string, tr
 		log.Println("Saved host token")
 	}
 
-	// get host token file from file
-	tokenBytes, err := ioutil.ReadFile(hostTokenFile)
-	if err != nil {
-		log.Println("ERROR: unable to read host token file;", err)
-		return ""
-	}
-	return string(tokenBytes)
+	return readHostTokenFile(hostTokenFile)
 }
 
 func createLinkScoreboard(serverURL string, linkScoreboard string) error {
@@ -249,6 +254,60 @@ func getScenarioDesc(serverURL string, id string, outFile string) {
 	log.Println("Wrote to scenario description file")
 }
 
+func handleTeamKey(teamKeyFile string, hostTokenFile string, serverURL string, transport *http.Transport) {
+	// if have team key file, don't continue
+	if _, err := os.Stat(teamKeyFile); !os.IsNotExist(err) {
+		log.Println("Team key already set")
+		return
+	}
+	// if don't have host token yet, don't continue
+	hostToken := readHostTokenFile(hostTokenFile)
+	if len(hostToken) == 0 {
+		log.Println("Cannot register, agent not running or unable to access scoring server")
+		return
+	}
+
+	// ask for team key
+	log.Println("Enter team key: ")
+	var teamKey string
+	_, err := fmt.Scan(&teamKey)
+	if err != nil {
+		log.Println("Error asking for team key")
+		os.Exit(1)
+	}
+
+	// register team with host token
+	c := http.Client{Transport: transport}
+	url := serverURL + "/token/team"
+	data := make(map[string][]string)
+	data["team_key"] = []string{teamKey}
+	data["host_token"] = []string{hostToken}
+	r, err := c.PostForm(url, data)
+	if err != nil {
+		log.Println("ERROR: unable to POST team key;", err)
+		return
+	}
+	if r.StatusCode != 200 {
+		log.Printf("ERROR: Unexpected status code from server: %d", r.StatusCode)
+		errMsg, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Fatalln("ERROR: unable to read error message;", err)
+		}
+		log.Println(string(errMsg))
+		os.Exit(1)
+	}
+	defer r.Body.Close()
+
+	// should be successful
+	log.Println("Team key and host registered")
+	// write team key to file
+	err = ioutil.WriteFile(teamKeyFile, []byte(teamKey), 0600)
+	if err != nil {
+		log.Println("Unable to save team key file")
+		os.Exit(1)
+	}
+}
+
 func main() {
 	ex, err := os.Executable()
 	if err != nil {
@@ -260,6 +319,7 @@ func main() {
 	serverPubFile := path.Join(dir, "server.pub")
 	serverCrtFile := path.Join(dir, "server.crt")
 	hostTokenFile := path.Join(dir, "host_token")
+	teamKeyFile := path.Join(dir, "team_key")
 	linkScoreboard := path.Join(dir, "scoreboard.html")
 	linkReport := path.Join(dir, "report.html")
 	scenarioDesc := path.Join(dir, "README.html")
@@ -268,11 +328,13 @@ func main() {
 	var serverURL string
 	var install bool
 	var askVersion bool
+	var askTeamKey bool
 	var scenarioID string
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.BoolVar(&install, "install", false, "install to this computer")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
+	flag.BoolVar(&askTeamKey, "teamKey", false, "ask for team key")
 	flag.StringVar(&scenarioID, "scenarioID", "", "get description for scenario with given ID")
 	flag.Parse()
 
@@ -283,6 +345,19 @@ func main() {
 
 	if askVersion {
 		log.Println("Version: " + version)
+		os.Exit(0)
+	}
+
+	if askTeamKey {
+		serverURL, err = getServerURL(serverURLFile)
+		if err != nil {
+			log.Fatalln("ERROR: could not get server URL;", err)
+		}
+		transport, err := readServerCert(serverCrtFile)
+		if err != nil {
+			log.Fatalln("ERROR: could not read server certificate;", err)
+		}
+		handleTeamKey(teamKeyFile, hostTokenFile, serverURL, transport)
 		os.Exit(0)
 	}
 
