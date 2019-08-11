@@ -931,8 +931,12 @@ class ScenarioEntry extends React.Component {
       }), React.createElement(Item, {
         name: "Name",
         value: this.state.scenario.Name
-      }), React.createElement(Item, {
+      }), React.createElement("label", {
+        htmlFor: "Description"
+      }, "Description"), React.createElement("textarea", {
         name: "Description",
+        rows: "10",
+        cols: "80",
         value: this.state.scenario.Description
       }), React.createElement(Item, {
         name: "Enabled",

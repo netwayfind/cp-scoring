@@ -31,6 +31,7 @@ mkdir -p $BASEDIR/ui/admin
 mkdir -p $BASEDIR/ui/scoreboard
 mkdir -p $BASEDIR/ui/report
 mkdir -p $BASEDIR/ui/insight
+mkdir -p $BASEDIR/ui/scenarioDesc
 cp $(dirname $0)/server/ui/js/* $BASEDIR/ui/js/
 cp $(dirname $0)/server/ui/index.html $BASEDIR/ui
 cp $(dirname $0)/server/ui/style.css $BASEDIR/ui
@@ -38,6 +39,7 @@ cp $(dirname $0)/server/ui/admin/index.html $BASEDIR/ui/admin
 cp $(dirname $0)/server/ui/scoreboard/index.html $BASEDIR/ui/scoreboard
 cp $(dirname $0)/server/ui/report/index.html $BASEDIR/ui/report
 cp $(dirname $0)/server/ui/insight/index.html $BASEDIR/ui/insight
+cp $(dirname $0)/server/ui/scenarioDesc/index.html $BASEDIR/ui/scenarioDesc
 echo "Building linux agent"
 GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
 echo "Building windows agent"

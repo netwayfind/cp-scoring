@@ -874,7 +874,8 @@ class ScenarioEntry extends React.Component {
           <label htmlFor="ID">ID</label>
           <input disabled value={this.state.scenario.ID || ""}/>
           <Item name="Name" value={this.state.scenario.Name}/>
-          <Item name="Description" value={this.state.scenario.Description}/>
+          <label htmlFor="Description">Description</label>
+          <textarea name="Description" rows="10" cols="80" value={this.state.scenario.Description}></textarea>
           <Item name="Enabled" type="checkbox" checked={!!this.state.scenario.Enabled}/>
           <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" value={this.state.scenario.HostTemplates} callback={this.handleCallback.bind(this)} mapItems={this.mapItems} listItems={this.listItems}/>
           <br />

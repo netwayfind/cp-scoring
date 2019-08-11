@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Scenario</title>
+
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/javascript">
+      function useScenario(id) {
+        if (id === undefined || id === null || id.length === 0) {
+          return;
+        }
+
+        fetch("/scenarioDesc/" + id)
+        .then(async function(response) {
+          let converter = new showdown.Converter();
+          let text = await response.text();
+          document.getElementById("content").innerHTML = converter.makeHtml(text);
+        });
+      }
+
+      // track which page to be on
+      let i = window.location.hash.indexOf('#');
+      let hash = window.location.hash.slice(i + 1);
+      this.useScenario(hash);
+      // handle browser back/forward
+      window.onhashchange = (e) => {
+          let i = e.newURL.indexOf('#');
+          let hash = e.newURL.slice(i + 1);
+          this.useScenario(hash);
+      };
+    </script>
+  </body>
+</html>
