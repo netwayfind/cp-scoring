@@ -14,6 +14,8 @@ import (
 
 type hostWindows struct {
 	PowerShellVersion string
+	Description       string
+	IsServer          bool
 }
 
 func powershellCsv(command string, columns string) ([]byte, error) {
@@ -103,12 +105,14 @@ func (host hostWindows) GetSoftware() ([]model.Software, error) {
 	found = append(found, sw...)
 
 	// also collect windows features/roles
-	loc3, err := powershellCsv("Get-WindowsFeature | Where-Object {$_.Installed -match 'True'}", "Name")
-	if err != nil {
-		return nil, err
+	if host.IsServer {
+		loc3, err := powershellCsv("Get-WindowsFeature | Where-Object {$_.Installed -match 'True'}", "Name")
+		if err != nil {
+			return nil, err
+		}
+		sw = parseWindowsFeatures(loc3)
+		found = append(found, sw...)
 	}
-	sw = parseWindowsFeatures(loc3)
-	found = append(found, sw...)
 
 	return found, nil
 }

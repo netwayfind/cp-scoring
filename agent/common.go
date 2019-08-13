@@ -2,7 +2,9 @@ package agent
 
 import (
 	"log"
+	"os/exec"
 	"runtime"
+	"strings"
 
 	"github.com/sumwonyuno/cp-scoring/model"
 )
@@ -52,10 +54,23 @@ func GetCurrentHost() model.CurrentHost {
 	} else if runtime.GOOS == "windows" {
 		version, err := getPowerShellVersion()
 		if err != nil {
-			// can't set it for some reason
-			return hostWindows{}
+			version = ""
 		}
-		return hostWindows{PowerShellVersion: version}
+		cmd := "Get-WmiObject Win32_operatingsystem | % caption"
+		descBytes, err := exec.Command("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe", "-command", cmd).Output()
+		if err != nil {
+			descBytes = make([]byte, 0)
+		}
+		desc := string(descBytes)
+		isServer := false
+		if strings.Contains(desc, "Server") {
+			isServer = true
+		}
+		return hostWindows{
+			PowerShellVersion: version,
+			Description:       desc,
+			IsServer:          isServer,
+		}
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
 		return nil
