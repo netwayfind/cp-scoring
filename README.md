@@ -33,15 +33,12 @@ There are open-source software, but none of the ones researched met the requirem
 
 ## Language Dependencies
 
-* golang stable (1.10.3+)
-* Node.js LTS (8.11.4+)
+* golang stable (1.10.4+)
+* Node.js LTS (10.16.2+)
 
-## UI Dependencies
-
-* react-plotly.js (2.2.0+)
-* plotly.js (1.40.1+)
-
-`npm install react-plotly plotly.js`
+```
+npm install
+```
 
 ## Procedure
 
