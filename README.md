@@ -36,15 +36,12 @@ There are open-source software, but none of the ones researched met the requirem
 * golang stable (1.10.4+)
 * Node.js LTS (10.16.2+)
 
-```
-npm install
-```
-
 ## Procedure
 
 To build [The Server] and [agents]:
 
 1. `cd cp-scoring`
+1. `npm install`
 1. `sh build.sh`
 
 To create a bundle for deployment:
