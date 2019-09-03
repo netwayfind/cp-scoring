@@ -15,6 +15,7 @@ class Scoreboard extends React.Component {
     this.state = {
       error: null,
       scenarios: [],
+      lastCheck: null,
       selectedScenarioID: null,
       selectedScenarioName: null,
       scores: []
@@ -40,9 +41,12 @@ class Scoreboard extends React.Component {
     }
 
     fetch(url).then(async function (response) {
+      let lastCheck = new Date().toLocaleString();
+
       if (response.status === 200) {
         let data = await response.json();
         return {
+          lastCheck: lastCheck,
           error: null,
           selectedScenarioID: id,
           selectedScenarioName: name,
@@ -52,6 +56,7 @@ class Scoreboard extends React.Component {
 
       let text = await response.text();
       return {
+        lastCheck: lastCheck,
         error: text
       };
     }).then(function (s) {
@@ -124,7 +129,11 @@ class Scoreboard extends React.Component {
     let content = null;
 
     if (this.state.selectedScenarioName != null) {
-      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("p", null), React.createElement("table", null, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", {
+      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("p", null), "Last updated: ", this.state.lastCheck, React.createElement("br", null), React.createElement("button", {
+        onClick: () => {
+          this.populateScores(this.state.selectedScenarioID);
+        }
+      }, "Refresh"), React.createElement("p", null), React.createElement("table", null, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", {
         class: "table-cell"
       }, "Team Name"), React.createElement("th", {
         class: "table-cell"

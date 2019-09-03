@@ -16,6 +16,7 @@ class Scoreboard extends React.Component {
     this.state = {
       error: null,
       scenarios: [],
+      lastCheck: null,
       selectedScenarioID: null,
       selectedScenarioName: null,
       scores: []
@@ -41,9 +42,11 @@ class Scoreboard extends React.Component {
   
     fetch(url)
     .then(async function(response) {
+      let lastCheck = new Date().toLocaleString()
       if (response.status === 200) {
         let data = await response.json();
         return {
+          lastCheck: lastCheck,
           error: null,
           selectedScenarioID: id,
           selectedScenarioName: name,
@@ -52,6 +55,7 @@ class Scoreboard extends React.Component {
       }
       let text = await response.text();
       return {
+        lastCheck: lastCheck,
         error: text
       }
     })
@@ -120,6 +124,10 @@ class Scoreboard extends React.Component {
       content = (
         <React.Fragment>
         <h2>{this.state.selectedScenarioName}</h2>
+        <p />
+        Last updated: {this.state.lastCheck}
+        <br />
+        <button onClick={() => {this.populateScores(this.state.selectedScenarioID)}}>Refresh</button>
         <p />
         <table>
           <thead>
