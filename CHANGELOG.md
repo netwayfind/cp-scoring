@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2019-09-01
+### Added
+- [#31](https://github.com/sumwonyuno/cp-scoring/issues/31) - create template from state ID
+- [#8](https://github.com/sumwonyuno/cp-scoring/issues/8) - adds scenario description page
+- [#35](https://github.com/sumwonyuno/cp-scoring/issues/35) - added refresh button to scoreboard and report UI
+
+### Changed
+- updated README
+- updated UI dependencies
+- minor insight UI layout improvements
+- [#30](https://github.com/sumwonyuno/cp-scoring/issues/30) - updated diff code to have report/state diff response streamed to reduce response times
+- [#32](https://github.com/sumwonyuno/cp-scoring/issues/32) - moved team/host registration from report UI to agent
+
+### Fixed
+- fixed random seed
+- fixed missing await keywords in report UI
+- [#29](https://github.com/sumwonyuno/cp-scoring/issues/29) - prevent deleting current or last admin user
+- [#34](https://github.com/sumwonyuno/cp-scoring/issues/34) - Windows features are only collected on Windows Server. Without this fix, software could not be collected on non-Server Windows hosts.
+
 ## [0.4.0] - 2019-06-02
 ### Added
 - [#21](https://github.com/sumwonyuno/cp-scoring/issues/21) - added insight UI to show states, reports, and diffs for scenarios and teams. Various changes to support this.
