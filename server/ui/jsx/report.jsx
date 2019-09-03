@@ -299,8 +299,12 @@ class ScoreTimeline extends React.Component {
         for (let i in scenarioHosts.Hosts) {
           let host = scenarioHosts.Hosts[i];
           let hostname = host.Hostname;
+          let classes = ["nav-button"];
+          if (this.state.selectedScenarioID === scenarioID && this.state.selectedScenarioHostname === hostname){
+            classes.push("nav-button-selected");
+          }
           hosts.push(
-            <li key={i}><a href="#" onClick={() => this.populateHostReport(scenarioName, scenarioID, teamKey, hostname)}>{hostname}</a></li>
+            <li key={i}><a className={classes.join(" ")} href="#" onClick={() => this.populateHostReport(scenarioName, scenarioID, teamKey, hostname)}>{hostname}</a></li>
           );
         }
         scenarios.push(
