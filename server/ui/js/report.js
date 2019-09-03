@@ -108,11 +108,13 @@ class ScoreTimeline extends React.Component {
     super(props);
     this.state = {
       error: null,
-      scenarioName: "",
-      hostname: "",
       timelines: [],
       report: {},
-      scenarioHosts: []
+      scenarioHosts: [],
+      selectedScenarioID: null,
+      selectedScenarioName: null,
+      selectedScenarioHostname: null,
+      lastCheck: null
     };
   }
 
@@ -150,8 +152,9 @@ class ScoreTimeline extends React.Component {
     }
 
     this.setState({
-      scenarioName: scenarioName,
-      hostname: hostname
+      selectedScenarioID: scenarioID,
+      selectedScenarioName: scenarioName,
+      selectedScenarioHostname: hostname
     });
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
     fetch(url).then(async function (response) {
@@ -176,7 +179,8 @@ class ScoreTimeline extends React.Component {
         }
 
         this.setState({
-          timelines: timelines
+          timelines: timelines,
+          lastCheck: new Date().toLocaleString()
         });
       }
     }.bind(this));
@@ -189,7 +193,8 @@ class ScoreTimeline extends React.Component {
       return await response.json();
     }).then(function (data) {
       this.setState({
-        report: data
+        report: data,
+        lastCheck: new Date().toLocaleString()
       });
     }.bind(this));
   }
@@ -302,8 +307,10 @@ class ScoreTimeline extends React.Component {
 
     let content = null;
 
-    if (this.state.hostname) {
-      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.scenarioName), React.createElement("h3", null, this.state.hostname), React.createElement(Plot, {
+    if (this.state.selectedScenarioHostname) {
+      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("h3", null, this.state.selectedScenarioHostname), React.createElement("p", null), "Last updated: ", this.state.lastCheck, React.createElement("br", null), React.createElement("button", {
+        onClick: () => this.populateHostReport(this.state.selectedScenarioName, this.state.selectedScenarioID, this.props.teamKey, this.state.selectedScenarioHostname)
+      }, "Refresh"), React.createElement("p", null), React.createElement(Plot, {
         data: data,
         layout: layout,
         config: config

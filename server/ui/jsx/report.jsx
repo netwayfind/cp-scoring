@@ -108,11 +108,13 @@ class ScoreTimeline extends React.Component {
     super(props);
     this.state = {
       error: null,
-      scenarioName: "",
-      hostname: "",
       timelines: [],
       report: {},
-      scenarioHosts: []
+      scenarioHosts: [],
+      selectedScenarioID: null,
+      selectedScenarioName: null,
+      selectedScenarioHostname: null,
+      lastCheck: null
     }
   }
 
@@ -153,8 +155,9 @@ class ScoreTimeline extends React.Component {
     }
 
     this.setState({
-      scenarioName: scenarioName,
-      hostname: hostname
+      selectedScenarioID: scenarioID,
+      selectedScenarioName: scenarioName,
+      selectedScenarioHostname: hostname,
     });
 
     let url = "/reports/scenario/" + scenarioID + "/timeline?team_key=" + teamKey + "&hostname=" + hostname;
@@ -179,7 +182,8 @@ class ScoreTimeline extends React.Component {
           });
         }
         this.setState({
-          timelines: timelines
+          timelines: timelines,
+          lastCheck: new Date().toLocaleString()
         })
       }
     }.bind(this));
@@ -194,7 +198,8 @@ class ScoreTimeline extends React.Component {
     })
     .then(function(data) {
       this.setState({
-        report: data
+        report: data,
+        lastCheck: new Date().toLocaleString()
       })
     }.bind(this));
   }
@@ -309,11 +314,16 @@ class ScoreTimeline extends React.Component {
     }
 
     let content = null;
-    if (this.state.hostname) {
+    if (this.state.selectedScenarioHostname) {
       content = (
         <React.Fragment>
-          <h2>{this.state.scenarioName}</h2>
-          <h3>{this.state.hostname}</h3>
+          <h2>{this.state.selectedScenarioName}</h2>
+          <h3>{this.state.selectedScenarioHostname}</h3>
+          <p />
+          Last updated: {this.state.lastCheck}
+          <br />
+          <button onClick={() => this.populateHostReport(this.state.selectedScenarioName, this.state.selectedScenarioID, this.props.teamKey, this.state.selectedScenarioHostname)}>Refresh</button>
+          <p />
           <Plot data={data} layout={layout} config={config}/>
           <br />
           Host instances found: {this.state.timelines.length}
