@@ -665,6 +665,17 @@ class AnalysisResults extends React.Component {
 class AnalysisSelected extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      showAllFindings: false
+    };
+    this.updateShowAllFindings = this.updateShowAllFindings.bind(this);
+  }
+
+  updateShowAllFindings(event) {
+    event.preventDefault();
+    this.setState({
+      showAllFindings: !this.state.showAllFindings
+    });
   }
 
   render() {
@@ -691,13 +702,20 @@ class AnalysisSelected extends React.Component {
           let findings = [];
 
           for (let i in this.props.selected.Findings) {
-            let finding = this.props.selected.Findings[i];
-            findings.push(React.createElement("li", {
-              key: i
-            }, finding.Show, " - ", finding.Value, " - ", finding.Message));
+            let finding = this.props.selected.Findings[i]; // always show findings where Show is true
+            // only show findings where Show is false when show all flag is true
+
+            if (finding.Show || this.state.showAllFindings) {
+              findings.push(React.createElement("li", {
+                key: i
+              }, finding.Value, " - ", finding.Message));
+            }
           }
 
-          selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("ul", null, findings));
+          selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("br", null), React.createElement("button", {
+            disabled: this.state.reportShowAllFindings,
+            onClick: this.updateShowAllFindings
+          }, "Show/Hide Findings"), React.createElement("ul", null, findings));
         } // state
         else if (this.props.selected.Users != undefined) {
             let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();

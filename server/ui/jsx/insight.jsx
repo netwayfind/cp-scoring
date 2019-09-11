@@ -642,6 +642,20 @@ class AnalysisResults extends React.Component {
 class AnalysisSelected extends React.Component {
   constructor(props) {
     super(props);
+
+    this.state = {
+      showAllFindings: false
+    }
+
+    this.updateShowAllFindings = this.updateShowAllFindings.bind(this);
+  }
+
+  updateShowAllFindings(event) {
+    event.preventDefault();
+
+    this.setState({
+      showAllFindings: !this.state.showAllFindings
+    });
   }
 
   render() {
@@ -678,13 +692,19 @@ class AnalysisSelected extends React.Component {
       let findings = [];
       for (let i in this.props.selected.Findings) {
         let finding = this.props.selected.Findings[i];
-        findings.push(<li key={i}>{finding.Show} - {finding.Value} - {finding.Message}</li>)
+        // always show findings where Show is true
+        // only show findings where Show is false when show all flag is true
+        if (finding.Show || this.state.showAllFindings) {
+          findings.push(<li key={i}>{finding.Value} - {finding.Message}</li>);
+        }
       }
       selected = (
         <React.Fragment>
           Time: {time}
           <br />
           Findings:
+          <br />
+          <button disabled={this.state.reportShowAllFindings} onClick={this.updateShowAllFindings}>Show/Hide Findings</button>
           <ul>
             {findings}
           </ul>
