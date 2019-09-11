@@ -503,7 +503,13 @@ class TeamEntry extends React.Component {
   }
 
   static newKey() {
-    return Math.random().toString(16).substring(7);
+    let key = "";
+
+    for (let i = 0; i < 8; i++) {
+      key += Math.floor(Math.random() * 16).toString(16).toUpperCase();
+    }
+
+    return key;
   }
 
   componentDidMount() {
@@ -669,7 +675,7 @@ class TeamEntry extends React.Component {
         name: "Enabled",
         type: "checkbox",
         checked: !!this.state.team.Enabled
-      }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.team.Key, React.createElement("button", {
+      }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.team.Key, React.createElement("br", null), React.createElement("button", {
         type: "button",
         onClick: this.regenKey.bind(this)
       }, "Regenerate")))), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {

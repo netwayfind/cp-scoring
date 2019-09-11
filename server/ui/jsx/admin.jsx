@@ -454,7 +454,11 @@ class TeamEntry extends React.Component {
   }
 
   static newKey() {
-    return Math.random().toString(16).substring(7);
+    let key = "";
+    for (let i = 0; i < 8; i++) {
+      key += Math.floor(Math.random() * 16).toString(16).toUpperCase();
+    }
+    return key;
   }
 
   componentDidMount() {
@@ -614,6 +618,7 @@ class TeamEntry extends React.Component {
             <ul>
               <li>
                 {this.state.team.Key}
+                <br />
                 <button type="button" onClick={this.regenKey.bind(this)}>Regenerate</button>
               </li>
             </ul>
