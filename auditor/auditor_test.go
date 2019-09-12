@@ -1050,3 +1050,82 @@ func TestAuditGroupsNotPresent(t *testing.T) {
 	}
 	checkFinding(t, findings[0], true, 1, "Group Users, member removed: user")
 }
+
+func TestAuditScheduledTasks(t *testing.T) {
+	state := model.State{}
+	task := model.ScheduledTask{Name: "task", Path: "path", Enabled: true}
+	empty := make([]model.ScheduledTask, 0)
+	notEmpty := append(empty, task)
+
+	// no task in template
+	template := model.NewTemplate()
+	// task not in state
+	state.ScheduledTasks = empty
+	findings := auditScheduledTasks(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// task in state
+	state.ScheduledTasks = notEmpty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// template task to add
+	template = model.NewTemplate()
+	templateTask := model.ScheduledTask{Name: "task", Path: "path", Enabled: true, ObjectState: model.ObjectStateAdd}
+	template.State.ScheduledTasks = append(make([]model.ScheduledTask, 0), templateTask)
+	// task not in state
+	state.ScheduledTasks = empty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Scheduled task not added: task @ path, true")
+	// template task to add, task in state
+	state.ScheduledTasks = notEmpty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Scheduled task added: task @ path, true")
+
+	// template task to keep
+	template = model.NewTemplate()
+	templateTask = model.ScheduledTask{Name: "task", Path: "path", Enabled: true, ObjectState: model.ObjectStateKeep}
+	template.State.ScheduledTasks = append(make([]model.ScheduledTask, 0), templateTask)
+	// task not in state
+	state.ScheduledTasks = empty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, -1, "Scheduled task not found: task @ path, true")
+	// task in state
+	state.ScheduledTasks = notEmpty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Scheduled task found: task @ path, true")
+
+	// template task to remove
+	template = model.NewTemplate()
+	templateTask = model.ScheduledTask{Name: "task", Path: "path", Enabled: true, ObjectState: model.ObjectStateRemove}
+	template.State.ScheduledTasks = append(make([]model.ScheduledTask, 0), templateTask)
+	// task not in state
+	state.ScheduledTasks = empty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Scheduled task removed: task @ path, true")
+	// task in state
+	state.ScheduledTasks = notEmpty
+	findings = auditScheduledTasks(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Scheduled task not removed: task @ path, true")
+}

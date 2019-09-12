@@ -1,6 +1,7 @@
 package auditor
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/sumwonyuno/cp-scoring/model"
@@ -505,6 +506,76 @@ func auditNetworkConnections(state model.State, template model.Template) []model
 
 	for _, templateConn := range template.State.NetworkConnections {
 		finding := auditNetworkConnectionObjectState(templateConn, state)
+		findings = append(findings, finding)
+	}
+
+	return findings
+}
+
+func auditScheduledTaskObjectState(templateTask model.ScheduledTask, state model.State) model.Finding {
+	var finding model.Finding
+
+	taskStr := templateTask.Name + " @ " + templateTask.Path + ", " + strconv.FormatBool(templateTask.Enabled)
+
+	found := false
+	for _, task := range state.ScheduledTasks {
+		if templateTask.Name != task.Name {
+			continue
+		}
+		if templateTask.Enabled != task.Enabled {
+			continue
+		}
+		if len(templateTask.Path) > 0 && templateTask.Path != task.Path {
+			continue
+		}
+		found = true
+		break
+	}
+
+	if templateTask.ObjectState == model.ObjectStateAdd {
+		if found {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Scheduled task added: " + taskStr
+		} else {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Scheduled task not added: " + taskStr
+		}
+	} else if templateTask.ObjectState == model.ObjectStateKeep {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Scheduled task found: " + taskStr
+		} else {
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Scheduled task not found: " + taskStr
+		}
+	} else if templateTask.ObjectState == model.ObjectStateRemove {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Scheduled task not removed: " + taskStr
+		} else {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Scheduled task removed: " + taskStr
+		}
+	} else {
+		finding.Show = false
+		finding.Value = 0
+		finding.Message = "Unknown scheduled task state: " + taskStr
+	}
+
+	return finding
+}
+
+func auditScheduledTasks(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for _, templateTask := range template.State.ScheduledTasks {
+		finding := auditScheduledTaskObjectState(templateTask, state)
 		findings = append(findings, finding)
 	}
 
