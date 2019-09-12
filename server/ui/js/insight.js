@@ -782,7 +782,22 @@ class AnalysisSelected extends React.Component {
               }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
             }
 
-            selected = React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, React.createElement("br", null), "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null));
+            let tasks = [];
+
+            for (let i in this.props.selected.ScheduledTasks) {
+              let task = this.props.selected.ScheduledTasks[i];
+              let enabledStr = "Enabled";
+
+              if (!task.Enabled) {
+                enabledStr = "Disabled";
+              }
+
+              tasks.push(React.createElement("li", {
+                key: i
+              }, task.Name, " @ ", task.Path, " - ", enabledStr));
+            }
+
+            selected = React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, React.createElement("br", null), "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null), "Scheduled tasks:", React.createElement("ul", null, tasks), React.createElement("br", null));
           }
 
     return selected;

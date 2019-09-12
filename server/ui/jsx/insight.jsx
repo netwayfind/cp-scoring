@@ -751,6 +751,15 @@ class AnalysisSelected extends React.Component {
         let conn = this.props.selected.NetworkConnections[i];
         conns.push(<li key={i}>{conn.Protocol} - {conn.LocalAddress}:{conn.LocalPort} - {conn.RemoteAddress}:{conn.RemotePort} - {conn.State}</li>);
       }
+      let tasks = [];
+      for (let i in this.props.selected.ScheduledTasks) {
+        let task = this.props.selected.ScheduledTasks[i];
+        let enabledStr = "Enabled";
+        if (!task.Enabled) {
+          enabledStr = "Disabled";
+        }
+        tasks.push(<li key={i}>{task.Name} @ {task.Path} - {enabledStr}</li>);
+      }
       selected = (
         <React.Fragment>
           State ID: {this.props.selected.StateID}
@@ -789,6 +798,11 @@ class AnalysisSelected extends React.Component {
           Network connections:
           <ul>
             {conns}
+          </ul>
+          <br />
+          Scheduled tasks:
+          <ul>
+            {tasks}
           </ul>
           <br />
         </React.Fragment>
