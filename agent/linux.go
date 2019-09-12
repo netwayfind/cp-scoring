@@ -99,6 +99,11 @@ func (h hostLinux) GetNetworkConnections() ([]model.NetworkConnection, error) {
 	return conns, nil
 }
 
+func (h hostLinux) GetScheduledTasks() ([]model.ScheduledTask, error) {
+	// not implemented yet
+	return make([]model.ScheduledTask, 0), nil
+}
+
 func copyAgentLinux(installPath string) {
 	log.Println("Copying this executable to installation folder")
 	ex, err := os.Executable()

@@ -37,6 +37,9 @@ func TestCollectState(t *testing.T) {
 	if state.NetworkConnections == nil && state.Errors == nil {
 		t.Fatal("network connections not set, no errors")
 	}
+	if state.ScheduledTasks == nil && state.Errors == nil {
+		t.Fatal("scheduled tasks not set, no errors")
+	}
 	if state.Errors == nil {
 		t.Fatal("No errors set")
 	}

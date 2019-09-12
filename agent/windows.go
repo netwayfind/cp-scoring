@@ -133,6 +133,14 @@ func (host hostWindows) GetNetworkConnections() ([]model.NetworkConnection, erro
 	return append(tcpConns, udpConns...), nil
 }
 
+func (host hostWindows) GetScheduledTasks() ([]model.ScheduledTask, error) {
+	out, err := powershellCsv("Get-ScheduledTask", "TaskName,TaskPath,State")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsScheduledTasks(out), nil
+}
+
 func getScheduledTaskXML() []byte {
 	return []byte(`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">

@@ -14,6 +14,7 @@ type CurrentHost interface {
 	GetProcesses() ([]Process, error)
 	GetSoftware() ([]Software, error)
 	GetNetworkConnections() ([]NetworkConnection, error)
+	GetScheduledTasks() ([]ScheduledTask, error)
 	Install()
 }
 
@@ -38,6 +39,7 @@ type State struct {
 	Processes          []Process
 	Software           []Software
 	NetworkConnections []NetworkConnection
+	ScheduledTasks     []ScheduledTask
 }
 
 type ObjectState string
@@ -73,6 +75,13 @@ type Process struct {
 type Software struct {
 	Name        string
 	Version     string
+	ObjectState ObjectState
+}
+
+type ScheduledTask struct {
+	Name        string
+	Path        string
+	Enabled     bool
 	ObjectState ObjectState
 }
 

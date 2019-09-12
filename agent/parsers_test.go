@@ -2072,3 +2072,124 @@ func TestParsePowerShellVersion(t *testing.T) {
 		t.Fatal("Incorrectly parsed version")
 	}
 }
+
+func TestParseWindowsScheduledTasksBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	tasks := parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// bad string
+	bs = []byte("csv")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// incorrect number
+	bs = []byte("1,2\r\n1,2")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4\r\n1,2,3,4")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// just header
+	bs = []byte("1,2,3")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3\r\n1,2")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3\r\n1,2,3\r\n1,2")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+}
+
+func TestParseWIndowsScheduledTasks(t *testing.T) {
+	// missing name
+	bs := []byte("1,2,3\r\n,path,Ready")
+	tasks := parseWindowsScheduledTasks(bs)
+	if len(tasks) != 0 {
+		t.Fatal("Expected 0 tasks")
+	}
+
+	// missing path
+	bs = []byte("1,2,3\r\ntask,,Ready")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 1 {
+		t.Fatal("Expected 1 tasks")
+	}
+	if len(tasks[0].Path) != 0 {
+		t.Fatal("Expected task path to be empty")
+	}
+
+	// missing enabled
+	bs = []byte("1,2,3\r\ntask,path,")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 1 {
+		t.Fatal("Expected 1 tasks")
+	}
+	if tasks[0].Enabled != false {
+		t.Fatal("Expected task to be not enabled")
+	}
+
+	// given name, path, and enabled
+	bs = []byte("1,2,3\r\ntask,path,Ready")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 1 {
+		t.Fatal("Expected 1 tasks")
+	}
+	if tasks[0].Name != "task" {
+		t.Fatal("Unexpected task name")
+	}
+	if tasks[0].Path != "path" {
+		t.Fatal("Unexpected task path")
+	}
+	if tasks[0].Enabled != true {
+		t.Fatal("Unexpected task enabled value")
+	}
+
+	// multiple tasks
+	bs = []byte("1,2,3\r\ntask,path,Ready\r\ntask2,path2,Disabled")
+	tasks = parseWindowsScheduledTasks(bs)
+	if len(tasks) != 2 {
+		t.Fatal("Expected 2 tasks")
+	}
+	if tasks[0].Name != "task" {
+		t.Fatal("Unexpected task name")
+	}
+	if tasks[0].Path != "path" {
+		t.Fatal("Unexpected task path")
+	}
+	if tasks[0].Enabled != true {
+		t.Fatal("Unexpected task enabled value")
+	}
+	if tasks[1].Name != "task2" {
+		t.Fatal("Unexpected task name")
+	}
+	if tasks[1].Path != "path2" {
+		t.Fatal("Unexpected task path")
+	}
+	if tasks[1].Enabled != false {
+		t.Fatal("Unexpected task enabled value")
+	}
+}

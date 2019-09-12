@@ -45,6 +45,12 @@ func GetState() model.State {
 		errors = append(errors, "ERROR: cannot get network connections; "+err.Error())
 	}
 	state.Errors = errors
+	tasks, err := host.GetScheduledTasks()
+	if err == nil {
+		state.ScheduledTasks = tasks
+	} else {
+		errors = append(errors, "ERROR: cannot get scheduled tasks;"+err.Error())
+	}
 	return state
 }
 

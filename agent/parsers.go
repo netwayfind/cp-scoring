@@ -754,3 +754,42 @@ func parsePowerShellVersion(bs []byte) string {
 	// no rows
 	return ""
 }
+
+func parseWindowsScheduledTasks(bs []byte) []model.ScheduledTask {
+	tasks := make([]model.ScheduledTask, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return tasks
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 3 columns, or else ignore line
+		if len(row) != 3 {
+			continue
+		}
+
+		// don't add if empty name
+		if len(row[0]) == 0 {
+			continue
+		}
+
+		task := model.ScheduledTask{}
+		task.Name = row[0]
+		task.Path = row[1]
+		if row[2] == "Ready" {
+			task.Enabled = true
+		} else {
+			task.Enabled = false
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks
+}
