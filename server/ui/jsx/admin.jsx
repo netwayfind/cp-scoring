@@ -1324,6 +1324,7 @@ class TemplateEntry extends React.Component {
           <Processes processes={this.state.template.State.Processes} callback={this.handleCallback.bind(this)}/>
           <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
           <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
+          <ScheduledTasks tasks={this.state.template.State.ScheduledTasks} callback={this.handleCallback.bind(this)}/>
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
@@ -2010,6 +2011,128 @@ class NetworkConnections extends React.Component {
         <button type="button" onClick={this.add.bind(this)}>Add Network Connection</button>
         <ul>
           {conns}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class ScheduledTasks extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      tasks: []
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setTasks(this.props.tasks);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setTasks(newProps.tasks);
+  }
+
+  setTasks(tasks) {
+    if (tasks === undefined || tasks === null) {
+      tasks = [];
+    }
+    this.setState({
+      tasks: tasks
+    });
+  }
+
+  add() {
+    let empty = {
+      Name: "",
+      Path: "",
+      Enabled: true
+    };
+    let tasks = [
+      ...this.state.tasks,
+      empty
+    ];
+    this.setState({
+      tasks: tasks
+    });
+    this.props.callback("ScheduledTasks", tasks)
+  }
+
+  remove(id) {
+    let tasks = this.state.tasks.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      tasks: tasks
+    });
+    this.props.callback("ScheduledTasks", tasks);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.tasks;
+    let value = event.target.value;
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      }
+      else {
+        value = false;
+      }
+    }
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      tasks: updated
+    })
+    this.props.callback("ScheduledTasks", updated);
+  }
+
+  render() {
+    let tasks = [];
+    for (let i in this.state.tasks) {
+      let entry = this.state.tasks[i];
+      let enabledStr = "Enabled";
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+      tasks.push(
+        <details key={i}>
+          <summary>{entry.Name} {entry.Path} {enabledStr}</summary>
+          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Name</label>
+              <input type="text" value={entry.Name} onChange={event=> this.update(i, "Name", event)}></input>
+            </li>
+            <li>
+              <label>Path</label>
+              <input type="text" value={entry.Path} onChange={event=> this.update(i, "Path", event)}></input>
+            </li>
+            <li>
+              <label>Enabled</label>
+              <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
+            </li>
+            <li>
+              <ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} />
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>Scheduled Tasks</summary>
+        <button type="button" onClick={this.add.bind(this)}>Add Scheduled Task</button>
+        <ul>
+          {tasks}
         </ul>
       </details>
     )

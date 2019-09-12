@@ -1430,6 +1430,9 @@ class TemplateEntry extends React.Component {
         }), React.createElement(NetworkConnections, {
           conns: this.state.template.State.NetworkConnections,
           callback: this.handleCallback.bind(this)
+        }), React.createElement(ScheduledTasks, {
+          tasks: this.state.template.State.ScheduledTasks,
+          callback: this.handleCallback.bind(this)
         }), React.createElement("div", null, React.createElement("button", {
           type: "submit"
         }, "Save"), React.createElement("button", {
@@ -2082,6 +2085,121 @@ class NetworkConnections extends React.Component {
       type: "button",
       onClick: this.add.bind(this)
     }, "Add Network Connection"), React.createElement("ul", null, conns));
+  }
+
+}
+
+class ScheduledTasks extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tasks: []
+    };
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setTasks(this.props.tasks);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setTasks(newProps.tasks);
+  }
+
+  setTasks(tasks) {
+    if (tasks === undefined || tasks === null) {
+      tasks = [];
+    }
+
+    this.setState({
+      tasks: tasks
+    });
+  }
+
+  add() {
+    let empty = {
+      Name: "",
+      Path: "",
+      Enabled: true
+    };
+    let tasks = [...this.state.tasks, empty];
+    this.setState({
+      tasks: tasks
+    });
+    this.props.callback("ScheduledTasks", tasks);
+  }
+
+  remove(id) {
+    let tasks = this.state.tasks.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      tasks: tasks
+    });
+    this.props.callback("ScheduledTasks", tasks);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.tasks;
+    let value = event.target.value;
+
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      } else {
+        value = false;
+      }
+    }
+
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      tasks: updated
+    });
+    this.props.callback("ScheduledTasks", updated);
+  }
+
+  render() {
+    let tasks = [];
+
+    for (let i in this.state.tasks) {
+      let entry = this.state.tasks[i];
+      let enabledStr = "Enabled";
+
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+
+      tasks.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.Name, " ", entry.Path, " ", enabledStr), React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+        type: "text",
+        value: entry.Name,
+        onChange: event => this.update(i, "Name", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Path"), React.createElement("input", {
+        type: "text",
+        value: entry.Path,
+        onChange: event => this.update(i, "Path", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+        type: "checkbox",
+        checked: entry.Enabled,
+        onChange: event => this.update(i, "Enabled", event)
+      })), React.createElement("li", null, React.createElement(ObjectState, {
+        value: entry.ObjectState,
+        onChange: event => this.update(i, "ObjectState", event)
+      })))));
+    }
+
+    return React.createElement("details", null, React.createElement("summary", null, "Scheduled Tasks"), React.createElement("button", {
+      type: "button",
+      onClick: this.add.bind(this)
+    }, "Add Scheduled Task"), React.createElement("ul", null, tasks));
   }
 
 }
