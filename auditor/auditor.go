@@ -17,6 +17,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditProcesses(state, template)...)
 		report.Findings = append(report.Findings, auditSoftware(state, template)...)
 		report.Findings = append(report.Findings, auditNetworkConnections(state, template)...)
+		report.Findings = append(report.Findings, auditScheduledTasks(state, template)...)
 	}
 
 	return report

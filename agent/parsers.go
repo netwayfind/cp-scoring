@@ -782,10 +782,12 @@ func parseWindowsScheduledTasks(bs []byte) []model.ScheduledTask {
 		task := model.ScheduledTask{}
 		task.Name = row[0]
 		task.Path = row[1]
-		if row[2] == "Ready" {
-			task.Enabled = true
-		} else {
+		if row[2] == "Disabled" {
 			task.Enabled = false
+		} else if len(row[2]) == 0 {
+			task.Enabled = false
+		} else {
+			task.Enabled = true
 		}
 
 		tasks = append(tasks, task)
