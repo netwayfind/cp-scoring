@@ -760,7 +760,6 @@ class AnalysisSelected extends React.Component {
         }
         tasks.push(<li key={i}>{task.Name} @ {task.Path} - {enabledStr}</li>);
       }
-
       let profiles = [];
       for (let i in this.props.selected.WindowsFirewallProfiles) {
         let profile = this.props.selected.WindowsFirewallProfiles[i];
@@ -769,6 +768,15 @@ class AnalysisSelected extends React.Component {
           enabledStr = "Disabled";
         }
         profiles.push(<li key={i}>Profile: {profile.Name} - {enabledStr} - Inbound: {profile.DefaultInboundAction} - Outbound: {profile.DefaultOutboundAction}</li>);
+      }
+      let rules = [];
+      for (let i in this.props.selected.WindowsFirewallRules) {
+        let rule = this.props.selected.WindowsFirewallRules[i];
+        let enabledStr = "Enabled";
+        if (!rule.Enabled) {
+          enabledStr = "Disabled";
+        }
+        rules.push(<li key={i}>{rule.Name}, {enabledStr}, Direction: {rule.Direction}, Action: {rule.Action}</li>);
       }
       selected = (
         <React.Fragment>
@@ -818,6 +826,11 @@ class AnalysisSelected extends React.Component {
           Windows Firewall profiles:
           <ul>
             {profiles}
+          </ul>
+          <br />
+          Windows Firewall rules:
+          <ul>
+            {rules}
           </ul>
           <br />
         </React.Fragment>
