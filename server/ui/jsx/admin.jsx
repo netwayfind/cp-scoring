@@ -1325,6 +1325,7 @@ class TemplateEntry extends React.Component {
           <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
           <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
           <ScheduledTasks tasks={this.state.template.State.ScheduledTasks} callback={this.handleCallback.bind(this)}/>
+          <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewall} callback={this.handleCallback.bind(this)}/>
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
@@ -2133,6 +2134,144 @@ class ScheduledTasks extends React.Component {
         <button type="button" onClick={this.add.bind(this)}>Add Scheduled Task</button>
         <ul>
           {tasks}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class WindowsFirewallProfiles extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      profiles: []
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setProfiles(this.props.profiles);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setProfiles(newProps.profiles);
+  }
+
+  setProfiles(profiles) {
+    if (profiles === undefined || profiles === null) {
+      profiles = [];
+    }
+    this.setState({
+      profiles: profiles
+    });
+  }
+
+  add() {
+    let empty = {
+      Name: "",
+      Enabled: true,
+      DefaultInboundAction: "Block",
+      DefaultOutboundAction: "Allow"
+    };
+    let profiles = [
+      ...this.state.profiles,
+      empty
+    ];
+    this.setState({
+      profiles: profiles
+    });
+    this.props.callback("WindowsFirewall", profiles)
+  }
+
+  remove(id) {
+    let profiles = this.state.profiles.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      profiles: profiles
+    });
+    this.props.callback("WindowsFirewall", profiles);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.profiles;
+    let value = event.target.value;
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      }
+      else {
+        value = false;
+      }
+    }
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      profiles: updated
+    })
+    this.props.callback("WindowsFirewall", updated);
+  }
+
+  render() {
+    let profiles = [];
+    for (let i in this.state.profiles) {
+      let entry = this.state.profiles[i];
+      let enabledStr = "Enabled";
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+      profiles.push(
+        <details key={i}>
+          <summary>Profile: {entry.Name} {enabledStr} Inbound: {entry.DefaultInboundAction} Outbound: {entry.DefaultOutboundAction}</summary>
+          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Name</label>
+              <select value={entry.Name} onChange={event=> this.update(i, "Name", event)}>
+                <option disabled key="" value="">
+                </option>
+                <option>Domain</option>
+                <option>Public</option>
+                <option>Private</option>
+              </select>
+            </li>
+            <li>
+              <label>Enabled</label>
+              <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
+            </li>
+            <li>
+              <label>Inbound</label>
+              <select value={entry.DefaultInboundAction} onChange={event=> this.update(i, "DefaultInboundAction", event)}>
+                <option>Block</option>
+                <option>Allow</option>
+                <option>NotConfigured</option>
+              </select>
+            </li>
+            <li>
+              <label>Outbound</label>
+              <select value={entry.DefaultOutboundAction} onChange={event=> this.update(i, "DefaultOutboundAction", event)}>
+                <option>Block</option>
+                <option>Allow</option>
+                <option>NotConfigured</option>
+              </select>
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>Windows Firewall Profiles</summary>
+        <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall profile</button>
+        <ul>
+          {profiles}
         </ul>
       </details>
     )

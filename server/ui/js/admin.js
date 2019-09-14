@@ -1433,6 +1433,9 @@ class TemplateEntry extends React.Component {
         }), React.createElement(ScheduledTasks, {
           tasks: this.state.template.State.ScheduledTasks,
           callback: this.handleCallback.bind(this)
+        }), React.createElement(WindowsFirewallProfiles, {
+          profiles: this.state.template.State.WindowsFirewall,
+          callback: this.handleCallback.bind(this)
         }), React.createElement("div", null, React.createElement("button", {
           type: "submit"
         }, "Save"), React.createElement("button", {
@@ -2200,6 +2203,124 @@ class ScheduledTasks extends React.Component {
       type: "button",
       onClick: this.add.bind(this)
     }, "Add Scheduled Task"), React.createElement("ul", null, tasks));
+  }
+
+}
+
+class WindowsFirewallProfiles extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      profiles: []
+    };
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setProfiles(this.props.profiles);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setProfiles(newProps.profiles);
+  }
+
+  setProfiles(profiles) {
+    if (profiles === undefined || profiles === null) {
+      profiles = [];
+    }
+
+    this.setState({
+      profiles: profiles
+    });
+  }
+
+  add() {
+    let empty = {
+      Name: "",
+      Enabled: true,
+      DefaultInboundAction: "Block",
+      DefaultOutboundAction: "Allow"
+    };
+    let profiles = [...this.state.profiles, empty];
+    this.setState({
+      profiles: profiles
+    });
+    this.props.callback("WindowsFirewall", profiles);
+  }
+
+  remove(id) {
+    let profiles = this.state.profiles.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      profiles: profiles
+    });
+    this.props.callback("WindowsFirewall", profiles);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.profiles;
+    let value = event.target.value;
+
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      } else {
+        value = false;
+      }
+    }
+
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      profiles: updated
+    });
+    this.props.callback("WindowsFirewall", updated);
+  }
+
+  render() {
+    let profiles = [];
+
+    for (let i in this.state.profiles) {
+      let entry = this.state.profiles[i];
+      let enabledStr = "Enabled";
+
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+
+      profiles.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, "Profile: ", entry.Name, " ", enabledStr, " Inbound: ", entry.DefaultInboundAction, " Outbound: ", entry.DefaultOutboundAction), React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("select", {
+        value: entry.Name,
+        onChange: event => this.update(i, "Name", event)
+      }, React.createElement("option", {
+        disabled: true,
+        key: "",
+        value: ""
+      }), React.createElement("option", null, "Domain"), React.createElement("option", null, "Public"), React.createElement("option", null, "Private"))), React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+        type: "checkbox",
+        checked: entry.Enabled,
+        onChange: event => this.update(i, "Enabled", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Inbound"), React.createElement("select", {
+        value: entry.DefaultInboundAction,
+        onChange: event => this.update(i, "DefaultInboundAction", event)
+      }, React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"), React.createElement("option", null, "NotConfigured"))), React.createElement("li", null, React.createElement("label", null, "Outbound"), React.createElement("select", {
+        value: entry.DefaultOutboundAction,
+        onChange: event => this.update(i, "DefaultOutboundAction", event)
+      }, React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"), React.createElement("option", null, "NotConfigured"))))));
+    }
+
+    return React.createElement("details", null, React.createElement("summary", null, "Windows Firewall Profiles"), React.createElement("button", {
+      type: "button",
+      onClick: this.add.bind(this)
+    }, "Add Windows Firewall profile"), React.createElement("ul", null, profiles));
   }
 
 }
