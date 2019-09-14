@@ -1326,6 +1326,7 @@ class TemplateEntry extends React.Component {
           <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
           <ScheduledTasks tasks={this.state.template.State.ScheduledTasks} callback={this.handleCallback.bind(this)}/>
           <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewallProfiles} callback={this.handleCallback.bind(this)}/>
+          <WindowsFirewallRules rules={this.state.template.State.WindowsFirewallRules} callback={this.handleCallback.bind(this)}/>
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
@@ -2272,6 +2273,151 @@ class WindowsFirewallProfiles extends React.Component {
         <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall profile</button>
         <ul>
           {profiles}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class WindowsFirewallRules extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      rules: []
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setRules(this.props.rules);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setRules(newProps.rules);
+  }
+
+  setRules(rules) {
+    if (rules === undefined || rules === null) {
+      rules = [];
+    }
+    this.setState({
+      rules: rules
+    });
+  }
+
+  add() {
+    let empty = {
+      DisplayName: "",
+      Enabled: true,
+      Direction: "",
+      Action: ""
+    };
+    let rules = [
+      ...this.state.rules,
+      empty
+    ];
+    this.setState({
+      rules: rules
+    });
+    this.props.callback("WindowsFirewallRules", rules)
+  }
+
+  remove(id) {
+    let rules = this.state.rules.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      rules: rules
+    });
+    this.props.callback("WindowsFirewallRules", rules);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.rules;
+    let value = event.target.value;
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      }
+      else {
+        value = false;
+      }
+    }
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      rules: updated
+    })
+    this.props.callback("WindowsFirewallRules", updated);
+  }
+
+  render() {
+    let rules = [];
+    for (let i in this.state.rules) {
+      let entry = this.state.rules[i];
+      let enabledStr = "Enabled";
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+      let ruleOptions = null;
+      if (entry.ObjectState != "Remove") {
+        ruleOptions = (
+          <React.Fragment>
+            <li>
+              <label>Enabled</label>
+              <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
+            </li>
+            <li>
+              <label>Direction</label>
+              <select value={entry.Direction} onChange={event=> this.update(i, "Direction", event)}>
+                <option disabled key="" value="">
+                </option>
+                <option>Inbound</option>
+                <option>Outbound</option>
+              </select>
+            </li>
+            <li>
+              <label>Action</label>
+              <select value={entry.Action} onChange={event=> this.update(i, "Action", event)}>
+                <option disabled key="" value="">
+                </option>
+                <option>Block</option>
+                <option>Allow</option>
+              </select>
+            </li>
+          </React.Fragment>
+        );
+      }
+      rules.push(
+        <details key={i}>
+          <summary>{entry.DisplayName}, {enabledStr}, Direction: {entry.Direction}, Action: {entry.Action}</summary>
+          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>DisplayName</label>
+              <input type="text" value={entry.DisplayName} onChange={event=> this.update(i, "DisplayName", event)}></input>
+            </li>
+            <li>
+              <ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} />
+            </li>
+            {ruleOptions}
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>Windows Firewall rules</summary>
+        <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall rule</button>
+        <ul>
+          {rules}
         </ul>
       </details>
     )

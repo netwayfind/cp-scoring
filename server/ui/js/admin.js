@@ -1436,6 +1436,9 @@ class TemplateEntry extends React.Component {
         }), React.createElement(WindowsFirewallProfiles, {
           profiles: this.state.template.State.WindowsFirewallProfiles,
           callback: this.handleCallback.bind(this)
+        }), React.createElement(WindowsFirewallRules, {
+          rules: this.state.template.State.WindowsFirewallRules,
+          callback: this.handleCallback.bind(this)
         }), React.createElement("div", null, React.createElement("button", {
           type: "submit"
         }, "Save"), React.createElement("button", {
@@ -2321,6 +2324,138 @@ class WindowsFirewallProfiles extends React.Component {
       type: "button",
       onClick: this.add.bind(this)
     }, "Add Windows Firewall profile"), React.createElement("ul", null, profiles));
+  }
+
+}
+
+class WindowsFirewallRules extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      rules: []
+    };
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setRules(this.props.rules);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setRules(newProps.rules);
+  }
+
+  setRules(rules) {
+    if (rules === undefined || rules === null) {
+      rules = [];
+    }
+
+    this.setState({
+      rules: rules
+    });
+  }
+
+  add() {
+    let empty = {
+      DisplayName: "",
+      Enabled: true,
+      Direction: "",
+      Action: ""
+    };
+    let rules = [...this.state.rules, empty];
+    this.setState({
+      rules: rules
+    });
+    this.props.callback("WindowsFirewallRules", rules);
+  }
+
+  remove(id) {
+    let rules = this.state.rules.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      rules: rules
+    });
+    this.props.callback("WindowsFirewallRules", rules);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.rules;
+    let value = event.target.value;
+
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      } else {
+        value = false;
+      }
+    }
+
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      rules: updated
+    });
+    this.props.callback("WindowsFirewallRules", updated);
+  }
+
+  render() {
+    let rules = [];
+
+    for (let i in this.state.rules) {
+      let entry = this.state.rules[i];
+      let enabledStr = "Enabled";
+
+      if (!entry.Enabled) {
+        enabledStr = "Disabled";
+      }
+
+      let ruleOptions = null;
+
+      if (entry.ObjectState != "Remove") {
+        ruleOptions = React.createElement(React.Fragment, null, React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+          type: "checkbox",
+          checked: entry.Enabled,
+          onChange: event => this.update(i, "Enabled", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Direction"), React.createElement("select", {
+          value: entry.Direction,
+          onChange: event => this.update(i, "Direction", event)
+        }, React.createElement("option", {
+          disabled: true,
+          key: "",
+          value: ""
+        }), React.createElement("option", null, "Inbound"), React.createElement("option", null, "Outbound"))), React.createElement("li", null, React.createElement("label", null, "Action"), React.createElement("select", {
+          value: entry.Action,
+          onChange: event => this.update(i, "Action", event)
+        }, React.createElement("option", {
+          disabled: true,
+          key: "",
+          value: ""
+        }), React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"))));
+      }
+
+      rules.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.DisplayName, ", ", enabledStr, ", Direction: ", entry.Direction, ", Action: ", entry.Action), React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "DisplayName"), React.createElement("input", {
+        type: "text",
+        value: entry.DisplayName,
+        onChange: event => this.update(i, "DisplayName", event)
+      })), React.createElement("li", null, React.createElement(ObjectState, {
+        value: entry.ObjectState,
+        onChange: event => this.update(i, "ObjectState", event)
+      })), ruleOptions)));
+    }
+
+    return React.createElement("details", null, React.createElement("summary", null, "Windows Firewall rules"), React.createElement("button", {
+      type: "button",
+      onClick: this.add.bind(this)
+    }, "Add Windows Firewall rule"), React.createElement("ul", null, rules));
   }
 
 }
