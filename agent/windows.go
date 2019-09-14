@@ -149,6 +149,14 @@ func (host hostWindows) GetWindowsFirewallProfiles() ([]model.WindowsFirewallPro
 	return parseWindowsFirewallProfiles(out), nil
 }
 
+func (host hostWindows) GetWindowsFirewallRules() ([]model.WindowsFirewallRule, error) {
+	out, err := powershellCsv("Get-NetFirewallRule", "DisplayName,Enabled,Direction,Action")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsFirewallRules(out), nil
+}
+
 func getScheduledTaskXML() []byte {
 	return []byte(`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">

@@ -57,6 +57,12 @@ func GetState() model.State {
 	} else {
 		errors = append(errors, "ERROR: cannot get Windows firewall profiles;"+err.Error())
 	}
+	rules, err := host.GetWindowsFirewallRules()
+	if err == nil {
+		state.WindowsFirewallRules = rules
+	} else {
+		errors = append(errors, "ERROR: cannot get Windows firewall rules;"+err.Error())
+	}
 	return state
 }
 

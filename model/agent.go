@@ -16,6 +16,7 @@ type CurrentHost interface {
 	GetNetworkConnections() ([]NetworkConnection, error)
 	GetScheduledTasks() ([]ScheduledTask, error)
 	GetWindowsFirewallProfiles() ([]WindowsFirewallProfile, error)
+	GetWindowsFirewallRules() ([]WindowsFirewallRule, error)
 	Install()
 }
 
@@ -42,6 +43,7 @@ type State struct {
 	NetworkConnections      []NetworkConnection
 	ScheduledTasks          []ScheduledTask
 	WindowsFirewallProfiles []WindowsFirewallProfile
+	WindowsFirewallRules    []WindowsFirewallRule
 }
 
 type ObjectState string
@@ -92,6 +94,13 @@ type WindowsFirewallProfile struct {
 	Enabled               bool
 	DefaultInboundAction  string
 	DefaultOutboundAction string
+}
+
+type WindowsFirewallRule struct {
+	DisplayName string
+	Enabled     bool
+	Direction   string
+	Action      string
 }
 
 type NetworkConnectionState string

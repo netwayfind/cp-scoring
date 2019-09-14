@@ -41,7 +41,10 @@ func TestCollectState(t *testing.T) {
 		t.Fatal("scheduled tasks not set, no errors")
 	}
 	if state.WindowsFirewallProfiles == nil && state.Errors == nil {
-		t.Fatal("Windows firewall not set, no errors")
+		t.Fatal("Windows firewall profiles not set, no errors")
+	}
+	if state.WindowsFirewallRules == nil && state.Errors == nil {
+		t.Fatal("Windows firewall rules not set, no errors")
 	}
 	if state.Errors == nil {
 		t.Fatal("No errors set")

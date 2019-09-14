@@ -2333,3 +2333,143 @@ func TestParseWindowsFirewallProfiles(t *testing.T) {
 		t.Fatal("Unexpected outbound action")
 	}
 }
+
+func TestParseWindowsFirewallRulesBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	rules := parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// bad string
+	bs = []byte("csv")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3\r\n1,2,3")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// just header
+	bs = []byte("1,2,3,4")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3,4\r\n1,2,3")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3,4\r\n1,2,3,4\r\n1,2,3")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+}
+
+func TestParseWindowsFirewallRules(t *testing.T) {
+	// missing name
+	bs := []byte("1,2,3,4\r\n,True,Inbound,Block")
+	rules := parseWindowsFirewallRules(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// missing enabled
+	bs = []byte("1,2,3,4\r\nrule,,Inbound,Block")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if rules[0].Enabled != false {
+		t.Fatal("Expected enabled to be false")
+	}
+
+	// missing direction
+	bs = []byte("1,2,3,4\r\nrule,True,,Block")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].Direction) != 0 {
+		t.Fatal("Expected direction to be empty")
+	}
+
+	// missing action
+	bs = []byte("1,2,3,4\r\nrule,True,Inbound,")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].Action) != 0 {
+		t.Fatal("Expected action to be empty")
+	}
+
+	// single profile
+	bs = []byte("1,2,3,4\r\nrule,True,Inbound,Block")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if rules[0].DisplayName != "rule" {
+		t.Fatal("Unexpected rule name")
+	}
+	if rules[0].Enabled != true {
+		t.Fatal("Unexpected rule enabled value")
+	}
+	if rules[0].Direction != "Inbound" {
+		t.Fatal("Unexpected direction")
+	}
+	if rules[0].Action != "Block" {
+		t.Fatal("Unexpected action")
+	}
+
+	// multiple rules
+	bs = []byte("1,2,3,4\r\nrule,True,Inbound,Block\r\nrule2,False,Outbound,Allow")
+	rules = parseWindowsFirewallRules(bs)
+	if len(rules) != 2 {
+		t.Fatal("Expected 2 rules")
+	}
+	if rules[0].DisplayName != "rule" {
+		t.Fatal("Unexpected rule name")
+	}
+	if rules[0].Enabled != true {
+		t.Fatal("Unexpected rule enabled value")
+	}
+	if rules[0].Direction != "Inbound" {
+		t.Fatal("Unexpected direction")
+	}
+	if rules[0].Action != "Block" {
+		t.Fatal("Unexpected action")
+	}
+	if rules[1].DisplayName != "rule2" {
+		t.Fatal("Unexpected rule name")
+	}
+	if rules[1].Enabled != false {
+		t.Fatal("Unexpected rule enabled value")
+	}
+	if rules[1].Direction != "Outbound" {
+		t.Fatal("Unexpected direction")
+	}
+	if rules[1].Action != "Allow" {
+		t.Fatal("Unexpected action")
+	}
+}
