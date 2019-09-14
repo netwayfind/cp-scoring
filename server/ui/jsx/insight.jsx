@@ -760,6 +760,16 @@ class AnalysisSelected extends React.Component {
         }
         tasks.push(<li key={i}>{task.Name} @ {task.Path} - {enabledStr}</li>);
       }
+
+      let profiles = [];
+      for (let i in this.props.selected.WindowsFirewall) {
+        let profile = this.props.selected.WindowsFirewall[i];
+        let enabledStr = "Enabled";
+        if (!profile.Enabled) {
+          enabledStr = "Disabled";
+        }
+        profiles.push(<li key={i}>Profile: {profile.Name} - {enabledStr} - Inbound: {profile.DefaultInboundAction} - Outbound: {profile.DefaultOutboundAction}</li>);
+      }
       selected = (
         <React.Fragment>
           State ID: {this.props.selected.StateID}
@@ -803,6 +813,11 @@ class AnalysisSelected extends React.Component {
           Scheduled tasks:
           <ul>
             {tasks}
+          </ul>
+          <br />
+          Windows Firewall profiles:
+          <ul>
+            {profiles}
           </ul>
           <br />
         </React.Fragment>
