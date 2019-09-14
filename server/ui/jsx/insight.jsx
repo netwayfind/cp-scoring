@@ -762,8 +762,8 @@ class AnalysisSelected extends React.Component {
       }
 
       let profiles = [];
-      for (let i in this.props.selected.WindowsFirewall) {
-        let profile = this.props.selected.WindowsFirewall[i];
+      for (let i in this.props.selected.WindowsFirewallProfiles) {
+        let profile = this.props.selected.WindowsFirewallProfiles[i];
         let enabledStr = "Enabled";
         if (!profile.Enabled) {
           enabledStr = "Disabled";

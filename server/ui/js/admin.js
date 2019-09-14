@@ -1434,7 +1434,7 @@ class TemplateEntry extends React.Component {
           tasks: this.state.template.State.ScheduledTasks,
           callback: this.handleCallback.bind(this)
         }), React.createElement(WindowsFirewallProfiles, {
-          profiles: this.state.template.State.WindowsFirewall,
+          profiles: this.state.template.State.WindowsFirewallProfiles,
           callback: this.handleCallback.bind(this)
         }), React.createElement("div", null, React.createElement("button", {
           type: "submit"
@@ -2247,7 +2247,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: profiles
     });
-    this.props.callback("WindowsFirewall", profiles);
+    this.props.callback("WindowsFirewallProfiles", profiles);
   }
 
   remove(id) {
@@ -2257,7 +2257,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: profiles
     });
-    this.props.callback("WindowsFirewall", profiles);
+    this.props.callback("WindowsFirewallProfiles", profiles);
   }
 
   update(id, field, event) {
@@ -2278,7 +2278,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: updated
     });
-    this.props.callback("WindowsFirewall", updated);
+    this.props.callback("WindowsFirewallProfiles", updated);
   }
 
   render() {

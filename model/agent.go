@@ -31,17 +31,17 @@ type StateSubmission struct {
 }
 
 type State struct {
-	Timestamp          int64
-	OS                 string
-	Hostname           string
-	Errors             []string
-	Users              []User
-	Groups             map[string][]GroupMember
-	Processes          []Process
-	Software           []Software
-	NetworkConnections []NetworkConnection
-	ScheduledTasks     []ScheduledTask
-	WindowsFirewall    []WindowsFirewallProfile
+	Timestamp               int64
+	OS                      string
+	Hostname                string
+	Errors                  []string
+	Users                   []User
+	Groups                  map[string][]GroupMember
+	Processes               []Process
+	Software                []Software
+	NetworkConnections      []NetworkConnection
+	ScheduledTasks          []ScheduledTask
+	WindowsFirewallProfiles []WindowsFirewallProfile
 }
 
 type ObjectState string

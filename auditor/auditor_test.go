@@ -1139,13 +1139,13 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 	// no profile in template
 	template := model.NewTemplate()
 	// profile not in state
-	state.WindowsFirewall = empty
+	state.WindowsFirewallProfiles = empty
 	findings := auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
 	}
 	// profile in state
-	state.WindowsFirewall = notEmpty
+	state.WindowsFirewallProfiles = notEmpty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 0 {
 		t.Fatal("Expected 0 findings")
@@ -1154,16 +1154,16 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 	// template profile
 	template = model.NewTemplate()
 	templateProfile := model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Block", DefaultOutboundAction: "Allow"}
-	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	template.State.WindowsFirewallProfiles = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
 	// profile not in state
-	state.WindowsFirewall = empty
+	state.WindowsFirewallProfiles = empty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
 	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile not found: profile")
 	// template profile, profile in state
-	state.WindowsFirewall = notEmpty
+	state.WindowsFirewallProfiles = notEmpty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 4 {
 		t.Fatal("Expected 4 findings")
@@ -1176,8 +1176,8 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 	// different enabled setting
 	template = model.NewTemplate()
 	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: false, DefaultInboundAction: "NotConfigured", DefaultOutboundAction: "NotConfigured"}
-	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
-	state.WindowsFirewall = notEmpty
+	template.State.WindowsFirewallProfiles = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewallProfiles = notEmpty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 4 {
 		t.Fatal("Expected 4 findings")
@@ -1190,8 +1190,8 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 	// different inbound setting
 	template = model.NewTemplate()
 	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Allow", DefaultOutboundAction: "Allow"}
-	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
-	state.WindowsFirewall = notEmpty
+	template.State.WindowsFirewallProfiles = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewallProfiles = notEmpty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 4 {
 		t.Fatal("Expected 4 findings")
@@ -1204,8 +1204,8 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 	// different outbound setting
 	template = model.NewTemplate()
 	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Block", DefaultOutboundAction: "Block"}
-	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
-	state.WindowsFirewall = notEmpty
+	template.State.WindowsFirewallProfiles = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewallProfiles = notEmpty
 	findings = auditWindowsFirewallProfiles(state, template)
 	if len(findings) != 4 {
 		t.Fatal("Expected 4 findings")

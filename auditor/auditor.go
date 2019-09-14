@@ -588,11 +588,11 @@ func auditWindowsFirewallProfiles(state model.State, template model.Template) []
 	findings := make([]model.Finding, 0)
 
 	foundProfiles := make(map[string]model.WindowsFirewallProfile)
-	for _, profile := range state.WindowsFirewall {
+	for _, profile := range state.WindowsFirewallProfiles {
 		foundProfiles[profile.Name] = profile
 	}
 
-	for _, templateProfile := range template.State.WindowsFirewall {
+	for _, templateProfile := range template.State.WindowsFirewallProfiles {
 		// check profile present
 		profile, present := foundProfiles[templateProfile.Name]
 		presentFinding := model.Finding{}

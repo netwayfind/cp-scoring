@@ -1325,7 +1325,7 @@ class TemplateEntry extends React.Component {
           <Software software={this.state.template.State.Software} callback={this.handleCallback.bind(this)}/>
           <NetworkConnections conns={this.state.template.State.NetworkConnections} callback={this.handleCallback.bind(this)}/>
           <ScheduledTasks tasks={this.state.template.State.ScheduledTasks} callback={this.handleCallback.bind(this)}/>
-          <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewall} callback={this.handleCallback.bind(this)}/>
+          <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewallProfiles} callback={this.handleCallback.bind(this)}/>
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
@@ -2184,7 +2184,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: profiles
     });
-    this.props.callback("WindowsFirewall", profiles)
+    this.props.callback("WindowsFirewallProfiles", profiles)
   }
 
   remove(id) {
@@ -2194,7 +2194,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: profiles
     });
-    this.props.callback("WindowsFirewall", profiles);
+    this.props.callback("WindowsFirewallProfiles", profiles);
   }
 
   update(id, field, event) {
@@ -2215,7 +2215,7 @@ class WindowsFirewallProfiles extends React.Component {
     this.setState({
       profiles: updated
     })
-    this.props.callback("WindowsFirewall", updated);
+    this.props.callback("WindowsFirewallProfiles", updated);
   }
 
   render() {
