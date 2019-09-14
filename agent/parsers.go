@@ -795,3 +795,43 @@ func parseWindowsScheduledTasks(bs []byte) []model.ScheduledTask {
 
 	return tasks
 }
+
+func parseWindowsFirewallProfiles(bs []byte) []model.WindowsFirewallProfile {
+	profiles := make([]model.WindowsFirewallProfile, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return profiles
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 4 columns, or else ignore line
+		if len(row) != 4 {
+			continue
+		}
+
+		// don't add if empty name
+		if len(row[0]) == 0 {
+			continue
+		}
+
+		profile := model.WindowsFirewallProfile{}
+		profile.Name = row[0]
+		if row[1] == "True" {
+			profile.Enabled = true
+		} else {
+			profile.Enabled = false
+		}
+		profile.DefaultInboundAction = row[2]
+		profile.DefaultOutboundAction = row[3]
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles
+}

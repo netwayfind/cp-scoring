@@ -141,6 +141,14 @@ func (host hostWindows) GetScheduledTasks() ([]model.ScheduledTask, error) {
 	return parseWindowsScheduledTasks(out), nil
 }
 
+func (host hostWindows) GetWindowsFirewallProfiles() ([]model.WindowsFirewallProfile, error) {
+	out, err := powershellCsv("Get-NetFirewallProfile", "Name,Enabled,DefaultInboundAction,DefaultOutboundAction")
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsFirewallProfiles(out), nil
+}
+
 func getScheduledTaskXML() []byte {
 	return []byte(`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">

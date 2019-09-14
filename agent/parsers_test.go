@@ -2124,7 +2124,7 @@ func TestParseWindowsScheduledTasksBad(t *testing.T) {
 	}
 }
 
-func TestParseWIndowsScheduledTasks(t *testing.T) {
+func TestParseWindowsScheduledTasks(t *testing.T) {
 	// missing name
 	bs := []byte("1,2,3\r\n,path,Ready")
 	tasks := parseWindowsScheduledTasks(bs)
@@ -2191,5 +2191,145 @@ func TestParseWIndowsScheduledTasks(t *testing.T) {
 	}
 	if tasks[1].Enabled != false {
 		t.Fatal("Unexpected task enabled value")
+	}
+}
+
+func TestParseWindowsFirewallProfilesBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	profiles := parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// bad string
+	bs = []byte("csv")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3\r\n1,2,3")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// just header
+	bs = []byte("1,2,3,4")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3,4\r\n1,2,3")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3,4\r\n1,2,3,4\r\n1,2,3")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+}
+
+func TestParseWindowsFirewallProfiles(t *testing.T) {
+	// missing name
+	bs := []byte("1,2,3,4\r\n,True,Block,Allow")
+	profiles := parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 0 {
+		t.Fatal("Expected 0 profiles")
+	}
+
+	// missing enabled
+	bs = []byte("1,2,3,4\r\nprofile,,Block,Allow")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 1 {
+		t.Fatal("Expected 1 profiles")
+	}
+	if profiles[0].Enabled != false {
+		t.Fatal("Expected enabled to be false")
+	}
+
+	// missing inbound
+	bs = []byte("1,2,3,4\r\nprofile,True,,Allow")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 1 {
+		t.Fatal("Expected 1 profiles")
+	}
+	if len(profiles[0].DefaultInboundAction) != 0 {
+		t.Fatal("Expected inbound to be empty")
+	}
+
+	// missing outbound
+	bs = []byte("1,2,3,4\r\nprofile,True,Block,")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 1 {
+		t.Fatal("Expected 1 profiles")
+	}
+	if len(profiles[0].DefaultOutboundAction) != 0 {
+		t.Fatal("Expected outbound to be empty")
+	}
+
+	// single profile
+	bs = []byte("1,2,3,4\r\nprofile,True,Block,Allow")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 1 {
+		t.Fatal("Expected 1 profiles")
+	}
+	if profiles[0].Name != "profile" {
+		t.Fatal("Unexpected profile name")
+	}
+	if profiles[0].Enabled != true {
+		t.Fatal("Unexpected profile enabled value")
+	}
+	if profiles[0].DefaultInboundAction != "Block" {
+		t.Fatal("Unexpected inbound action")
+	}
+	if profiles[0].DefaultOutboundAction != "Allow" {
+		t.Fatal("Unexpected outbound action")
+	}
+
+	// multiple profiles
+	bs = []byte("1,2,3,4\r\nprofile,True,Block,Allow\r\nprofile2,False,NotConfigured,NotConfigured")
+	profiles = parseWindowsFirewallProfiles(bs)
+	if len(profiles) != 2 {
+		t.Fatal("Expected 2 profiles")
+	}
+	if profiles[0].Name != "profile" {
+		t.Fatal("Unexpected profile name")
+	}
+	if profiles[0].Enabled != true {
+		t.Fatal("Unexpected profile enabled value")
+	}
+	if profiles[0].DefaultInboundAction != "Block" {
+		t.Fatal("Unexpected inbound action")
+	}
+	if profiles[0].DefaultOutboundAction != "Allow" {
+		t.Fatal("Unexpected outbound action")
+	}
+	if profiles[1].Name != "profile2" {
+		t.Fatal("Unexpected profile name")
+	}
+	if profiles[1].Enabled != false {
+		t.Fatal("Unexpected profile enabled value")
+	}
+	if profiles[1].DefaultInboundAction != "NotConfigured" {
+		t.Fatal("Unexpected inbound action")
+	}
+	if profiles[1].DefaultOutboundAction != "NotConfigured" {
+		t.Fatal("Unexpected outbound action")
 	}
 }

@@ -104,6 +104,11 @@ func (h hostLinux) GetScheduledTasks() ([]model.ScheduledTask, error) {
 	return make([]model.ScheduledTask, 0), nil
 }
 
+func (h hostLinux) GetWindowsFirewallProfiles() ([]model.WindowsFirewallProfile, error) {
+	// no Windows firewall
+	return make([]model.WindowsFirewallProfile, 0), nil
+}
+
 func copyAgentLinux(installPath string) {
 	log.Println("Copying this executable to installation folder")
 	ex, err := os.Executable()

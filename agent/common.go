@@ -51,6 +51,12 @@ func GetState() model.State {
 	} else {
 		errors = append(errors, "ERROR: cannot get scheduled tasks;"+err.Error())
 	}
+	profiles, err := host.GetWindowsFirewallProfiles()
+	if err == nil {
+		state.WindowsFirewall = profiles
+	} else {
+		errors = append(errors, "ERROR: cannot get Windows firewall profiles;"+err.Error())
+	}
 	return state
 }
 
