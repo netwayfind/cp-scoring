@@ -19,6 +19,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditNetworkConnections(state, template)...)
 		report.Findings = append(report.Findings, auditScheduledTasks(state, template)...)
 		report.Findings = append(report.Findings, auditWindowsFirewallProfiles(state, template)...)
+		report.Findings = append(report.Findings, auditWindowsFirewallRules(state, template)...)
 	}
 
 	return report
@@ -648,6 +649,78 @@ func auditWindowsFirewallProfiles(state model.State, template model.Template) []
 			outboundFinding.Message = "Windows Firewall Profile " + profile.Name + " outbound not matched: " + profile.DefaultOutboundAction
 		}
 		findings = append(findings, outboundFinding)
+	}
+
+	return findings
+}
+
+func auditWindowsFirewallRuleObjectState(templateRule model.WindowsFirewallRule, state model.State) model.Finding {
+	var finding model.Finding
+
+	found := false
+	for _, rule := range state.WindowsFirewallRules {
+		if templateRule.DisplayName != rule.DisplayName {
+			continue
+		}
+		if templateRule.Enabled != rule.Enabled {
+			continue
+		}
+		if templateRule.Direction != rule.Direction {
+			continue
+		}
+		if templateRule.Action != rule.Action {
+			continue
+		}
+		found = true
+		break
+	}
+
+	if templateRule.ObjectState == model.ObjectStateAdd {
+		if found {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Windows Firewall rule added: " + templateRule.DisplayName
+		} else {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Windows Firewall rule not added: " + templateRule.DisplayName
+		}
+	} else if templateRule.ObjectState == model.ObjectStateKeep {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Windows Firewall rule found: " + templateRule.DisplayName
+		} else {
+			finding.Show = true
+			finding.Value = -1
+			finding.Message = "Windows Firewall rule not found: " + templateRule.DisplayName
+		}
+	} else if templateRule.ObjectState == model.ObjectStateRemove {
+		if found {
+			finding.Show = false
+			finding.Value = 0
+			finding.Message = "Windows Firewall rule not removed: " + templateRule.DisplayName
+		} else {
+			finding.Show = true
+			finding.Value = 1
+			finding.Message = "Windows Firewall rule removed: " + templateRule.DisplayName
+		}
+	} else {
+		finding.Show = false
+		finding.Value = 0
+		finding.Message = "Unknown Windows Firewall rule state: " + templateRule.DisplayName
+	}
+
+	return finding
+}
+
+func auditWindowsFirewallRules(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for _, templateRule := range template.State.WindowsFirewallRules {
+		// check rule present
+		presentFinding := auditWindowsFirewallRuleObjectState(templateRule, state)
+		findings = append(findings, presentFinding)
 	}
 
 	return findings

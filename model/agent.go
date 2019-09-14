@@ -101,6 +101,7 @@ type WindowsFirewallRule struct {
 	Enabled     bool
 	Direction   string
 	Action      string
+	ObjectState ObjectState
 }
 
 type NetworkConnectionState string
