@@ -1129,3 +1129,89 @@ func TestAuditScheduledTasks(t *testing.T) {
 	}
 	checkFinding(t, findings[0], false, 0, "Scheduled task not removed: task @ path, true")
 }
+
+func TestAuditWindowsFirewallProfiles(t *testing.T) {
+	state := model.State{}
+	profile := model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Block", DefaultOutboundAction: "Allow"}
+	empty := make([]model.WindowsFirewallProfile, 0)
+	notEmpty := append(empty, profile)
+
+	// no profile in template
+	template := model.NewTemplate()
+	// profile not in state
+	state.WindowsFirewall = empty
+	findings := auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// profile in state
+	state.WindowsFirewall = notEmpty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// template profile
+	template = model.NewTemplate()
+	templateProfile := model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Block", DefaultOutboundAction: "Allow"}
+	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	// profile not in state
+	state.WindowsFirewall = empty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile not found: profile")
+	// template profile, profile in state
+	state.WindowsFirewall = notEmpty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 4 {
+		t.Fatal("Expected 4 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile found: profile")
+	checkFinding(t, findings[1], true, 1, "Windows Firewall Profile profile enabled")
+	checkFinding(t, findings[2], true, 1, "Windows Firewall Profile profile inbound: Block")
+	checkFinding(t, findings[3], true, 1, "Windows Firewall Profile profile outbound: Allow")
+
+	// different enabled setting
+	template = model.NewTemplate()
+	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: false, DefaultInboundAction: "NotConfigured", DefaultOutboundAction: "NotConfigured"}
+	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewall = notEmpty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 4 {
+		t.Fatal("Expected 4 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile found: profile")
+	checkFinding(t, findings[1], false, 0, "Windows Firewall Profile profile not enabled")
+	checkFinding(t, findings[2], false, 0, "Windows Firewall Profile profile inbound not matched: Block")
+	checkFinding(t, findings[3], false, 0, "Windows Firewall Profile profile outbound not matched: Allow")
+
+	// different inbound setting
+	template = model.NewTemplate()
+	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Allow", DefaultOutboundAction: "Allow"}
+	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewall = notEmpty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 4 {
+		t.Fatal("Expected 4 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile found: profile")
+	checkFinding(t, findings[1], true, 1, "Windows Firewall Profile profile enabled")
+	checkFinding(t, findings[2], false, 0, "Windows Firewall Profile profile inbound not matched: Block")
+	checkFinding(t, findings[3], true, 1, "Windows Firewall Profile profile outbound: Allow")
+
+	// different outbound setting
+	template = model.NewTemplate()
+	templateProfile = model.WindowsFirewallProfile{Name: "profile", Enabled: true, DefaultInboundAction: "Block", DefaultOutboundAction: "Block"}
+	template.State.WindowsFirewall = append(make([]model.WindowsFirewallProfile, 0), templateProfile)
+	state.WindowsFirewall = notEmpty
+	findings = auditWindowsFirewallProfiles(state, template)
+	if len(findings) != 4 {
+		t.Fatal("Expected 4 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Windows Firewall Profile found: profile")
+	checkFinding(t, findings[1], true, 1, "Windows Firewall Profile profile enabled")
+	checkFinding(t, findings[2], true, 1, "Windows Firewall Profile profile inbound: Block")
+	checkFinding(t, findings[3], false, 0, "Windows Firewall Profile profile outbound not matched: Allow")
+}

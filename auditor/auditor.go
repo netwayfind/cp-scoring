@@ -18,6 +18,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditSoftware(state, template)...)
 		report.Findings = append(report.Findings, auditNetworkConnections(state, template)...)
 		report.Findings = append(report.Findings, auditScheduledTasks(state, template)...)
+		report.Findings = append(report.Findings, auditWindowsFirewallProfiles(state, template)...)
 	}
 
 	return report
@@ -578,6 +579,75 @@ func auditScheduledTasks(state model.State, template model.Template) []model.Fin
 	for _, templateTask := range template.State.ScheduledTasks {
 		finding := auditScheduledTaskObjectState(templateTask, state)
 		findings = append(findings, finding)
+	}
+
+	return findings
+}
+
+func auditWindowsFirewallProfiles(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	foundProfiles := make(map[string]model.WindowsFirewallProfile)
+	for _, profile := range state.WindowsFirewall {
+		foundProfiles[profile.Name] = profile
+	}
+
+	for _, templateProfile := range template.State.WindowsFirewall {
+		// check profile present
+		profile, present := foundProfiles[templateProfile.Name]
+		presentFinding := model.Finding{}
+		if present {
+			presentFinding.Show = false
+			presentFinding.Value = 0
+			presentFinding.Message = "Windows Firewall Profile found: " + templateProfile.Name
+		} else {
+			presentFinding.Show = false
+			presentFinding.Value = 0
+			presentFinding.Message = "Windows Firewall Profile not found: " + templateProfile.Name
+		}
+		findings = append(findings, presentFinding)
+		if !present {
+			continue
+		}
+
+		// check profile enabled setting
+		enabledFinding := model.Finding{}
+		if templateProfile.Enabled == profile.Enabled {
+			enabledFinding.Show = true
+			enabledFinding.Value = 1
+			enabledFinding.Message = "Windows Firewall Profile " + profile.Name + " enabled"
+		} else {
+			enabledFinding.Show = false
+			enabledFinding.Value = 0
+			enabledFinding.Message = "Windows Firewall Profile " + profile.Name + " not enabled"
+		}
+		findings = append(findings, enabledFinding)
+
+		// check profile inbound setting
+		inboundFinding := model.Finding{}
+		if templateProfile.DefaultInboundAction == profile.DefaultInboundAction {
+			inboundFinding.Show = true
+			inboundFinding.Value = 1
+			inboundFinding.Message = "Windows Firewall Profile " + profile.Name + " inbound: " + profile.DefaultInboundAction
+		} else {
+			inboundFinding.Show = false
+			inboundFinding.Value = 0
+			inboundFinding.Message = "Windows Firewall Profile " + profile.Name + " inbound not matched: " + profile.DefaultInboundAction
+		}
+		findings = append(findings, inboundFinding)
+
+		// check profile outbound setting
+		outboundFinding := model.Finding{}
+		if templateProfile.DefaultOutboundAction == profile.DefaultOutboundAction {
+			outboundFinding.Show = true
+			outboundFinding.Value = 1
+			outboundFinding.Message = "Windows Firewall Profile " + profile.Name + " outbound: " + profile.DefaultOutboundAction
+		} else {
+			outboundFinding.Show = false
+			outboundFinding.Value = 0
+			outboundFinding.Message = "Windows Firewall Profile " + profile.Name + " outbound not matched: " + profile.DefaultOutboundAction
+		}
+		findings = append(findings, outboundFinding)
 	}
 
 	return findings
