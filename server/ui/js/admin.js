@@ -765,6 +765,12 @@ class ScenarioEntry extends React.Component {
     window.location.href = "#scenarios";
   }
 
+  newScenarioFromExisting() {
+    this.state.scenario.ID = null;
+    this.state.scenario.Name += " (copy " + new Date().toLocaleString() + ")";
+    this.saveScenario(null);
+  }
+
   getScenario(id) {
     if (id === null || id === undefined) {
       return;
@@ -806,7 +812,10 @@ class ScenarioEntry extends React.Component {
   }
 
   saveScenario(event) {
-    event.preventDefault();
+    if (event != null) {
+      event.preventDefault();
+    }
+
     var url = "/scenarios";
 
     if (this.state.scenario.ID != null) {
@@ -970,7 +979,9 @@ class ScenarioEntry extends React.Component {
 
     return React.createElement(React.Fragment, null, React.createElement("button", {
       onClick: this.newScenario.bind(this)
-    }, "New Scenario"), React.createElement("hr", null), React.createElement(Error, {
+    }, "New Scenario"), React.createElement("button", {
+      onClick: this.newScenarioFromExisting.bind(this)
+    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
       message: this.state.error
     }), content);
   }
