@@ -1259,6 +1259,12 @@ class TemplateEntry extends React.Component {
     window.location.href = "#templates";
   }
 
+  newTemplateFromExisting() {
+    this.state.template.ID = null;
+    this.state.template.Name += " (copy " + new Date().toLocaleString() + ")";
+    this.saveTemplate(null, "/templates");
+  }
+
   getTemplate(id) {
     if (id === null || id === undefined) {
       return;
@@ -1308,7 +1314,9 @@ class TemplateEntry extends React.Component {
   }
 
   saveTemplate(event, url) {
-    event.preventDefault();
+    if (event != null) {
+      event.preventDefault();
+    }
 
     if (this.state.template.ID != null) {
       url += "/" + this.state.template.ID;
@@ -1455,7 +1463,10 @@ class TemplateEntry extends React.Component {
     }, "New Template"), React.createElement("button", {
       type: "button",
       onClick: this.newTemplateFromState.bind(this)
-    }, "From State"), React.createElement("hr", null), React.createElement(Error, {
+    }, "From State"), React.createElement("button", {
+      type: "button",
+      onClick: this.newTemplateFromExisting.bind(this)
+    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
       message: this.state.error
     }), content);
   }
