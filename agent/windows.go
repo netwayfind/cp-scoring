@@ -187,7 +187,7 @@ func getScheduledTaskXML() []byte {
   </Triggers>
   <Principals>
     <Principal id="Author">
-      <UserId>S-1-5-19</UserId>
+      <UserId>S-1-5-18</UserId>
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
