@@ -2389,8 +2389,11 @@ func TestParseWindowsFirewallRules(t *testing.T) {
 	// missing name
 	bs := []byte("1,2,3,4\r\n,True,Inbound,Block")
 	rules := parseWindowsFirewallRules(bs)
-	if len(rules) != 0 {
-		t.Fatal("Expected 0 rules")
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].DisplayName) != 0 {
+		t.Fatal("Expected display name to be empty")
 	}
 
 	// missing enabled
@@ -2423,7 +2426,7 @@ func TestParseWindowsFirewallRules(t *testing.T) {
 		t.Fatal("Expected action to be empty")
 	}
 
-	// single profile
+	// single rule
 	bs = []byte("1,2,3,4\r\nrule,True,Inbound,Block")
 	rules = parseWindowsFirewallRules(bs)
 	if len(rules) != 1 {
@@ -2443,7 +2446,7 @@ func TestParseWindowsFirewallRules(t *testing.T) {
 	}
 
 	// multiple rules
-	bs = []byte("1,2,3,4\r\nrule,True,Inbound,Block\r\nrule2,False,Outbound,Allow")
+	bs = []byte("1,2,3,4\r\nrule,True,Inbound,Block\r\nrule2,False,Inbound,Allow")
 	rules = parseWindowsFirewallRules(bs)
 	if len(rules) != 2 {
 		t.Fatal("Expected 2 rules")
@@ -2466,10 +2469,218 @@ func TestParseWindowsFirewallRules(t *testing.T) {
 	if rules[1].Enabled != false {
 		t.Fatal("Unexpected rule enabled value")
 	}
-	if rules[1].Direction != "Outbound" {
+	if rules[1].Direction != "Inbound" {
 		t.Fatal("Unexpected direction")
 	}
 	if rules[1].Action != "Allow" {
+		t.Fatal("Unexpected action")
+	}
+}
+
+func TestParseWindowsFirewallPortFiltersBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	rules := parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// bad string
+	bs = []byte("csv")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3\r\n1,2,3")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// incorrect number
+	bs = []byte("1,2,3,4,5\r\n1,2,3,4,5")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// just header
+	bs = []byte("1,2,3,4")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// mismatch between header and row
+	bs = []byte("1,2,3,4\r\n1,2,3")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+
+	// mismatch between header and later row
+	bs = []byte("1,2,3,4\r\n1,2,3,4\r\n1,2,3")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 rules")
+	}
+}
+
+func TestParseWindowsFirewallPortFilters(t *testing.T) {
+	// missing protocol
+	bs := []byte("1,2,3,4\r\n,Any,192.168.1.5,Any")
+	rules := parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].Protocol) != 0 {
+		t.Fatal("Expected protocol to be empty")
+	}
+
+	// missing local port
+	bs = []byte("1,2,3,4\r\nTCP,,192.168.1.5,Any")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].LocalPort) != 0 {
+		t.Fatal("Expected local port to be empty")
+	}
+
+	// missing remote address
+	bs = []byte("1,2,3,4\r\nTCP,Any,,Any")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].RemoteAddress) != 0 {
+		t.Fatal("Expected remote address to be empty")
+	}
+
+	// missing remote port
+	bs = []byte("1,2,3,4\r\nTCP,Any,192.168.1.5,")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if len(rules[0].RemotePort) != 0 {
+		t.Fatal("Expected remote port to be empty")
+	}
+
+	// single rule
+	bs = []byte("1,2,3,4\r\nTCP,Any,192.168.1.5,Any")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 rules")
+	}
+	if rules[0].Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if rules[0].LocalPort != "Any" {
+		t.Fatal("Unexpected local port")
+	}
+	if rules[0].RemoteAddress != "192.168.1.5" {
+		t.Fatal("Unexpected remote address")
+	}
+	if rules[0].RemotePort != "Any" {
+		t.Fatal("Unexpected remote port")
+	}
+
+	// multiple rules
+	bs = []byte("1,2,3,4\r\nTCP,Any,192.168.1.5,Any\r\nTCP,49000,192.168.1.10,8080")
+	rules = parseWindowsFirewallPortFilters(bs)
+	if len(rules) != 2 {
+		t.Fatal("Expected 2 rules")
+	}
+	if rules[0].Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if rules[0].LocalPort != "Any" {
+		t.Fatal("Unexpected local port")
+	}
+	if rules[0].RemoteAddress != "192.168.1.5" {
+		t.Fatal("Unexpected remote address")
+	}
+	if rules[0].RemotePort != "Any" {
+		t.Fatal("Unexpected remote port")
+	}
+	if rules[1].Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if rules[1].LocalPort != "49000" {
+		t.Fatal("Unexpected local port")
+	}
+	if rules[1].RemoteAddress != "192.168.1.10" {
+		t.Fatal("Unexpected remote address")
+	}
+	if rules[1].RemotePort != "8080" {
+		t.Fatal("Unexpected remote port")
+	}
+}
+
+func TestMergeWindowsFirewallRules(t *testing.T) {
+	// both empty
+	fromRules := make([]model.WindowsFirewallRule, 0)
+	fromPortFilters := make([]model.WindowsFirewallRule, 0)
+	_, err := mergeWindowsFirewallRules(fromRules, fromPortFilters)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+
+	// unequal
+	rule := model.WindowsFirewallRule{
+		DisplayName: "rule",
+		Enabled:     true,
+		Direction:   "Inbound",
+		Action:      "Block",
+	}
+	fromRules = append(fromRules, rule)
+	_, err = mergeWindowsFirewallRules(fromRules, fromPortFilters)
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+
+	// example
+	part2 := model.WindowsFirewallRule{
+		Protocol:      "TCP",
+		LocalPort:     "Any",
+		RemoteAddress: "192.168.1.5",
+		RemotePort:    "Any",
+	}
+	fromPortFilters = append(fromPortFilters, part2)
+	rules, err := mergeWindowsFirewallRules(fromRules, fromPortFilters)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+
+	// check updated
+	if len(rules) != 1 {
+		t.Fatal("Unexpected count")
+	}
+	if rules[0].DisplayName != "rule" {
+		t.Fatal("Unexpected display name")
+	}
+	if rules[0].Enabled != true {
+		t.Fatal("Unexpected enabled value")
+	}
+	if rules[0].Protocol != "TCP" {
+		t.Fatal("Unexpected protocol")
+	}
+	if rules[0].LocalPort != "Any" {
+		t.Fatal("Unexpected local port")
+	}
+	if rules[0].RemoteAddress != "192.168.1.5" {
+		t.Fatal("Unexpected remote address")
+	}
+	if rules[0].RemotePort != "Any" {
+		t.Fatal("Unexpected report port")
+	}
+	if rules[0].Direction != "Inbound" {
+		t.Fatal("Unexpected direction")
+	}
+	if rules[0].Action != "Block" {
 		t.Fatal("Unexpected action")
 	}
 }

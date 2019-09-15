@@ -97,11 +97,15 @@ type WindowsFirewallProfile struct {
 }
 
 type WindowsFirewallRule struct {
-	DisplayName string
-	Enabled     bool
-	Direction   string
-	Action      string
-	ObjectState ObjectState
+	DisplayName   string
+	Enabled       bool
+	Protocol      string
+	LocalPort     string
+	RemoteAddress string
+	RemotePort    string
+	Direction     string
+	Action        string
+	ObjectState   ObjectState
 }
 
 type NetworkConnectionState string

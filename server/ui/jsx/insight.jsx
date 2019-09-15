@@ -776,7 +776,7 @@ class AnalysisSelected extends React.Component {
         if (!rule.Enabled) {
           enabledStr = "Disabled";
         }
-        rules.push(<li key={i}>{rule.DisplayName}, {enabledStr}, Direction: {rule.Direction}, Action: {rule.Action}</li>);
+        rules.push(<li key={i}>Display Name: {rule.DisplayName}, {enabledStr}, Protocol: {rule.Protocol}, Local Port: {rule.LocalPort}, Remote Address: {rule.RemoteAddress}, Remote Port: {rule.RemotePort}, Direction: {rule.Direction}, Action: {rule.Action}</li>);
       }
       selected = (
         <React.Fragment>

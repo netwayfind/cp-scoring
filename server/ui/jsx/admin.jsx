@@ -2374,6 +2374,22 @@ class WindowsFirewallRules extends React.Component {
               <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
             </li>
             <li>
+              <label>Protocol</label>
+              <input type="text" value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}></input>
+            </li>
+            <li>
+              <label>Local Port</label>
+              <input type="text" value={entry.LocalPort} onChange={event=> this.update(i, "LocalPort", event)}></input>
+            </li>
+            <li>
+              <label>Remote Address</label>
+              <input type="text" value={entry.RemoteAddress} onChange={event=> this.update(i, "RemoteAddress", event)}></input>
+            </li>
+            <li>
+              <label>Remote Port</label>
+              <input type="text" value={entry.RemotePort} onChange={event=> this.update(i, "RemotePort", event)}></input>
+            </li>
+            <li>
               <label>Direction</label>
               <select value={entry.Direction} onChange={event=> this.update(i, "Direction", event)}>
                 <option disabled key="" value="">
@@ -2396,7 +2412,7 @@ class WindowsFirewallRules extends React.Component {
       }
       rules.push(
         <details key={i}>
-          <summary>{entry.DisplayName}, {enabledStr}, Direction: {entry.Direction}, Action: {entry.Action}</summary>
+          <summary>Display Name: {entry.DisplayName}, {enabledStr}, Protocol: {entry.Protocol}, Local Port: {entry.LocalPort}, Remote Address: {entry.RemoteAddress}, Remote Port: {entry.RemotePort}, Direction: {entry.Direction}, Action: {entry.Action}</summary>
           <button type="button" onClick={this.remove.bind(this, i)}>-</button>
           <ul>
             <li>

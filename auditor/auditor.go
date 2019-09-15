@@ -659,56 +659,70 @@ func auditWindowsFirewallRuleObjectState(templateRule model.WindowsFirewallRule,
 
 	found := false
 	for _, rule := range state.WindowsFirewallRules {
-		if templateRule.DisplayName != rule.DisplayName {
+		if len(templateRule.DisplayName) > 0 && templateRule.DisplayName != rule.DisplayName {
 			continue
 		}
 		if templateRule.Enabled != rule.Enabled {
 			continue
 		}
-		if templateRule.Direction != rule.Direction {
+		if len(templateRule.Protocol) > 0 && templateRule.Protocol != rule.Protocol {
 			continue
 		}
-		if templateRule.Action != rule.Action {
+		if len(templateRule.LocalPort) > 0 && templateRule.LocalPort != rule.LocalPort {
+			continue
+		}
+		if len(templateRule.RemoteAddress) > 0 && templateRule.RemoteAddress != rule.RemoteAddress {
+			continue
+		}
+		if len(templateRule.RemotePort) > 0 && templateRule.RemotePort != rule.RemotePort {
+			continue
+		}
+		if len(templateRule.Direction) > 0 && templateRule.Direction != rule.Direction {
+			continue
+		}
+		if len(templateRule.Action) > 0 && templateRule.Action != rule.Action {
 			continue
 		}
 		found = true
 		break
 	}
 
+	templateRuleStr := templateRule.DisplayName + ", " + templateRule.Protocol + ", " + templateRule.LocalPort + ", " + templateRule.RemoteAddress + ", " + templateRule.RemotePort + ", " + templateRule.Direction + ", " + templateRule.Action
+
 	if templateRule.ObjectState == model.ObjectStateAdd {
 		if found {
 			finding.Show = true
 			finding.Value = 1
-			finding.Message = "Windows Firewall rule added: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule added: " + templateRuleStr
 		} else {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Windows Firewall rule not added: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule not added: " + templateRuleStr
 		}
 	} else if templateRule.ObjectState == model.ObjectStateKeep {
 		if found {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Windows Firewall rule found: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule found: " + templateRuleStr
 		} else {
 			finding.Show = true
 			finding.Value = -1
-			finding.Message = "Windows Firewall rule not found: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule not found: " + templateRuleStr
 		}
 	} else if templateRule.ObjectState == model.ObjectStateRemove {
 		if found {
 			finding.Show = false
 			finding.Value = 0
-			finding.Message = "Windows Firewall rule not removed: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule not removed: " + templateRuleStr
 		} else {
 			finding.Show = true
 			finding.Value = 1
-			finding.Message = "Windows Firewall rule removed: " + templateRule.DisplayName
+			finding.Message = "Windows Firewall rule removed: " + templateRuleStr
 		}
 	} else {
 		finding.Show = false
 		finding.Value = 0
-		finding.Message = "Unknown Windows Firewall rule state: " + templateRule.DisplayName
+		finding.Message = "Unknown Windows Firewall rule state: " + templateRuleStr
 	}
 
 	return finding

@@ -2420,6 +2420,22 @@ class WindowsFirewallRules extends React.Component {
           type: "checkbox",
           checked: entry.Enabled,
           onChange: event => this.update(i, "Enabled", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Protocol"), React.createElement("input", {
+          type: "text",
+          value: entry.Protocol,
+          onChange: event => this.update(i, "Protocol", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Local Port"), React.createElement("input", {
+          type: "text",
+          value: entry.LocalPort,
+          onChange: event => this.update(i, "LocalPort", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Remote Address"), React.createElement("input", {
+          type: "text",
+          value: entry.RemoteAddress,
+          onChange: event => this.update(i, "RemoteAddress", event)
+        })), React.createElement("li", null, React.createElement("label", null, "Remote Port"), React.createElement("input", {
+          type: "text",
+          value: entry.RemotePort,
+          onChange: event => this.update(i, "RemotePort", event)
         })), React.createElement("li", null, React.createElement("label", null, "Direction"), React.createElement("select", {
           value: entry.Direction,
           onChange: event => this.update(i, "Direction", event)
@@ -2439,7 +2455,7 @@ class WindowsFirewallRules extends React.Component {
 
       rules.push(React.createElement("details", {
         key: i
-      }, React.createElement("summary", null, entry.DisplayName, ", ", enabledStr, ", Direction: ", entry.Direction, ", Action: ", entry.Action), React.createElement("button", {
+      }, React.createElement("summary", null, "Display Name: ", entry.DisplayName, ", ", enabledStr, ", Protocol: ", entry.Protocol, ", Local Port: ", entry.LocalPort, ", Remote Address: ", entry.RemoteAddress, ", Remote Port: ", entry.RemotePort, ", Direction: ", entry.Direction, ", Action: ", entry.Action), React.createElement("button", {
         type: "button",
         onClick: this.remove.bind(this, i)
       }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "DisplayName"), React.createElement("input", {

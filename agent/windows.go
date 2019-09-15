@@ -150,11 +150,26 @@ func (host hostWindows) GetWindowsFirewallProfiles() ([]model.WindowsFirewallPro
 }
 
 func (host hostWindows) GetWindowsFirewallRules() ([]model.WindowsFirewallRule, error) {
+	// get first part
 	out, err := powershellCsv("Get-NetFirewallRule", "DisplayName,Enabled,Direction,Action")
 	if err != nil {
 		return nil, err
 	}
-	return parseWindowsFirewallRules(out), nil
+	fromRules := parseWindowsFirewallRules(out)
+	// get second part
+	out, err = powershellCsv("Get-NetFirewallPortFilter -PolicyStore PersistentStore", "Protocol,LocalPort,RemoteAddress,RemotePort")
+	if err != nil {
+		return nil, err
+	}
+	fromPortFilters := parseWindowsFirewallPortFilters(out)
+
+	// merge entries
+	rules, err := mergeWindowsFirewallRules(fromRules, fromPortFilters)
+	if err != nil {
+		return nil, err
+	}
+
+	return rules, nil
 }
 
 func getScheduledTaskXML() []byte {

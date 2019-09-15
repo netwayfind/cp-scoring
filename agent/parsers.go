@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/csv"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -855,11 +856,6 @@ func parseWindowsFirewallRules(bs []byte) []model.WindowsFirewallRule {
 			continue
 		}
 
-		// don't add if empty name
-		if len(row[0]) == 0 {
-			continue
-		}
-
 		rule := model.WindowsFirewallRule{}
 		rule.DisplayName = row[0]
 		if row[1] == "True" {
@@ -874,4 +870,54 @@ func parseWindowsFirewallRules(bs []byte) []model.WindowsFirewallRule {
 	}
 
 	return rules
+}
+
+func parseWindowsFirewallPortFilters(bs []byte) []model.WindowsFirewallRule {
+	rules := make([]model.WindowsFirewallRule, 0)
+
+	r := csv.NewReader(bytes.NewReader(bs))
+	records, err := r.ReadAll()
+	if err != nil {
+		return rules
+	}
+	for i, row := range records {
+		// header row
+		if i == 0 {
+			continue
+		}
+
+		// must have exactly 4 columns, or else ignore line
+		if len(row) != 4 {
+			continue
+		}
+
+		rule := model.WindowsFirewallRule{}
+		rule.Protocol = row[0]
+		rule.LocalPort = row[1]
+		rule.RemoteAddress = row[2]
+		rule.RemotePort = row[3]
+
+		rules = append(rules, rule)
+	}
+
+	return rules
+}
+
+func mergeWindowsFirewallRules(fromRules []model.WindowsFirewallRule, fromPortFilters []model.WindowsFirewallRule) ([]model.WindowsFirewallRule, error) {
+	if len(fromRules) != len(fromPortFilters) {
+		return nil, errors.New("Mismatch Windows firewall rules results")
+	}
+
+	rules := make([]model.WindowsFirewallRule, len(fromRules))
+
+	for i, rule := range fromRules {
+		other := fromPortFilters[i]
+		rule.Protocol = other.Protocol
+		rule.LocalPort = other.LocalPort
+		rule.RemoteAddress = other.RemoteAddress
+		rule.RemotePort = other.RemotePort
+		rules[i] = rule
+	}
+
+	return rules, nil
 }

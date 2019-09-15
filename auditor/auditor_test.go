@@ -1218,7 +1218,7 @@ func TestAuditWindowsFirewallProfiles(t *testing.T) {
 
 func TestAuditWindowsFirewallRules(t *testing.T) {
 	state := model.State{}
-	rule := model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Inbound", Action: "Block"}
+	rule := model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Block"}
 	empty := make([]model.WindowsFirewallRule, 0)
 	notEmpty := append(empty, rule)
 
@@ -1239,7 +1239,7 @@ func TestAuditWindowsFirewallRules(t *testing.T) {
 
 	// template rule to add
 	template = model.NewTemplate()
-	templateRule := model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateAdd}
+	templateRule := model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateAdd}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	// rule not in state
 	state.WindowsFirewallRules = empty
@@ -1247,18 +1247,18 @@ func TestAuditWindowsFirewallRules(t *testing.T) {
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], false, 0, "Windows Firewall rule not added: rule")
+	checkFinding(t, findings[0], false, 0, "Windows Firewall rule not added: rule, TCP, 3389, , , Inbound, Block")
 	// template rule, rule in state
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 4 findings")
 	}
-	checkFinding(t, findings[0], true, 1, "Windows Firewall rule added: rule")
+	checkFinding(t, findings[0], true, 1, "Windows Firewall rule added: rule, TCP, 3389, , , Inbound, Block")
 
 	// template rule to remove
 	template = model.NewTemplate()
-	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateRemove}
+	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateRemove}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	// rule not in state
 	state.WindowsFirewallRules = empty
@@ -1266,18 +1266,18 @@ func TestAuditWindowsFirewallRules(t *testing.T) {
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], true, 1, "Windows Firewall rule removed: rule")
+	checkFinding(t, findings[0], true, 1, "Windows Firewall rule removed: rule, TCP, 3389, , , Inbound, Block")
 	// template rule, rule in state
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], false, 0, "Windows Firewall rule not removed: rule")
+	checkFinding(t, findings[0], false, 0, "Windows Firewall rule not removed: rule, TCP, 3389, , , Inbound, Block")
 
 	// template rule
 	template = model.NewTemplate()
-	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateKeep}
+	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateKeep}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	// rule not in state
 	state.WindowsFirewallRules = empty
@@ -1285,45 +1285,45 @@ func TestAuditWindowsFirewallRules(t *testing.T) {
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule")
+	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule, TCP, 3389, , , Inbound, Block")
 	// template rule, rule in state
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], false, 0, "Windows Firewall rule found: rule")
+	checkFinding(t, findings[0], false, 0, "Windows Firewall rule found: rule, TCP, 3389, , , Inbound, Block")
 
 	// different enabled setting
 	template = model.NewTemplate()
-	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: false, Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateKeep}
+	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: false, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Block", ObjectState: model.ObjectStateKeep}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule")
+	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule, TCP, 3389, , , Inbound, Block")
 
 	// different direction setting
 	template = model.NewTemplate()
-	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Outbound", Action: "Block", ObjectState: model.ObjectStateKeep}
+	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Outbound", Action: "Block", ObjectState: model.ObjectStateKeep}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule")
+	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule, TCP, 3389, , , Outbound, Block")
 
 	// different action setting
 	template = model.NewTemplate()
-	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Direction: "Inbound", Action: "Allow", ObjectState: model.ObjectStateKeep}
+	templateRule = model.WindowsFirewallRule{DisplayName: "rule", Enabled: true, Protocol: "TCP", LocalPort: "3389", Direction: "Inbound", Action: "Allow", ObjectState: model.ObjectStateKeep}
 	template.State.WindowsFirewallRules = append(make([]model.WindowsFirewallRule, 0), templateRule)
 	state.WindowsFirewallRules = notEmpty
 	findings = auditWindowsFirewallRules(state, template)
 	if len(findings) != 1 {
 		t.Fatal("Expected 1 findings")
 	}
-	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule")
+	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule, TCP, 3389, , , Inbound, Allow")
 }
