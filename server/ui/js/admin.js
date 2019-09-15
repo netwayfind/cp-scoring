@@ -1052,6 +1052,12 @@ class HostEntry extends React.Component {
     window.location.href = "#hosts";
   }
 
+  newHostFromExisting() {
+    this.state.host.ID = null;
+    this.state.host.Hostname += " (copy " + new Date().toLocaleString() + ")";
+    this.saveHost(null);
+  }
+
   getHost(id) {
     if (id === null || id === undefined) {
       return;
@@ -1093,7 +1099,10 @@ class HostEntry extends React.Component {
   }
 
   saveHost(event) {
-    event.preventDefault();
+    if (event != null) {
+      event.preventDefault();
+    }
+
     var url = "/hosts";
 
     if (this.state.host.ID != null) {
@@ -1188,7 +1197,10 @@ class HostEntry extends React.Component {
     return React.createElement(React.Fragment, null, React.createElement("button", {
       type: "button",
       onClick: this.newHost.bind(this)
-    }, "New Host"), React.createElement("hr", null), React.createElement(Error, {
+    }, "New Host"), React.createElement("button", {
+      type: "button",
+      onClick: this.newHostFromExisting.bind(this)
+    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
       message: this.state.error
     }), content);
   }
