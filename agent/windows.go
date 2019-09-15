@@ -80,7 +80,7 @@ func (host hostWindows) GetGroups() (map[string][]model.GroupMember, error) {
 }
 
 func (host hostWindows) GetProcesses() ([]model.Process, error) {
-	out, err := powershellCsv("Get-Process | Sort-Object ID", "ID,UserName,Name,Path")
+	out, err := powershellCsv("Get-Process -IncludeUserName | Sort-Object ID", "ID,UserName,Name,Path")
 	if err != nil {
 		return nil, err
 	}
