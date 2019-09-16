@@ -2396,7 +2396,8 @@ class WindowsFirewallRules extends React.Component {
       DisplayName: "",
       Enabled: true,
       Direction: "",
-      Action: ""
+      Action: "",
+      ObjectState: "Keep"
     };
     let rules = [...this.state.rules, empty];
     this.setState({
