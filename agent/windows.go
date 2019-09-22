@@ -256,6 +256,16 @@ func createScheduledTask(installPath string) {
 	}
 }
 
+func createTeamKeyRegistrationWindows(installPath string) {
+	log.Println("Creating team key registration")
+	fileReg := filepath.Join(installPath, "Team Key Registration.bat")
+	text := []byte("cd C:\\cp-scoring\r\ncp-scoring-agent-windows.exe -teamKey")
+	err := ioutil.WriteFile(fileReg, text, 0600)
+	if err != nil {
+		log.Fatalln("Could not write team key registration file")
+	}
+}
+
 func (host hostWindows) Install() {
 	installPath := "C:\\cp-scoring"
 
@@ -268,6 +278,9 @@ func (host hostWindows) Install() {
 
 	// create Task Scheduler file
 	createScheduledTask(installPath)
+
+	// create team key registration
+	createTeamKeyRegistrationWindows(installPath)
 
 	log.Println("Finished installing to " + installPath)
 }

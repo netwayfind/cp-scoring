@@ -173,6 +173,24 @@ func createService(installPath string) {
 	}
 }
 
+func createTeamKeyRegistrationLinux(installPath string) {
+	log.Println("Creating team key registration")
+	// script
+	fileReg := filepath.Join(installPath, "teamkeyregistration.sh")
+	text := []byte("#!/bin/sh\ncd /opt/cp-scoring\nsudo ./cp-scoring-agent-linux -teamKey")
+	err := ioutil.WriteFile(fileReg, text, 0755)
+	if err != nil {
+		log.Fatalln("Could not write team key registration file")
+	}
+	// shortcut
+	fileShortcut := filepath.Join(installPath, "teamkeyregistration.desktop")
+	text = []byte("[Desktop Entry]\nEncoding=UTF-8\nVersion=1.0\nName[en_US]=Team Key Registration\nExec=/opt/cp-scoring/teamkeyregistration.sh\nTerminal=true\nType=Application")
+	err = ioutil.WriteFile(fileShortcut, text, 0755)
+	if err != nil {
+		log.Fatalln("Could not write team key registration shortcut file")
+	}
+}
+
 func (h hostLinux) Install() {
 	installPath := "/opt/cp-scoring"
 
@@ -188,6 +206,9 @@ func (h hostLinux) Install() {
 
 	// create service
 	createService(installPath)
+
+	// create team key registration
+	createTeamKeyRegistrationLinux(installPath)
 
 	log.Println("Finished installing to " + installPath)
 }
