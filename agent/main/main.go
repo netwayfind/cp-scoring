@@ -330,12 +330,14 @@ func main() {
 	var askVersion bool
 	var askTeamKey bool
 	var scenarioID string
+	var copyFiles bool
 
 	flag.StringVar(&serverURL, "server", "", "server URL")
 	flag.BoolVar(&install, "install", false, "install to this computer")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
 	flag.BoolVar(&askTeamKey, "teamKey", false, "ask for team key")
 	flag.StringVar(&scenarioID, "scenarioID", "", "get description for scenario with given ID")
+	flag.BoolVar(&copyFiles, "copyFiles", false, "copy files to current directory")
 	flag.Parse()
 
 	if install {
@@ -358,6 +360,12 @@ func main() {
 			log.Fatalln("ERROR: could not read server certificate;", err)
 		}
 		handleTeamKey(teamKeyFile, hostTokenFile, serverURL, transport)
+		os.Exit(0)
+	}
+
+	if copyFiles {
+		host := agent.GetCurrentHost()
+		host.CopyFiles()
 		os.Exit(0)
 	}
 

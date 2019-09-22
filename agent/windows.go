@@ -284,3 +284,26 @@ func (host hostWindows) Install() {
 
 	log.Println("Finished installing to " + installPath)
 }
+
+func (host hostWindows) CopyFiles() {
+	installPath := "C:\\cp-scoring"
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalln("ERROR: cannot get current directory;", err)
+	}
+	log.Println("Copying files to: " + currentDir)
+
+	// report
+	copyFile(filepath.Join(installPath, "report.html"), filepath.Join(currentDir, "report.html"))
+
+	// scoreboard
+	copyFile(filepath.Join(installPath, "scoreboard.html"), filepath.Join(currentDir, "scoreboard.html"))
+
+	// readme
+	copyFile(filepath.Join(installPath, "README.html"), filepath.Join(currentDir, "README.html"))
+
+	// team key registration shortcut
+	copyFile(filepath.Join(installPath, "Team Key Registration.bat"), filepath.Join(currentDir, "Team Key Registration.bat"))
+
+	log.Println("Finished copying files")
+}

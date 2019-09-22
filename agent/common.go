@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"io"
 	"log"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -92,5 +94,22 @@ func GetCurrentHost() model.CurrentHost {
 	} else {
 		log.Fatal("ERROR: unsupported platform: " + runtime.GOOS)
 		return nil
+	}
+}
+
+func copyFile(srcPath string, dstPath string) {
+	src, err := os.Open(srcPath)
+	if err != nil {
+		log.Fatalln("Unable to open source file;", err)
+	}
+	defer src.Close()
+	dst, err := os.Create(dstPath)
+	if err != nil {
+		log.Fatalln("Unable to open destination file;", err)
+	}
+	defer dst.Close()
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		log.Fatalln("Unable to copy file;", err)
 	}
 }

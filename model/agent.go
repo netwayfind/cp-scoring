@@ -18,6 +18,7 @@ type CurrentHost interface {
 	GetWindowsFirewallProfiles() ([]WindowsFirewallProfile, error)
 	GetWindowsFirewallRules() ([]WindowsFirewallRule, error)
 	Install()
+	CopyFiles()
 }
 
 type Host struct {

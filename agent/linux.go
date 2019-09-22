@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -120,21 +119,8 @@ func copyAgentLinux(installPath string) {
 	if err != nil {
 		log.Println("Unable to get this executable path;", err)
 	}
-	fileIn, err := os.Open(ex)
-	if err != nil {
-		log.Fatalln("Unable to open self file;", err)
-	}
-	defer fileIn.Close()
 	binFile := filepath.Join(installPath, "cp-scoring-agent-linux")
-	fileOut, err := os.Create(binFile)
-	if err != nil {
-		log.Fatalln("Unable to open destination file;", err)
-	}
-	defer fileOut.Close()
-	_, err = io.Copy(fileOut, fileIn)
-	if err != nil {
-		log.Fatalln("Unable to copy file;", err)
-	}
+	copyFile(ex, binFile)
 	err = os.Chmod(binFile, 0755)
 	if err != nil {
 		log.Fatalln("Unable to set permissions;", err)
@@ -211,4 +197,28 @@ func (h hostLinux) Install() {
 	createTeamKeyRegistrationLinux(installPath)
 
 	log.Println("Finished installing to " + installPath)
+}
+
+func (h hostLinux) CopyFiles() {
+	installPath := "/opt/cp-scoring"
+	currentDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalln("ERROR: cannot get current directory;", err)
+	}
+	log.Println("Copying files to: " + currentDir)
+
+	// report
+	copyFile(filepath.Join(installPath, "report.html"), filepath.Join(currentDir, "report.html"))
+
+	// scoreboard
+	copyFile(filepath.Join(installPath, "scoreboard.html"), filepath.Join(currentDir, "scoreboard.html"))
+
+	// readme
+	copyFile(filepath.Join(installPath, "README.html"), filepath.Join(currentDir, "README.html"))
+
+	// team key registration shortcut
+	copyFile(filepath.Join(installPath, "teamkeyregistration.desktop"), filepath.Join(currentDir, "teamkeyregistration.desktop"))
+	os.Chmod(filepath.Join(currentDir, "teamkeyregistration.desktop"), 0755)
+
+	log.Println("Finished copying files")
 }
