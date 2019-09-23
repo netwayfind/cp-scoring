@@ -2684,3 +2684,85 @@ func TestMergeWindowsFirewallRules(t *testing.T) {
 		t.Fatal("Unexpected action")
 	}
 }
+
+func TestParseWindowsSecEditBad(t *testing.T) {
+	// empty string
+	bs := []byte("")
+	rules, err := parseWindowsSecEdit(bs)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 settings")
+	}
+
+	// bad string
+	bs = []byte("ini")
+	rules, err = parseWindowsSecEdit(bs)
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 settings")
+	}
+
+	// non-exitent section
+	bs = []byte("[other]")
+	rules, err = parseWindowsSecEdit(bs)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 settings")
+	}
+
+	// unknown setting
+	bs = []byte("[System Access]\r\nOther = 7")
+	rules, err = parseWindowsSecEdit(bs)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+	if len(rules) != 0 {
+		t.Fatal("Expected 0 settings")
+	}
+}
+
+func TestParseWindowsSecEdit(t *testing.T) {
+	// sample setting
+	bs := []byte("[System Access]\r\nMinimumPasswordAge = 1")
+	rules, err := parseWindowsSecEdit(bs)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+	if len(rules) != 1 {
+		t.Fatal("Expected 1 settings")
+	}
+	if rules[0].Key != "MinimumPasswordAge" {
+		t.Fatal("Unexpected setting key")
+	}
+	if rules[0].Value != "1" {
+		t.Fatal("Unexpected setting value")
+	}
+
+	// multiple settings
+	bs = []byte("[System Access]\r\nMinimumPasswordAge = 1\r\nMaximumPasswordAge = 30")
+	rules, err = parseWindowsSecEdit(bs)
+	if err != nil {
+		t.Fatal("Unexpected error")
+	}
+	if len(rules) != 2 {
+		t.Fatal("Expected 2 settings")
+	}
+	if rules[0].Key != "MinimumPasswordAge" {
+		t.Fatal("Unexpected setting key")
+	}
+	if rules[0].Value != "1" {
+		t.Fatal("Unexpected setting value")
+	}
+	if rules[1].Key != "MaximumPasswordAge" {
+		t.Fatal("Unexpected setting key")
+	}
+	if rules[1].Value != "30" {
+		t.Fatal("Unexpected setting value")
+	}
+}

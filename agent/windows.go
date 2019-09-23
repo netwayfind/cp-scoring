@@ -172,6 +172,26 @@ func (host hostWindows) GetWindowsFirewallRules() ([]model.WindowsFirewallRule, 
 	return rules, nil
 }
 
+func (host hostWindows) GetWindowsSettings() ([]model.WindowsSetting, error) {
+	tempFile, err := ioutil.TempFile("", "windows_settings_")
+	defer os.Remove(tempFile.Name())
+
+	settings := make([]model.WindowsSetting, 0)
+
+	// export local security settings to file
+	err = exec.Command("C:\\Windows\\System32\\SecEdit.exe", "/export", "/cfg", tempFile.Name()).Run()
+	if err != nil {
+		return settings, err
+	}
+
+	// read file
+	bs, err := ioutil.ReadFile(tempFile.Name())
+	if err != nil {
+		return nil, err
+	}
+	return parseWindowsSecEdit(bs)
+}
+
 func getScheduledTaskXML() []byte {
 	return []byte(`<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">

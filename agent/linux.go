@@ -113,6 +113,11 @@ func (h hostLinux) GetWindowsFirewallRules() ([]model.WindowsFirewallRule, error
 	return make([]model.WindowsFirewallRule, 0), nil
 }
 
+func (h hostLinux) GetWindowsSettings() ([]model.WindowsSetting, error) {
+	// not applicalbe
+	return make([]model.WindowsSetting, 0), nil
+}
+
 func copyAgentLinux(installPath string) {
 	log.Println("Copying this executable to installation folder")
 	ex, err := os.Executable()

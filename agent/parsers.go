@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/sumwonyuno/cp-scoring/model"
+	"gopkg.in/ini.v1"
 )
 
 func parseEtcPasswd(bs []byte) []model.User {
@@ -920,4 +921,48 @@ func mergeWindowsFirewallRules(fromRules []model.WindowsFirewallRule, fromPortFi
 	}
 
 	return rules, nil
+}
+
+func addToSettings(section *ini.Section, key string, settings []model.WindowsSetting) []model.WindowsSetting {
+	if !section.HasKey(key) {
+		return settings
+	}
+	return append(settings, model.WindowsSetting{
+		Key:   key,
+		Value: section.Key(key).String(),
+	})
+}
+
+func parseWindowsSecEdit(bs []byte) ([]model.WindowsSetting, error) {
+	settings := make([]model.WindowsSetting, 0)
+
+	cfg, err := ini.Load(bs)
+	if err != nil {
+		return settings, err
+	}
+
+	section := cfg.Section("System Access")
+	settings = addToSettings(section, "MinimumPasswordAge", settings)
+	settings = addToSettings(section, "MaximumPasswordAge", settings)
+	settings = addToSettings(section, "MinimumPasswordLength", settings)
+	settings = addToSettings(section, "PasswordComplexity", settings)
+	settings = addToSettings(section, "PasswordHistorySize", settings)
+	settings = addToSettings(section, "LockoutBadCount", settings)
+	settings = addToSettings(section, "ResetLockoutCount", settings)
+	settings = addToSettings(section, "LockoutDuration", settings)
+	settings = addToSettings(section, "EnableAdminAccount", settings)
+	settings = addToSettings(section, "EnableGuestAccount", settings)
+
+	section = cfg.Section("Event Audit")
+	settings = addToSettings(section, "AuditSystemEvents", settings)
+	settings = addToSettings(section, "AuditLogonEvents", settings)
+	settings = addToSettings(section, "AuditObjectAccess", settings)
+	settings = addToSettings(section, "AuditPrivilegeUse", settings)
+	settings = addToSettings(section, "AuditPolicyChange", settings)
+	settings = addToSettings(section, "AuditAccountManage", settings)
+	settings = addToSettings(section, "AuditProcessTracking", settings)
+	settings = addToSettings(section, "AuditDSAccess", settings)
+	settings = addToSettings(section, "AuditAccountLogon", settings)
+
+	return settings, nil
 }

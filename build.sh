@@ -17,6 +17,7 @@ go get golang.org/x/crypto/ripemd160
 go get github.com/cnf/structhash
 go get github.com/gorilla/mux
 go get github.com/gorilla/securecookie
+go get gopkg.in/ini.v1
 
 VERSION=$(cat $SCRIPTDIR/VERSION)
 echo "Setting to version $VERSION"
