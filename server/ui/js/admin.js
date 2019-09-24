@@ -1470,6 +1470,9 @@ class TemplateEntry extends React.Component {
         }), React.createElement(WindowsFirewallRules, {
           rules: this.state.template.State.WindowsFirewallRules,
           callback: this.handleCallback.bind(this)
+        }), React.createElement(WindowsSettings, {
+          settings: this.state.template.State.WindowsSettings,
+          callback: this.handleCallback.bind(this)
         }), React.createElement("div", null, React.createElement("button", {
           type: "submit"
         }, "Save"), React.createElement("button", {
@@ -2507,6 +2510,107 @@ class WindowsFirewallRules extends React.Component {
       type: "button",
       onClick: this.add.bind(this)
     }, "Add Windows Firewall rule"), React.createElement("ul", null, rules));
+  }
+
+}
+
+class WindowsSettings extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      settings: []
+    };
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setSettings(this.props.settings);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setSettings(newProps.settings);
+  }
+
+  setSettings(settings) {
+    if (settings === undefined || settings === null) {
+      settings = [];
+    }
+
+    this.setState({
+      settings: settings
+    });
+  }
+
+  add() {
+    let empty = {
+      Key: "",
+      Value: ""
+    };
+    let settings = [...this.state.settings, empty];
+    this.setState({
+      settings: settings
+    });
+    this.props.callback("WindowsSettings", settings);
+  }
+
+  remove(id) {
+    let settings = this.state.settings.filter(function (_, index) {
+      return index != id;
+    });
+    this.setState({
+      settings: settings
+    });
+    this.props.callback("WindowsSettings", settings);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.settings;
+    let value = event.target.value;
+
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      } else {
+        value = false;
+      }
+    }
+
+    updated[id] = _objectSpread({}, updated[id], {
+      [field]: value
+    });
+    this.setState({
+      settings: updated
+    });
+    this.props.callback("WindowsSettings", settings);
+  }
+
+  render() {
+    let settings = [];
+
+    for (let i in this.state.settings) {
+      let entry = this.state.settings[i];
+      settings.push(React.createElement("details", {
+        key: i
+      }, React.createElement("summary", null, entry.Key, " = ", entry.Value), React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Key"), React.createElement("input", {
+        type: "text",
+        value: entry.Key,
+        onChange: event => this.update(i, "Key", event)
+      })), React.createElement("li", null, React.createElement("label", null, "Value"), React.createElement("input", {
+        type: "text",
+        value: entry.Value,
+        onChange: event => this.update(i, "Value", event)
+      })))));
+    }
+
+    return React.createElement("details", null, React.createElement("summary", null, "Windows Settings"), React.createElement("button", {
+      type: "button",
+      onClick: this.add.bind(this)
+    }, "Add Windows setting"), React.createElement("ul", null, settings));
   }
 
 }

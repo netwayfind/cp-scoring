@@ -1353,6 +1353,7 @@ class TemplateEntry extends React.Component {
           <ScheduledTasks tasks={this.state.template.State.ScheduledTasks} callback={this.handleCallback.bind(this)}/>
           <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewallProfiles} callback={this.handleCallback.bind(this)}/>
           <WindowsFirewallRules rules={this.state.template.State.WindowsFirewallRules} callback={this.handleCallback.bind(this)}/>
+          <WindowsSettings settings={this.state.template.State.WindowsSettings} callback={this.handleCallback.bind(this)}/>
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>
@@ -2462,6 +2463,116 @@ class WindowsFirewallRules extends React.Component {
         <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall rule</button>
         <ul>
           {rules}
+        </ul>
+      </details>
+    )
+  }
+}
+
+class WindowsSettings extends React.Component {
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      settings: []
+    }
+
+    this.add = this.add.bind(this);
+    this.remove = this.remove.bind(this);
+    this.update = this.update.bind(this);
+  }
+
+  componentDidMount() {
+    this.setSettings(this.props.settings);
+  }
+
+  componentWillReceiveProps(newProps) {
+    this.setSettings(newProps.settings);
+  }
+
+  setSettings(settings) {
+    if (settings === undefined || settings === null) {
+      settings = [];
+    }
+    this.setState({
+      settings: settings
+    });
+  }
+
+  add() {
+    let empty = {
+      Key: "",
+      Value: "",
+    };
+    let settings = [
+      ...this.state.settings,
+      empty
+    ];
+    this.setState({
+      settings: settings
+    });
+    this.props.callback("WindowsSettings", settings)
+  }
+
+  remove(id) {
+    let settings = this.state.settings.filter(function(_, index) {
+      return index != id;
+    });
+    this.setState({
+      settings: settings
+    });
+    this.props.callback("WindowsSettings", settings);
+  }
+
+  update(id, field, event) {
+    let updated = this.state.settings;
+    let value = event.target.value;
+    if (event.target.type === "checkbox") {
+      if (event.target.checked) {
+        value = true;
+      }
+      else {
+        value = false;
+      }
+    }
+    updated[id] = {
+      ...updated[id],
+      [field]: value
+    }
+    this.setState({
+      settings: updated
+    })
+    this.props.callback("WindowsSettings", settings);
+  }
+
+  render() {
+    let settings = [];
+    for (let i in this.state.settings) {
+      let entry = this.state.settings[i];
+      settings.push(
+        <details key={i}>
+          <summary>{entry.Key} = {entry.Value}</summary>
+          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
+          <ul>
+            <li>
+              <label>Key</label>
+              <input type="text" value={entry.Key} onChange={event=> this.update(i, "Key", event)}></input>
+            </li>
+            <li>
+              <label>Value</label>
+              <input type="text" value={entry.Value} onChange={event=> this.update(i, "Value", event)}></input>
+            </li>
+          </ul>
+        </details>
+      );
+    }
+
+    return (
+      <details>
+        <summary>Windows Settings</summary>
+        <button type="button" onClick={this.add.bind(this)}>Add Windows setting</button>
+        <ul>
+          {settings}
         </ul>
       </details>
     )
