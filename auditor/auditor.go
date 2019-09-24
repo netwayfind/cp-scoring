@@ -20,6 +20,7 @@ func Audit(state model.State, templates []model.Template) model.Report {
 		report.Findings = append(report.Findings, auditScheduledTasks(state, template)...)
 		report.Findings = append(report.Findings, auditWindowsFirewallProfiles(state, template)...)
 		report.Findings = append(report.Findings, auditWindowsFirewallRules(state, template)...)
+		report.Findings = append(report.Findings, auditWindowsSettings(state, template)...)
 	}
 
 	return report
@@ -734,6 +735,43 @@ func auditWindowsFirewallRules(state model.State, template model.Template) []mod
 	for _, templateRule := range template.State.WindowsFirewallRules {
 		// check rule present
 		presentFinding := auditWindowsFirewallRuleObjectState(templateRule, state)
+		findings = append(findings, presentFinding)
+	}
+
+	return findings
+}
+
+func auditWindowsSetting(templateSetting model.WindowsSetting, state model.State) model.Finding {
+	found := false
+	for _, setting := range state.WindowsSettings {
+		if templateSetting.Key == setting.Key && templateSetting.Value == setting.Value {
+			found = true
+			break
+		}
+	}
+
+	settingStr := templateSetting.Key + " = " + templateSetting.Value
+
+	if found {
+		return model.Finding{
+			Show:    true,
+			Value:   1,
+			Message: "Setting found: " + settingStr,
+		}
+	}
+	return model.Finding{
+		Show:    false,
+		Value:   0,
+		Message: "Setting not found: " + settingStr,
+	}
+}
+
+func auditWindowsSettings(state model.State, template model.Template) []model.Finding {
+	findings := make([]model.Finding, 0)
+
+	for _, templateSetting := range template.State.WindowsSettings {
+		// check setting present
+		presentFinding := auditWindowsSetting(templateSetting, state)
 		findings = append(findings, presentFinding)
 	}
 

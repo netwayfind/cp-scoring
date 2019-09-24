@@ -1327,3 +1327,64 @@ func TestAuditWindowsFirewallRules(t *testing.T) {
 	}
 	checkFinding(t, findings[0], true, -1, "Windows Firewall rule not found: rule, TCP, 3389, , , Inbound, Allow")
 }
+
+func TestAuditWindowsSettings(t *testing.T) {
+	state := model.State{}
+	setting := model.WindowsSetting{Key: "MaximumPasswordAge", Value: "30"}
+	empty := make([]model.WindowsSetting, 0)
+	notEmpty := append(empty, setting)
+
+	// no template setting
+	template := model.Template{}
+	// setting in not state
+	state.WindowsSettings = empty
+	findings := auditWindowsSettings(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+	// setting in state
+	state.WindowsSettings = notEmpty
+	findings = auditWindowsSettings(state, template)
+	if len(findings) != 0 {
+		t.Fatal("Expected 0 findings")
+	}
+
+	// sample template setting
+	template = model.Template{}
+	templateSetting := model.WindowsSetting{Key: "MaximumPasswordAge", Value: "30"}
+	template.State.WindowsSettings = append(make([]model.WindowsSetting, 0), templateSetting)
+	// setting in not state
+	state.WindowsSettings = empty
+	findings = auditWindowsSettings(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Setting not found: MaximumPasswordAge = 30")
+	// setting in state
+	state.WindowsSettings = notEmpty
+	findings = auditWindowsSettings(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], true, 1, "Setting found: MaximumPasswordAge = 30")
+
+	// different template setting
+	template = model.Template{}
+	templateSetting = model.WindowsSetting{Key: "MaximumPasswordAge", Value: "90"}
+	template.State.WindowsSettings = append(make([]model.WindowsSetting, 0), templateSetting)
+	// setting in not state
+	state.WindowsSettings = empty
+	findings = auditWindowsSettings(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Setting not found: MaximumPasswordAge = 90")
+	// setting in state
+	state.WindowsSettings = notEmpty
+	findings = auditWindowsSettings(state, template)
+	if len(findings) != 1 {
+		t.Fatal("Expected 1 findings")
+	}
+	checkFinding(t, findings[0], false, 0, "Setting not found: MaximumPasswordAge = 90")
+
+}
