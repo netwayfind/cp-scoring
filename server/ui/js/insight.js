@@ -827,7 +827,16 @@ class AnalysisSelected extends React.Component {
               }, "Display Name: ", rule.DisplayName, ", ", enabledStr, ", Protocol: ", rule.Protocol, ", Local Port: ", rule.LocalPort, ", Remote Address: ", rule.RemoteAddress, ", Remote Port: ", rule.RemotePort, ", Direction: ", rule.Direction, ", Action: ", rule.Action));
             }
 
-            selected = React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, React.createElement("br", null), "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null), "Scheduled tasks:", React.createElement("ul", null, tasks), React.createElement("br", null), "Windows Firewall profiles:", React.createElement("ul", null, profiles), React.createElement("br", null), "Windows Firewall rules:", React.createElement("ul", null, rules), React.createElement("br", null));
+            let settings = [];
+
+            for (let i in this.props.selected.WindowsSettings) {
+              let setting = this.props.selected.WindowsSettings[i];
+              settings.push(React.createElement("li", {
+                key: i
+              }, "Key: ", setting.Key, ", Value: ", setting.Value));
+            }
+
+            selected = React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, React.createElement("br", null), "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null), "Scheduled tasks:", React.createElement("ul", null, tasks), React.createElement("br", null), "Windows Firewall profiles:", React.createElement("ul", null, profiles), React.createElement("br", null), "Windows Firewall rules:", React.createElement("ul", null, rules), React.createElement("br", null), "Windows settings:", React.createElement("ul", null, settings), React.createElement("br", null));
           }
 
     return selected;

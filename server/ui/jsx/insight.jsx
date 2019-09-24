@@ -778,6 +778,11 @@ class AnalysisSelected extends React.Component {
         }
         rules.push(<li key={i}>Display Name: {rule.DisplayName}, {enabledStr}, Protocol: {rule.Protocol}, Local Port: {rule.LocalPort}, Remote Address: {rule.RemoteAddress}, Remote Port: {rule.RemotePort}, Direction: {rule.Direction}, Action: {rule.Action}</li>);
       }
+      let settings = [];
+      for (let i in this.props.selected.WindowsSettings) {
+        let setting = this.props.selected.WindowsSettings[i];
+        settings.push(<li key={i}>Key: {setting.Key}, Value: {setting.Value}</li>);
+      }
       selected = (
         <React.Fragment>
           State ID: {this.props.selected.StateID}
@@ -831,6 +836,11 @@ class AnalysisSelected extends React.Component {
           Windows Firewall rules:
           <ul>
             {rules}
+          </ul>
+          <br />
+          Windows settings:
+          <ul>
+            {settings}
           </ul>
           <br />
         </React.Fragment>
