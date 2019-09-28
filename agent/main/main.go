@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
@@ -254,57 +255,72 @@ func getScenarioDesc(serverURL string, id string, outFile string) {
 	log.Println("Wrote to scenario description file")
 }
 
+func pressEnterBeforeExit(code int) {
+	log.Println("Press enter to exit")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	os.Exit(code)
+}
+
 func handleTeamKey(teamKeyFile string, hostTokenFile string, serverURL string, transport *http.Transport) {
 	// if have team key file, don't continue
 	if _, err := os.Stat(teamKeyFile); !os.IsNotExist(err) {
 		log.Println("Team key already set")
-		return
+		pressEnterBeforeExit(0)
 	}
 	// if don't have host token yet, don't continue
 	hostToken := readHostTokenFile(hostTokenFile)
 	if len(hostToken) == 0 {
-		log.Println("Cannot register, agent not running or unable to access scoring server")
-		return
+		log.Println("Cannot register, agent not running or unable to access scoring server. Try again later.")
+		pressEnterBeforeExit(1)
 	}
 
-	// ask for team key
-	log.Println("Enter team key: ")
 	var teamKey string
-	_, err := fmt.Scan(&teamKey)
-	if err != nil {
-		log.Println("Error asking for team key")
-		os.Exit(1)
-	}
-
-	// register team with host token
-	c := http.Client{Transport: transport}
-	url := serverURL + "/token/team"
-	data := make(map[string][]string)
-	data["team_key"] = []string{teamKey}
-	data["host_token"] = []string{hostToken}
-	r, err := c.PostForm(url, data)
-	if err != nil {
-		log.Println("ERROR: unable to POST team key;", err)
-		return
-	}
-	if r.StatusCode != 200 {
-		log.Printf("ERROR: Unexpected status code from server: %d", r.StatusCode)
-		errMsg, err := ioutil.ReadAll(r.Body)
+	for {
+		// ask for team key
+		log.Println("Enter team key: ")
+		_, err := fmt.Scan(&teamKey)
 		if err != nil {
-			log.Fatalln("ERROR: unable to read error message;", err)
+			log.Println("Error asking for team key;", err)
+			pressEnterBeforeExit(1)
 		}
-		log.Println(string(errMsg))
-		os.Exit(1)
+
+		// register team with host token
+		c := http.Client{Transport: transport}
+		url := serverURL + "/token/team"
+		data := make(map[string][]string)
+		data["team_key"] = []string{teamKey}
+		data["host_token"] = []string{hostToken}
+		r, err := c.PostForm(url, data)
+		if err != nil {
+			log.Println("ERROR: unable to POST team key (try again later);", err)
+			pressEnterBeforeExit(1)
+		}
+		if r.StatusCode == 200 {
+			break
+		} else if r.StatusCode == 401 {
+			log.Println("Team key rejected. Try again.")
+			continue
+		} else {
+			log.Printf("ERROR: Unexpected status code from server: %d", r.StatusCode)
+			errMsg, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				log.Println("ERROR: unable to read error message;", err)
+				pressEnterBeforeExit(1)
+			}
+			defer r.Body.Close()
+			log.Println(string(errMsg))
+			pressEnterBeforeExit(1)
+		}
 	}
-	defer r.Body.Close()
 
 	// should be successful
 	log.Println("Team key and host registered")
 	// write team key to file
-	err = ioutil.WriteFile(teamKeyFile, []byte(teamKey), 0600)
+	err := ioutil.WriteFile(teamKeyFile, []byte(teamKey), 0600)
 	if err != nil {
-		log.Println("Unable to save team key file")
-		os.Exit(1)
+		log.Println("Unable to save team key file;", err)
+		pressEnterBeforeExit(1)
 	}
 }
 
@@ -360,7 +376,7 @@ func main() {
 			log.Fatalln("ERROR: could not read server certificate;", err)
 		}
 		handleTeamKey(teamKeyFile, hostTokenFile, serverURL, transport)
-		os.Exit(0)
+		pressEnterBeforeExit(0)
 	}
 
 	if copyFiles {
