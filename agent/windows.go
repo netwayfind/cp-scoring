@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 type hostWindows struct {

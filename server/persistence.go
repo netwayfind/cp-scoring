@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 
-	"github.com/sumwonyuno/cp-scoring/processing"
+	"github.com/netwayfind/cp-scoring/processing"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 type backingStore interface {

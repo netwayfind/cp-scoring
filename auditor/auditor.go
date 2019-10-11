@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 // Audit will audit the given state against the given templates, and then returns a report.

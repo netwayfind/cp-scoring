@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sumwonyuno/cp-scoring/model"
-	"github.com/sumwonyuno/cp-scoring/processing"
+	"github.com/netwayfind/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/processing"
 )
 
 var testDBObj backingStore

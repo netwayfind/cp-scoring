@@ -3,7 +3,7 @@ package auditor
 import (
 	"testing"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 func checkFinding(t *testing.T, finding model.Finding, show bool, value int64, message string) {

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/openpgp"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 
 	_ "golang.org/x/crypto/ripemd160"
 )

@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/cnf/structhash"
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 type Change struct {

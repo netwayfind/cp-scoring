@@ -8,10 +8,10 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/sumwonyuno/cp-scoring/processing"
+	"github.com/netwayfind/cp-scoring/processing"
 
 	_ "github.com/lib/pq"
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 type dbObj struct {

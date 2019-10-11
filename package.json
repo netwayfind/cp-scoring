@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sumwonyuno/cp-scoring.git"
+    "url": "git+https://github.com/netwayfind/cp-scoring.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/sumwonyuno/cp-scoring/issues"
+    "url": "https://github.com/netwayfind/cp-scoring/issues"
   },
-  "homepage": "https://github.com/sumwonyuno/cp-scoring#readme",
+  "homepage": "https://github.com/netwayfind/cp-scoring#readme",
   "dependencies": {},
   "devDependencies": {
     "@babel/cli": "^7.4.4",

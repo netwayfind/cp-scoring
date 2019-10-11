@@ -2,7 +2,7 @@
 
 set -e
 
-PKG_BASE="github.com/sumwonyuno/cp-scoring"
+PKG_BASE="github.com/netwayfind/cp-scoring"
 BASEDIR="target"
 SCRIPTDIR="$(dirname $(readlink -f $0))"
 
@@ -48,11 +48,11 @@ echo "Building windows agent"
 GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
 
 echo "Running unit tests"
-go test github.com/sumwonyuno/cp-scoring/agent
-go test github.com/sumwonyuno/cp-scoring/agent/main
-go test github.com/sumwonyuno/cp-scoring/auditor
-go test github.com/sumwonyuno/cp-scoring/model
-go test github.com/sumwonyuno/cp-scoring/processing
-go test github.com/sumwonyuno/cp-scoring/server
+go test github.com/netwayfind/cp-scoring/agent
+go test github.com/netwayfind/cp-scoring/agent/main
+go test github.com/netwayfind/cp-scoring/auditor
+go test github.com/netwayfind/cp-scoring/model
+go test github.com/netwayfind/cp-scoring/processing
+go test github.com/netwayfind/cp-scoring/server
 
 echo "Done"

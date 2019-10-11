@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 func TestEmptyEtcPasswd(t *testing.T) {

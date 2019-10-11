@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sumwonyuno/cp-scoring/agent"
-	"github.com/sumwonyuno/cp-scoring/model"
-	"github.com/sumwonyuno/cp-scoring/processing"
+	"github.com/netwayfind/cp-scoring/agent"
+	"github.com/netwayfind/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/processing"
 	"golang.org/x/crypto/openpgp"
 
 	_ "golang.org/x/crypto/ripemd160"

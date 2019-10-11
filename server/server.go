@@ -17,12 +17,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sumwonyuno/cp-scoring/processing"
+	"github.com/netwayfind/cp-scoring/processing"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/securecookie"
-	"github.com/sumwonyuno/cp-scoring/auditor"
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/auditor"
+	"github.com/netwayfind/cp-scoring/model"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/crypto/openpgp"
 )

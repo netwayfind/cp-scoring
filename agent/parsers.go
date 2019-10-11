@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 	"gopkg.in/ini.v1"
 )
 

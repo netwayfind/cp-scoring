@@ -5,7 +5,7 @@ import (
 
 	"github.com/cnf/structhash"
 
-	"github.com/sumwonyuno/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 func TestGetReportEntries(t *testing.T) {

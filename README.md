@@ -56,7 +56,7 @@ The `cp-scoring\server\db_test.go` has integration tests for the persistent back
 1. Create a file at `cp-scoring\server\cp-scoring.test.conf`
    - Refer to the `cp-scoring.test.conf.example` file to set up connecting to the postgres instance.
 1. Open Terminal
-1. `go test github.com/sumwonyuno/cp-scoring/server --tags=integration`
+1. `go test github.com/netwayfind/cp-scoring/server --tags=integration`
 
 The UI code does not currently have automated tests.
 
