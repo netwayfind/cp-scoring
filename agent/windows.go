@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/netwayfind/cp-scoring/model"
 )
@@ -28,8 +30,11 @@ func powershellCsv(command string, columns string) ([]byte, error) {
 }
 
 func (host hostWindows) GetUsers() ([]model.User, error) {
-	// powershell 5.1 required
-	if host.PowerShellVersion == "5.1" {
+	// powershell 5.1 or greater required
+	versionTokens := strings.Split(host.PowerShellVersion, ".")
+	majorVersion, _ := strconv.Atoi(versionTokens[0])
+	minorVersion, _ := strconv.Atoi(versionTokens[1])
+	if majorVersion >= 5 && minorVersion >= 1 {
 		out, err := powershellCsv("Get-LocalUser", "Name,SID,Enabled,AccountExpires,PasswordLastSet,PasswordExpires")
 		if err != nil {
 			return nil, err
