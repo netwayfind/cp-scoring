@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2020-06-14
+### Added
+- [#37](https://github.com/netwayfind/cp-scoring/issues/37) - insight UI, add button to show/hide findings
+- [#4](https://github.com/netwayfind/cp-scoring/issues/4) - initial support for scheduled tasks in Windows
+- [#3](https://github.com/netwayfind/cp-scoring/issues/3) - initial support for Windows Firewall
+- [#5](https://github.com/netwayfind/cp-scoring/issues/5) - initial support for Windows settings
+- [#33](https://github.com/netwayfind/cp-scoring/issues/33) - adds clone button for existing hosts, templates, and scenarios
+- [#36](https://github.com/netwayfind/cp-scoring/issues/36) - adds shortcut on Desktop to team key registration
+- [#11](https://github.com/netwayfind/cp-scoring/issues/11) - adds shortcut on Desktop to report and scoreboard
+
+### Changed
+- generated team key is only upper case letters and numbers
+- Windows agent runs under SYSTEM account to allow more actions
+- updated repository URLs
+- updated npm dependencies
+
+### Fixed
+- [#23](https://github.com/netwayfind/cp-scoring/issues/23) - able to retrieve user for Windows processes, due to running with SYSTEM account privileges
+- [#32](https://github.com/netwayfind/cp-scoring/issues/32) - adds behavior to press Enter key before exiting team key registration. This allows seeing success or any errors.
+- [#41](https://github.com/netwayfind/cp-scoring/issues/41) - fixes parsing PowerShell versino
+
 ## [0.5.0] - 2019-09-01
 ### Added
 - [#31](https://github.com/netwayfind/cp-scoring/issues/31) - create template from state ID
