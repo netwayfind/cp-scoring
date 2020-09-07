@@ -401,65 +401,51 @@ func TestSelectLatestScenarioScores(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// should just be 2 latest scores, one for each team
+	// should have latest scores, one group for each team
 	if len(scores) != 2 {
 		t.Fatal("Unexpected number of scores:", len(scores))
 	}
 	// should be ordered by team name
+	// team 1 should have two hosts
 	if scores[0].TeamName != "Team 1" {
 		t.Fatal("Unexpected team name")
 	}
-	if scores[0].Timestamp != 1010 {
+	if len(scores[0].HostScores) != 2 {
+		t.Fatal("Unexpected team host score count", len(scores[0].HostScores))
+	}
+	if scores[0].HostScores[0].Timestamp != 1010 {
 		t.Fatal("Unexpected timestamp")
 	}
-	// team 1: host 1 has 2 points (latest instance), host 2 has 1 points
-	if scores[0].Score != 3 {
-		t.Fatal("Unexpected score", scores[0].Score)
+	if scores[0].HostScores[0].Hostname != "host1" {
+		t.Fatal("Unexpected hostname")
 	}
+	if scores[0].HostScores[0].Score != 2 {
+		t.Fatal("Unexpected score:", scores[0].HostScores[0].Score)
+	}
+	if scores[0].HostScores[1].Timestamp != 1002 {
+		t.Fatal("Unexpected timestamp")
+	}
+	if scores[0].HostScores[1].Hostname != "host2" {
+		t.Fatal("Unexpected hostname")
+	}
+	if scores[0].HostScores[1].Score != 1 {
+		t.Fatal("Unexpected score:", scores[0].HostScores[1].Score)
+	}
+	// team 2 should have one host
 	if scores[1].TeamName != "Team 2" {
 		t.Fatal("Unexpected team name")
 	}
-	if scores[1].Timestamp != 1040 {
+	if len(scores[1].HostScores) != 1 {
+		t.Fatal("Unexpected team host score count")
+	}
+	if scores[1].HostScores[0].Timestamp != 1040 {
 		t.Fatal("Unexpected timestamp")
 	}
-	if scores[1].Score != 6 {
-		t.Fatal("Unexpected score")
+	if scores[1].HostScores[0].Hostname != "host1" {
+		t.Fatal("Unexpected hostname")
 	}
-
-	// insert duplicate team host token
-	err = backingStore.InsertTeamHostToken(team1ID, "host1_1", 100)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// scores shouldn't change
-	scores, err = backingStore.SelectLatestScenarioScores(scenarioID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	// should just be 2 latest scores, one for each team
-	if len(scores) != 2 {
-		t.Fatal("Unexpected number of scores:", len(scores))
-	}
-	// should be ordered by team name
-	if scores[0].TeamName != "Team 1" {
-		t.Fatal("Unexpected team name")
-	}
-	if scores[0].Timestamp != 1010 {
-		t.Fatal("Unexpected timestamp")
-	}
-	// this shouldn't change
-	if scores[0].Score != 3 {
-		t.Fatal("Unexpected score", scores[0].Score)
-	}
-	if scores[1].TeamName != "Team 2" {
-		t.Fatal("Unexpected team name")
-	}
-	if scores[1].Timestamp != 1040 {
-		t.Fatal("Unexpected timestamp")
-	}
-	if scores[1].Score != 6 {
-		t.Fatal("Unexpected score")
+	if scores[1].HostScores[0].Score != 6 {
+		t.Fatal("Unexpected score:", scores[1].HostScores[0].Score)
 	}
 }
 

@@ -94,12 +94,31 @@ class Scoreboard extends React.Component {
     let body = [];
     for (let i in this.state.scores) {
       let entry = this.state.scores[i];
-      let lastUpdated = new Date(entry.Timestamp * 1000).toLocaleString();
+      let lastTimestamp = 0;
+      let totalScore = 0;
+      let hostScoreDetails = [];
+      for (let j in entry.HostScores) {
+        let hostScore = entry.HostScores[j];
+        totalScore += hostScore.Score;
+        if (hostScore.Timestamp > lastTimestamp) {
+          lastTimestamp = hostScore.Timestamp;
+        }
+        let lastUpdated = new Date(hostScore.Timestamp * 1000).toLocaleString();
+        hostScoreDetails.push(
+          <p>Time: {lastUpdated}; Hostname: {hostScore.Hostname}; Score: {hostScore.Score} </p>
+        );
+      }
+      let lastTimestampStr = new Date(lastTimestamp * 1000).toLocaleString();
       body.push(
         <tr key={i}>
           <td class="table-cell">{entry.TeamName}</td>
-          <td class="table-cell">{entry.Score}</td>
-          <td class="table-cell">{lastUpdated}</td>
+          <td class="table-cell">{totalScore}</td>
+          <td class="table-cell">{lastTimestampStr}</td>
+          <td class="table-cell">
+            <details>
+              {hostScoreDetails}
+            </details>
+          </td>
         </tr>
       )
     }

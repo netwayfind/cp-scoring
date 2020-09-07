@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"math/rand"
+	"sort"
 	"strings"
 
 	"github.com/netwayfind/cp-scoring/processing"
@@ -673,26 +674,48 @@ func (db dbObj) UpdateScenario(id uint64, scenario model.Scenario) error {
 }
 
 func (db dbObj) SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error) {
-	rows, err := db.dbConn.Query("SELECT DISTINCT ON (name) name, SUM(score), MAX(timestamp) FROM (SELECT DISTINCT ON(team_hosts.name, team_hosts.hostname) team_hosts.name, team_hosts.hostname, host_scores.score, host_scores.timestamp FROM (SELECT teams.name, host_tokens.host_token, host_tokens.hostname FROM teams, host_tokens, team_host_tokens WHERE teams.id=team_host_tokens.team_id AND host_tokens.host_token=team_host_tokens.host_token GROUP BY teams.name, host_tokens.host_token) AS team_hosts, (SELECT DISTINCT ON (host_token) host_token, timestamp, score FROM scores WHERE scores.scenario_id=$1 ORDER BY host_token, timestamp DESC) AS host_scores WHERE host_scores.host_token=team_hosts.host_token ORDER BY team_hosts.name, team_hosts.hostname, host_scores.timestamp DESC) AS a GROUP BY name", scenarioID)
+	rows, err := db.dbConn.Query("SELECT name, hostname, score, timestamp FROM (SELECT DISTINCT ON(team_hosts.name, team_hosts.hostname) team_hosts.name, team_hosts.hostname, host_scores.score, host_scores.timestamp FROM (SELECT teams.name, host_tokens.host_token, host_tokens.hostname FROM teams, host_tokens, team_host_tokens WHERE teams.id=team_host_tokens.team_id AND host_tokens.host_token=team_host_tokens.host_token GROUP BY teams.name, host_tokens.host_token) AS team_hosts, (SELECT DISTINCT ON (host_token) host_token, timestamp, score FROM scores WHERE scores.scenario_id=$1 ORDER BY host_token, timestamp DESC) AS host_scores WHERE host_scores.host_token=team_hosts.host_token ORDER BY team_hosts.name, team_hosts.hostname, host_scores.timestamp DESC) AS a", scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var teamName string
+	var hostname string
 	var score int64
 	var timestamp int64
-	scores := make([]model.TeamScore, 0)
+	teamHostScores := make(map[string][]model.TeamHostScore)
 
 	for rows.Next() {
-		err = rows.Scan(&teamName, &score, &timestamp)
+		err = rows.Scan(&teamName, &hostname, &score, &timestamp)
 		if err != nil {
 			return nil, err
 		}
-		var entry model.TeamScore
-		entry.TeamName = teamName
+		hostScores, present := teamHostScores[teamName]
+		if !present {
+			hostScores = make([]model.TeamHostScore, 0)
+		}
+
+		var entry model.TeamHostScore
+		entry.Hostname = hostname
 		entry.Timestamp = timestamp
 		entry.Score = score
+		hostScores = append(hostScores, entry)
+		teamHostScores[teamName] = hostScores
+	}
+
+	teamNames := make([]string, 0)
+	for teamName := range teamHostScores {
+		teamNames = append(teamNames, teamName)
+	}
+	sort.Strings(teamNames)
+	scores := make([]model.TeamScore, 0)
+	for i := range teamNames {
+		teamName := teamNames[i]
+		hostScores := teamHostScores[teamName]
+		var entry model.TeamScore
+		entry.TeamName = teamName
+		entry.HostScores = hostScores
 		scores = append(scores, entry)
 	}
 

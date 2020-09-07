@@ -50,7 +50,12 @@ type Scenario struct {
 }
 
 type TeamScore struct {
-	TeamName  string
+	TeamName   string
+	HostScores []TeamHostScore
+}
+
+type TeamHostScore struct {
+	Hostname  string
 	Timestamp int64
 	Score     int64
 }
