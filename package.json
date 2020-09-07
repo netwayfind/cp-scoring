@@ -19,9 +19,9 @@
   "homepage": "https://github.com/netwayfind/cp-scoring#readme",
   "dependencies": {},
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/core": "^7.4.5",
-    "@babel/plugin-proposal-object-rest-spread": "^7.4.4",
-    "@babel/preset-react": "^7.0.0"
+    "@babel/cli": "^7.11.6",
+    "@babel/core": "^7.11.6",
+    "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
+    "@babel/preset-react": "^7.10.4"
   }
 }
