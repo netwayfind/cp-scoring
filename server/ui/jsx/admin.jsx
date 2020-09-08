@@ -393,8 +393,8 @@ class AdministratorEntry extends React.Component {
         <form onChange={this.updateAdministrator.bind(this)} onSubmit={this.saveAdministrator.bind(this)}>
           <Item name="Username" value={this.state.user.Username || ""} disabled={existingUser}/>
           <Item name="Password" type="password" value={this.state.user.Password} />
-          <p />
-          <button type="submit">Submit</button>
+          <hr />
+          <button type="submit">Save</button>
           <button class="right" type="button" disabled={!this.state.user.Username} onClick={this.deleteAdministrator.bind(this, this.state.user.Username)}>Delete</button>
         </form>
       );
@@ -623,7 +623,7 @@ class TeamEntry extends React.Component {
               </li>
             </ul>
           </details>
-          <br />
+          <hr />
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.team.ID} onClick={this.deleteTeam.bind(this, this.state.team.ID)}>Delete</button>
@@ -891,7 +891,7 @@ class ScenarioEntry extends React.Component {
           <textarea name="Description" rows="10" cols="80" value={this.state.scenario.Description}></textarea>
           <Item name="Enabled" type="checkbox" checked={!!this.state.scenario.Enabled}/>
           <ItemMap name="HostTemplates" label="Hosts" listLabel="Templates" value={this.state.scenario.HostTemplates} callback={this.handleCallback.bind(this)} mapItems={this.mapItems} listItems={this.listItems}/>
-          <br />
+          <hr />
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.scenario.ID} onClick={this.deleteScenario.bind(this, this.state.scenario.ID)}>Delete</button>
@@ -1095,7 +1095,7 @@ class HostEntry extends React.Component {
           <input disabled value={this.state.host.ID || ""}/>
           <Item name="Hostname" type="text" value={this.state.host.Hostname}/>
           <Item name="OS" type="text" value={this.state.host.OS}/>
-          <br />
+          <hr />
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.host.ID} onClick={this.deleteHost.bind(this, this.state.host.ID)}>Delete</button>
@@ -1332,6 +1332,7 @@ class TemplateEntry extends React.Component {
           <br />
           <label htmlFor="StateID">State ID</label>
           <input name="StateID" value={this.state.template.StateID || ""}/>
+          <hr />
           <div>
             <button type="submit">Save</button>
           </div>
@@ -1354,6 +1355,7 @@ class TemplateEntry extends React.Component {
           <WindowsFirewallProfiles profiles={this.state.template.State.WindowsFirewallProfiles} callback={this.handleCallback.bind(this)}/>
           <WindowsFirewallRules rules={this.state.template.State.WindowsFirewallRules} callback={this.handleCallback.bind(this)}/>
           <WindowsSettings settings={this.state.template.State.WindowsSettings} callback={this.handleCallback.bind(this)}/>
+          <hr />
           <div>
             <button type="submit">Save</button>
             <button class="right" type="button" disabled={!this.state.template.ID} onClick={this.deleteTemplate.bind(this, this.state.template.ID)}>Delete</button>

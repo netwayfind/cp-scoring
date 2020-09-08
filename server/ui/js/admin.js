@@ -438,9 +438,9 @@ class AdministratorEntry extends React.Component {
         name: "Password",
         type: "password",
         value: this.state.user.Password
-      }), /*#__PURE__*/React.createElement("p", null), /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("button", {
         type: "submit"
-      }, "Submit"), /*#__PURE__*/React.createElement("button", {
+      }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
         type: "button",
         disabled: !this.state.user.Username,
@@ -678,7 +678,7 @@ class TeamEntry extends React.Component {
       }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Key"), /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement("li", null, this.state.team.Key, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
         type: "button",
         onClick: this.regenKey.bind(this)
-      }, "Regenerate")))), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      }, "Regenerate")))), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
       }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
@@ -967,7 +967,7 @@ class ScenarioEntry extends React.Component {
         callback: this.handleCallback.bind(this),
         mapItems: this.mapItems,
         listItems: this.listItems
-      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
       }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
@@ -1184,7 +1184,7 @@ class HostEntry extends React.Component {
         name: "OS",
         type: "text",
         value: this.state.host.OS
-      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
       }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
@@ -1429,7 +1429,7 @@ class TemplateEntry extends React.Component {
       }, "State ID"), /*#__PURE__*/React.createElement("input", {
         name: "StateID",
         value: this.state.template.StateID || ""
-      }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
       }, "Save")));
     } // regular template
@@ -1473,7 +1473,7 @@ class TemplateEntry extends React.Component {
         }), /*#__PURE__*/React.createElement(WindowsSettings, {
           settings: this.state.template.State.WindowsSettings,
           callback: this.handleCallback.bind(this)
-        }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
+        }), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
           type: "submit"
         }, "Save"), /*#__PURE__*/React.createElement("button", {
           class: "right",
