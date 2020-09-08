@@ -1383,7 +1383,6 @@ class ObjectState extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <label>State</label>
         <select value={this.props.value} onChange={this.props.onChange}>
           <option>Add</option>
           <option>Keep</option>
@@ -1517,37 +1516,26 @@ class Users extends React.Component {
       if (user.ObjectState != "Remove") {
         userOptions = (
           <React.Fragment>
-            <li>
-              <label>Active</label>
+            <td>
               <input type="checkbox" checked={user.AccountActive} onChange={event=> this.updateUser(i, "AccountActive", event)}/>
-            </li>
-            <li>
-              <label>Password Expires</label>
+            </td>
+            <td>
               <input type="checkbox" checked={user.PasswordExpires} onChange={event=> this.updateUser(i, "PasswordExpires", event)}/>
-            </li>
-            <li>
-              <label>Password Last Set</label>
+            </td>
+            <td>
               <input type="date" value={passwordLastSetDate} onChange={event=> this.updateUser(i, "PasswordLastSet", event)}/>
               <input type="time" value={passwordLastSetTime} onChange={event=> this.updateUser(i, "PasswordLastSet", event)}/>
-            </li>
+            </td>
           </React.Fragment>
         );
       }
       users.push(
-        <details key={i}>
-          <summary>{user.Name}</summary>
+        <tr>
+          <td><input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/></td>
+          <td><ObjectState value={user.ObjectState} onChange={event=> this.updateUser(i, "ObjectState", event)} /></td>
+          {userOptions}
           <button type="button" onClick={this.removeUser.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Name</label>
-              <input type="text" value={user.Name} onChange={event=> this.updateUser(i, "Name", event)}/>
-            </li>
-            <li>
-              <ObjectState value={user.ObjectState} onChange={event=> this.updateUser(i, "ObjectState", event)} />
-            </li>
-            {userOptions}
-          </ul>
-        </details>
+        </tr>
       );
     }
 
@@ -1555,9 +1543,17 @@ class Users extends React.Component {
       <details>
         <summary>Users</summary>
         <button type="button" onClick={this.addUser.bind(this)}>Add User</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>State</th>
+            <th>Active</th>
+            <th>Password Expires</th>
+            <th>Password Last Set</th>
+            <th></th>
+          </tr>
           {users}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -1788,19 +1784,11 @@ class Processes extends React.Component {
     for (let i in this.state.processes) {
       let entry = this.state.processes[i];
       processes.push(
-        <details key={i}>
-          <summary>{entry.CommandLine}</summary>
-          <button type="button" onClick={this.removeProcess.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Command line</label>
-              <input type="text" value={entry.CommandLine} onChange={event=> this.updateProcess(i, "CommandLine", event)}></input>
-            </li>
-            <li>
-              <ObjectState value={entry.ObjectState} onChange={event=> this.updateProcess(i, "ObjectState", event)} />
-            </li>
-          </ul>
-        </details>
+        <tr>
+          <td><input type="text" value={entry.CommandLine} onChange={event=> this.updateProcess(i, "CommandLine", event)}></input></td>
+          <td><ObjectState value={entry.ObjectState} onChange={event=> this.updateProcess(i, "ObjectState", event)} /></td>
+          <td><button type="button" onClick={this.removeProcess.bind(this, i)}>-</button></td>
+        </tr>
       );
     }
 
@@ -1808,9 +1796,14 @@ class Processes extends React.Component {
       <details>
         <summary>Processes</summary>
         <button type="button" onClick={this.addProcess.bind(this)}>Add Process</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Command Line</th>
+            <th>State</th>
+            <th></th>
+          </tr>
           {processes}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -1890,23 +1883,12 @@ class Software extends React.Component {
     for (let i in this.state.software) {
       let entry = this.state.software[i];
       software.push(
-        <details key={i}>
-          <summary>{entry.Name}</summary>
+        <tr>
+          <td><input type="text" value={entry.Name} onChange={event=> this.updateSoftware(i, "Name", event)}></input></td>
+          <td><input type="text" value={entry.Version} onChange={event=> this.updateSoftware(i, "Version", event)}></input></td>
+          <td><ObjectState value={entry.ObjectState} onChange={event=> this.updateSoftware(i, "ObjectState", event)} /></td>
           <button type="button" onClick={this.removeSoftware.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Name</label>
-              <input type="text" value={entry.Name} onChange={event=> this.updateSoftware(i, "Name", event)}></input>
-            </li>
-            <li>
-              <label>Version</label>
-              <input type="text" value={entry.Version} onChange={event=> this.updateSoftware(i, "Version", event)}></input>
-            </li>
-            <li>
-              <ObjectState value={entry.ObjectState} onChange={event=> this.updateSoftware(i, "ObjectState", event)} />
-            </li>
-          </ul>
-        </details>
+        </tr>
       );
     }
 
@@ -1914,9 +1896,15 @@ class Software extends React.Component {
       <details>
         <summary>Software</summary>
         <button type="button" onClick={this.addSoftware.bind(this)}>Add Software</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Version</th>
+            <th>State</th>
+            <th></th>
+          </tr>
           {software}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -1999,39 +1987,21 @@ class NetworkConnections extends React.Component {
     for (let i in this.state.conns) {
       let entry = this.state.conns[i];
       conns.push(
-        <details key={i}>
-          <summary>{entry.Protocol} {entry.LocalAddress} {entry.LocalPort} {entry.RemoteAddress} {entry.RemotePort}</summary>
+        <tr>
+          <td>
+            <select value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}>
+              <option value=""></option>
+              <option value="TCP">TCP</option>
+              <option value="UDP">UDP</option>
+            </select>
+          </td>
+          <td><input type="text" value={entry.LocalAddress} onChange={event=> this.update(i, "LocalAddress", event)}></input></td>
+          <td><input type="text" value={entry.LocalPort} onChange={event=> this.update(i, "LocalPort", event)}></input></td>
+          <td><input type="text" value={entry.RemoteAddress} onChange={event=> this.update(i, "RemoteAddress", event)}></input></td>
+          <td><input type="text" value={entry.RemotePort} onChange={event=> this.update(i, "RemotePort", event)}></input></td>
+          <td><ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} /></td>
           <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Protocol</label>
-              <select value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}>
-                <option value=""></option>
-                <option value="TCP">TCP</option>
-                <option value="UDP">UDP</option>
-              </select>
-            </li>
-            <li>
-              <label>Local Address</label>
-              <input type="text" value={entry.LocalAddress} onChange={event=> this.update(i, "LocalAddress", event)}></input>
-            </li>
-            <li>
-              <label>Local Port</label>
-              <input type="text" value={entry.LocalPort} onChange={event=> this.update(i, "LocalPort", event)}></input>
-            </li>
-            <li>
-              <label>Remote Address</label>
-              <input type="text" value={entry.RemoteAddress} onChange={event=> this.update(i, "RemoteAddress", event)}></input>
-            </li>
-            <li>
-              <label>Remote Port</label>
-              <input type="text" value={entry.RemotePort} onChange={event=> this.update(i, "RemotePort", event)}></input>
-            </li>
-            <li>
-              <ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} />
-            </li>
-          </ul>
-        </details>
+        </tr>
       );
     }
 
@@ -2039,9 +2009,18 @@ class NetworkConnections extends React.Component {
       <details>
         <summary>Network Connections</summary>
         <button type="button" onClick={this.add.bind(this)}>Add Network Connection</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Protocol</th>
+            <th>Local Address</th>
+            <th>Local Port</th>
+            <th>Remote Address</th>
+            <th>Remote Port</th>
+            <th>State</th>
+            <th></th>
+          </tr>
           {conns}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -2133,27 +2112,13 @@ class ScheduledTasks extends React.Component {
         enabledStr = "Disabled";
       }
       tasks.push(
-        <details key={i}>
-          <summary>{entry.Name} {entry.Path} {enabledStr}</summary>
-          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Name</label>
-              <input type="text" value={entry.Name} onChange={event=> this.update(i, "Name", event)}></input>
-            </li>
-            <li>
-              <label>Path</label>
-              <input type="text" value={entry.Path} onChange={event=> this.update(i, "Path", event)}></input>
-            </li>
-            <li>
-              <label>Enabled</label>
-              <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
-            </li>
-            <li>
-              <ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} />
-            </li>
-          </ul>
-        </details>
+        <tr>
+          <td><input type="text" value={entry.Name} onChange={event=> this.update(i, "Name", event)}></input></td>
+          <td><input type="text" value={entry.Path} onChange={event=> this.update(i, "Path", event)}></input></td>
+          <td><input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input></td>
+          <td><ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} /></td>
+          <td><button type="button" onClick={this.remove.bind(this, i)}>-</button></td>
+        </tr>
       );
     }
 
@@ -2161,9 +2126,16 @@ class ScheduledTasks extends React.Component {
       <details>
         <summary>Scheduled Tasks</summary>
         <button type="button" onClick={this.add.bind(this)}>Add Scheduled Task</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Path</th>
+            <th>Enabled</th>
+            <th>State</th>
+            <th></th>
+          </tr>
           {tasks}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -2256,42 +2228,35 @@ class WindowsFirewallProfiles extends React.Component {
         enabledStr = "Disabled";
       }
       profiles.push(
-        <details key={i}>
-          <summary>Profile: {entry.Name} {enabledStr} Inbound: {entry.DefaultInboundAction} Outbound: {entry.DefaultOutboundAction}</summary>
+        <tr>
+          <td>
+            <select value={entry.Name} onChange={event=> this.update(i, "Name", event)}>
+              <option disabled key="" value="">
+              </option>
+              <option>Domain</option>
+              <option>Public</option>
+              <option>Private</option>
+            </select>
+          </td>
+          <td>
+            <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
+          </td>
+          <td>
+            <select value={entry.DefaultInboundAction} onChange={event=> this.update(i, "DefaultInboundAction", event)}>
+              <option>Block</option>
+              <option>Allow</option>
+              <option>NotConfigured</option>
+            </select>
+          </td>
+          <td>
+            <select value={entry.DefaultOutboundAction} onChange={event=> this.update(i, "DefaultOutboundAction", event)}>
+              <option>Block</option>
+              <option>Allow</option>
+              <option>NotConfigured</option>
+            </select>
+          </td>
           <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Name</label>
-              <select value={entry.Name} onChange={event=> this.update(i, "Name", event)}>
-                <option disabled key="" value="">
-                </option>
-                <option>Domain</option>
-                <option>Public</option>
-                <option>Private</option>
-              </select>
-            </li>
-            <li>
-              <label>Enabled</label>
-              <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
-            </li>
-            <li>
-              <label>Inbound</label>
-              <select value={entry.DefaultInboundAction} onChange={event=> this.update(i, "DefaultInboundAction", event)}>
-                <option>Block</option>
-                <option>Allow</option>
-                <option>NotConfigured</option>
-              </select>
-            </li>
-            <li>
-              <label>Outbound</label>
-              <select value={entry.DefaultOutboundAction} onChange={event=> this.update(i, "DefaultOutboundAction", event)}>
-                <option>Block</option>
-                <option>Allow</option>
-                <option>NotConfigured</option>
-              </select>
-            </li>
-          </ul>
-        </details>
+        </tr>
       );
     }
 
@@ -2299,9 +2264,16 @@ class WindowsFirewallProfiles extends React.Component {
       <details>
         <summary>Windows Firewall Profiles</summary>
         <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall profile</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Enabled</th>
+            <th>Inbound</th>
+            <th>Outbound</th>
+            <th></th>
+          </tr>
           {profiles}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -2398,62 +2370,51 @@ class WindowsFirewallRules extends React.Component {
       if (entry.ObjectState != "Remove") {
         ruleOptions = (
           <React.Fragment>
-            <li>
-              <label>Enabled</label>
+            <td>
               <input type="checkbox" checked={entry.Enabled} onChange={event=> this.update(i, "Enabled", event)}></input>
-            </li>
-            <li>
-              <label>Protocol</label>
-              <input type="text" value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}></input>
-            </li>
-            <li>
-              <label>Local Port</label>
+            </td>
+            <td>
+              <select value={entry.Protocol} onChange={event=> this.update(i, "Protocol", event)}>
+                <option value=""></option>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+              </select>
+            </td>
+            <td>
               <input type="text" value={entry.LocalPort} onChange={event=> this.update(i, "LocalPort", event)}></input>
-            </li>
-            <li>
-              <label>Remote Address</label>
+            </td>
+            <td>
               <input type="text" value={entry.RemoteAddress} onChange={event=> this.update(i, "RemoteAddress", event)}></input>
-            </li>
-            <li>
-              <label>Remote Port</label>
+            </td>
+            <td>
               <input type="text" value={entry.RemotePort} onChange={event=> this.update(i, "RemotePort", event)}></input>
-            </li>
-            <li>
-              <label>Direction</label>
+            </td>
+            <td>
               <select value={entry.Direction} onChange={event=> this.update(i, "Direction", event)}>
                 <option disabled key="" value="">
                 </option>
                 <option>Inbound</option>
                 <option>Outbound</option>
               </select>
-            </li>
-            <li>
-              <label>Action</label>
+            </td>
+            <td>
               <select value={entry.Action} onChange={event=> this.update(i, "Action", event)}>
                 <option disabled key="" value="">
                 </option>
                 <option>Block</option>
                 <option>Allow</option>
               </select>
-            </li>
+            </td>
           </React.Fragment>
         );
       }
       rules.push(
-        <details key={i}>
-          <summary>Display Name: {entry.DisplayName}, {enabledStr}, Protocol: {entry.Protocol}, Local Port: {entry.LocalPort}, Remote Address: {entry.RemoteAddress}, Remote Port: {entry.RemotePort}, Direction: {entry.Direction}, Action: {entry.Action}</summary>
-          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>DisplayName</label>
-              <input type="text" value={entry.DisplayName} onChange={event=> this.update(i, "DisplayName", event)}></input>
-            </li>
-            <li>
-              <ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} />
-            </li>
-            {ruleOptions}
-          </ul>
-        </details>
+        <tr>
+          <td><input type="text" value={entry.DisplayName} onChange={event=> this.update(i, "DisplayName", event)}></input></td>
+          <td><ObjectState value={entry.ObjectState} onChange={event=> this.update(i, "ObjectState", event)} /></td>
+          {ruleOptions}
+          <td><button type="button" onClick={this.remove.bind(this, i)}>-</button></td>
+        </tr>
       );
     }
 
@@ -2461,9 +2422,22 @@ class WindowsFirewallRules extends React.Component {
       <details>
         <summary>Windows Firewall rules</summary>
         <button type="button" onClick={this.add.bind(this)}>Add Windows Firewall rule</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Display name</th>
+            <th>State</th>
+            <th>Enabled</th>
+            <th>Protocol</th>
+            <th>Local Address</th>
+            <th>Local Port</th>
+            <th>Remote Address</th>
+            <th>Remote Port</th>
+            <th>Direction</th>
+            <th>Action</th>
+            <th></th>
+          </tr>
           {rules}
-        </ul>
+        </table>
       </details>
     )
   }
@@ -2550,20 +2524,11 @@ class WindowsSettings extends React.Component {
     for (let i in this.state.settings) {
       let entry = this.state.settings[i];
       settings.push(
-        <details key={i}>
-          <summary>{entry.Key} = {entry.Value}</summary>
-          <button type="button" onClick={this.remove.bind(this, i)}>-</button>
-          <ul>
-            <li>
-              <label>Key</label>
-              <input type="text" value={entry.Key} onChange={event=> this.update(i, "Key", event)}></input>
-            </li>
-            <li>
-              <label>Value</label>
-              <input type="text" value={entry.Value} onChange={event=> this.update(i, "Value", event)}></input>
-            </li>
-          </ul>
-        </details>
+        <tr>
+          <td><input type="text" value={entry.Key} onChange={event=> this.update(i, "Key", event)}></input></td>
+          <td><input type="text" value={entry.Value} onChange={event=> this.update(i, "Value", event)}></input></td>
+          <td><button type="button" onClick={this.remove.bind(this, i)}>-</button></td>
+        </tr>
       );
     }
 
@@ -2571,9 +2536,14 @@ class WindowsSettings extends React.Component {
       <details>
         <summary>Windows Settings</summary>
         <button type="button" onClick={this.add.bind(this)}>Add Windows setting</button>
-        <ul>
+        <table>
+          <tr>
+            <th>Key</th>
+            <th>Value</th>
+            <th></th>
+          </tr>
           {settings}
-        </ul>
+        </table>
       </details>
     )
   }

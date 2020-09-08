@@ -2,7 +2,7 @@
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -115,9 +115,9 @@ class App extends React.Component {
 
   render() {
     if (!this.state.authenticated) {
-      return React.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         className: "App"
-      }, React.createElement(Login, {
+      }, /*#__PURE__*/React.createElement(Login, {
         callback: this.authCallback
       }));
     } // reset links to available
@@ -129,89 +129,89 @@ class App extends React.Component {
     let classes_scenarios = ["nav-button"];
     let classes_administrators = ["nav-button"]; // default page is empty
 
-    let page = React.createElement(React.Fragment, null);
-    let content = React.createElement(React.Fragment, null);
+    let page = /*#__PURE__*/React.createElement(React.Fragment, null);
+    let content = /*#__PURE__*/React.createElement(React.Fragment, null);
 
     if (this.state.page == "teams") {
       classes_teams.push("nav-button-selected");
-      page = React.createElement(Teams, {
+      page = /*#__PURE__*/React.createElement(Teams, {
         lastUpdated: this.state.lastUpdatedTeams,
         selected: this.state.id
       });
-      content = React.createElement(TeamEntry, {
+      content = /*#__PURE__*/React.createElement(TeamEntry, {
         id: this.state.id,
         updateCallback: this.updateTeamCallback.bind(this)
       });
     } else if (this.state.page == "hosts") {
       classes_hosts.push("nav-button-selected");
-      page = React.createElement(Hosts, {
+      page = /*#__PURE__*/React.createElement(Hosts, {
         lastUpdated: this.state.lastUpdatedHosts,
         selected: this.state.id
       });
-      content = React.createElement(HostEntry, {
+      content = /*#__PURE__*/React.createElement(HostEntry, {
         id: this.state.id,
         updateCallback: this.updateHostCallback.bind(this)
       });
     } else if (this.state.page == "templates") {
       classes_templates.push("nav-button-selected");
-      page = React.createElement(Templates, {
+      page = /*#__PURE__*/React.createElement(Templates, {
         lastUpdated: this.state.lastUpdatedTemplates,
         selected: this.state.id
       });
-      content = React.createElement(TemplateEntry, {
+      content = /*#__PURE__*/React.createElement(TemplateEntry, {
         id: this.state.id,
         updateCallback: this.updateTemplateCallback.bind(this)
       });
     } else if (this.state.page == "scenarios") {
       classes_scenarios.push("nav-button-selected");
-      page = React.createElement(Scenarios, {
+      page = /*#__PURE__*/React.createElement(Scenarios, {
         lastUpdated: this.state.lastUpdatedScenarios,
         selected: this.state.id
       });
-      content = React.createElement(ScenarioEntry, {
+      content = /*#__PURE__*/React.createElement(ScenarioEntry, {
         id: this.state.id,
         updateCallback: this.updateScenarioCallback.bind(this)
       });
     } else if (this.state.page == "administrators") {
       classes_administrators.push("nav-button-selected");
-      page = React.createElement(Administrators, {
+      page = /*#__PURE__*/React.createElement(Administrators, {
         lastUpdated: this.state.lastUpdatedAdministrators,
         selected: this.state.id
       });
-      content = React.createElement(AdministratorEntry, {
+      content = /*#__PURE__*/React.createElement(AdministratorEntry, {
         username: this.state.id,
         updateCallback: this.updateAdministratorCallback.bind(this)
       });
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "App"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "heading"
-    }, React.createElement("h1", null, "cp-scoring")), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h1", null, "cp-scoring")), /*#__PURE__*/React.createElement("div", {
       className: "navbar"
-    }, React.createElement("a", {
+    }, /*#__PURE__*/React.createElement("a", {
       className: classes_teams.join(" "),
       href: "#teams"
-    }, "Teams"), React.createElement("a", {
+    }, "Teams"), /*#__PURE__*/React.createElement("a", {
       className: classes_hosts.join(" "),
       href: "#hosts"
-    }, "Hosts"), React.createElement("a", {
+    }, "Hosts"), /*#__PURE__*/React.createElement("a", {
       className: classes_templates.join(" "),
       href: "#templates"
-    }, "Templates"), React.createElement("a", {
+    }, "Templates"), /*#__PURE__*/React.createElement("a", {
       className: classes_scenarios.join(" "),
       href: "#scenarios"
-    }, "Scenarios"), React.createElement("a", {
+    }, "Scenarios"), /*#__PURE__*/React.createElement("a", {
       className: classes_administrators.join(" "),
       href: "#administrators"
-    }, "Administrators"), React.createElement("div", {
+    }, "Administrators"), /*#__PURE__*/React.createElement("div", {
       className: "right"
-    }, React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       onClick: this.logout
-    }, "Logout"))), React.createElement("div", {
+    }, "Logout"))), /*#__PURE__*/React.createElement("div", {
       className: "toc"
-    }, page), React.createElement("div", {
+    }, page), /*#__PURE__*/React.createElement("div", {
       className: "content"
     }, content));
   }
@@ -286,19 +286,19 @@ class Administrators extends Listing {
         classes.push("nav-button-selected");
       }
 
-      rows.push(React.createElement("li", {
+      rows.push( /*#__PURE__*/React.createElement("li", {
         key: i
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#administrators/" + administrator
       }, administrator)));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "Admins"
-    }, React.createElement("strong", null, "Administrators"), React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement("strong", null, "Administrators"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), React.createElement("ul", null, rows));
+    }), /*#__PURE__*/React.createElement("ul", null, rows));
   }
 
 }
@@ -347,7 +347,7 @@ class AdministratorEntry extends React.Component {
   updateAdministrator(event) {
     let value = event.target.value;
     this.setState({
-      user: _objectSpread({}, this.state.user, {
+      user: _objectSpread(_objectSpread({}, this.state.user), {}, {
         [event.target.name]: value
       })
     });
@@ -427,20 +427,20 @@ class AdministratorEntry extends React.Component {
         existingUser = false;
       }
 
-      content = React.createElement("form", {
+      content = /*#__PURE__*/React.createElement("form", {
         onChange: this.updateAdministrator.bind(this),
         onSubmit: this.saveAdministrator.bind(this)
-      }, React.createElement(Item, {
+      }, /*#__PURE__*/React.createElement(Item, {
         name: "Username",
         value: this.state.user.Username || "",
         disabled: existingUser
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Password",
         type: "password",
         value: this.state.user.Password
-      }), React.createElement("p", null), React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("p", null), /*#__PURE__*/React.createElement("button", {
         type: "submit"
-      }, "Submit"), React.createElement("button", {
+      }, "Submit"), /*#__PURE__*/React.createElement("button", {
         class: "right",
         type: "button",
         disabled: !this.state.user.Username,
@@ -448,10 +448,10 @@ class AdministratorEntry extends React.Component {
       }, "Delete"));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("button", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newAdministrator.bind(this)
-    }, "New Administrator"), React.createElement("hr", null), React.createElement(Error, {
+    }, "New Administrator"), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content);
   }
@@ -475,19 +475,19 @@ class Teams extends Listing {
         classes.push("nav-button-selected");
       }
 
-      rows.push(React.createElement("li", {
+      rows.push( /*#__PURE__*/React.createElement("li", {
         key: team.ID
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#teams/" + team.ID
       }, "[", team.ID, "] ", team.Name)));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "Teams"
-    }, React.createElement("strong", null, "Teams"), React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement("strong", null, "Teams"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), React.createElement("ul", null, rows));
+    }), /*#__PURE__*/React.createElement("ul", null, rows));
   }
 
 }
@@ -571,7 +571,7 @@ class TeamEntry extends React.Component {
     }
 
     this.setState({
-      team: _objectSpread({}, this.state.team, {
+      team: _objectSpread(_objectSpread({}, this.state.team), {}, {
         [event.target.name]: value
       })
     });
@@ -643,7 +643,7 @@ class TeamEntry extends React.Component {
   regenKey() {
     let key = TeamEntry.newKey();
     this.setState({
-      team: _objectSpread({}, this.state.team, {
+      team: _objectSpread(_objectSpread({}, this.state.team), {}, {
         Key: key
       })
     });
@@ -653,34 +653,34 @@ class TeamEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.team).length != 0) {
-      content = React.createElement("form", {
+      content = /*#__PURE__*/React.createElement("form", {
         onChange: this.updateTeam.bind(this),
         onSubmit: this.saveTeam.bind(this)
-      }, React.createElement("label", {
+      }, /*#__PURE__*/React.createElement("label", {
         htmlFor: "ID"
-      }, "ID"), React.createElement("input", {
+      }, "ID"), /*#__PURE__*/React.createElement("input", {
         disabled: true,
         value: this.state.team.ID || ""
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Name",
         value: this.state.team.Name
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "POC",
         value: this.state.team.POC
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Email",
         type: "email",
         value: this.state.team.Email
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Enabled",
         type: "checkbox",
         checked: !!this.state.team.Enabled
-      }), React.createElement("br", null), React.createElement("details", null, React.createElement("summary", null, "Key"), React.createElement("ul", null, React.createElement("li", null, this.state.team.Key, React.createElement("br", null), React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Key"), /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement("li", null, this.state.team.Key, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
         type: "button",
         onClick: this.regenKey.bind(this)
-      }, "Regenerate")))), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+      }, "Regenerate")))), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
-      }, "Save"), React.createElement("button", {
+      }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
         type: "button",
         disabled: !this.state.team.ID,
@@ -688,10 +688,10 @@ class TeamEntry extends React.Component {
       }, "Delete")));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("button", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newTeam.bind(this)
-    }, "New Team"), React.createElement("hr", null), React.createElement(Error, {
+    }, "New Team"), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content);
   }
@@ -715,19 +715,19 @@ class Scenarios extends Listing {
         classes.push("nav-button-selected");
       }
 
-      rows.push(React.createElement("li", {
+      rows.push( /*#__PURE__*/React.createElement("li", {
         key: scenario.ID
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#scenarios/" + scenario.ID
       }, scenario.Name)));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "Scenarios"
-    }, React.createElement("strong", null, "Scenarios"), React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement("strong", null, "Scenarios"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), React.createElement("ul", null, rows));
+    }), /*#__PURE__*/React.createElement("ul", null, rows));
   }
 
 }
@@ -805,7 +805,7 @@ class ScenarioEntry extends React.Component {
     }
 
     this.setState({
-      scenario: _objectSpread({}, this.state.scenario, {
+      scenario: _objectSpread(_objectSpread({}, this.state.scenario), {}, {
         [event.target.name]: value
       })
     });
@@ -879,7 +879,7 @@ class ScenarioEntry extends React.Component {
 
   handleCallback(key, value) {
     this.setState({
-      scenario: _objectSpread({}, this.state.scenario, {
+      scenario: _objectSpread(_objectSpread({}, this.state.scenario), {}, {
         [key]: value
       })
     });
@@ -937,29 +937,29 @@ class ScenarioEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.scenario).length != 0) {
-      content = React.createElement("form", {
+      content = /*#__PURE__*/React.createElement("form", {
         onChange: this.updateScenario.bind(this),
         onSubmit: this.saveScenario.bind(this)
-      }, React.createElement("label", {
+      }, /*#__PURE__*/React.createElement("label", {
         htmlFor: "ID"
-      }, "ID"), React.createElement("input", {
+      }, "ID"), /*#__PURE__*/React.createElement("input", {
         disabled: true,
         value: this.state.scenario.ID || ""
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Name",
         value: this.state.scenario.Name
-      }), React.createElement("label", {
+      }), /*#__PURE__*/React.createElement("label", {
         htmlFor: "Description"
-      }, "Description"), React.createElement("textarea", {
+      }, "Description"), /*#__PURE__*/React.createElement("textarea", {
         name: "Description",
         rows: "10",
         cols: "80",
         value: this.state.scenario.Description
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Enabled",
         type: "checkbox",
         checked: !!this.state.scenario.Enabled
-      }), React.createElement(ItemMap, {
+      }), /*#__PURE__*/React.createElement(ItemMap, {
         name: "HostTemplates",
         label: "Hosts",
         listLabel: "Templates",
@@ -967,9 +967,9 @@ class ScenarioEntry extends React.Component {
         callback: this.handleCallback.bind(this),
         mapItems: this.mapItems,
         listItems: this.listItems
-      }), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
-      }, "Save"), React.createElement("button", {
+      }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
         type: "button",
         disabled: !this.state.scenario.ID,
@@ -977,11 +977,11 @@ class ScenarioEntry extends React.Component {
       }, "Delete")));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("button", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       onClick: this.newScenario.bind(this)
-    }, "New Scenario"), React.createElement("button", {
+    }, "New Scenario"), /*#__PURE__*/React.createElement("button", {
       onClick: this.newScenarioFromExisting.bind(this)
-    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
+    }, "Clone"), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content);
   }
@@ -1005,19 +1005,19 @@ class Hosts extends Listing {
         classes.push("nav-button-selected");
       }
 
-      rows.push(React.createElement("li", {
+      rows.push( /*#__PURE__*/React.createElement("li", {
         key: host.ID
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#hosts/" + host.ID
       }, host.Hostname, " - ", host.OS)));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "Hosts"
-    }, React.createElement("strong", null, "Hosts"), React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement("strong", null, "Hosts"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), React.createElement("ul", null, rows));
+    }), /*#__PURE__*/React.createElement("ul", null, rows));
   }
 
 }
@@ -1092,7 +1092,7 @@ class HostEntry extends React.Component {
     }
 
     this.setState({
-      host: _objectSpread({}, this.state.host, {
+      host: _objectSpread(_objectSpread({}, this.state.host), {}, {
         [event.target.name]: value
       })
     });
@@ -1168,25 +1168,25 @@ class HostEntry extends React.Component {
     let content = null;
 
     if (Object.entries(this.state.host).length != 0) {
-      content = React.createElement("form", {
+      content = /*#__PURE__*/React.createElement("form", {
         onChange: this.updateHost.bind(this),
         onSubmit: this.saveHost.bind(this)
-      }, React.createElement("label", {
+      }, /*#__PURE__*/React.createElement("label", {
         htmlFor: "ID"
-      }, "ID"), React.createElement("input", {
+      }, "ID"), /*#__PURE__*/React.createElement("input", {
         disabled: true,
         value: this.state.host.ID || ""
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "Hostname",
         type: "text",
         value: this.state.host.Hostname
-      }), React.createElement(Item, {
+      }), /*#__PURE__*/React.createElement(Item, {
         name: "OS",
         type: "text",
         value: this.state.host.OS
-      }), React.createElement("br", null), React.createElement("div", null, React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
-      }, "Save"), React.createElement("button", {
+      }, "Save"), /*#__PURE__*/React.createElement("button", {
         class: "right",
         type: "button",
         disabled: !this.state.host.ID,
@@ -1194,13 +1194,13 @@ class HostEntry extends React.Component {
       }, "Delete")));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("button", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newHost.bind(this)
-    }, "New Host"), React.createElement("button", {
+    }, "New Host"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newHostFromExisting.bind(this)
-    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
+    }, "Clone"), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content);
   }
@@ -1224,19 +1224,19 @@ class Templates extends Listing {
         classes.push("nav-button-selected");
       }
 
-      rows.push(React.createElement("li", {
+      rows.push( /*#__PURE__*/React.createElement("li", {
         key: template.ID
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#templates/" + template.ID
       }, template.Name)));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "Templates"
-    }, React.createElement("strong", null, "Templates"), React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement("strong", null, "Templates"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), React.createElement("ul", null, rows));
+    }), /*#__PURE__*/React.createElement("ul", null, rows));
   }
 
 }
@@ -1322,7 +1322,7 @@ class TemplateEntry extends React.Component {
     }
 
     this.setState({
-      template: _objectSpread({}, this.state.template, {
+      template: _objectSpread(_objectSpread({}, this.state.template), {}, {
         [event.target.name]: value
       })
     });
@@ -1401,12 +1401,12 @@ class TemplateEntry extends React.Component {
   }
 
   handleCallback(key, value) {
-    let state = _objectSpread({}, this.state.template.State, {
+    let state = _objectSpread(_objectSpread({}, this.state.template.State), {}, {
       [key]: value
     });
 
     this.setState({
-      template: _objectSpread({}, this.state.template, {
+      template: _objectSpread(_objectSpread({}, this.state.template), {}, {
         State: state
       })
     });
@@ -1416,66 +1416,66 @@ class TemplateEntry extends React.Component {
     let content = null; // template from state
 
     if (this.state.template.StateID != undefined) {
-      content = React.createElement("form", {
+      content = /*#__PURE__*/React.createElement("form", {
         onChange: this.updateTemplate.bind(this),
         onSubmit: this.saveStateTemplate.bind(this)
-      }, React.createElement("label", {
+      }, /*#__PURE__*/React.createElement("label", {
         htmlFor: "TemplateName"
-      }, "Template Name"), React.createElement("input", {
+      }, "Template Name"), /*#__PURE__*/React.createElement("input", {
         name: "TemplateName",
         value: this.state.template.TemplateName || ""
-      }), React.createElement("br", null), React.createElement("label", {
+      }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("label", {
         htmlFor: "StateID"
-      }, "State ID"), React.createElement("input", {
+      }, "State ID"), /*#__PURE__*/React.createElement("input", {
         name: "StateID",
         value: this.state.template.StateID || ""
-      }), React.createElement("div", null, React.createElement("button", {
+      }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
         type: "submit"
       }, "Save")));
     } // regular template
     else if (Object.entries(this.state.template).length != 0) {
-        content = React.createElement("form", {
+        content = /*#__PURE__*/React.createElement("form", {
           onChange: this.updateTemplate.bind(this),
           onSubmit: this.saveRegularTemplate.bind(this)
-        }, React.createElement("label", {
+        }, /*#__PURE__*/React.createElement("label", {
           htmlFor: "ID"
-        }, "ID"), React.createElement("input", {
+        }, "ID"), /*#__PURE__*/React.createElement("input", {
           disabled: true,
           value: this.state.template.ID || ""
-        }), React.createElement(Item, {
+        }), /*#__PURE__*/React.createElement(Item, {
           name: "Name",
           type: "text",
           value: this.state.template.Name
-        }), React.createElement(Users, {
+        }), /*#__PURE__*/React.createElement(Users, {
           users: this.state.template.State.Users,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(Groups, {
+        }), /*#__PURE__*/React.createElement(Groups, {
           groups: this.state.template.State.Groups,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(Processes, {
+        }), /*#__PURE__*/React.createElement(Processes, {
           processes: this.state.template.State.Processes,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(Software, {
+        }), /*#__PURE__*/React.createElement(Software, {
           software: this.state.template.State.Software,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(NetworkConnections, {
+        }), /*#__PURE__*/React.createElement(NetworkConnections, {
           conns: this.state.template.State.NetworkConnections,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(ScheduledTasks, {
+        }), /*#__PURE__*/React.createElement(ScheduledTasks, {
           tasks: this.state.template.State.ScheduledTasks,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(WindowsFirewallProfiles, {
+        }), /*#__PURE__*/React.createElement(WindowsFirewallProfiles, {
           profiles: this.state.template.State.WindowsFirewallProfiles,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(WindowsFirewallRules, {
+        }), /*#__PURE__*/React.createElement(WindowsFirewallRules, {
           rules: this.state.template.State.WindowsFirewallRules,
           callback: this.handleCallback.bind(this)
-        }), React.createElement(WindowsSettings, {
+        }), /*#__PURE__*/React.createElement(WindowsSettings, {
           settings: this.state.template.State.WindowsSettings,
           callback: this.handleCallback.bind(this)
-        }), React.createElement("div", null, React.createElement("button", {
+        }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("button", {
           type: "submit"
-        }, "Save"), React.createElement("button", {
+        }, "Save"), /*#__PURE__*/React.createElement("button", {
           class: "right",
           type: "button",
           disabled: !this.state.template.ID,
@@ -1483,16 +1483,16 @@ class TemplateEntry extends React.Component {
         }, "Delete")));
       }
 
-    return React.createElement(React.Fragment, null, React.createElement("button", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newTemplate.bind(this)
-    }, "New Template"), React.createElement("button", {
+    }, "New Template"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newTemplateFromState.bind(this)
-    }, "From State"), React.createElement("button", {
+    }, "From State"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.newTemplateFromExisting.bind(this)
-    }, "Clone"), React.createElement("hr", null), React.createElement(Error, {
+    }, "Clone"), /*#__PURE__*/React.createElement("hr", null), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content);
   }
@@ -1505,10 +1505,10 @@ class ObjectState extends React.Component {
   }
 
   render() {
-    return React.createElement(React.Fragment, null, React.createElement("label", null, "State"), React.createElement("select", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("select", {
       value: this.props.value,
       onChange: this.props.onChange
-    }, React.createElement("option", null, "Add"), React.createElement("option", null, "Keep"), React.createElement("option", null, "Remove")));
+    }, /*#__PURE__*/React.createElement("option", null, "Add"), /*#__PURE__*/React.createElement("option", null, "Keep"), /*#__PURE__*/React.createElement("option", null, "Remove")));
   }
 
 }
@@ -1610,7 +1610,7 @@ class Users extends React.Component {
       }
     }
 
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -1638,44 +1638,42 @@ class Users extends React.Component {
       let userOptions = null;
 
       if (user.ObjectState != "Remove") {
-        userOptions = React.createElement(React.Fragment, null, React.createElement("li", null, React.createElement("label", null, "Active"), React.createElement("input", {
+        userOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "checkbox",
           checked: user.AccountActive,
           onChange: event => this.updateUser(i, "AccountActive", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Password Expires"), React.createElement("input", {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "checkbox",
           checked: user.PasswordExpires,
           onChange: event => this.updateUser(i, "PasswordExpires", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Password Last Set"), React.createElement("input", {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "date",
           value: passwordLastSetDate,
           onChange: event => this.updateUser(i, "PasswordLastSet", event)
-        }), React.createElement("input", {
+        }), /*#__PURE__*/React.createElement("input", {
           type: "time",
           value: passwordLastSetTime,
           onChange: event => this.updateUser(i, "PasswordLastSet", event)
         })));
       }
 
-      users.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, user.Name), React.createElement("button", {
-        type: "button",
-        onClick: this.removeUser.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+      users.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: user.Name,
         onChange: event => this.updateUser(i, "Name", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: user.ObjectState,
         onChange: event => this.updateUser(i, "ObjectState", event)
-      })), userOptions)));
+      })), userOptions, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.removeUser.bind(this, i)
+      }, "-")));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Users"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Users"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.addUser.bind(this)
-    }, "Add User"), React.createElement("ul", null, users));
+    }, "Add User"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Name"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null, "Active"), /*#__PURE__*/React.createElement("th", null, "Password Expires"), /*#__PURE__*/React.createElement("th", null, "Password Last Set"), /*#__PURE__*/React.createElement("th", null)), users));
   }
 
 }
@@ -1719,7 +1717,7 @@ class Groups extends React.Component {
       return;
     }
 
-    let groups = _objectSpread({}, this.state.groups, {
+    let groups = _objectSpread(_objectSpread({}, this.state.groups), {}, {
       [this.newGroupName.current.value]: []
     });
 
@@ -1737,7 +1735,7 @@ class Groups extends React.Component {
       ObjectState: "Keep"
     });
 
-    let groups = _objectSpread({}, this.state.groups, {
+    let groups = _objectSpread(_objectSpread({}, this.state.groups), {}, {
       [groupName]: group
     });
 
@@ -1760,7 +1758,7 @@ class Groups extends React.Component {
     let group = this.state.groups[groupName];
     group.splice(memberIndex, 1);
 
-    let groups = _objectSpread({}, this.state.groups, {
+    let groups = _objectSpread(_objectSpread({}, this.state.groups), {}, {
       [groupName]: group
     });
 
@@ -1775,7 +1773,7 @@ class Groups extends React.Component {
     let member = group[memberIndex];
     member[key] = value;
 
-    let groups = _objectSpread({}, this.state.groups, {
+    let groups = _objectSpread(_objectSpread({}, this.state.groups), {}, {
       [groupName]: group
     });
 
@@ -1793,38 +1791,38 @@ class Groups extends React.Component {
 
       for (let i in this.state.groups[groupName]) {
         let member = this.state.groups[groupName][i];
-        groupMembers.push(React.createElement("details", {
+        groupMembers.push( /*#__PURE__*/React.createElement("details", {
           key: i
-        }, React.createElement("summary", null, member.Name), React.createElement("button", {
+        }, /*#__PURE__*/React.createElement("summary", null, member.Name), /*#__PURE__*/React.createElement("button", {
           type: "button",
           onClick: this.removeGroupMember.bind(this, groupName, i)
-        }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+        }, "-"), /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("label", null, "Name"), /*#__PURE__*/React.createElement("input", {
           type: "text",
           value: member.Name,
           onChange: event => this.updateGroupMember(groupName, i, "Name", event.target.value)
-        })), React.createElement("li", null, React.createElement(ObjectState, {
+        })), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement(ObjectState, {
           value: member.ObjectState,
           onChange: event => this.updateGroupMember(groupName, i, "ObjectState", event.target.value)
         })))));
       }
 
-      groups.push(React.createElement("details", {
+      groups.push( /*#__PURE__*/React.createElement("details", {
         key: groupName
-      }, React.createElement("summary", null, groupName), React.createElement("button", {
+      }, /*#__PURE__*/React.createElement("summary", null, groupName), /*#__PURE__*/React.createElement("button", {
         type: "button",
         onClick: this.removeGroup.bind(this, groupName)
-      }, "Remove Group"), React.createElement("br", null), React.createElement("button", {
+      }, "Remove Group"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
         type: "button",
         onClick: event => this.addGroupMember(groupName, event)
-      }, "Add Group Member"), React.createElement("ul", null, groupMembers)));
+      }, "Add Group Member"), /*#__PURE__*/React.createElement("ul", null, groupMembers)));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Groups"), React.createElement("input", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Groups"), /*#__PURE__*/React.createElement("input", {
       ref: this.newGroupName
-    }), React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.addGroup.bind(this)
-    }, "Add Group"), React.createElement("ul", null, groups));
+    }, "Add Group"), /*#__PURE__*/React.createElement("ul", null, groups));
   }
 
 }
@@ -1883,7 +1881,7 @@ class Processes extends React.Component {
   updateProcess(id, field, event) {
     let updated = this.state.processes;
     let value = event.target.value;
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -1897,25 +1895,23 @@ class Processes extends React.Component {
 
     for (let i in this.state.processes) {
       let entry = this.state.processes[i];
-      processes.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, entry.CommandLine), React.createElement("button", {
-        type: "button",
-        onClick: this.removeProcess.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Command line"), React.createElement("input", {
+      processes.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.CommandLine,
         onChange: event => this.updateProcess(i, "CommandLine", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: entry.ObjectState,
         onChange: event => this.updateProcess(i, "ObjectState", event)
-      })))));
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.removeProcess.bind(this, i)
+      }, "-"))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Processes"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Processes"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.addProcess.bind(this)
-    }, "Add Process"), React.createElement("ul", null, processes));
+    }, "Add Process"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Command Line"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null)), processes));
   }
 
 }
@@ -1975,7 +1971,7 @@ class Software extends React.Component {
   updateSoftware(id, field, event) {
     let updated = this.state.software;
     let value = event.target.value;
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -1989,29 +1985,27 @@ class Software extends React.Component {
 
     for (let i in this.state.software) {
       let entry = this.state.software[i];
-      software.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, entry.Name), React.createElement("button", {
-        type: "button",
-        onClick: this.removeSoftware.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+      software.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Name,
         onChange: event => this.updateSoftware(i, "Name", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Version"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Version,
         onChange: event => this.updateSoftware(i, "Version", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: entry.ObjectState,
         onChange: event => this.updateSoftware(i, "ObjectState", event)
-      })))));
+      })), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.removeSoftware.bind(this, i)
+      }, "-")));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Software"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Software"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.addSoftware.bind(this)
-    }, "Add Software"), React.createElement("ul", null, software));
+    }, "Add Software"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Name"), /*#__PURE__*/React.createElement("th", null, "Version"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null)), software));
   }
 
 }
@@ -2074,7 +2068,7 @@ class NetworkConnections extends React.Component {
   update(id, field, event) {
     let updated = this.state.conns;
     let value = event.target.value;
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -2088,46 +2082,44 @@ class NetworkConnections extends React.Component {
 
     for (let i in this.state.conns) {
       let entry = this.state.conns[i];
-      conns.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, entry.Protocol, " ", entry.LocalAddress, " ", entry.LocalPort, " ", entry.RemoteAddress, " ", entry.RemotePort), React.createElement("button", {
-        type: "button",
-        onClick: this.remove.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Protocol"), React.createElement("select", {
+      conns.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
         value: entry.Protocol,
         onChange: event => this.update(i, "Protocol", event)
-      }, React.createElement("option", {
+      }, /*#__PURE__*/React.createElement("option", {
         value: ""
-      }), React.createElement("option", {
+      }), /*#__PURE__*/React.createElement("option", {
         value: "TCP"
-      }, "TCP"), React.createElement("option", {
+      }, "TCP"), /*#__PURE__*/React.createElement("option", {
         value: "UDP"
-      }, "UDP"))), React.createElement("li", null, React.createElement("label", null, "Local Address"), React.createElement("input", {
+      }, "UDP"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.LocalAddress,
         onChange: event => this.update(i, "LocalAddress", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Local Port"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.LocalPort,
         onChange: event => this.update(i, "LocalPort", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Remote Address"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.RemoteAddress,
         onChange: event => this.update(i, "RemoteAddress", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Remote Port"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.RemotePort,
         onChange: event => this.update(i, "RemotePort", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: entry.ObjectState,
         onChange: event => this.update(i, "ObjectState", event)
-      })))));
+      })), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-")));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Network Connections"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Network Connections"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
-    }, "Add Network Connection"), React.createElement("ul", null, conns));
+    }, "Add Network Connection"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Protocol"), /*#__PURE__*/React.createElement("th", null, "Local Address"), /*#__PURE__*/React.createElement("th", null, "Local Port"), /*#__PURE__*/React.createElement("th", null, "Remote Address"), /*#__PURE__*/React.createElement("th", null, "Remote Port"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null)), conns));
   }
 
 }
@@ -2196,7 +2188,7 @@ class ScheduledTasks extends React.Component {
       }
     }
 
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -2216,33 +2208,31 @@ class ScheduledTasks extends React.Component {
         enabledStr = "Disabled";
       }
 
-      tasks.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, entry.Name, " ", entry.Path, " ", enabledStr), React.createElement("button", {
-        type: "button",
-        onClick: this.remove.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("input", {
+      tasks.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Name,
         onChange: event => this.update(i, "Name", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Path"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Path,
         onChange: event => this.update(i, "Path", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "checkbox",
         checked: entry.Enabled,
         onChange: event => this.update(i, "Enabled", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: entry.ObjectState,
         onChange: event => this.update(i, "ObjectState", event)
-      })))));
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Scheduled Tasks"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Scheduled Tasks"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
-    }, "Add Scheduled Task"), React.createElement("ul", null, tasks));
+    }, "Add Scheduled Task"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Name"), /*#__PURE__*/React.createElement("th", null, "Path"), /*#__PURE__*/React.createElement("th", null, "Enabled"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null)), tasks));
   }
 
 }
@@ -2312,7 +2302,7 @@ class WindowsFirewallProfiles extends React.Component {
       }
     }
 
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -2332,35 +2322,33 @@ class WindowsFirewallProfiles extends React.Component {
         enabledStr = "Disabled";
       }
 
-      profiles.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, "Profile: ", entry.Name, " ", enabledStr, " Inbound: ", entry.DefaultInboundAction, " Outbound: ", entry.DefaultOutboundAction), React.createElement("button", {
-        type: "button",
-        onClick: this.remove.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Name"), React.createElement("select", {
+      profiles.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
         value: entry.Name,
         onChange: event => this.update(i, "Name", event)
-      }, React.createElement("option", {
+      }, /*#__PURE__*/React.createElement("option", {
         disabled: true,
         key: "",
         value: ""
-      }), React.createElement("option", null, "Domain"), React.createElement("option", null, "Public"), React.createElement("option", null, "Private"))), React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+      }), /*#__PURE__*/React.createElement("option", null, "Domain"), /*#__PURE__*/React.createElement("option", null, "Public"), /*#__PURE__*/React.createElement("option", null, "Private"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "checkbox",
         checked: entry.Enabled,
         onChange: event => this.update(i, "Enabled", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Inbound"), React.createElement("select", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
         value: entry.DefaultInboundAction,
         onChange: event => this.update(i, "DefaultInboundAction", event)
-      }, React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"), React.createElement("option", null, "NotConfigured"))), React.createElement("li", null, React.createElement("label", null, "Outbound"), React.createElement("select", {
+      }, /*#__PURE__*/React.createElement("option", null, "Block"), /*#__PURE__*/React.createElement("option", null, "Allow"), /*#__PURE__*/React.createElement("option", null, "NotConfigured"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
         value: entry.DefaultOutboundAction,
         onChange: event => this.update(i, "DefaultOutboundAction", event)
-      }, React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"), React.createElement("option", null, "NotConfigured"))))));
+      }, /*#__PURE__*/React.createElement("option", null, "Block"), /*#__PURE__*/React.createElement("option", null, "Allow"), /*#__PURE__*/React.createElement("option", null, "NotConfigured"))), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-")));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Windows Firewall Profiles"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Windows Firewall Profiles"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
-    }, "Add Windows Firewall profile"), React.createElement("ul", null, profiles));
+    }, "Add Windows Firewall profile"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Name"), /*#__PURE__*/React.createElement("th", null, "Enabled"), /*#__PURE__*/React.createElement("th", null, "Inbound"), /*#__PURE__*/React.createElement("th", null, "Outbound"), /*#__PURE__*/React.createElement("th", null)), profiles));
   }
 
 }
@@ -2431,7 +2419,7 @@ class WindowsFirewallRules extends React.Component {
       }
     }
 
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -2454,62 +2442,65 @@ class WindowsFirewallRules extends React.Component {
       let ruleOptions = null;
 
       if (entry.ObjectState != "Remove") {
-        ruleOptions = React.createElement(React.Fragment, null, React.createElement("li", null, React.createElement("label", null, "Enabled"), React.createElement("input", {
+        ruleOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "checkbox",
           checked: entry.Enabled,
           onChange: event => this.update(i, "Enabled", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Protocol"), React.createElement("input", {
-          type: "text",
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
           value: entry.Protocol,
           onChange: event => this.update(i, "Protocol", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Local Port"), React.createElement("input", {
+        }, /*#__PURE__*/React.createElement("option", {
+          value: ""
+        }), /*#__PURE__*/React.createElement("option", {
+          value: "TCP"
+        }, "TCP"), /*#__PURE__*/React.createElement("option", {
+          value: "UDP"
+        }, "UDP"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "text",
           value: entry.LocalPort,
           onChange: event => this.update(i, "LocalPort", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Remote Address"), React.createElement("input", {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "text",
           value: entry.RemoteAddress,
           onChange: event => this.update(i, "RemoteAddress", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Remote Port"), React.createElement("input", {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "text",
           value: entry.RemotePort,
           onChange: event => this.update(i, "RemotePort", event)
-        })), React.createElement("li", null, React.createElement("label", null, "Direction"), React.createElement("select", {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
           value: entry.Direction,
           onChange: event => this.update(i, "Direction", event)
-        }, React.createElement("option", {
+        }, /*#__PURE__*/React.createElement("option", {
           disabled: true,
           key: "",
           value: ""
-        }), React.createElement("option", null, "Inbound"), React.createElement("option", null, "Outbound"))), React.createElement("li", null, React.createElement("label", null, "Action"), React.createElement("select", {
+        }), /*#__PURE__*/React.createElement("option", null, "Inbound"), /*#__PURE__*/React.createElement("option", null, "Outbound"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
           value: entry.Action,
           onChange: event => this.update(i, "Action", event)
-        }, React.createElement("option", {
+        }, /*#__PURE__*/React.createElement("option", {
           disabled: true,
           key: "",
           value: ""
-        }), React.createElement("option", null, "Block"), React.createElement("option", null, "Allow"))));
+        }), /*#__PURE__*/React.createElement("option", null, "Block"), /*#__PURE__*/React.createElement("option", null, "Allow"))));
       }
 
-      rules.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, "Display Name: ", entry.DisplayName, ", ", enabledStr, ", Protocol: ", entry.Protocol, ", Local Port: ", entry.LocalPort, ", Remote Address: ", entry.RemoteAddress, ", Remote Port: ", entry.RemotePort, ", Direction: ", entry.Direction, ", Action: ", entry.Action), React.createElement("button", {
-        type: "button",
-        onClick: this.remove.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "DisplayName"), React.createElement("input", {
+      rules.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.DisplayName,
         onChange: event => this.update(i, "DisplayName", event)
-      })), React.createElement("li", null, React.createElement(ObjectState, {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
         value: entry.ObjectState,
         onChange: event => this.update(i, "ObjectState", event)
-      })), ruleOptions)));
+      })), ruleOptions, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Windows Firewall rules"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Windows Firewall rules"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
-    }, "Add Windows Firewall rule"), React.createElement("ul", null, rules));
+    }, "Add Windows Firewall rule"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Display name"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null, "Enabled"), /*#__PURE__*/React.createElement("th", null, "Protocol"), /*#__PURE__*/React.createElement("th", null, "Local Address"), /*#__PURE__*/React.createElement("th", null, "Local Port"), /*#__PURE__*/React.createElement("th", null, "Remote Address"), /*#__PURE__*/React.createElement("th", null, "Remote Port"), /*#__PURE__*/React.createElement("th", null, "Direction"), /*#__PURE__*/React.createElement("th", null, "Action"), /*#__PURE__*/React.createElement("th", null)), rules));
   }
 
 }
@@ -2577,7 +2568,7 @@ class WindowsSettings extends React.Component {
       }
     }
 
-    updated[id] = _objectSpread({}, updated[id], {
+    updated[id] = _objectSpread(_objectSpread({}, updated[id]), {}, {
       [field]: value
     });
     this.setState({
@@ -2591,26 +2582,24 @@ class WindowsSettings extends React.Component {
 
     for (let i in this.state.settings) {
       let entry = this.state.settings[i];
-      settings.push(React.createElement("details", {
-        key: i
-      }, React.createElement("summary", null, entry.Key, " = ", entry.Value), React.createElement("button", {
-        type: "button",
-        onClick: this.remove.bind(this, i)
-      }, "-"), React.createElement("ul", null, React.createElement("li", null, React.createElement("label", null, "Key"), React.createElement("input", {
+      settings.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Key,
         onChange: event => this.update(i, "Key", event)
-      })), React.createElement("li", null, React.createElement("label", null, "Value"), React.createElement("input", {
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
         type: "text",
         value: entry.Value,
         onChange: event => this.update(i, "Value", event)
-      })))));
+      })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.remove.bind(this, i)
+      }, "-"))));
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, "Windows Settings"), React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Windows Settings"), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add.bind(this)
-    }, "Add Windows setting"), React.createElement("ul", null, settings));
+    }, "Add Windows setting"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Key"), /*#__PURE__*/React.createElement("th", null, "Value"), /*#__PURE__*/React.createElement("th", null)), settings));
   }
 
 }
@@ -2621,9 +2610,9 @@ class Item extends React.Component {
   }
 
   render() {
-    return React.createElement("div", null, React.createElement("label", {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
       htmlFor: this.props.name
-    }, this.props.name), React.createElement("input", {
+    }, this.props.name), /*#__PURE__*/React.createElement("input", {
       name: this.props.name,
       type: this.props.type,
       value: this.props.value,
@@ -2665,7 +2654,7 @@ class ItemMap extends React.Component {
   }
 
   handleCallback(key, value) {
-    let v = _objectSpread({}, this.state.value, {
+    let v = _objectSpread(_objectSpread({}, this.state.value), {}, {
       [key]: value
     });
 
@@ -2684,7 +2673,7 @@ class ItemMap extends React.Component {
       return;
     }
 
-    let value = _objectSpread({}, this.state.value, {
+    let value = _objectSpread(_objectSpread({}, this.state.value), {}, {
       [this.state.item]: []
     });
 
@@ -2700,7 +2689,7 @@ class ItemMap extends React.Component {
       return;
     }
 
-    let value = _objectSpread({}, this.state.value, {
+    let value = _objectSpread(_objectSpread({}, this.state.value), {}, {
       [id]: undefined
     });
 
@@ -2741,12 +2730,12 @@ class ItemMap extends React.Component {
           text = matches[0].Display;
         }
 
-        rows.push(React.createElement("details", {
+        rows.push( /*#__PURE__*/React.createElement("details", {
           key: i
-        }, React.createElement("summary", null, text), React.createElement("button", {
+        }, /*#__PURE__*/React.createElement("summary", null, text), /*#__PURE__*/React.createElement("button", {
           type: "button",
           onClick: this.remove.bind(this, i)
-        }, "-"), React.createElement("ul", null, React.createElement(ItemList, {
+        }, "-"), /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement(ItemList, {
           name: i,
           label: this.props.listLabel,
           type: "select",
@@ -2759,7 +2748,7 @@ class ItemMap extends React.Component {
 
     let optionsMap = []; // empty selection
 
-    optionsMap.push(React.createElement("option", {
+    optionsMap.push( /*#__PURE__*/React.createElement("option", {
       disabled: true,
       key: "",
       value: ""
@@ -2772,16 +2761,16 @@ class ItemMap extends React.Component {
         continue;
       }
 
-      optionsMap.push(React.createElement("option", {
+      optionsMap.push( /*#__PURE__*/React.createElement("option", {
         key: option.ID,
         value: option.ID
       }, option.Display));
     }
 
-    return React.createElement("div", null, React.createElement("label", null, this.props.label), React.createElement("ul", null, rows, React.createElement("select", {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", null, this.props.label), /*#__PURE__*/React.createElement("ul", null, rows, /*#__PURE__*/React.createElement("select", {
       value: this.state.item,
       onChange: this.handleChange
-    }, optionsMap), React.createElement("button", {
+    }, optionsMap), /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add
     }, "+")));
@@ -2876,16 +2865,16 @@ class ItemList extends React.Component {
           }
         }
 
-        rows.push(React.createElement("li", {
+        rows.push( /*#__PURE__*/React.createElement("li", {
           key: i
-        }, text, React.createElement("button", {
+        }, text, /*#__PURE__*/React.createElement("button", {
           type: "button",
           onClick: this.remove.bind(this, i)
         }, "-")));
       }
     }
 
-    let input = React.createElement("input", {
+    let input = /*#__PURE__*/React.createElement("input", {
       type: this.props.type,
       value: this.state.item,
       onChange: this.handleChange
@@ -2894,7 +2883,7 @@ class ItemList extends React.Component {
     if (this.props.type === "select") {
       let optionsList = []; // empty selection
 
-      optionsList.push(React.createElement("option", {
+      optionsList.push( /*#__PURE__*/React.createElement("option", {
         disabled: true,
         key: "",
         value: ""
@@ -2907,19 +2896,19 @@ class ItemList extends React.Component {
           continue;
         }
 
-        optionsList.push(React.createElement("option", {
+        optionsList.push( /*#__PURE__*/React.createElement("option", {
           key: option.ID,
           value: option.ID
         }, option.Display));
       }
 
-      input = React.createElement("select", {
+      input = /*#__PURE__*/React.createElement("select", {
         value: this.state.item,
         onChange: this.handleChange
       }, optionsList);
     }
 
-    return React.createElement("details", null, React.createElement("summary", null, this.props.label), React.createElement("ul", null, rows, input, React.createElement("button", {
+    return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, this.props.label), /*#__PURE__*/React.createElement("ul", null, rows, input, /*#__PURE__*/React.createElement("button", {
       type: "button",
       onClick: this.add
     }, "+")));
@@ -2927,4 +2916,4 @@ class ItemList extends React.Component {
 
 }
 
-ReactDOM.render(React.createElement(App, null), document.getElementById('app'));
+ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('app'));

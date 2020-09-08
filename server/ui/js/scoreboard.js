@@ -2,9 +2,9 @@
 
 class App extends React.Component {
   render() {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "App"
-    }, React.createElement(Scoreboard, null));
+    }, /*#__PURE__*/React.createElement(Scoreboard, null));
   }
 
 }
@@ -106,21 +106,21 @@ class Scoreboard extends React.Component {
         }
 
         let lastUpdated = new Date(hostScore.Timestamp * 1000).toLocaleString();
-        hostScoreDetails.push(React.createElement("p", null, "Time: ", lastUpdated, "; Hostname: ", hostScore.Hostname, "; Score: ", hostScore.Score, " "));
+        hostScoreDetails.push( /*#__PURE__*/React.createElement("p", null, "Time: ", lastUpdated, "; Hostname: ", hostScore.Hostname, "; Score: ", hostScore.Score, " "));
       }
 
       let lastTimestampStr = new Date(lastTimestamp * 1000).toLocaleString();
-      body.push(React.createElement("tr", {
+      body.push( /*#__PURE__*/React.createElement("tr", {
         key: i
-      }, React.createElement("td", {
+      }, /*#__PURE__*/React.createElement("td", {
         class: "table-cell"
-      }, entry.TeamName), React.createElement("td", {
+      }, entry.TeamName), /*#__PURE__*/React.createElement("td", {
         class: "table-cell"
-      }, totalScore), React.createElement("td", {
+      }, totalScore), /*#__PURE__*/React.createElement("td", {
         class: "table-cell"
-      }, lastTimestampStr), React.createElement("td", {
+      }, lastTimestampStr), /*#__PURE__*/React.createElement("td", {
         class: "table-cell"
-      }, React.createElement("details", null, hostScoreDetails))));
+      }, /*#__PURE__*/React.createElement("details", null, hostScoreDetails))));
     }
 
     let scenarios = [];
@@ -133,9 +133,9 @@ class Scoreboard extends React.Component {
         classes.push("nav-button-selected");
       }
 
-      scenarios.push(React.createElement("li", {
+      scenarios.push( /*#__PURE__*/React.createElement("li", {
         id: i
-      }, React.createElement("a", {
+      }, /*#__PURE__*/React.createElement("a", {
         className: classes.join(" "),
         href: "#",
         onClick: () => {
@@ -147,32 +147,32 @@ class Scoreboard extends React.Component {
     let content = null;
 
     if (this.state.selectedScenarioName != null) {
-      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("p", null), "Last updated: ", this.state.lastCheck, React.createElement("br", null), React.createElement("button", {
+      content = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", null, this.state.selectedScenarioName), /*#__PURE__*/React.createElement("p", null), "Last updated: ", this.state.lastCheck, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
         onClick: () => {
           this.populateScores(this.state.selectedScenarioID);
         }
-      }, "Refresh"), React.createElement("p", null), React.createElement("table", null, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", {
+      }, "Refresh"), /*#__PURE__*/React.createElement("p", null), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", {
         class: "table-cell"
-      }, "Team Name"), React.createElement("th", {
+      }, "Team Name"), /*#__PURE__*/React.createElement("th", {
         class: "table-cell"
-      }, "Score"), React.createElement("th", {
+      }, "Score"), /*#__PURE__*/React.createElement("th", {
         class: "table-cell"
-      }, "Last Updated"))), React.createElement("tbody", null, body)));
+      }, "Last Updated"))), /*#__PURE__*/React.createElement("tbody", null, body)));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       className: "heading"
-    }, React.createElement("h1", null, "Scoreboard")), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h1", null, "Scoreboard")), /*#__PURE__*/React.createElement("div", {
       className: "toc",
       id: "toc"
-    }, React.createElement("h4", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h4", null, "Scenarios"), /*#__PURE__*/React.createElement("ul", null, scenarios)), /*#__PURE__*/React.createElement("div", {
       className: "content",
       id: "content"
-    }, React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content));
   }
 
 }
 
-ReactDOM.render(React.createElement(App, null), document.getElementById('app'));
+ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('app'));

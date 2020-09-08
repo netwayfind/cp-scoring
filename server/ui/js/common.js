@@ -10,7 +10,7 @@ class Error extends React.Component {
       return null;
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       class: "error"
     }, this.props.message);
   }
@@ -70,25 +70,25 @@ class Login extends React.Component {
   }
 
   render() {
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "login"
-    }, React.createElement("form", {
+    }, /*#__PURE__*/React.createElement("form", {
       onChange: this.handleChange,
       onSubmit: this.handleSubmit
-    }, React.createElement("label", {
+    }, /*#__PURE__*/React.createElement("label", {
       htmlFor: "username"
-    }, "Username"), React.createElement("input", {
+    }, "Username"), /*#__PURE__*/React.createElement("input", {
       name: "username",
       required: "required"
-    }), React.createElement("br", null), React.createElement("label", {
+    }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("label", {
       htmlFor: "password"
-    }, "Password"), React.createElement("input", {
+    }, "Password"), /*#__PURE__*/React.createElement("input", {
       name: "password",
       type: "password",
       required: "required"
-    }), React.createElement("br", null), React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
       type: "submit"
-    }, "Submit")), React.createElement(Error, {
+    }, "Submit")), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }));
   }

@@ -22,12 +22,12 @@ class App extends React.Component {
     }
 
     if (teamKey.length == 0) {
-      return React.createElement(AskTeamKey, null);
+      return /*#__PURE__*/React.createElement(AskTeamKey, null);
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "App"
-    }, React.createElement(ScoreTimeline, {
+    }, /*#__PURE__*/React.createElement(ScoreTimeline, {
       teamKey: teamKey
     }));
   }
@@ -87,16 +87,16 @@ class AskTeamKey extends React.Component {
   }
 
   render() {
-    return React.createElement(React.Fragment, null, React.createElement("form", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("form", {
       onChange: this.handleChange,
       onSubmit: event => this.submit(event)
-    }, React.createElement("label", {
+    }, /*#__PURE__*/React.createElement("label", {
       id: "team_key"
-    }, "Enter team key:"), React.createElement("input", {
+    }, "Enter team key:"), /*#__PURE__*/React.createElement("input", {
       name: "team_key"
-    }), React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("button", {
       type: "submit"
-    }, "Submit")), React.createElement(Error, {
+    }, "Submit")), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }));
   }
@@ -264,15 +264,15 @@ class ScoreTimeline extends React.Component {
         }
 
         if (finding.Show) {
-          findings.push(React.createElement("li", {
+          findings.push( /*#__PURE__*/React.createElement("li", {
             key: i
-          }, React.createElement("span", {
+          }, /*#__PURE__*/React.createElement("span", {
             style: {
               fontWeight: fontWeight
             }
           }, finding.Value, " - ", finding.Message)));
         } else {
-          findings.push(React.createElement("li", {
+          findings.push( /*#__PURE__*/React.createElement("li", {
             key: i
           }, "?"));
         }
@@ -297,46 +297,46 @@ class ScoreTimeline extends React.Component {
             classes.push("nav-button-selected");
           }
 
-          hosts.push(React.createElement("li", {
+          hosts.push( /*#__PURE__*/React.createElement("li", {
             key: i
-          }, React.createElement("a", {
+          }, /*#__PURE__*/React.createElement("a", {
             className: classes.join(" "),
             href: "#",
             onClick: () => this.populateHostReport(scenarioName, scenarioID, teamKey, hostname)
           }, hostname)));
         }
 
-        scenarios.push(React.createElement("li", {
+        scenarios.push( /*#__PURE__*/React.createElement("li", {
           key: i
-        }, scenarioHosts.ScenarioName, React.createElement("ul", null, hosts)));
+        }, scenarioHosts.ScenarioName, /*#__PURE__*/React.createElement("ul", null, hosts)));
       }
     }
 
     let content = null;
 
     if (this.state.selectedScenarioHostname) {
-      content = React.createElement(React.Fragment, null, React.createElement("h2", null, this.state.selectedScenarioName), React.createElement("h3", null, this.state.selectedScenarioHostname), React.createElement("p", null), "Last updated: ", this.state.lastCheck, React.createElement("br", null), React.createElement("button", {
+      content = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("h2", null, this.state.selectedScenarioName), /*#__PURE__*/React.createElement("h3", null, this.state.selectedScenarioHostname), /*#__PURE__*/React.createElement("p", null), "Last updated: ", this.state.lastCheck, /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
         onClick: () => this.populateHostReport(this.state.selectedScenarioName, this.state.selectedScenarioID, this.props.teamKey, this.state.selectedScenarioHostname)
-      }, "Refresh"), React.createElement("p", null), React.createElement(Plot, {
+      }, "Refresh"), /*#__PURE__*/React.createElement("p", null), /*#__PURE__*/React.createElement(Plot, {
         data: data,
         layout: layout,
         config: config
-      }), React.createElement("br", null), "Host instances found: ", this.state.timelines.length, React.createElement("p", null), "Latest Report: ", lastUpdated, React.createElement("p", null), "Report Score: ", score, React.createElement("ul", null, React.createElement("li", null, "Points earned: ", pointsEarned), React.createElement("li", null, "Points lost: ", pointsLost)), React.createElement("p", null), "Report Findings:", React.createElement("br", null), React.createElement("ul", null, findings));
+      }), /*#__PURE__*/React.createElement("br", null), "Host instances found: ", this.state.timelines.length, /*#__PURE__*/React.createElement("p", null), "Latest Report: ", lastUpdated, /*#__PURE__*/React.createElement("p", null), "Report Score: ", score, /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement("li", null, "Points earned: ", pointsEarned), /*#__PURE__*/React.createElement("li", null, "Points lost: ", pointsLost)), /*#__PURE__*/React.createElement("p", null), "Report Findings:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("ul", null, findings));
     }
 
-    return React.createElement(React.Fragment, null, React.createElement("div", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       className: "heading"
-    }, React.createElement("h1", null, "Team Reports")), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h1", null, "Team Reports")), /*#__PURE__*/React.createElement("div", {
       className: "toc",
       id: "toc"
-    }, React.createElement("h4", null, "Scenarios"), React.createElement("ul", null, scenarios)), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h4", null, "Scenarios"), /*#__PURE__*/React.createElement("ul", null, scenarios)), /*#__PURE__*/React.createElement("div", {
       className: "content",
       id: "content"
-    }, React.createElement(Error, {
+    }, /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }), content));
   }
 
 }
 
-ReactDOM.render(React.createElement(App, null), document.getElementById('app'));
+ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('app'));

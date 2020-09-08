@@ -56,29 +56,29 @@ class App extends React.Component {
 
   render() {
     if (!this.state.authenticated) {
-      return React.createElement("div", {
+      return /*#__PURE__*/React.createElement("div", {
         className: "App"
-      }, React.createElement(Login, {
+      }, /*#__PURE__*/React.createElement(Login, {
         callback: this.authCallback
       }));
     }
 
-    return React.createElement("div", {
+    return /*#__PURE__*/React.createElement("div", {
       className: "App"
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "heading"
-    }, React.createElement("h1", null, "cp-scoring Insight")), React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("h1", null, "cp-scoring Insight")), /*#__PURE__*/React.createElement("div", {
       className: "navbar"
-    }, React.createElement("button", {
+    }, /*#__PURE__*/React.createElement("button", {
       className: "right",
       onClick: this.logout
-    }, "Logout")), React.createElement("div", {
+    }, "Logout")), /*#__PURE__*/React.createElement("div", {
       className: "toc"
-    }, React.createElement(AnalysisConfig, {
+    }, /*#__PURE__*/React.createElement(AnalysisConfig, {
       requestCallback: this.analysisRequestCallback
-    })), React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       className: "content"
-    }, React.createElement(AnalysisResults, {
+    }, /*#__PURE__*/React.createElement(AnalysisResults, {
       args: this.state.args,
       selectedCallback: this.analysisSelectedCallback
     })));
@@ -265,10 +265,10 @@ class AnalysisConfig extends React.Component {
         let response = responses[r];
 
         if (response.status >= 400) {
-          errors.push((await response.text()));
+          errors.push(await response.text());
         }
 
-        j.push((await response.json()));
+        j.push(await response.json());
       }
 
       if (errors.length === 0) {
@@ -318,14 +318,14 @@ class AnalysisConfig extends React.Component {
   render() {
     // form scenario options
     let scenarioOptions = [];
-    scenarioOptions.push(React.createElement("option", {
+    scenarioOptions.push( /*#__PURE__*/React.createElement("option", {
       key: "-1",
       value: ""
     }));
 
     for (let i in this.state.scenarios) {
       let scenario = this.state.scenarios[i];
-      scenarioOptions.push(React.createElement("option", {
+      scenarioOptions.push( /*#__PURE__*/React.createElement("option", {
         key: i,
         value: scenario.ID
       }, scenario.Name));
@@ -333,14 +333,14 @@ class AnalysisConfig extends React.Component {
 
 
     let teamOptions = [];
-    teamOptions.push(React.createElement("option", {
+    teamOptions.push( /*#__PURE__*/React.createElement("option", {
       key: "-1",
       value: ""
     }));
 
     for (let i in this.state.teams) {
       let team = this.state.teams[i];
-      teamOptions.push(React.createElement("option", {
+      teamOptions.push( /*#__PURE__*/React.createElement("option", {
         key: i,
         value: team.ID
       }, team.Name));
@@ -370,39 +370,39 @@ class AnalysisConfig extends React.Component {
     endTime += ("000" + d.getMinutes()).slice(-2);
     endTime += ":";
     endTime += ("000" + d.getSeconds()).slice(-2);
-    return React.createElement(React.Fragment, null, React.createElement("label", {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("label", {
       name: "scenarios"
-    }, "Scenarios"), React.createElement("select", {
+    }, "Scenarios"), /*#__PURE__*/React.createElement("select", {
       value: this.state.scenarioID,
       onChange: this.selectScenarioCallback
-    }, scenarioOptions), React.createElement("br", null), React.createElement("label", {
+    }, scenarioOptions), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("label", {
       name: "teams"
-    }, "Teams"), React.createElement("select", {
+    }, "Teams"), /*#__PURE__*/React.createElement("select", {
       value: this.state.teamID,
       onChange: this.selectTeamCallback
-    }, teamOptions), React.createElement("br", null), React.createElement("label", {
+    }, teamOptions), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("label", {
       name: "timeStart"
-    }, "Time start"), React.createElement("input", {
+    }, "Time start"), /*#__PURE__*/React.createElement("input", {
       type: "date",
       value: startDate,
       onChange: this.selectTimeStartCallback
-    }), React.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       type: "time",
       value: startTime,
       onChange: this.selectTimeStartCallback
-    }), React.createElement("br", null), React.createElement("label", {
+    }), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("label", {
       name: "timeEnd"
-    }, "Time end"), React.createElement("input", {
+    }, "Time end"), /*#__PURE__*/React.createElement("input", {
       type: "date",
       value: endDate,
       onChange: this.selectTimeEndCallback
-    }), React.createElement("input", {
+    }), /*#__PURE__*/React.createElement("input", {
       type: "time",
       value: endTime,
       onChange: this.selectTimeEndCallback
-    }), React.createElement("p", null), React.createElement("button", {
+    }), /*#__PURE__*/React.createElement("p", null), /*#__PURE__*/React.createElement("button", {
       onClick: this.submit
-    }, "Submit"), React.createElement(Error, {
+    }, "Submit"), /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
     }));
   }
@@ -646,16 +646,16 @@ class AnalysisResults extends React.Component {
   }
 
   render() {
-    return React.createElement(React.Fragment, null, React.createElement(Error, {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Error, {
       message: this.state.error
-    }), "Timeline", React.createElement("br", null), React.createElement(Plot, {
+    }), "Timeline", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement(Plot, {
       data: this.state.traces,
       layout: this.state.layout,
       config: this.state.config,
       onClick: this.plotClick
-    }), React.createElement("br", null), "Selected", React.createElement("div", {
+    }), /*#__PURE__*/React.createElement("br", null), "Selected", /*#__PURE__*/React.createElement("div", {
       className: "analysisSelected"
-    }, React.createElement(AnalysisSelected, {
+    }, /*#__PURE__*/React.createElement(AnalysisSelected, {
       selected: this.state.selected
     })));
   }
@@ -682,7 +682,7 @@ class AnalysisSelected extends React.Component {
     let selected = null;
 
     if (!this.props.selected) {
-      selected = React.createElement(React.Fragment, null, "No result");
+      selected = /*#__PURE__*/React.createElement(React.Fragment, null, "No result");
     } // diff
     else if (this.props.selected.Changes != undefined) {
         let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
@@ -690,12 +690,12 @@ class AnalysisSelected extends React.Component {
 
         for (let i in this.props.selected.Changes) {
           let change = this.props.selected.Changes[i];
-          changes.push(React.createElement("li", {
+          changes.push( /*#__PURE__*/React.createElement("li", {
             key: i
           }, change.Type, " - ", change.Key, " - ", JSON.stringify(change.Item)));
         }
 
-        selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Changes:", React.createElement("ul", null, changes));
+        selected = /*#__PURE__*/React.createElement(React.Fragment, null, "Time: ", time, /*#__PURE__*/React.createElement("br", null), "Changes:", /*#__PURE__*/React.createElement("ul", null, changes));
       } // report
       else if (this.props.selected.Findings != undefined) {
           let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
@@ -706,16 +706,16 @@ class AnalysisSelected extends React.Component {
             // only show findings where Show is false when show all flag is true
 
             if (finding.Show || this.state.showAllFindings) {
-              findings.push(React.createElement("li", {
+              findings.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, finding.Value, " - ", finding.Message));
             }
           }
 
-          selected = React.createElement(React.Fragment, null, "Time: ", time, React.createElement("br", null), "Findings:", React.createElement("br", null), React.createElement("button", {
+          selected = /*#__PURE__*/React.createElement(React.Fragment, null, "Time: ", time, /*#__PURE__*/React.createElement("br", null), "Findings:", /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
             disabled: this.state.reportShowAllFindings,
             onClick: this.updateShowAllFindings
-          }, "Show/Hide Findings"), React.createElement("ul", null, findings));
+          }, "Show/Hide Findings"), /*#__PURE__*/React.createElement("ul", null, findings));
         } // state
         else if (this.props.selected.Users != undefined) {
             let time = new Date(this.props.selected.Timestamp * 1000).toLocaleString();
@@ -723,7 +723,7 @@ class AnalysisSelected extends React.Component {
 
             for (let i in this.props.selected.Errors) {
               let error = this.props.selected.Errors[i];
-              errors.push(React.createElement("li", {
+              errors.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, error));
             }
@@ -733,7 +733,7 @@ class AnalysisSelected extends React.Component {
             for (let i in this.props.selected.Users) {
               let user = this.props.selected.Users[i];
               let passwordLastSet = new Date(user.PasswordLastSet * 1000).toLocaleString();
-              users.push(React.createElement("li", {
+              users.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, user.ID, " - ", user.Name, " - ", user.AccountActive, " - ", user.AccountExpires, " - ", passwordLastSet, " - ", user.PasswordExpires));
             }
@@ -744,12 +744,12 @@ class AnalysisSelected extends React.Component {
               let members = this.props.selected.Groups[group];
 
               if (members.length === 0) {
-                groups.push(React.createElement("li", {
+                groups.push( /*#__PURE__*/React.createElement("li", {
                   key: group
                 }, group));
               } else {
                 let membersStr = members.map(member => member.Name).join(', ');
-                groups.push(React.createElement("li", {
+                groups.push( /*#__PURE__*/React.createElement("li", {
                   key: group
                 }, group, " - [", membersStr, "]"));
               }
@@ -759,7 +759,7 @@ class AnalysisSelected extends React.Component {
 
             for (let i in this.props.selected.Software) {
               let sw = this.props.selected.Software[i];
-              software.push(React.createElement("li", {
+              software.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, sw.Name, " - ", sw.Version));
             }
@@ -768,7 +768,7 @@ class AnalysisSelected extends React.Component {
 
             for (let i in this.props.selected.Processes) {
               let process = this.props.selected.Processes[i];
-              processes.push(React.createElement("li", {
+              processes.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, process.PID, " - ", process.User, " - ", process.CommandLine));
             }
@@ -777,7 +777,7 @@ class AnalysisSelected extends React.Component {
 
             for (let i in this.props.selected.NetworkConnections) {
               let conn = this.props.selected.NetworkConnections[i];
-              conns.push(React.createElement("li", {
+              conns.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, conn.Protocol, " - ", conn.LocalAddress, ":", conn.LocalPort, " - ", conn.RemoteAddress, ":", conn.RemotePort, " - ", conn.State));
             }
@@ -792,7 +792,7 @@ class AnalysisSelected extends React.Component {
                 enabledStr = "Disabled";
               }
 
-              tasks.push(React.createElement("li", {
+              tasks.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, task.Name, " @ ", task.Path, " - ", enabledStr));
             }
@@ -807,7 +807,7 @@ class AnalysisSelected extends React.Component {
                 enabledStr = "Disabled";
               }
 
-              profiles.push(React.createElement("li", {
+              profiles.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, "Profile: ", profile.Name, " - ", enabledStr, " - Inbound: ", profile.DefaultInboundAction, " - Outbound: ", profile.DefaultOutboundAction));
             }
@@ -822,7 +822,7 @@ class AnalysisSelected extends React.Component {
                 enabledStr = "Disabled";
               }
 
-              rules.push(React.createElement("li", {
+              rules.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, "Display Name: ", rule.DisplayName, ", ", enabledStr, ", Protocol: ", rule.Protocol, ", Local Port: ", rule.LocalPort, ", Remote Address: ", rule.RemoteAddress, ", Remote Port: ", rule.RemotePort, ", Direction: ", rule.Direction, ", Action: ", rule.Action));
             }
@@ -831,12 +831,12 @@ class AnalysisSelected extends React.Component {
 
             for (let i in this.props.selected.WindowsSettings) {
               let setting = this.props.selected.WindowsSettings[i];
-              settings.push(React.createElement("li", {
+              settings.push( /*#__PURE__*/React.createElement("li", {
                 key: i
               }, "Key: ", setting.Key, ", Value: ", setting.Value));
             }
 
-            selected = React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, React.createElement("br", null), "Time: ", time, React.createElement("br", null), "OS: ", this.props.selected.OS, React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, React.createElement("br", null), "Errors:", React.createElement("ul", null, errors), React.createElement("br", null), "Users:", React.createElement("ul", null, users), React.createElement("br", null), "Groups:", React.createElement("ul", null, groups), React.createElement("br", null), "Software:", React.createElement("ul", null, software), React.createElement("br", null), "Processes:", React.createElement("ul", null, processes), React.createElement("br", null), "Network connections:", React.createElement("ul", null, conns), React.createElement("br", null), "Scheduled tasks:", React.createElement("ul", null, tasks), React.createElement("br", null), "Windows Firewall profiles:", React.createElement("ul", null, profiles), React.createElement("br", null), "Windows Firewall rules:", React.createElement("ul", null, rules), React.createElement("br", null), "Windows settings:", React.createElement("ul", null, settings), React.createElement("br", null));
+            selected = /*#__PURE__*/React.createElement(React.Fragment, null, "State ID: ", this.props.selected.StateID, /*#__PURE__*/React.createElement("br", null), "Time: ", time, /*#__PURE__*/React.createElement("br", null), "OS: ", this.props.selected.OS, /*#__PURE__*/React.createElement("br", null), "Hostname: ", this.props.selected.Hostname, /*#__PURE__*/React.createElement("br", null), "Errors:", /*#__PURE__*/React.createElement("ul", null, errors), /*#__PURE__*/React.createElement("br", null), "Users:", /*#__PURE__*/React.createElement("ul", null, users), /*#__PURE__*/React.createElement("br", null), "Groups:", /*#__PURE__*/React.createElement("ul", null, groups), /*#__PURE__*/React.createElement("br", null), "Software:", /*#__PURE__*/React.createElement("ul", null, software), /*#__PURE__*/React.createElement("br", null), "Processes:", /*#__PURE__*/React.createElement("ul", null, processes), /*#__PURE__*/React.createElement("br", null), "Network connections:", /*#__PURE__*/React.createElement("ul", null, conns), /*#__PURE__*/React.createElement("br", null), "Scheduled tasks:", /*#__PURE__*/React.createElement("ul", null, tasks), /*#__PURE__*/React.createElement("br", null), "Windows Firewall profiles:", /*#__PURE__*/React.createElement("ul", null, profiles), /*#__PURE__*/React.createElement("br", null), "Windows Firewall rules:", /*#__PURE__*/React.createElement("ul", null, rules), /*#__PURE__*/React.createElement("br", null), "Windows settings:", /*#__PURE__*/React.createElement("ul", null, settings), /*#__PURE__*/React.createElement("br", null));
           }
 
     return selected;
@@ -844,4 +844,4 @@ class AnalysisSelected extends React.Component {
 
 }
 
-ReactDOM.render(React.createElement(App, null), document.getElementById('app'));
+ReactDOM.render( /*#__PURE__*/React.createElement(App, null), document.getElementById('app'));
