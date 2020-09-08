@@ -1515,7 +1515,15 @@ class Users extends React.Component {
       passwordLastSetTime += ":";
       passwordLastSetTime += ("000" + d.getSeconds()).slice(-2);
       let userOptions = null;
-      if (user.ObjectState != "Remove") {
+      if (user.ObjectState === "Remove") {
+        userOptions = (
+          <React.Fragment>
+            <td></td>
+            <td></td>
+            <td></td>
+          </React.Fragment>
+        );
+      } else {
         userOptions = (
           <React.Fragment>
             <td>
@@ -1672,30 +1680,26 @@ class Groups extends React.Component {
       for (let i in this.state.groups[groupName]) {
         let member = this.state.groups[groupName][i];
         groupMembers.push(
-          <details key={i}>
-            <summary>{member.Name}</summary>
-            <button type="button" onClick={this.removeGroupMember.bind(this, groupName, i)}>-</button>
-            <ul>
-              <li>
-                <label>Name</label>
-                <input type="text" value={member.Name} onChange={event=> this.updateGroupMember(groupName, i, "Name", event.target.value)}/>
-              </li>
-              <li>
-                <ObjectState value={member.ObjectState} onChange={event=> this.updateGroupMember(groupName, i, "ObjectState", event.target.value)} />
-              </li>
-            </ul>
-          </details>
+          <tr>
+            <td><input type="text" value={member.Name} onChange={event=> this.updateGroupMember(groupName, i, "Name", event.target.value)}/></td>
+            <td><ObjectState value={member.ObjectState} onChange={event=> this.updateGroupMember(groupName, i, "ObjectState", event.target.value)} /></td>
+            <td><button type="button" onClick={this.removeGroupMember.bind(this, groupName, i)}>-</button></td>
+          </tr>
         );
       }
       groups.push(
         <details key={groupName}>
           <summary>{groupName}</summary>
-          <button type="button" onClick={this.removeGroup.bind(this, groupName)}>Remove Group</button>
-          <br />
           <button type="button" onClick={event => this.addGroupMember(groupName, event)}>Add Group Member</button>
-          <ul>
+          <button type="button" onClick={this.removeGroup.bind(this, groupName)}>Remove Group</button>
+          <table>
+            <tr>
+              <th>Name</th>
+              <th>State</th>
+              <th></th>
+            </tr>
             {groupMembers}
-          </ul>
+          </table>
         </details>
       );
     }
@@ -2369,7 +2373,19 @@ class WindowsFirewallRules extends React.Component {
         enabledStr = "Disabled";
       }
       let ruleOptions = null;
-      if (entry.ObjectState != "Remove") {
+      if (entry.ObjectState === "Remove") {
+        ruleOptions = (
+          <React.Fragment>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </React.Fragment>
+        );
+      } else {
         ruleOptions = (
           <React.Fragment>
             <td>

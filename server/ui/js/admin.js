@@ -1637,7 +1637,9 @@ class Users extends React.Component {
       passwordLastSetTime += ("000" + d.getSeconds()).slice(-2);
       let userOptions = null;
 
-      if (user.ObjectState != "Remove") {
+      if (user.ObjectState === "Remove") {
+        userOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null));
+      } else {
         userOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "checkbox",
           checked: user.AccountActive,
@@ -1791,30 +1793,28 @@ class Groups extends React.Component {
 
       for (let i in this.state.groups[groupName]) {
         let member = this.state.groups[groupName][i];
-        groupMembers.push( /*#__PURE__*/React.createElement("details", {
-          key: i
-        }, /*#__PURE__*/React.createElement("summary", null, member.Name), /*#__PURE__*/React.createElement("button", {
-          type: "button",
-          onClick: this.removeGroupMember.bind(this, groupName, i)
-        }, "-"), /*#__PURE__*/React.createElement("ul", null, /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement("label", null, "Name"), /*#__PURE__*/React.createElement("input", {
+        groupMembers.push( /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "text",
           value: member.Name,
           onChange: event => this.updateGroupMember(groupName, i, "Name", event.target.value)
-        })), /*#__PURE__*/React.createElement("li", null, /*#__PURE__*/React.createElement(ObjectState, {
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(ObjectState, {
           value: member.ObjectState,
           onChange: event => this.updateGroupMember(groupName, i, "ObjectState", event.target.value)
-        })))));
+        })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+          type: "button",
+          onClick: this.removeGroupMember.bind(this, groupName, i)
+        }, "-"))));
       }
 
       groups.push( /*#__PURE__*/React.createElement("details", {
         key: groupName
       }, /*#__PURE__*/React.createElement("summary", null, groupName), /*#__PURE__*/React.createElement("button", {
         type: "button",
-        onClick: this.removeGroup.bind(this, groupName)
-      }, "Remove Group"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("button", {
-        type: "button",
         onClick: event => this.addGroupMember(groupName, event)
-      }, "Add Group Member"), /*#__PURE__*/React.createElement("ul", null, groupMembers)));
+      }, "Add Group Member"), /*#__PURE__*/React.createElement("button", {
+        type: "button",
+        onClick: this.removeGroup.bind(this, groupName)
+      }, "Remove Group"), /*#__PURE__*/React.createElement("table", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Name"), /*#__PURE__*/React.createElement("th", null, "State"), /*#__PURE__*/React.createElement("th", null)), groupMembers)));
     }
 
     return /*#__PURE__*/React.createElement("details", null, /*#__PURE__*/React.createElement("summary", null, "Groups"), /*#__PURE__*/React.createElement("input", {
@@ -2441,7 +2441,9 @@ class WindowsFirewallRules extends React.Component {
 
       let ruleOptions = null;
 
-      if (entry.ObjectState != "Remove") {
+      if (entry.ObjectState === "Remove") {
+        ruleOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null), /*#__PURE__*/React.createElement("td", null));
+      } else {
         ruleOptions = /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
           type: "checkbox",
           checked: entry.Enabled,
