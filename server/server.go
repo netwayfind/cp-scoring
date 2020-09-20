@@ -37,6 +37,14 @@ type theServer struct {
 	backingStore backingStore
 }
 
+func getSourceIP(r *http.Request) string {
+	ips := r.Header.Get("X-Forwarded-For")
+	if ips == "" {
+		return r.RemoteAddr
+	}
+	return strings.Split(ips, ",")[0]
+}
+
 func (theServer theServer) middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(cookieName)
@@ -45,6 +53,7 @@ func (theServer theServer) middleware(next http.Handler) http.Handler {
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
+		sourceIP := getSourceIP(r)
 
 		if username, found := theServer.userTokens[cookie.Value]; found {
 			isAdmin, err := theServer.backingStore.IsAdmin(username)
@@ -59,14 +68,14 @@ func (theServer theServer) middleware(next http.Handler) http.Handler {
 				delete(theServer.userTokens, cookie.Value)
 				msg := "Unauthorized request"
 				http.Error(w, msg, http.StatusUnauthorized)
-				log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
+				log.Println(sourceIP, ",", r.URL, ",", msg)
 				return
 			}
 			next.ServeHTTP(w, r)
 		} else {
 			msg := "Unauthorized request"
 			http.Error(w, msg, http.StatusUnauthorized)
-			log.Println(r.RemoteAddr, ",", r.URL, ",", msg)
+			log.Println(sourceIP, ",", r.URL, ",", msg)
 		}
 	})
 }
@@ -93,7 +102,7 @@ func saveAuditRequest(w http.ResponseWriter, r *http.Request, dataDir string) {
 	// save request to temp file
 	// temp file is dataDir/<timestamp>_<source>_<tempname>
 	timestampStr := strconv.FormatInt(time.Now().Unix(), 10)
-	sourceStr := strings.Split(r.RemoteAddr, ":")[0]
+	sourceStr := getSourceIP(r)
 	outFile, err := ioutil.TempFile(dataDir, timestampStr+"_"+sourceStr+"_")
 	outFile.Chmod(0600)
 	defer outFile.Close()
@@ -1633,7 +1642,7 @@ func (theServer theServer) getNewHostToken(w http.ResponseWriter, r *http.Reques
 
 	// record request
 	timestamp := time.Now().Unix()
-	source := r.RemoteAddr
+	source := getSourceIP(r)
 	token := getRandStr()
 	err := theServer.backingStore.InsertHostToken(token, timestamp, hostname, source)
 	if err != nil {
