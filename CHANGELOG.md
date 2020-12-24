@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2020-12-24
+### Added
+- [#43](https://github.com/netwayfind/cp-scoring/issues/43) - Scoreboard: Host scores
+
+### Changed
+- updated npm dependencies
+- minor UI improvements
+
+### Fixed
+- [#44](https://github.com/netwayfind/cp-scoring/issues/44) - Fix source IP address
+
 ## [0.6.0] - 2020-06-14
 ### Added
 - [#37](https://github.com/netwayfind/cp-scoring/issues/37) - insight UI, add button to show/hide findings
