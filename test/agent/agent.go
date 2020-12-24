@@ -24,7 +24,7 @@ func main() {
 
 	log.Println("scenario: ", scen)
 
-	rrrr, err := http.Get("http://localhost:8000/host-token")
+	rrrr, err := http.Get("http://localhost:8000/api/host-token")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,12 +49,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = http.Post("http://localhost:8000/host-token", "application/json", bytes.NewBuffer(rtkBs))
+	_, err = http.Post("http://localhost:8000/api/host-token", "application/json", bytes.NewBuffer(rtkBs))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	x, err := http.Get("http://localhost:8000/scenarios/" + scen)
+	x, err := http.Get("http://localhost:8000/api/scenarios/" + scen)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func main() {
 	log.Println(y.Name)
 	log.Println(y.Description)
 
-	x, err = http.Get("http://localhost:8000/scenarios/" + scen + "/checks")
+	x, err = http.Get("http://localhost:8000/api/scenarios/" + scen + "/checks")
 	if err != nil {
 		log.Fatal(err)
 	}
