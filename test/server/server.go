@@ -13,10 +13,13 @@ import (
 func main() {
 	log.Println("server")
 	port := "8000"
+	uiPath := "./ui/build"
+	backingStoreStr := "postgres"
+	dbURL := "postgres://postgres:password@localhost:5432?sslmode=disable"
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	backingStore, err := getBackingStore("postgres", "postgres://postgres:password@localhost:5432?sslmode=disable")
+	backingStore, err := getBackingStore(backingStoreStr, dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,6 +28,10 @@ func main() {
 	}
 
 	r := mux.NewRouter().StrictSlash(true)
+	r.PathPrefix("/ui").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, uiPath+"/index.html")
+	})
+	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(uiPath)))
 	apiRouter := r.PathPrefix("/api").Subrouter()
 	r.HandleFunc("/audit", apiHandler.audit).Methods("POST")
 	hostTokenRouter := apiRouter.PathPrefix("/host-token").Subrouter()

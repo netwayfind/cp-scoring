@@ -1,4 +1,6 @@
+build/
 node_modules/
 server/cp-scoring.test.conf
 target/
 test_temp/
+.eslintcache
