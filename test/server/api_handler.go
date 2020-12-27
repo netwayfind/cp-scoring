@@ -196,7 +196,7 @@ func (handler APIHandler) updateScenario(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = handler.BackingStore.scenarioUpdate(id, scenario)
+	s, err := handler.BackingStore.scenarioUpdate(id, scenario)
 	if err != nil {
 		if err.Error() == model.ErrorDBUpdateNoChange {
 			httpErrorNotFound(w)
@@ -205,6 +205,8 @@ func (handler APIHandler) updateScenario(w http.ResponseWriter, r *http.Request)
 		httpErrorDatabase(w, err)
 		return
 	}
+
+	sendResponse(w, s)
 }
 
 func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Request) {
@@ -325,7 +327,7 @@ func (handler APIHandler) updateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = handler.BackingStore.teamUpdate(id, team)
+	s, err := handler.BackingStore.teamUpdate(id, team)
 	if err != nil {
 		if err.Error() == model.ErrorDBUpdateNoChange {
 			httpErrorNotFound(w)
@@ -334,4 +336,6 @@ func (handler APIHandler) updateTeam(w http.ResponseWriter, r *http.Request) {
 		httpErrorDatabase(w, err)
 		return
 	}
+
+	sendResponse(w, s)
 }

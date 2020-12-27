@@ -92,13 +92,13 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
-func (db dbObj) scenarioInsert(scenario model.Scenario) (uint64, error) {
+func (db dbObj) scenarioInsert(scenario model.Scenario) (model.Scenario, error) {
 	id, err := db.dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES($1, $2, $3) RETURNING id", scenario.Name, scenario.Description, scenario.Enabled)
 	if err != nil {
-		return 0, err
+		return model.Scenario{}, err
 	}
 
-	return id, nil
+	return db.scenarioSelect(id)
 }
 
 func (db dbObj) scenarioSelect(id uint64) (model.Scenario, error) {
@@ -123,28 +123,28 @@ func (db dbObj) scenarioSelect(id uint64) (model.Scenario, error) {
 	return scenario, nil
 }
 
-func (db dbObj) scenarioSelectAll() ([]model.Scenario, error) {
-	rows, err := db.dbConn.Query("SELECT id, name, description, enabled FROM scenarios ORDER BY id ASC")
+func (db dbObj) scenarioSelectAll() ([]model.ScenarioSummary, error) {
+	rows, err := db.dbConn.Query("SELECT id, name, enabled FROM scenarios ORDER BY id ASC")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	scenarios := make([]model.Scenario, 0)
+	summaries := make([]model.ScenarioSummary, 0)
 
 	for rows.Next() {
-		scenario := model.Scenario{}
-		err = rows.Scan(&scenario.ID, &scenario.Name, &scenario.Description, &scenario.Enabled)
+		summary := model.ScenarioSummary{}
+		err = rows.Scan(&summary.ID, &summary.Name, &summary.Enabled)
 		if err != nil {
 			return nil, err
 		}
-		scenarios = append(scenarios, scenario)
+		summaries = append(summaries, summary)
 	}
 
-	return scenarios, nil
+	return summaries, nil
 }
 
-func (db dbObj) scenarioUpdate(id uint64, scenario model.Scenario) error {
+func (db dbObj) scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenario, error) {
 	enabled := 1
 	if !scenario.Enabled {
 		enabled = 0
@@ -152,10 +152,10 @@ func (db dbObj) scenarioUpdate(id uint64, scenario model.Scenario) error {
 
 	err := db.dbUpdate("UPDATE scenarios SET name=$1, description=$2, enabled=$3 WHERE id=$4", scenario.Name, scenario.Description, enabled, id)
 	if err != nil {
-		return err
+		return model.Scenario{}, err
 	}
 
-	return nil
+	return db.scenarioSelect(id)
 }
 
 func (db dbObj) scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error) {
@@ -206,7 +206,7 @@ func (db dbObj) scenarioChecksUpdate(id uint64, hostnameChecks map[string][]mode
 	return nil
 }
 
-func (db dbObj) teamInsert(team model.Team) (uint64, error) {
+func (db dbObj) teamInsert(team model.Team) (model.Team, error) {
 	key := team.Key
 	if len(key) == 0 {
 		key = randHexStr(8)
@@ -217,10 +217,10 @@ func (db dbObj) teamInsert(team model.Team) (uint64, error) {
 	}
 	id, err := db.dbInsert("INSERT INTO teams(name, poc, email, enabled, key) VALUES($1, $2, $3, $4, $5) RETURNING id", team.Name, team.POC, team.Email, enabled, key)
 	if err != nil {
-		return 0, err
+		return model.Team{}, err
 	}
 
-	return id, nil
+	return db.teamSelect(id)
 }
 
 func (db dbObj) teamSelect(id uint64) (model.Team, error) {
@@ -245,28 +245,28 @@ func (db dbObj) teamSelect(id uint64) (model.Team, error) {
 	return team, nil
 }
 
-func (db dbObj) teamSelectAll() ([]model.Team, error) {
-	rows, err := db.dbConn.Query("SELECT id, name, poc, email, enabled, key FROM teams ORDER BY id ASC")
+func (db dbObj) teamSelectAll() ([]model.TeamSummary, error) {
+	rows, err := db.dbConn.Query("SELECT id, name, enabled FROM teams ORDER BY id ASC")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	teams := make([]model.Team, 0)
+	summaries := make([]model.TeamSummary, 0)
 
 	for rows.Next() {
-		team := model.Team{}
-		err = rows.Scan(&team.ID, &team.Name, &team.POC, &team.Email, &team.Enabled, &team.Key)
+		summary := model.TeamSummary{}
+		err = rows.Scan(&summary.ID, &summary.Name, &summary.Enabled)
 		if err != nil {
 			return nil, err
 		}
-		teams = append(teams, team)
+		summaries = append(summaries, summary)
 	}
 
-	return teams, nil
+	return summaries, nil
 }
 
-func (db dbObj) teamUpdate(id uint64, team model.Team) error {
+func (db dbObj) teamUpdate(id uint64, team model.Team) (model.Team, error) {
 	enabled := 1
 	if !team.Enabled {
 		enabled = 0
@@ -274,8 +274,8 @@ func (db dbObj) teamUpdate(id uint64, team model.Team) error {
 
 	err := db.dbUpdate("UPDATE teams SET name=$1, poc=$2, email=$3, enabled=$4, key=$5 WHERE id=$6", team.Name, team.POC, team.Email, enabled, team.Key, id)
 	if err != nil {
-		return err
+		return model.Team{}, err
 	}
 
-	return nil
+	return db.teamSelect(id)
 }

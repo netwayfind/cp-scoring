@@ -3,7 +3,7 @@ import Admin from './Admin';
 import NotFound from './NotFound';
 import Scoreboard from './Scoreboard';
 
-import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom';
+import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
 
 export default function App() {
   return (

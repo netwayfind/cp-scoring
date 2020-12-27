@@ -28,6 +28,13 @@ type Scenario struct {
 	Enabled     bool
 }
 
+// ScenarioSummary asdf
+type ScenarioSummary struct {
+	ID      uint64
+	Name    string
+	Enabled bool
+}
+
 // ScenarioHostResult asdf
 type ScenarioHostResult struct {
 	HostToken string
@@ -43,4 +50,11 @@ type Team struct {
 	Email   string
 	Enabled bool
 	Key     string
+}
+
+// TeamSummary asdf
+type TeamSummary struct {
+	ID      uint64
+	Name    string
+	Enabled bool
 }

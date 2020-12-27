@@ -3,7 +3,7 @@ import NotFound from './NotFound';
 import Scenarios from './admin/Scenarios';
 import Teams from './admin/Teams';
 
-import {Link, Route, Switch, useRouteMatch} from 'react-router-dom';
+import { Link, Route, Switch, useRouteMatch } from 'react-router-dom';
 
 export default function Admin() {
   let { path, url } = useRouteMatch();

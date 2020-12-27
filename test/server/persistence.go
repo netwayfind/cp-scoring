@@ -10,16 +10,16 @@ import (
 )
 
 type backingStore interface {
-	scenarioInsert(scenario model.Scenario) (uint64, error)
+	scenarioInsert(scenario model.Scenario) (model.Scenario, error)
 	scenarioSelect(id uint64) (model.Scenario, error)
-	scenarioSelectAll() ([]model.Scenario, error)
-	scenarioUpdate(id uint64, scenario model.Scenario) error
+	scenarioSelectAll() ([]model.ScenarioSummary, error)
+	scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenario, error)
 	scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error)
 	scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error
-	teamInsert(team model.Team) (uint64, error)
+	teamInsert(team model.Team) (model.Team, error)
 	teamSelect(id uint64) (model.Team, error)
-	teamSelectAll() ([]model.Team, error)
-	teamUpdate(id uint64, team model.Team) error
+	teamSelectAll() ([]model.TeamSummary, error)
+	teamUpdate(id uint64, team model.Team) (model.Team, error)
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {
