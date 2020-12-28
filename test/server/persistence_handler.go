@@ -92,6 +92,10 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
+func (db dbObj) scenarioDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM scenarios where id=$1", id)
+}
+
 func (db dbObj) scenarioInsert(scenario model.Scenario) (model.Scenario, error) {
 	id, err := db.dbInsert("INSERT INTO scenarios(name, description, enabled) VALUES($1, $2, $3) RETURNING id", scenario.Name, scenario.Description, scenario.Enabled)
 	if err != nil {
@@ -204,6 +208,10 @@ func (db dbObj) scenarioChecksUpdate(id uint64, hostnameChecks map[string][]mode
 	}
 
 	return nil
+}
+
+func (db dbObj) teamDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM teams where id=$1", id)
 }
 
 func (db dbObj) teamInsert(team model.Team) (model.Team, error) {

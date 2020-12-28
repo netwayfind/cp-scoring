@@ -1,5 +1,5 @@
 import '../App.css';
-import { apiGet, apiPost, apiPut } from '../common/utils';
+import { apiDelete, apiGet, apiPost, apiPut } from '../common/utils';
 
 import { Component } from 'react';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
@@ -10,6 +10,7 @@ class Team extends Component {
         this.state = this.defaultState();
 
         this.getData = this.getData.bind(this);
+        this.handleDelete = this.handleDelete.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleSave = this.handleSave.bind(this);
     }
@@ -48,6 +49,20 @@ class Team extends Component {
         }.bind(this));
     }
 
+    handleDelete() {
+        apiDelete("/api/teams/" + this.state.team.ID)
+        .then(async function(s) {
+            if (s.error) {
+                this.setState({
+                    error: s.error
+                });
+            } else {
+                this.props.parentCallback();
+                this.props.history.push(this.props.parentPath);
+            }
+        }.bind(this));
+    }
+
     handleSave(event) {
         if (event !== null) {
           event.preventDefault();
@@ -57,17 +72,27 @@ class Team extends Component {
             // update
             apiPut("/api/teams/" + id, this.state.team)
             .then(async function(s) {
-                this.props.callback();
-                let url = this.props.match.url;
-                this.props.history.push(url);
+                if (s.error) {
+                    this.setState({
+                        error: s.error
+                    });
+                } else {
+                    this.props.parentCallback();
+                    this.props.history.push(this.props.match.url);
+                }
             }.bind(this));
         } else {
             // create
             apiPost("/api/teams/", this.state.team)
             .then(async function(s) {
-                this.props.callback();
-                let url = this.props.match.url + "/" + s.data.ID;
-                this.props.history.push(url);
+                if (s.error) {
+                    this.setState({
+                        error: s.error
+                    });
+                } else {
+                    this.props.parentCallback();
+                    this.props.history.push(this.props.match.url + "/" + s.data.ID);
+                }
             }.bind(this));
         }
     }
@@ -103,6 +128,7 @@ class Team extends Component {
                     <label htmlFor="ID">Key</label>
                     <input onChange={this.handleUpdate} name="Key" value={this.state.team.Key || ""} />
                     <button type="submit">Save</button>
+                    <button type="button" disabled={!this.state.team.ID} onClick={this.handleDelete}>Delete</button>
                 </form>
             </div>
         );

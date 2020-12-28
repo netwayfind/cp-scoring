@@ -145,8 +145,34 @@ func (handler APIHandler) createScenario(w http.ResponseWriter, r *http.Request)
 	sendResponse(w, s)
 }
 
+func (handler APIHandler) deleteScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete scenario")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	team, err := handler.BackingStore.scenarioSelect(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if team.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	err = handler.BackingStore.scenarioDelete(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+	}
+}
+
 func (handler APIHandler) readScenario(w http.ResponseWriter, r *http.Request) {
-	log.Print("read scenario")
+	log.Println("read scenario")
 
 	id, err := getRequestID(r)
 	if err != nil {
@@ -276,8 +302,34 @@ func (handler APIHandler) createTeam(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, t)
 }
 
+func (handler APIHandler) deleteTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete team")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	team, err := handler.BackingStore.teamSelect(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if team.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	err = handler.BackingStore.teamDelete(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+	}
+}
+
 func (handler APIHandler) readTeam(w http.ResponseWriter, r *http.Request) {
-	log.Print("read team")
+	log.Println("read team")
 
 	id, err := getRequestID(r)
 	if err != nil {

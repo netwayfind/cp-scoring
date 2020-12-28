@@ -10,12 +10,14 @@ import (
 )
 
 type backingStore interface {
+	scenarioDelete(id uint64) error
 	scenarioInsert(scenario model.Scenario) (model.Scenario, error)
 	scenarioSelect(id uint64) (model.Scenario, error)
 	scenarioSelectAll() ([]model.ScenarioSummary, error)
 	scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenario, error)
 	scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error)
 	scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error
+	teamDelete(id uint64) error
 	teamInsert(team model.Team) (model.Team, error)
 	teamSelect(id uint64) (model.Team, error)
 	teamSelectAll() ([]model.TeamSummary, error)

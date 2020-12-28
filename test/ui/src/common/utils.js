@@ -1,3 +1,19 @@
+export async function apiDelete(url) {
+    return fetch(url, {
+            credentials: 'same-origin',
+            method: 'DELETE',
+        })
+        .then(async function(response) {
+            let error = null;
+            if (response.status !== 200) {
+                error = await response.text();
+            }
+            return {
+                error: error
+            };
+        });
+}
+
 export async function apiGet(url) {
     return fetch(url, {
             credentials: 'same-origin'

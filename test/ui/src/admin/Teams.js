@@ -44,10 +44,10 @@ class Teams extends Component {
                 <LinkList items={this.state.teams} path={this.props.match.path} />
                 <Switch>
                     <Route path={`${this.props.match.url}/:id`}>
-                        <Team callback={this.getData} />
+                        <Team parentCallback={this.getData} parentPath={this.props.match.path} />
                     </Route>
                     <Route>
-                        <Team callback={this.getData} />
+                        <Team parentCallback={this.getData} parentPath={this.props.match.path}/>
                     </Route>
                 </Switch>
             </div>

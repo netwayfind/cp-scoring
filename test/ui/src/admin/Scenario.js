@@ -1,5 +1,5 @@
 import '../App.css';
-import { apiGet, apiPost, apiPut } from '../common/utils';
+import { apiDelete, apiGet, apiPost, apiPut } from '../common/utils';
 
 import { Component } from 'react';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
@@ -10,6 +10,7 @@ class Scenario extends Component {
         this.state = this.defaultState();
 
         this.getData = this.getData.bind(this);
+        this.handleDelete = this.handleDelete.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleSave = this.handleSave.bind(this);
     }
@@ -48,6 +49,20 @@ class Scenario extends Component {
         }.bind(this));
     }
 
+    handleDelete() {
+        apiDelete("/api/scenarios/" + this.state.scenario.ID)
+        .then(async function(s) {
+            if (s.error) {
+                this.setState({
+                    error: s.error
+                });
+            } else {
+                this.props.parentCallback();
+                this.props.history.push(this.props.parentPath);
+            }
+        }.bind(this));
+    }
+
     handleSave(event) {
         if (event !== null) {
           event.preventDefault();
@@ -57,17 +72,27 @@ class Scenario extends Component {
             // update
             apiPut("/api/scenarios/" + id, this.state.scenario)
             .then(async function(s) {
-                this.props.callback();
-                let url = this.props.match.url;
-                this.props.history.push(url);
+                if (s.error) {
+                    this.setState({
+                        error: s.error
+                    });
+                } else {
+                    this.props.parentCallback();
+                    this.props.history.push(this.props.match.url);
+                }
             }.bind(this));
         } else {
             // create
             apiPost("/api/scenarios/", this.state.scenario)
             .then(async function(s) {
-                this.props.callback();
-                let url = this.props.match.url + "/" + s.data.ID;
-                this.props.history.push(url);
+                if (s.error) {
+                    this.setState({
+                        error: s.error
+                    });
+                } else {
+                    this.props.parentCallback();
+                    this.props.history.push(this.props.match.url + "/" + s.data.ID);
+                }
             }.bind(this));
         }
     }
@@ -99,6 +124,7 @@ class Scenario extends Component {
                     <label htmlFor="ID">Enabled</label>
                     <input onChange={this.handleUpdate} name="Enabled" type="checkbox" value={this.state.scenario.Enabled || false} />
                     <button type="submit">Save</button>
+                    <button type="button" disabled={!this.state.scenario.ID} onClick={this.handleDelete}>Delete</button>
                 </form>
             </div>
         );
