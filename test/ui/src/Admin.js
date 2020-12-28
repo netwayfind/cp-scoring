@@ -1,5 +1,5 @@
 import './App.css';
-import NotFound from './NotFound';
+import NotFound from './common/NotFound';
 import Scenarios from './admin/Scenarios';
 import Teams from './admin/Teams';
 

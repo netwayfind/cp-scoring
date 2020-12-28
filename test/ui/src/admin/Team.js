@@ -1,5 +1,5 @@
 import '../App.css';
-import { apiGet, apiPost, apiPut } from '../utils';
+import { apiGet, apiPost, apiPut } from '../common/utils';
 
 import { Component } from 'react';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
@@ -15,16 +15,13 @@ class Team extends Component {
     }
 
     componentDidMount() {
-        console.log("team did mount")
         let id = this.props.match.params.id;
         this.getData(id);
     }
 
     componentDidUpdate(prevProps) {
-        console.log("team did update")
         let id = this.props.match.params.id;
         let prevId = prevProps.match.params.id;
-        console.log(id + " " + prevId);
         if (id !== prevId) {
             this.getData(id);
         }
@@ -38,7 +35,6 @@ class Team extends Component {
     }
 
     getData(id) {
-        console.log("team get " + id);
         if (id === undefined) {
             this.setState(this.defaultState);
             return;
@@ -53,29 +49,30 @@ class Team extends Component {
     }
 
     handleSave(event) {
-        console.log("save");
         if (event !== null) {
           event.preventDefault();
         }
-        let url = '/api/teams/';
-        let method = apiPost;
-        if (this.state.team.ID) {
-            url += this.state.team.ID;
-            method = apiPut;
+        let id = this.state.team.ID;
+        if (id) {
+            // update
+            apiPut("/api/teams/" + id, this.state.team)
+            .then(async function(s) {
+                this.props.callback();
+                let url = this.props.match.url;
+                this.props.history.push(url);
+            }.bind(this));
+        } else {
+            // create
+            apiPost("/api/teams/", this.state.team)
+            .then(async function(s) {
+                this.props.callback();
+                let url = this.props.match.url + "/" + s.data.ID;
+                this.props.history.push(url);
+            }.bind(this));
         }
-        method(url, this.state.team)
-        .then(async function(s) {
-            this.setState({
-                error: s.error,
-                team: s.data
-            });
-            this.props.callback();
-            this.props.history.push(this.props.match.url + "/" + s.data.ID);
-        }.bind(this));
     }
 
     handleUpdate(event) {
-        console.log("update");
         let value = event.target.value;
         if (event.target.type === 'checkbox') {
           value = event.target.checked;
@@ -89,7 +86,6 @@ class Team extends Component {
     }
 
     render() {
-        console.log("render");
         return (
             <div>
                 <h1>{this.state.error}</h1>

@@ -1,5 +1,6 @@
 import '../App.css';
-import { apiGet } from '../utils';
+import LinkList from '../common/LinkList';
+import { apiGet } from '../common/utils';
 import Team from './Team';
 
 import { Component } from 'react';
@@ -36,16 +37,11 @@ class Teams extends Component {
     }
 
     render() {
-        let teams = [];
-        this.state.teams.forEach((team, i) => {
-            teams.push(
-                <li key={i}><Link to={`${this.props.match.path}/${team.ID}`}>{team.Name}</Link></li>
-            );
-        });
         return (
             <div className="Teams">
                 <Link to={this.props.match.path}>Add Team</Link>
-                <ul>{teams}</ul>
+                <p />
+                <LinkList items={this.state.teams} path={this.props.match.path} />
                 <Switch>
                     <Route path={`${this.props.match.url}/:id`}>
                         <Team callback={this.getData} />

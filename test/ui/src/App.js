@@ -1,6 +1,6 @@
 import './App.css';
 import Admin from './Admin';
-import NotFound from './NotFound';
+import NotFound from './common/NotFound';
 import Scoreboard from './Scoreboard';
 
 import { BrowserRouter, Redirect, Route, Switch } from 'react-router-dom';
