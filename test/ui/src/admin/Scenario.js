@@ -1,5 +1,6 @@
 import '../App.css';
 import { apiDelete, apiGet, apiPost, apiPut } from '../common/utils';
+import ScenarioChecks from './ScenarioChecks';
 
 import { Component } from 'react';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
@@ -31,7 +32,8 @@ class Scenario extends Component {
     defaultState() {
         return {
             error: null,
-            scenario: {}
+            scenario: {},
+            checkMap: {}
         }
     }
 
@@ -40,11 +42,17 @@ class Scenario extends Component {
             this.setState(this.defaultState);
             return;
         }
-        apiGet('/api/scenarios/' + id)
-        .then(async function(s) {
+        Promise.all([
+            apiGet('/api/scenarios/' + id),
+            apiGet('/api/scenarios/' + id + '/checks'),
+        ])
+        .then(async function(responses) {
+            let s1 = responses[0];
+            let s2 = responses[1];
             this.setState({
-                error: s.error,
-                scenario: s.data
+                error: s1.error || s2.error,
+                scenario: s1.data,
+                checkMap: s2.data
             });
         }.bind(this));
     }
@@ -125,6 +133,9 @@ class Scenario extends Component {
                     <input onChange={this.handleUpdate} name="Enabled" type="checkbox" value={this.state.scenario.Enabled || false} />
                     <button type="submit">Save</button>
                     <button type="button" disabled={!this.state.scenario.ID} onClick={this.handleDelete}>Delete</button>
+                    <hr />
+                    <p>Checks</p>
+                    <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} />
                 </form>
             </div>
         );
