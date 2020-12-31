@@ -243,6 +243,7 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 		httpErrorInvalidID(w)
 		return
 	}
+	log.Println(id)
 
 	s, err := handler.BackingStore.scenarioChecksSelectAll(id)
 	if err != nil {

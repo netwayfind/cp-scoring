@@ -5,51 +5,60 @@ class ScenarioChecks extends Component {
         super(props);
         this.state = {
             scenarioID: props.scenarioID,
-            checkMap: this.setupCheckMap(props)
+            checkMap: props.checkMap,
+            currentHostname: '',
+            newHostname: ''
         }
 
-        this.handleAddCheck = this.handleAddCheck.bind(this);
-        this.handleAddCheckArg = this.handleAddCheckArg.bind(this);
-        this.handleUpdateCheck = this.handleUpdateCheck.bind(this);
-        this.handleUpdateCheckArg = this.handleUpdateCheckArg.bind(this);
+        this.handleCheckAdd = this.handleCheckAdd.bind(this);
+        this.handleCheckDelete = this.handleCheckDelete.bind(this);
+        this.handleCheckUpdate = this.handleCheckUpdate.bind(this);
+        this.handleCheckArgAdd = this.handleCheckArgAdd.bind(this);
+        this.handleCheckArgDelete = this.handleCheckArgDelete.bind(this);
+        this.handleCheckArgUpdate = this.handleCheckArgUpdate.bind(this);
+        this.handleHostnameAdd = this.handleHostnameAdd.bind(this);
+        this.handleHostnameDelete = this.handleHostnameDelete.bind(this);
+        this.handleHostnameSelect = this.handleHostnameSelect.bind(this);
+        this.handleNewHostnameUpdate = this.handleNewHostnameUpdate.bind(this);
+        this.handleSave = this.handleSave.bind(this);
     }
 
     componentDidUpdate(prevProps) {
         if (this.props.scenarioID !== prevProps.scenarioID) {
             this.setState({
                 scenarioID: this.props.scenarioID,
-                checkMap: this.setupCheckMap(this.props)
+                checkMap: this.props.checkMap,
+                currentHostname: '',
+                newHostname: ''
             });
         }
     }
-    
-    setupCheckMap(props) {
-        if (props.checkMap) {
-            return props.checkMap;
-        }
-        return {};
-    }
 
-    handleAddCheck() {
+    handleCheckAdd(hostname) {
         let checkMap = {
             ...this.state.checkMap
         }
-        let hostname = "new hostname" + (Object.keys(checkMap).length + 1);
-        checkMap[hostname] = [{
+        checkMap[hostname].push({
             Type: 'EXEC',
-            Command: null,
+            Command: '',
             Args: []
-        }]
+        });
         this.setState({
             checkMap: checkMap
         });
     }
 
-    handleAddCheckArg(hostname, i) {
-        console.log("add check arg " + hostname + " " + i);
+    handleCheckDelete(hostname, i) {
+        let checkMap = {
+            ...this.state.checkMap
+        }
+        checkMap[hostname].splice(i, 1);
+        this.setState({
+            checkMap: checkMap
+        });
     }
 
-    handleUpdateCheck(hostname, i, name, event) {
+    handleCheckUpdate(hostname, i, name, event) {
         let value = event.target.value;
         let checkMap = {
             ...this.state.checkMap
@@ -60,7 +69,27 @@ class ScenarioChecks extends Component {
         });
     }
 
-    handleUpdateCheckArg(hostname, i, j, event) {
+    handleCheckArgAdd(hostname, i) {
+        let checkMap = {
+            ...this.state.checkMap
+        }
+        checkMap[hostname][i]['Args'].push('');
+        this.setState({
+            checkMap: checkMap
+        });
+    }
+
+    handleCheckArgDelete(hostname, i, j) {
+        let checkMap = {
+            ...this.state.checkMap
+        }
+        checkMap[hostname][i]['Args'].splice(j, 1);
+        this.setState({
+            checkMap: checkMap
+        });
+    }
+
+    handleCheckArgUpdate(hostname, i, j, event) {
         let value = event.target.value;
         let checkMap = {
             ...this.state.checkMap
@@ -71,6 +100,62 @@ class ScenarioChecks extends Component {
         });
     }
 
+    handleHostnameAdd() {
+        let hostname = this.state.newHostname;
+        if (!hostname) {
+            return;
+        }
+        let checkMap = {
+            ...this.state.checkMap
+        }
+        checkMap[hostname] = [{
+            Type: 'EXEC',
+            Command: '',
+            Args: []
+        }]
+        this.setState({
+            checkMap: checkMap,
+            currentHostname: hostname,
+            newHostname: ''
+        });
+    }
+
+    handleHostnameDelete() {
+        let hostname = this.state.currentHostname;
+        if (!hostname) {
+            return;
+        }
+        let checkMap = {
+            ...this.state.checkMap
+        }
+        delete checkMap[hostname];
+        this.setState({
+            checkMap: checkMap,
+            currentHostname: ''
+        });
+    }
+
+    handleHostnameSelect(event) {
+        let value = event.target.value;
+        this.setState({
+            currentHostname: value
+        });
+    }
+
+    handleNewHostnameUpdate(event) {
+        let newHostname = event.target.value;
+        this.setState({
+            newHostname: newHostname
+        });
+    }
+
+    handleSave(event) {
+        if (event !== null) {
+            event.preventDefault();
+        }
+        this.props.parentCallback(this.state.checkMap);
+    }
+
     render() {
         let actionExecOptions = [
             <option>A</option>,
@@ -78,34 +163,70 @@ class ScenarioChecks extends Component {
             <option>FILE_EXISTS</option>
         ]
 
-        let checkList = [];
+        let hostnameList = [];
+        hostnameList.push(<option value='' />);
         for (let hostname in this.state.checkMap) {
+            hostnameList.push(<option>{hostname}</option>);
+        }
+        let checkList = [];
+        if (this.state.currentHostname) {
+            let hostname = this.state.currentHostname;
             let checks = this.state.checkMap[hostname];
-            checks.forEach((check, i) => {
-                let args = [];
-                if (check.Args) {
-                    check.Args.forEach((arg, j) => {
-                        args.push(<input onChange={event => this.handleUpdateCheckArg(hostname, i, j, event)} value={arg}></input>);
-                    });
-                }
-                checkList.push(
-                    <li key={`${hostname}${i}`}>
-                        <input value={hostname} />
-                        <br />
-                        <select onChange={event => this.handleUpdateCheck(hostname, i, "Type", event)} value={check.Type}>{actionExecOptions}</select>
-                        <input onChange={event => this.handleUpdateCheck(hostname, i, "Command", event)} value={check.Command} />
-                        {args}
-                        <button type="button" onClick={() => this.handleAddCheckArg(hostname, i)}>+</button>
-                    </li>
-                );
-            });
+            if (checks) {
+                checks.forEach((check, i) => {
+                    let args = [];
+                    if (check.Args) {
+                        check.Args.forEach((arg, j) => {
+                            args.push(
+                                <li key={j}>
+                                    <input onChange={event => this.handleCheckArgUpdate(hostname, i, j, event)} value={arg}></input>
+                                    <button type="button" onClick={() => this.handleCheckArgDelete(hostname, i, j)}>-</button>
+                                </li>
+                            );
+                        });
+                    }
+                    checkList.push(
+                        <li key={i}>
+                            <details>
+                                <summary>Type: {check.Type}, Command: {check.Command}, Args: [{ check.Args.join(" ") || ""}]</summary>
+                                <button type="button" onClick={() => this.handleCheckDelete(hostname, i)}>Delete Check</button>
+                                <p />
+                                <label htmlFor="Type">Type</label>
+                                <select onChange={event => this.handleCheckUpdate(hostname, i, "Type", event)} value={check.Type}>{actionExecOptions}</select>
+                                <br />
+                                <label htmlFor="Command">Command</label>
+                                <input onChange={event => this.handleCheckUpdate(hostname, i, "Command", event)} value={check.Command} />
+                                <br />
+                                <label htmlFor="Args">Args</label>
+                                <ul>
+                                    {args}
+                                    <li key="new_arg"><button type="button" onClick={() => this.handleCheckArgAdd(hostname, i)}>Add Arg</button></li>
+                                </ul>
+                            </details>
+                        </li>
+                    );
+                });
+            }
+            checkList.push(
+                <li key="new_check">
+                    <button type="button" onClick={() => this.handleCheckAdd(hostname)}>Add Check</button>
+                </li>
+            );
         }
 
         return (
-            <ul>
-                {checkList}
-                <li key="new"><button type="button" onClick={this.handleAddCheck}>+</button></li>
-            </ul>
+            <form onSubmit={this.handleSave}>
+                <ul>
+                    <input onChange={this.handleNewHostnameUpdate} value={this.state.newHostname} />
+                    <button type="button" onClick={this.handleHostnameAdd}>Add Hostname</button>
+                    <p />
+                    <select onChange={this.handleHostnameSelect} value={this.state.currentHostname}>{hostnameList}</select>
+                    <button type="button" disabled={!this.state.currentHostname} onClick={this.handleHostnameDelete}>Delete Hostname</button>
+                    <p />
+                    <ul>{checkList}</ul>
+                </ul>
+                <button type="submit">Save Checks</button>
+            </form>
         );
     }
 }

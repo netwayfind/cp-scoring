@@ -14,6 +14,7 @@ class Scenario extends Component {
         this.handleDelete = this.handleDelete.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleSave = this.handleSave.bind(this);
+        this.handleSaveChecks = this.handleSaveChecks.bind(this);
     }
 
     componentDidMount() {
@@ -58,7 +59,7 @@ class Scenario extends Component {
     }
 
     handleDelete() {
-        apiDelete("/api/scenarios/" + this.state.scenario.ID)
+        apiDelete('/api/scenarios/' + this.state.scenario.ID)
         .then(async function(s) {
             if (s.error) {
                 this.setState({
@@ -78,7 +79,7 @@ class Scenario extends Component {
         let id = this.state.scenario.ID;
         if (id) {
             // update
-            apiPut("/api/scenarios/" + id, this.state.scenario)
+            apiPut('/api/scenarios/' + id, this.state.scenario)
             .then(async function(s) {
                 if (s.error) {
                     this.setState({
@@ -91,7 +92,7 @@ class Scenario extends Component {
             }.bind(this));
         } else {
             // create
-            apiPost("/api/scenarios/", this.state.scenario)
+            apiPost('/api/scenarios/', this.state.scenario)
             .then(async function(s) {
                 if (s.error) {
                     this.setState({
@@ -99,10 +100,25 @@ class Scenario extends Component {
                     });
                 } else {
                     this.props.parentCallback();
-                    this.props.history.push(this.props.match.url + "/" + s.data.ID);
+                    this.props.history.push(this.props.match.url + '/' + s.data.ID);
                 }
             }.bind(this));
         }
+    }
+
+    handleSaveChecks(checkMap) {
+        let id = this.state.scenario.ID;
+        apiPut('/api/scenarios/' + id + '/checks', checkMap)
+        .then(async function(s) {
+            if (s.error) {
+                this.setState({
+                    error: s.error
+                });
+            } else {
+                this.props.parentCallback();
+                this.props.history.push(this.props.match.url);
+            }
+        }.bind(this));
     }
 
     handleUpdate(event) {
@@ -125,18 +141,18 @@ class Scenario extends Component {
                 <form onSubmit={this.handleSave}>
                     <label htmlFor="ID">ID</label>
                     <input onChange={this.handleUpdate} name="ID" disabled value={this.state.scenario.ID || ""} />
-                    <label htmlFor="ID">Name</label>
+                    <label htmlFor="Name">Name</label>
                     <input onChange={this.handleUpdate} name="Name" value={this.state.scenario.Name || ""} />
-                    <label htmlFor="ID">Description</label>
+                    <label htmlFor="Description">Description</label>
                     <input onChange={this.handleUpdate} name="Description" value={this.state.scenario.Description || ""} />
-                    <label htmlFor="ID">Enabled</label>
+                    <label htmlFor="Enabled">Enabled</label>
                     <input onChange={this.handleUpdate} name="Enabled" type="checkbox" value={this.state.scenario.Enabled || false} />
                     <button type="submit">Save</button>
                     <button type="button" disabled={!this.state.scenario.ID} onClick={this.handleDelete}>Delete</button>
-                    <hr />
-                    <p>Checks</p>
-                    <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} />
                 </form>
+                <hr />
+                <p>Checks</p>
+                <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} parentCallback={this.handleSaveChecks} />
             </div>
         );
     }

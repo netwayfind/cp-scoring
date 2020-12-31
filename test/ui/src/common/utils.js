@@ -22,7 +22,9 @@ export async function apiGet(url) {
             let error = null;
             let data = null;
             if (response.status === 200) {
-                data = await response.json();
+                if (response.headers.get("Content-Length") > 0) {
+                    data = await response.json();
+                }
             } else {
                 error = await response.text();
             }
@@ -46,7 +48,9 @@ export async function apiPost(url, body) {
             let error = null;
             let data = null;
             if (response.status === 200) {
-                data = await response.json();
+                if (response.headers.get("Content-Length") > 0) {
+                    data = await response.json();
+                }
             } else {
                 error = await response.text();
             }
@@ -70,7 +74,9 @@ export async function apiPut(url, body) {
             let error = null;
             let data = null;
             if (response.status === 200) {
-                data = await response.json();
+                if (response.headers.get("Content-Length") > 0) {
+                    data = await response.json();
+                }
             } else {
                 error = await response.text();
             }
