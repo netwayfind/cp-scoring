@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/netwayfind/cp-scoring/test/model"
@@ -20,6 +22,15 @@ func getRequestID(r *http.Request) (uint64, error) {
 	vars := mux.Vars(r)
 
 	return strconv.ParseUint(vars["id"], 10, 64)
+}
+
+func getSourceIP(r *http.Request) string {
+	conn := r.RemoteAddr
+	ips := r.Header.Get("X-Forwarded-For")
+	if ips != "" {
+		conn = strings.Split(ips, ",")[0]
+	}
+	return strings.Split(conn, ":")[0]
 }
 
 func httpErrorDatabase(w http.ResponseWriter, err error) {
@@ -116,15 +127,55 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 	log.Println(match)
 }
 
-func (handler APIHandler) readNewHostToken(w http.ResponseWriter, r *http.Request) {
-	log.Println("read new host token")
+func (handler APIHandler) requestHostToken(w http.ResponseWriter, r *http.Request) {
+	log.Println("request host token")
 
-	x := randHexStr(16)
-	w.Write([]byte(x))
+	var hostTokenRequest model.HostTokenRequest
+	err := readRequestBody(w, r, &hostTokenRequest)
+	if err != nil {
+		return
+	}
+
+	hostToken := randHexStr(16)
+	hostname := hostTokenRequest.Hostname
+	timestamp := time.Now().Unix()
+	sourceIP := getSourceIP(r)
+	err = handler.BackingStore.hostTokenInsert(hostToken, hostname, timestamp, sourceIP)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, hostToken)
 }
 
 func (handler APIHandler) registerHostToken(w http.ResponseWriter, r *http.Request) {
 	log.Println("register host token")
+
+	var hostTokenRegistration model.HostTokenRegistration
+	err := readRequestBody(w, r, &hostTokenRegistration)
+	if err != nil {
+		return
+	}
+
+	team, err := handler.BackingStore.teamSelectByKey(hostTokenRegistration.TeamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if team.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	hostToken := hostTokenRegistration.HostToken
+	timestamp := time.Now().Unix()
+
+	err = handler.BackingStore.teamHostTokenInsert(team.ID, hostToken, timestamp)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
 }
 
 func (handler APIHandler) createScenario(w http.ResponseWriter, r *http.Request) {

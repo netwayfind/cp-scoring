@@ -15,6 +15,9 @@ type dbObj struct {
 }
 
 func (db dbObj) dbInit() {
+
+	db.dbCreateTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
+	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.dbCreateTable("scenario_checks", "CREATE TABLE IF NOT EXISTS scenario_checks(scenario_id BIGSERIAL NOT NULL, checks JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
@@ -90,6 +93,11 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	}
 
 	return nil
+}
+
+func (db dbObj) hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error {
+	_, err := db.dbInsert("INSERT INTO host_tokens(host_token, hostname, timestamp, source) VALUES($1, $2, $3, $4)", hostToken, hostname, timestamp, source)
+	return err
 }
 
 func (db dbObj) scenarioDelete(id uint64) error {
@@ -262,6 +270,28 @@ func (db dbObj) teamSelect(id uint64) (model.Team, error) {
 	return team, nil
 }
 
+func (db dbObj) teamSelectByKey(key string) (model.Team, error) {
+	var team model.Team
+
+	rows, err := db.dbConn.Query("SELECT id, name, poc, email, enabled, key FROM teams WHERE key=$1", key)
+	if err != nil {
+		return team, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		team = model.Team{}
+		err = rows.Scan(&team.ID, &team.Name, &team.POC, &team.Email, &team.Enabled, &team.Key)
+		if err != nil {
+			return team, err
+		}
+		// only get first result
+		break
+	}
+
+	return team, nil
+}
+
 func (db dbObj) teamSelectAll() ([]model.TeamSummary, error) {
 	rows, err := db.dbConn.Query("SELECT id, name, enabled FROM teams ORDER BY id ASC")
 	if err != nil {
@@ -295,4 +325,9 @@ func (db dbObj) teamUpdate(id uint64, team model.Team) (model.Team, error) {
 	}
 
 	return db.teamSelect(id)
+}
+
+func (db dbObj) teamHostTokenInsert(teamID uint64, hostToken string, timestamp int64) error {
+	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, host_token, timestamp) VALUES($1, $2, $3)", teamID, hostToken, timestamp)
+	return err
 }

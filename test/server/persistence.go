@@ -10,6 +10,7 @@ import (
 )
 
 type backingStore interface {
+	hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error
 	scenarioDelete(id uint64) error
 	scenarioInsert(scenario model.Scenario) (model.Scenario, error)
 	scenarioSelect(id uint64) (model.Scenario, error)
@@ -21,8 +22,10 @@ type backingStore interface {
 	teamDelete(id uint64) error
 	teamInsert(team model.Team) (model.Team, error)
 	teamSelect(id uint64) (model.Team, error)
+	teamSelectByKey(key string) (model.Team, error)
 	teamSelectAll() ([]model.TeamSummary, error)
 	teamUpdate(id uint64, team model.Team) (model.Team, error)
+	teamHostTokenInsert(teamID uint64, hostToken string, timestamp int64) error
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {

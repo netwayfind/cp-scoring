@@ -13,10 +13,15 @@ type Answer struct {
 	Value    interface{}
 }
 
-// HostRegistration asdf
-type HostRegistration struct {
-	Scenario  string
+// HostTokenRequest asdf
+type HostTokenRequest struct {
+	Hostname string
+}
+
+// HostTokenRegistration asdf
+type HostTokenRegistration struct {
 	HostToken string
+	Scenario  string
 	TeamKey   string
 }
 

@@ -24,22 +24,39 @@ func main() {
 
 	log.Println("scenario: ", scen)
 
-	rrrr, err := http.Get("http://localhost:8000/api/host-token")
+	contentType := "application/json"
+
+	hostname, err := os.Hostname()
 	if err != nil {
 		log.Fatal(err)
 	}
-	hostTokenBs, err := ioutil.ReadAll(rrrr.Body)
+	hostTokenRequest := model.HostTokenRequest{
+		Hostname: hostname,
+	}
+	hostTokenRequestBs, err := json.Marshal(hostTokenRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
-	hostToken := string(hostTokenBs)
+
+	rrrr, err := http.Post("http://localhost:8000/api/host-token/request", contentType, bytes.NewBuffer(hostTokenRequestBs))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if rrrr.StatusCode != 200 {
+		log.Fatal("Could not request host token")
+	}
+	var hostToken string
+	err = json.NewDecoder(rrrr.Body).Decode(&hostToken)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	teamKey := "55555555"
 
 	log.Println("host token: " + hostToken)
 	log.Println("team key: " + teamKey)
 
-	rtk := model.HostRegistration{
+	rtk := model.HostTokenRegistration{
 		HostToken: hostToken,
 		Scenario:  scen,
 		TeamKey:   teamKey,
@@ -49,9 +66,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = http.Post("http://localhost:8000/api/host-token", "application/json", bytes.NewBuffer(rtkBs))
+	rrrr, err = http.Post("http://localhost:8000/api/host-token/register", contentType, bytes.NewBuffer(rtkBs))
 	if err != nil {
 		log.Fatal(err)
+	}
+	if rrrr.StatusCode != 200 {
+		log.Fatal("Could not register host token")
 	}
 
 	x, err := http.Get("http://localhost:8000/api/scenarios/" + scen)
