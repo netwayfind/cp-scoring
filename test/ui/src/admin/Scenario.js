@@ -34,7 +34,8 @@ class Scenario extends Component {
         return {
             error: null,
             scenario: {},
-            checkMap: {}
+            checkMap: {},
+            answerMap: {}
         }
     }
 
@@ -46,14 +47,17 @@ class Scenario extends Component {
         Promise.all([
             apiGet('/api/scenarios/' + id),
             apiGet('/api/scenarios/' + id + '/checks'),
+            apiGet('/api/scenarios/' + id + '/answers'),
         ])
         .then(async function(responses) {
             let s1 = responses[0];
             let s2 = responses[1];
+            let s3 = responses[2];
             this.setState({
-                error: s1.error || s2.error,
+                error: s1.error || s2.error || s3.error,
                 scenario: s1.data,
-                checkMap: s2.data
+                checkMap: s2.data,
+                answerMap: s3.data
             });
         }.bind(this));
     }
@@ -106,18 +110,27 @@ class Scenario extends Component {
         }
     }
 
-    handleSaveChecks(checkMap) {
+    handleSaveChecks(checkMap, answerMap) {
         let id = this.state.scenario.ID;
-        apiPut('/api/scenarios/' + id + '/checks', checkMap)
-        .then(async function(s) {
-            if (s.error) {
+        Promise.all([
+            apiPut('/api/scenarios/' + id + '/checks', checkMap),
+            apiPut('/api/scenarios/' + id + '/answers', answerMap)
+        ])
+        .then(async function(responses) {
+            let s1 = responses[0];
+            let s2 = responses[1];
+            let error = s1.error || s2.error;
+            if (error) {
                 this.setState({
-                    error: s.error
+                    error: error
                 });
             } else {
                 this.props.parentCallback();
                 this.props.history.push(this.props.match.url);
             }
+            this.setState({
+                error: s1.error || s2.error
+            });
         }.bind(this));
     }
 
@@ -152,7 +165,7 @@ class Scenario extends Component {
                 </form>
                 <hr />
                 <p>Checks</p>
-                <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} parentCallback={this.handleSaveChecks} />
+                <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} answerMap={this.state.answerMap} parentCallback={this.handleSaveChecks} />
             </div>
         );
     }

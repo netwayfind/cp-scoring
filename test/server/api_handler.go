@@ -286,6 +286,69 @@ func (handler APIHandler) updateScenario(w http.ResponseWriter, r *http.Request)
 	sendResponse(w, s)
 }
 
+func (handler APIHandler) readScenarioAnswers(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario answers")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	s, err := handler.BackingStore.scenarioAnswersSelectAll(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) deleteScenarioAnswers(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete scenario answers")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	err = handler.BackingStore.scenarioAnswersDelete(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+}
+
+func (handler APIHandler) updateScenarioAnswers(w http.ResponseWriter, r *http.Request) {
+	log.Println("update scenario answers")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	var answerMap map[string][]model.Answer
+	err = readRequestBody(w, r, &answerMap)
+	if err != nil {
+		return
+	}
+
+	err = handler.BackingStore.scenarioAnswersUpdate(id, answerMap)
+	if err != nil {
+		if err.Error() == model.ErrorDBUpdateNoChange {
+			httpErrorNotFound(w)
+			return
+		}
+		httpErrorDatabase(w, err)
+		return
+	}
+}
+
 func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Request) {
 	log.Println("read scenario checks")
 

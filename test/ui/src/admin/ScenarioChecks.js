@@ -4,12 +4,14 @@ class ScenarioChecks extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            scenarioID: props.scenarioID,
             checkMap: props.checkMap,
+            answerMap: props.checkMap,
             currentHostname: '',
-            newHostname: ''
+            newHostname: '',
+            scenarioID: props.scenarioID,
         }
 
+        this.handleAnswerUpdate = this.handleAnswerUpdate.bind(this);
         this.handleCheckAdd = this.handleCheckAdd.bind(this);
         this.handleCheckDelete = this.handleCheckDelete.bind(this);
         this.handleCheckUpdate = this.handleCheckUpdate.bind(this);
@@ -26,34 +28,59 @@ class ScenarioChecks extends Component {
     componentDidUpdate(prevProps) {
         if (this.props.scenarioID !== prevProps.scenarioID) {
             this.setState({
-                scenarioID: this.props.scenarioID,
+                answerMap: this.props.answerMap,
                 checkMap: this.props.checkMap,
                 currentHostname: '',
-                newHostname: ''
+                newHostname: '',
+                scenarioID: this.props.scenarioID,
             });
         }
     }
+    
+    handleAnswerUpdate(hostname, i, name, event) {
+        let value = event.target.value;
+        let answerMap = {
+            ...this.state.answerMap
+        }
+        answerMap[hostname][i][name] = value;
+        this.setState({
+            answerMap: answerMap
+        });
+    }
 
     handleCheckAdd(hostname) {
+        let answerMap = {
+            ...this.state.answerMap
+        }
         let checkMap = {
             ...this.state.checkMap
         }
+        answerMap[hostname].push({
+            Type: '',
+            Value: ''
+        });
         checkMap[hostname].push({
             Type: 'EXEC',
             Command: '',
             Args: []
         });
         this.setState({
+            answerMap: answerMap,
             checkMap: checkMap
         });
     }
 
     handleCheckDelete(hostname, i) {
+        let answerMap = {
+            ...this.state.answerMap
+        }
         let checkMap = {
             ...this.state.checkMap
         }
+        answerMap[hostname].splice(i, 1);
         checkMap[hostname].splice(i, 1);
         this.setState({
+            answerMap: answerMap,
             checkMap: checkMap
         });
     }
@@ -105,15 +132,16 @@ class ScenarioChecks extends Component {
         if (!hostname) {
             return;
         }
+        let answerMap = {
+            ...this.state.answerMap
+        }
         let checkMap = {
             ...this.state.checkMap
         }
-        checkMap[hostname] = [{
-            Type: 'EXEC',
-            Command: '',
-            Args: []
-        }]
+        answerMap[hostname] = []
+        checkMap[hostname] = []
         this.setState({
+            answerMap: answerMap,
             checkMap: checkMap,
             currentHostname: hostname,
             newHostname: ''
@@ -153,20 +181,27 @@ class ScenarioChecks extends Component {
         if (event !== null) {
             event.preventDefault();
         }
-        this.props.parentCallback(this.state.checkMap);
+        this.props.parentCallback(this.state.checkMap, this.state.answerMap);
     }
 
     render() {
         let actionExecOptions = [
-            <option>A</option>,
-            <option>EXEC</option>,
-            <option>FILE_EXISTS</option>
+            <option key="1">A</option>,
+            <option key="2">EXEC</option>,
+            <option key="3">FILE_EXISTS</option>
+        ]
+        let operatorTypeOptions = [
+            <option key="1" value='' />,
+            <option key="2">EQUAL</option>,
+            <option key="3">NOT_EQUAL</option>,
+            <option key="4">NIL</option>,
+            <option key="5">NOT_NIL</option>
         ]
 
         let hostnameList = [];
-        hostnameList.push(<option value='' />);
+        hostnameList.push(<option key="" value="" />);
         for (let hostname in this.state.checkMap) {
-            hostnameList.push(<option>{hostname}</option>);
+            hostnameList.push(<option key={hostname}>{hostname}</option>);
         }
         let checkList = [];
         if (this.state.currentHostname) {
@@ -185,6 +220,10 @@ class ScenarioChecks extends Component {
                             );
                         });
                     }
+                    args.push(
+                        <li key="arg_add"><button type="button" onClick={() => this.handleCheckArgAdd(hostname, i)}>Add Arg</button></li>
+                    );
+                    let answer = this.state.answerMap[hostname][i];
                     checkList.push(
                         <li key={i}>
                             <details>
@@ -198,17 +237,17 @@ class ScenarioChecks extends Component {
                                 <input onChange={event => this.handleCheckUpdate(hostname, i, "Command", event)} value={check.Command} />
                                 <br />
                                 <label htmlFor="Args">Args</label>
-                                <ul>
-                                    {args}
-                                    <li key="new_arg"><button type="button" onClick={() => this.handleCheckArgAdd(hostname, i)}>Add Arg</button></li>
-                                </ul>
+                                <ul>{args}</ul>
+                                <label htmlFor="Answer">Answer</label>
+                                <select onChange={event => this.handleAnswerUpdate(hostname, i, "Operator", event)} value={answer.Operator}>{operatorTypeOptions}</select>
+                                <input onChange={event => this.handleAnswerUpdate(hostname, i, "Value", event)} value={answer.Value} />
                             </details>
                         </li>
                     );
                 });
             }
             checkList.push(
-                <li key="new_check">
+                <li key="check_add">
                     <button type="button" onClick={() => this.handleCheckAdd(hostname)}>Add Check</button>
                 </li>
             );
@@ -216,15 +255,13 @@ class ScenarioChecks extends Component {
 
         return (
             <form onSubmit={this.handleSave}>
-                <ul>
-                    <input onChange={this.handleNewHostnameUpdate} value={this.state.newHostname} />
-                    <button type="button" onClick={this.handleHostnameAdd}>Add Hostname</button>
-                    <p />
-                    <select onChange={this.handleHostnameSelect} value={this.state.currentHostname}>{hostnameList}</select>
-                    <button type="button" disabled={!this.state.currentHostname} onClick={this.handleHostnameDelete}>Delete Hostname</button>
-                    <p />
-                    <ul>{checkList}</ul>
-                </ul>
+                <input onChange={this.handleNewHostnameUpdate} value={this.state.newHostname} />
+                <button type="button" onClick={this.handleHostnameAdd}>Add Hostname</button>
+                <p />
+                <select onChange={this.handleHostnameSelect} value={this.state.currentHostname}>{hostnameList}</select>
+                <button type="button" disabled={!this.state.currentHostname} onClick={this.handleHostnameDelete}>Delete Hostname</button>
+                <p />
+                <ul>{checkList}</ul>
                 <button type="submit">Save Checks</button>
             </form>
         );

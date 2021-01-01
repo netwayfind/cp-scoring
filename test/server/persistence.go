@@ -19,6 +19,9 @@ type backingStore interface {
 	scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error)
 	scenarioChecksDelete(id uint64) error
 	scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error
+	scenarioAnswersSelectAll(id uint64) (map[string][]model.Answer, error)
+	scenarioAnswersDelete(id uint64) error
+	scenarioAnswersUpdate(id uint64, answersMap map[string][]model.Answer) error
 	teamDelete(id uint64) error
 	teamInsert(team model.Team) (model.Team, error)
 	teamSelect(id uint64) (model.Team, error)

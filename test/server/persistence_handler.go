@@ -21,6 +21,7 @@ func (db dbObj) dbInit() {
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.dbCreateTable("scenario_checks", "CREATE TABLE IF NOT EXISTS scenario_checks(scenario_id BIGSERIAL NOT NULL, checks JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
+	db.dbCreateTable("scenario_answers", "CREATE TABLE IF NOT EXISTS scenario_answers(scenario_id BIGSERIAL NOT NULL, answers JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
 
 	log.Println("Finished setting up database")
 }
@@ -106,6 +107,10 @@ func (db dbObj) scenarioDelete(id uint64) error {
 	if err != nil {
 		return err
 	}
+	err = db.scenarioAnswersDelete(id)
+	if err != nil {
+		return err
+	}
 	return db.dbDelete("DELETE FROM scenarios where id=$1", id)
 }
 
@@ -173,6 +178,58 @@ func (db dbObj) scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenar
 	}
 
 	return db.scenarioSelect(id)
+}
+
+func (db dbObj) scenarioAnswersSelectAll(id uint64) (map[string][]model.Answer, error) {
+	rows, err := db.dbConn.Query("SELECT answers FROM scenario_answers WHERE scenario_id=$1", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var answersMap map[string][]model.Answer
+	var answersMapBs []byte
+
+	for rows.Next() {
+		err = rows.Scan(&answersMapBs)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(answersMapBs, &answersMap)
+		if err != nil {
+			return nil, err
+		}
+		break
+	}
+
+	if answersMap == nil {
+		answersMap = make(map[string][]model.Answer)
+	}
+
+	return answersMap, nil
+}
+
+func (db dbObj) scenarioAnswersDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM scenario_answers WHERE scenario_id=$1", id)
+}
+
+func (db dbObj) scenarioAnswersUpdate(id uint64, answersMap map[string][]model.Answer) error {
+	// TODO: transaction
+	err := db.scenarioAnswersDelete(id)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(answersMap)
+	if err != nil {
+		return err
+	}
+	_, err = db.dbInsert("INSERT INTO scenario_answers(scenario_id, answers) VALUES ($1, $2)", id, b)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (db dbObj) scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error) {

@@ -49,6 +49,8 @@ func main() {
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.deleteScenario).Methods("DELETE")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenario).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateScenario).Methods("PUT")
+	scenarioRouter.HandleFunc("/{id:[0-9]+}/answers", apiHandler.readScenarioAnswers).Methods("GET")
+	scenarioRouter.HandleFunc("/{id:[0-9]+}/answers", apiHandler.updateScenarioAnswers).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/checks", apiHandler.readScenarioChecks).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/checks", apiHandler.updateScenarioChecks).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/config", apiHandler.readScenarioConfig).Methods("GET")
