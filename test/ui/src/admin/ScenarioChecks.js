@@ -225,7 +225,7 @@ class ScenarioChecks extends Component {
                     <p />
                     <ul>{checkList}</ul>
                 </ul>
-                <button type="submit" disabled={!this.state.currentHostname}>Save Checks</button>
+                <button type="submit">Save Checks</button>
             </form>
         );
     }

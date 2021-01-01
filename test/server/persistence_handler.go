@@ -93,6 +93,11 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 }
 
 func (db dbObj) scenarioDelete(id uint64) error {
+	// TODO: transaction
+	err := db.scenarioChecksDelete(id)
+	if err != nil {
+		return err
+	}
 	return db.dbDelete("DELETE FROM scenarios where id=$1", id)
 }
 
@@ -191,9 +196,13 @@ func (db dbObj) scenarioChecksSelectAll(id uint64) (map[string][]model.Action, e
 	return hostnameChecks, nil
 }
 
+func (db dbObj) scenarioChecksDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM scenario_checks WHERE scenario_id=$1", id)
+}
+
 func (db dbObj) scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error {
 	// TODO: transaction
-	err := db.dbDelete("DELETE FROM scenario_checks WHERE scenario_id=$1", id)
+	err := db.scenarioChecksDelete(id)
 	if err != nil {
 		return err
 	}
