@@ -17,11 +17,13 @@ type dbObj struct {
 func (db dbObj) dbInit() {
 
 	db.dbCreateTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
-	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id INTEGER NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
+	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.dbCreateTable("scenario_checks", "CREATE TABLE IF NOT EXISTS scenario_checks(scenario_id BIGSERIAL NOT NULL, checks JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
 	db.dbCreateTable("scenario_answers", "CREATE TABLE IF NOT EXISTS scenario_answers(scenario_id BIGSERIAL NOT NULL, answers JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
+	db.dbCreateTable("audit_check_results", "CREATE TABLE IF NOT EXISTS audit_check_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp_reported INTEGER NOT NULL, timestamp_received INTEGER NOT NULL, check_results JSONB NOT NULL, source VARCHAR NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
+	db.dbCreateTable("audit_answer_results", "CREATE TABLE IF NOT EXISTS audit_answer_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, audit_check_results_id BIGSERIAL NOT NULL, score INTEGER NOT NULL, answer_results JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token), FOREIGN KEY(audit_check_results_id) REFERENCES audit_check_results(id))")
 
 	log.Println("Finished setting up database")
 }
@@ -96,9 +98,68 @@ func (db dbObj) dbUpdate(stmtStr string, args ...interface{}) error {
 	return nil
 }
 
+func (db dbObj) auditAnswerResultsInsert(results model.AuditAnswerResults) error {
+	b, err := json.Marshal(results.AnswerResults)
+	if err != nil {
+		return err
+	}
+	_, err = db.dbInsert("INSERT INTO audit_answer_results(scenario_id, team_id, host_token, timestamp, audit_check_results_id, score, answer_results) VALUES($1, $2, $3, $4, $5, $6, $7)",
+		results.ScenarioID, results.TeamID, results.HostToken, results.Timestamp, results.CheckResultsID, results.Score, b)
+	return err
+}
+
+func (db dbObj) auditCheckResultsInsert(results model.AuditCheckResults, teamID uint64, timestampProcessed int64, source string) (uint64, error) {
+	b, err := json.Marshal(results.CheckResults)
+	if err != nil {
+		return 0, err
+	}
+	return db.dbInsert("INSERT INTO audit_check_results(scenario_id, team_id, host_token, timestamp_reported, timestamp_received, check_results, source) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
+		results.ScenarioID, teamID, results.HostToken, results.Timestamp, timestampProcessed, b, source)
+}
+
 func (db dbObj) hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error {
 	_, err := db.dbInsert("INSERT INTO host_tokens(host_token, hostname, timestamp, source) VALUES($1, $2, $3, $4)", hostToken, hostname, timestamp, source)
 	return err
+}
+
+func (db dbObj) hostTokenSelectHostname(hostToken string) (string, error) {
+	var hostname string
+	rows, err := db.dbConn.Query("SELECT hostname FROM host_tokens WHERE host_token=$1", hostToken)
+	if err != nil {
+		return hostname, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&hostname)
+		if err != nil {
+			return hostname, err
+		}
+		// only get first result
+		break
+	}
+
+	return hostname, nil
+}
+
+func (db dbObj) hostTokenSelectTeamID(hostToken string) (uint64, error) {
+	var teamID uint64
+	rows, err := db.dbConn.Query("SELECT team_id FROM team_host_tokens WHERE host_token=$1", hostToken)
+	if err != nil {
+		return teamID, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&teamID)
+		if err != nil {
+			return teamID, err
+		}
+		// only get first result
+		break
+	}
+
+	return teamID, nil
 }
 
 func (db dbObj) scenarioDelete(id uint64) error {

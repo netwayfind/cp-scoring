@@ -10,7 +10,11 @@ import (
 )
 
 type backingStore interface {
+	auditAnswerResultsInsert(results model.AuditAnswerResults) error
+	auditCheckResultsInsert(results model.AuditCheckResults, teamID uint64, timestamp int64, source string) (uint64, error)
 	hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error
+	hostTokenSelectHostname(hostToken string) (string, error)
+	hostTokenSelectTeamID(hostToken string) (uint64, error)
 	scenarioDelete(id uint64) error
 	scenarioInsert(scenario model.Scenario) (model.Scenario, error)
 	scenarioSelect(id uint64) (model.Scenario, error)

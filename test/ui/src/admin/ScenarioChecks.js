@@ -42,6 +42,9 @@ class ScenarioChecks extends Component {
         let answerMap = {
             ...this.state.answerMap
         }
+        if (event.target.type === "number") {
+            value = Number(value);
+        }
         answerMap[hostname][i][name] = value;
         this.setState({
             answerMap: answerMap
@@ -241,6 +244,7 @@ class ScenarioChecks extends Component {
                                 <label htmlFor="Answer">Answer</label>
                                 <select onChange={event => this.handleAnswerUpdate(hostname, i, "Operator", event)} value={answer.Operator}>{operatorTypeOptions}</select>
                                 <input onChange={event => this.handleAnswerUpdate(hostname, i, "Value", event)} value={answer.Value} />
+                                <input onChange={event => this.handleAnswerUpdate(hostname, i, "Points", event)} value={answer.Points} type="number" steps="1" />
                             </details>
                         </li>
                     );

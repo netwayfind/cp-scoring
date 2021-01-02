@@ -18,11 +18,12 @@ import (
 )
 
 func main() {
-	var scen string
-	flag.StringVar(&scen, "scenario", "", "scenario")
+	var scenarioID uint64
+	flag.Uint64Var(&scenarioID, "scenario", 0, "scenario")
 	flag.Parse()
 
-	log.Println("scenario: ", scen)
+	log.Println("scenario: ", scenarioID)
+	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
 
 	contentType := "application/json"
 
@@ -58,7 +59,6 @@ func main() {
 
 	rtk := model.HostTokenRegistration{
 		HostToken: hostToken,
-		Scenario:  scen,
 		TeamKey:   teamKey,
 	}
 	rtkBs, err := json.Marshal(rtk)
@@ -74,7 +74,7 @@ func main() {
 		log.Fatal("Could not register host token")
 	}
 
-	x, err := http.Get("http://localhost:8000/api/scenarios/" + scen)
+	x, err := http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -86,15 +86,19 @@ func main() {
 	log.Println(y.Name)
 	log.Println(y.Description)
 
-	x, err = http.Get("http://localhost:8000/api/scenarios/" + scen + "/checks")
+	x, err = http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr + "/checks")
 	if err != nil {
 		log.Fatal(err)
 	}
 	var y2 map[string][]model.Action
 	err = json.NewDecoder(x.Body).Decode(&y2)
-	findings := []string{}
-	yy := y2["ubuntu"]
+	checkResults := []string{}
+	yy := y2[hostname]
+	if yy == nil {
+		log.Fatal("check for hostname not found")
+	}
 	for _, v := range yy {
+		log.Println(v)
 		log.Println(" - ", v.Type, ": ", v.Command)
 		var r string
 		if v.Type == model.ActionTypeExec {
@@ -137,15 +141,16 @@ func main() {
 			rrs := rgx.FindAllString(string(contents), -1)
 			r = strconv.Itoa(len(rrs))
 		}
-		findings = append(findings, r)
+		checkResults = append(checkResults, r)
 	}
-	rr := model.ScenarioHostResult{}
-	rr.Findings = findings
-	rr.Timestamp = time.Now().Unix()
+	auditCheckResults := model.AuditCheckResults{}
+	auditCheckResults.ScenarioID = scenarioID
+	auditCheckResults.HostToken = hostToken
+	auditCheckResults.Timestamp = time.Now().Unix()
+	auditCheckResults.CheckResults = checkResults
 
 	log.Println("to server")
-	log.Println(len(findings))
-	body, err := json.Marshal(rr)
+	body, err := json.Marshal(auditCheckResults)
 	if err != nil {
 		log.Fatal(err)
 	}

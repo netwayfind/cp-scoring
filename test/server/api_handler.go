@@ -33,6 +33,11 @@ func getSourceIP(r *http.Request) string {
 	return strings.Split(conn, ":")[0]
 }
 
+func httpErrorBadRequest(w http.ResponseWriter) {
+	msg := "ERROR: bad request;"
+	http.Error(w, msg, http.StatusBadRequest)
+}
+
 func httpErrorDatabase(w http.ResponseWriter, err error) {
 	msg := "ERROR: database query;"
 	log.Println(msg, err)
@@ -96,35 +101,102 @@ func sendResponse(w http.ResponseWriter, o interface{}) {
 
 func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 	log.Println("audit")
-	var result model.ScenarioHostResult
-	err := json.NewDecoder(r.Body).Decode(&result)
+
+	source := getSourceIP(r)
+	timestamp := time.Now().Unix()
+
+	var auditCheckResults model.AuditCheckResults
+	err := readRequestBody(w, r, &auditCheckResults)
 	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(result)
-
-	answers := make([]model.Answer, 1)
-	answers[0] = model.Answer{
-		Operator: model.OperatorTypeEqual,
-		Value:    "1000",
+		return
 	}
 
-	match := false
+	scenario, err := handler.BackingStore.scenarioSelect(auditCheckResults.ScenarioID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if scenario.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
 
-	if len(answers) == len(result.Findings) {
-		for i, answer := range answers {
-			finding := result.Findings[i]
-			if answer.Operator == model.OperatorTypeEqual {
-				log.Println(answer.Value)
-				log.Println(finding)
-				if answer.Value == finding {
-					match = true
-				}
+	answersMap, err := handler.BackingStore.scenarioAnswersSelectAll(auditCheckResults.ScenarioID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	if len(auditCheckResults.HostToken) == 0 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	teamID, err := handler.BackingStore.hostTokenSelectTeamID(auditCheckResults.HostToken)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if teamID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	checkResultsID, err := handler.BackingStore.auditCheckResultsInsert(auditCheckResults, teamID, timestamp, source)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	hostname, err := handler.BackingStore.hostTokenSelectHostname(auditCheckResults.HostToken)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if len(hostname) == 0 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	answers := answersMap[hostname]
+	if answers == nil {
+		httpErrorNotFound(w)
+		return
+	}
+
+	if len(answers) != len(auditCheckResults.CheckResults) {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	answerResults := make([]bool, len(answers))
+	score := 0
+	for i, answer := range answers {
+		checkResult := auditCheckResults.CheckResults[i]
+		if answer.Operator == model.OperatorTypeEqual {
+			matched := answer.Value == checkResult
+			answerResults[i] = matched
+			if matched {
+				score += answer.Points
 			}
 		}
 	}
 
-	log.Println(match)
+	auditAnswerResults := model.AuditAnswerResults{
+		ScenarioID:     scenario.ID,
+		TeamID:         teamID,
+		HostToken:      auditCheckResults.HostToken,
+		Timestamp:      auditCheckResults.Timestamp,
+		CheckResultsID: checkResultsID,
+		Score:          score,
+		AnswerResults:  answerResults,
+	}
+
+	err = handler.BackingStore.auditAnswerResultsInsert(auditAnswerResults)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
 }
 
 func (handler APIHandler) requestHostToken(w http.ResponseWriter, r *http.Request) {

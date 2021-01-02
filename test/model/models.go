@@ -9,8 +9,29 @@ type Action struct {
 
 // Answer asdf
 type Answer struct {
-	Operator OperatorType
-	Value    interface{}
+	Operator    OperatorType
+	Value       interface{}
+	Description string
+	Points      int
+}
+
+// AuditAnswerResults asdf
+type AuditAnswerResults struct {
+	ScenarioID     uint64
+	TeamID         uint64
+	HostToken      string
+	Timestamp      int64
+	CheckResultsID uint64
+	Score          int
+	AnswerResults  []bool
+}
+
+// AuditCheckResults asdf
+type AuditCheckResults struct {
+	ScenarioID   uint64
+	HostToken    string
+	Timestamp    int64
+	CheckResults []string
 }
 
 // HostTokenRequest asdf
@@ -21,7 +42,6 @@ type HostTokenRequest struct {
 // HostTokenRegistration asdf
 type HostTokenRegistration struct {
 	HostToken string
-	Scenario  string
 	TeamKey   string
 }
 
@@ -38,13 +58,6 @@ type ScenarioSummary struct {
 	ID      uint64
 	Name    string
 	Enabled bool
-}
-
-// ScenarioHostResult asdf
-type ScenarioHostResult struct {
-	HostToken string
-	Timestamp int64
-	Findings  []string
 }
 
 // Team asdf
