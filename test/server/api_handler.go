@@ -197,6 +197,12 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 		httpErrorDatabase(w, err)
 		return
 	}
+
+	err = handler.BackingStore.scoreboardUpdate(scenario.ID, teamID, hostname, score, auditCheckResults.Timestamp)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
 }
 
 func (handler APIHandler) requestHostToken(w http.ResponseWriter, r *http.Request) {
@@ -469,6 +475,37 @@ func (handler APIHandler) updateScenarioChecks(w http.ResponseWriter, r *http.Re
 
 func (handler APIHandler) readScenarioConfig(w http.ResponseWriter, r *http.Request) {
 	log.Println("read scenario config")
+}
+
+func (handler APIHandler) readScoreboardForScenario(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scoreboard for scenarios")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	s, err := handler.BackingStore.scoreboardSelectByScenarioID(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) readScoreboardScenarios(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scoreboard scenarios")
+
+	s, err := handler.BackingStore.scoreboardSelectScenarios()
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
 }
 
 func (handler APIHandler) createTeam(w http.ResponseWriter, r *http.Request) {

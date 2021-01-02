@@ -22,6 +22,7 @@ func (db dbObj) dbInit() {
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
 	db.dbCreateTable("scenario_checks", "CREATE TABLE IF NOT EXISTS scenario_checks(scenario_id BIGSERIAL NOT NULL, checks JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
 	db.dbCreateTable("scenario_answers", "CREATE TABLE IF NOT EXISTS scenario_answers(scenario_id BIGSERIAL NOT NULL, answers JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
+	db.dbCreateTable("scoreboard", "CREATE TABLE IF NOT EXISTS scoreboard(scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, score INTEGER NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id))")
 	db.dbCreateTable("audit_check_results", "CREATE TABLE IF NOT EXISTS audit_check_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp_reported INTEGER NOT NULL, timestamp_received INTEGER NOT NULL, check_results JSONB NOT NULL, source VARCHAR NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("audit_answer_results", "CREATE TABLE IF NOT EXISTS audit_answer_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, audit_check_results_id BIGSERIAL NOT NULL, score INTEGER NOT NULL, answer_results JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token), FOREIGN KEY(audit_check_results_id) REFERENCES audit_check_results(id))")
 
@@ -342,6 +343,73 @@ func (db dbObj) scenarioChecksUpdate(id uint64, hostnameChecks map[string][]mode
 		return err
 	}
 
+	return nil
+}
+
+func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error) {
+	rows, err := db.dbConn.Query("SELECT t.name, s.hostname, s.score, s.timestamp FROM scoreboard s JOIN teams t ON s.team_id=t.id WHERE s.scenario_id=$1", scenarioID)
+	if err != nil {
+		return nil, err
+	}
+
+	scoreboard := make([]model.ScenarioScore, 0)
+	for rows.Next() {
+		var teamName string
+		var hostname string
+		var score int
+		var timestamp int64
+		err = rows.Scan(&teamName, &hostname, &score, &timestamp)
+		if err != nil {
+			return nil, err
+		}
+		scenarioScore := model.ScenarioScore{
+			TeamName:  teamName,
+			Hostname:  hostname,
+			Score:     score,
+			Timestamp: timestamp,
+		}
+		scoreboard = append(scoreboard, scenarioScore)
+	}
+
+	return scoreboard, nil
+}
+
+func (db dbObj) scoreboardSelectScenarios() ([]model.ScenarioSummary, error) {
+	rows, err := db.dbConn.Query("SELECT id, name FROM scenarios WHERE enabled=true")
+	if err != nil {
+		return nil, err
+	}
+
+	scenarios := make([]model.ScenarioSummary, 0)
+	for rows.Next() {
+		var id uint64
+		var name string
+		err = rows.Scan(&id, &name)
+		if err != nil {
+			return nil, err
+		}
+		scenario := model.ScenarioSummary{
+			ID:      id,
+			Name:    name,
+			Enabled: true,
+		}
+		scenarios = append(scenarios, scenario)
+	}
+
+	return scenarios, nil
+}
+
+func (db dbObj) scoreboardUpdate(scenarioID uint64, teamID uint64, hostname string, score int, timestamp int64) error {
+	// TODO: transaction
+	err := db.dbDelete("DELETE FROM scoreboard WHERE scenario_id=$1 AND team_id=$2 AND hostname=$3", scenarioID, teamID, hostname)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.dbInsert("INSERT INTO scoreboard(scenario_id, team_id, hostname, score, timestamp) VALUES($1, $2, $3, $4, $5)", scenarioID, teamID, hostname, score, timestamp)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

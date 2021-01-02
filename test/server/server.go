@@ -54,6 +54,9 @@ func main() {
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/checks", apiHandler.readScenarioChecks).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/checks", apiHandler.updateScenarioChecks).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/config", apiHandler.readScenarioConfig).Methods("GET")
+	scoreboardRouter := apiRouter.PathPrefix("/scoreboard").Subrouter()
+	scoreboardRouter.HandleFunc("/scenarios", apiHandler.readScoreboardScenarios).Methods("GET")
+	scoreboardRouter.HandleFunc("/scenarios/{id:[0-9]+}", apiHandler.readScoreboardForScenario).Methods("GET")
 
 	log.Println("Ready to serve requests")
 	addr := "0.0.0.0:" + port

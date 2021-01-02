@@ -53,6 +53,14 @@ type Scenario struct {
 	Enabled     bool
 }
 
+// ScenarioScore asdf
+type ScenarioScore struct {
+	TeamName  string
+	Hostname  string
+	Score     int
+	Timestamp int64
+}
+
 // ScenarioSummary asdf
 type ScenarioSummary struct {
 	ID      uint64
