@@ -169,15 +169,20 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answerResults := make([]bool, len(answers))
+	answerResults := make([]model.AnswerResult, len(answers))
 	score := 0
 	for i, answer := range answers {
 		checkResult := auditCheckResults.CheckResults[i]
 		if answer.Operator == model.OperatorTypeEqual {
+			points := 0
 			matched := answer.Value == checkResult
-			answerResults[i] = matched
 			if matched {
-				score += answer.Points
+				points = answer.Points
+				score += points
+			}
+			answerResults[i] = model.AnswerResult{
+				Description: answer.Description,
+				Points:      points,
 			}
 		}
 	}
@@ -475,6 +480,129 @@ func (handler APIHandler) updateScenarioChecks(w http.ResponseWriter, r *http.Re
 
 func (handler APIHandler) readScenarioConfig(w http.ResponseWriter, r *http.Request) {
 	log.Println("read scenario config")
+}
+
+func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	teamKeyParam, present := r.URL.Query()["team_key"]
+	if !present || len(teamKeyParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	teamKey := teamKeyParam[0]
+	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	hostnameParam, present := r.URL.Query()["hostname"]
+	if !present || len(hostnameParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+	hostname := hostnameParam[0]
+
+	s, err := handler.BackingStore.auditAnswerResultsReport(id, team.ID, hostname)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if s.AnswerResults == nil {
+		httpErrorNotFound(w)
+		return
+	}
+
+	// filter out 0 points to not hint on answers
+	filtered := make([]model.AnswerResult, 0)
+	for _, answerResult := range s.AnswerResults {
+		if answerResult.Points != 0 {
+			filtered = append(filtered, answerResult)
+		}
+	}
+	s.AnswerResults = filtered
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report hostnames")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	teamKeyParam, present := r.URL.Query()["team_key"]
+	if !present || len(teamKeyParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	teamKey := teamKeyParam[0]
+	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	s, err := handler.BackingStore.auditAnswerResultsSelectHostnames(id, team.ID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) readScenarioReportTimeline(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report timeline")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	teamKeyParam, present := r.URL.Query()["team_key"]
+	if !present || len(teamKeyParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	teamKey := teamKeyParam[0]
+	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	hostnameParam, present := r.URL.Query()["hostname"]
+	if !present || len(hostnameParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+	hostname := hostnameParam[0]
+
+	s, err := handler.BackingStore.auditAnswerResultsReportTimeline(id, team.ID, hostname)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
 }
 
 func (handler APIHandler) readScoreboardForScenario(w http.ResponseWriter, r *http.Request) {

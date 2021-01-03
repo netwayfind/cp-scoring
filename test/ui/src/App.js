@@ -1,6 +1,7 @@
 import './App.css';
 import Admin from './Admin';
 import NotFound from './common/NotFound';
+import Report from './Report';
 import ScenarioDesc from './ScenarioDesc';
 import Scoreboard from './Scoreboard';
 
@@ -16,6 +17,9 @@ export default function App() {
           </Route>
           <Route path="/admin">
             <Admin />
+          </Route>
+          <Route path="/report">
+            <Report />
           </Route>
           <Route path="/scoreboard">
             <Scoreboard />

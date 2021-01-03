@@ -15,6 +15,12 @@ type Answer struct {
 	Points      int
 }
 
+// AnswerResult asdf
+type AnswerResult struct {
+	Description string
+	Points      int
+}
+
 // AuditAnswerResults asdf
 type AuditAnswerResults struct {
 	ScenarioID     uint64
@@ -23,7 +29,7 @@ type AuditAnswerResults struct {
 	Timestamp      int64
 	CheckResultsID uint64
 	Score          int
-	AnswerResults  []bool
+	AnswerResults  []AnswerResult
 }
 
 // AuditCheckResults asdf
@@ -43,6 +49,18 @@ type HostTokenRequest struct {
 type HostTokenRegistration struct {
 	HostToken string
 	TeamKey   string
+}
+
+// Report asdf
+type Report struct {
+	Timestamp     int64
+	AnswerResults []AnswerResult
+}
+
+// ReportTimeline asdf
+type ReportTimeline struct {
+	Timestamps []int64
+	Scores     []int
 }
 
 // Scenario asdf

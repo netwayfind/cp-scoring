@@ -109,6 +109,95 @@ func (db dbObj) auditAnswerResultsInsert(results model.AuditAnswerResults) error
 	return err
 }
 
+func (db dbObj) auditAnswerResultsSelectHostnames(scenarioID uint64, teamID uint64) ([]string, error) {
+	rows, err := db.dbConn.Query("SELECT h.hostname FROM audit_answer_results a JOIN host_tokens h ON a.host_token=h.host_token GROUP BY h.hostname ORDER BY h.hostname ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	hostnames := make([]string, 0)
+	for rows.Next() {
+		var hostname string
+		err = rows.Scan(&hostname)
+		if err != nil {
+			return nil, err
+		}
+		hostnames = append(hostnames, hostname)
+	}
+
+	return hostnames, nil
+}
+
+func (db dbObj) auditAnswerResultsReport(scenarioID uint64, teamID uint64, hostname string) (model.Report, error) {
+	var report model.Report
+
+	rows, err := db.dbConn.Query("SELECT a.timestamp, a.answer_results FROM audit_answer_results a JOIN host_tokens h ON a.host_token=h.host_token WHERE a.scenario_id=$1 AND a.team_id=$2 AND h.hostname=$3 ORDER BY a.timestamp DESC LIMIT 1", scenarioID, teamID, hostname)
+	if err != nil {
+		return report, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var timestamp int64
+		var answerResultsBs []byte
+		err = rows.Scan(&timestamp, &answerResultsBs)
+		if err != nil {
+			return report, err
+		}
+		var answerResults []model.AnswerResult
+		err = json.Unmarshal(answerResultsBs, &answerResults)
+		if err != nil {
+			return report, err
+		}
+		report = model.Report{
+			Timestamp:     timestamp,
+			AnswerResults: answerResults,
+		}
+
+		// only get first result
+		break
+	}
+
+	return report, nil
+}
+
+func (db dbObj) auditAnswerResultsReportTimeline(scenarioID uint64, teamID uint64, hostname string) ([]model.ReportTimeline, error) {
+	rows, err := db.dbConn.Query("SELECT a.host_token, a.timestamp, a.score FROM audit_answer_results a JOIN host_tokens h ON a.host_token=h.host_token WHERE a.scenario_id=$1 AND a.team_id=$2 AND h.hostname=$3 ORDER BY h.hostname, a.timestamp ASC", scenarioID, teamID, hostname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	hostTokenMap := make(map[string]int)
+	timeline := make([]model.ReportTimeline, 0)
+	for rows.Next() {
+		var hostToken string
+		var timestamp int64
+		var score int
+		err = rows.Scan(&hostToken, &timestamp, &score)
+		if err != nil {
+			return nil, err
+		}
+		hostIndex, present := hostTokenMap[hostToken]
+		if !present {
+			hostIndex = len(hostTokenMap)
+			hostTokenMap[hostToken] = hostIndex
+			hostTimeline := model.ReportTimeline{
+				Timestamps: make([]int64, 0),
+				Scores:     make([]int, 0),
+			}
+			timeline = append(timeline, hostTimeline)
+		}
+		currentTimeline := timeline[hostIndex]
+		currentTimeline.Timestamps = append(currentTimeline.Timestamps, timestamp)
+		currentTimeline.Scores = append(currentTimeline.Scores, score)
+		timeline[hostIndex] = currentTimeline
+	}
+
+	return timeline, nil
+}
+
 func (db dbObj) auditCheckResultsInsert(results model.AuditCheckResults, teamID uint64, timestampProcessed int64, source string) (uint64, error) {
 	b, err := json.Marshal(results.CheckResults)
 	if err != nil {
@@ -125,6 +214,7 @@ func (db dbObj) hostTokenInsert(hostToken string, hostname string, timestamp int
 
 func (db dbObj) hostTokenSelectHostname(hostToken string) (string, error) {
 	var hostname string
+
 	rows, err := db.dbConn.Query("SELECT hostname FROM host_tokens WHERE host_token=$1", hostToken)
 	if err != nil {
 		return hostname, err
@@ -145,6 +235,7 @@ func (db dbObj) hostTokenSelectHostname(hostToken string) (string, error) {
 
 func (db dbObj) hostTokenSelectTeamID(hostToken string) (uint64, error) {
 	var teamID uint64
+
 	rows, err := db.dbConn.Query("SELECT team_id FROM team_host_tokens WHERE host_token=$1", hostToken)
 	if err != nil {
 		return teamID, err
@@ -351,6 +442,7 @@ func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.Scenari
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	scoreboard := make([]model.ScenarioScore, 0)
 	for rows.Next() {
@@ -379,6 +471,7 @@ func (db dbObj) scoreboardSelectScenarios() ([]model.ScenarioSummary, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	scenarios := make([]model.ScenarioSummary, 0)
 	for rows.Next() {
