@@ -157,7 +157,7 @@ class Scenario extends Component {
                     <label htmlFor="Name">Name</label>
                     <input onChange={this.handleUpdate} name="Name" value={this.state.scenario.Name || ""} />
                     <label htmlFor="Description">Description</label>
-                    <input onChange={this.handleUpdate} name="Description" value={this.state.scenario.Description || ""} />
+                    <textarea onChange={this.handleUpdate} name="Description" value={this.state.scenario.Description || ""} />
                     <label htmlFor="Enabled">Enabled</label>
                     <input onChange={this.handleUpdate} name="Enabled" type="checkbox" value={this.state.scenario.Enabled || false} />
                     <button type="submit">Save</button>
