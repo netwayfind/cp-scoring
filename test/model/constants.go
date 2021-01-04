@@ -18,8 +18,6 @@ type OperatorType string
 const (
 	OperatorTypeEqual    OperatorType = "EQUAL"
 	OperatorTypeNotEqual OperatorType = "NOT_EQUAL"
-	OperatorTypeNil      OperatorType = "NIL"
-	OperatorTypeNotNil   OperatorType = "NOT_NIL"
 )
 
 // asdf

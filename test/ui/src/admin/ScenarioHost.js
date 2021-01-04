@@ -150,9 +150,7 @@ class ScenarioHost extends Component {
         let operatorOptions = [
             <option key="1" value='' />,
             <option key="2">EQUAL</option>,
-            <option key="3">NOT_EQUAL</option>,
-            <option key="4">NIL</option>,
-            <option key="5">NOT_NIL</option>
+            <option key="3">NOT_EQUAL</option>
         ]
 
         let checkList = [];

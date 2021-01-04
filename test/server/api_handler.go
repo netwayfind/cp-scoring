@@ -167,17 +167,21 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 	score := 0
 	for i, answer := range answers {
 		checkResult := auditCheckResults.CheckResults[i]
+		points := 0
 		if answer.Operator == model.OperatorTypeEqual {
-			points := 0
-			matched := answer.Value == checkResult
-			if matched {
+			if answer.Value == checkResult {
 				points = answer.Points
 				score += points
 			}
-			answerResults[i] = model.AnswerResult{
-				Description: answer.Description,
-				Points:      points,
+		} else if answer.Operator == model.OperatorTypeNotEqual {
+			if answer.Value != checkResult {
+				points = answer.Points
+				score += points
 			}
+		}
+		answerResults[i] = model.AnswerResult{
+			Description: answer.Description,
+			Points:      points,
 		}
 	}
 
