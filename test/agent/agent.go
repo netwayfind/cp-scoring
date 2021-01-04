@@ -84,19 +84,15 @@ func main() {
 		log.Fatal(err)
 	}
 	log.Println(y.Name)
-	log.Println(y.Description)
 
-	x, err = http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr + "/checks")
+	x, err = http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr + "/checks?hostname=" + hostname)
 	if err != nil {
 		log.Fatal(err)
 	}
-	var y2 map[string][]model.Action
-	err = json.NewDecoder(x.Body).Decode(&y2)
+	var yy []model.Action
+	err = json.NewDecoder(x.Body).Decode(&yy)
+
 	checkResults := []string{}
-	yy := y2[hostname]
-	if yy == nil {
-		log.Fatal("check for hostname not found")
-	}
 	for _, v := range yy {
 		log.Println(v)
 		log.Println(" - ", v.Type, ": ", v.Command)

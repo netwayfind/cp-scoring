@@ -23,12 +23,12 @@ type backingStore interface {
 	scenarioSelect(id uint64) (model.Scenario, error)
 	scenarioSelectAll() ([]model.ScenarioSummary, error)
 	scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenario, error)
-	scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error)
-	scenarioChecksDelete(id uint64) error
-	scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error
-	scenarioAnswersSelectAll(id uint64) (map[string][]model.Answer, error)
-	scenarioAnswersDelete(id uint64) error
-	scenarioAnswersUpdate(id uint64, answersMap map[string][]model.Answer) error
+	scenarioHostsSelectAll(scenarioID uint64) (map[string]model.ScenarioHost, error)
+	scenarioHostsSelectAnswers(scenarioID uint64, hostname string) ([]model.Answer, error)
+	scenarioHostsSelectChecks(scenarioID uint64, hostname string) ([]model.Action, error)
+	scenarioHostsSelectConfig(scenarioID uint64, hostname string) ([]model.Action, error)
+	scenarioHostsDelete(scenarioID uint64) error
+	scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]model.ScenarioHost) error
 	scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error)
 	scoreboardSelectScenarios() ([]model.ScenarioSummary, error)
 	scoreboardUpdate(scenarioID uint64, teamID uint64, hostname string, score int, timestamp int64) error

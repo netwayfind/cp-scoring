@@ -71,6 +71,13 @@ type Scenario struct {
 	Enabled     bool
 }
 
+// ScenarioHost asdf
+type ScenarioHost struct {
+	Answers []Answer
+	Checks  []Action
+	Config  []Action
+}
+
 // ScenarioScore asdf
 type ScenarioScore struct {
 	TeamName  string

@@ -1,6 +1,6 @@
 import '../App.css';
 import { apiDelete, apiGet, apiPost, apiPut } from '../common/utils';
-import ScenarioChecks from './ScenarioChecks';
+import ScenarioHost from './ScenarioHost';
 
 import { Component } from 'react';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
@@ -14,7 +14,11 @@ class Scenario extends Component {
         this.handleDelete = this.handleDelete.bind(this);
         this.handleUpdate = this.handleUpdate.bind(this);
         this.handleSave = this.handleSave.bind(this);
-        this.handleSaveChecks = this.handleSaveChecks.bind(this);
+        this.handleSaveHost = this.handleSaveHost.bind(this);
+        this.handleHostnameAdd = this.handleHostnameAdd.bind(this);
+        this.handleHostnameDelete = this.handleHostnameDelete.bind(this);
+        this.handleHostnameSelect = this.handleHostnameSelect.bind(this);
+        this.handleNewHostnameUpdate = this.handleNewHostnameUpdate.bind(this);
     }
 
     componentDidMount() {
@@ -33,9 +37,11 @@ class Scenario extends Component {
     defaultState() {
         return {
             error: null,
+            currentScenarioHostname: '',
+            currentScenarioHost: {},
+            newScenarioHostname: '',
             scenario: {},
-            checkMap: {},
-            answerMap: {}
+            scenarioHosts: {}
         }
     }
 
@@ -46,18 +52,18 @@ class Scenario extends Component {
         }
         Promise.all([
             apiGet('/api/scenarios/' + id),
-            apiGet('/api/scenarios/' + id + '/checks'),
-            apiGet('/api/scenarios/' + id + '/answers'),
+            apiGet('/api/scenarios/' + id + '/hosts')
         ])
         .then(async function(responses) {
             let s1 = responses[0];
             let s2 = responses[1];
-            let s3 = responses[2];
             this.setState({
-                error: s1.error || s2.error || s3.error,
+                error: s1.error || s2.error,
+                currentScenarioHostname: '',
+                currentScenarioHost: {},
+                newScenarioHostname: '',
                 scenario: s1.data,
-                checkMap: s2.data,
-                answerMap: s3.data
+                scenarioHosts: s2.data
             });
         }.bind(this));
     }
@@ -110,27 +116,30 @@ class Scenario extends Component {
         }
     }
 
-    handleSaveChecks(checkMap, answerMap) {
+    handleSaveHost(checks, answers, config) {
         let id = this.state.scenario.ID;
-        Promise.all([
-            apiPut('/api/scenarios/' + id + '/checks', checkMap),
-            apiPut('/api/scenarios/' + id + '/answers', answerMap)
-        ])
-        .then(async function(responses) {
-            let s1 = responses[0];
-            let s2 = responses[1];
-            let error = s1.error || s2.error;
-            if (error) {
+        let scenarioHost = {
+            Checks: checks,
+            Answers: answers,
+            Config: config
+        }
+        let scenarioHosts = {
+            ...this.state.scenarioHosts
+        }
+        scenarioHosts[this.state.currentScenarioHostname] = scenarioHost;
+        apiPut('/api/scenarios/' + id + '/hosts', scenarioHosts)
+        .then(async function(s) {
+            if (s.error) {
                 this.setState({
-                    error: error
+                    error: s.error
                 });
             } else {
+                this.setState({
+                    scenarioHosts: scenarioHosts
+                });
                 this.props.parentCallback();
                 this.props.history.push(this.props.match.url);
             }
-            this.setState({
-                error: s1.error || s2.error
-            });
         }.bind(this));
     }
 
@@ -147,25 +156,98 @@ class Scenario extends Component {
         });
     }
 
+    handleHostnameAdd() {
+        let hostname = this.state.newScenarioHostname;
+        if (!hostname) {
+            return;
+        }
+        let scenarioHost = {
+            Checks: [],
+            Answers: [],
+            Config: []
+        }
+        let scenarioHosts = {
+            ...this.state.scenarioHosts
+        }
+        scenarioHosts[hostname] = scenarioHost
+        this.setState({
+            currentScenarioHostname: hostname,
+            currentScenarioHost: scenarioHost,
+            newScenarioHostname: '',
+            scenarioHosts: scenarioHosts
+        });
+    }
+
+    handleHostnameDelete() {
+        let hostname = this.state.currentScenarioHostname;
+        if (!hostname) {
+            return;
+        }
+        let scenarioHosts = {
+            ...this.state.scenarioHosts
+        }
+        delete scenarioHosts[hostname];
+        this.setState({
+            currentScenarioHostname: '',
+            currentScenarioHost: {},
+            scenarioHosts: scenarioHosts
+        });
+    }
+
+    handleHostnameSelect(event) {
+        let hostname = event.target.value;
+        this.setState({
+            currentScenarioHostname: hostname,
+            currentScenarioHost: this.state.scenarioHosts[hostname] || {}
+        });
+    }
+
+    handleNewHostnameUpdate(event) {
+        let hostname = event.target.value;
+        this.setState({
+            newScenarioHostname: hostname
+        });
+    }
+
     render() {
+        let hostOptions = [];
+        hostOptions.push(<option key=""></option>)
+        for (let hostname in this.state.scenarioHosts) {
+            hostOptions.push(
+                <option key={hostname}>{hostname}</option>
+            );
+        };
+
+        console.log(this.state.currentScenarioHost);
+        let answers = this.state.currentScenarioHost.Answers || [];
+        let checks = this.state.currentScenarioHost.Checks || [];
+        let config = this.state.currentScenarioHost.Config || [];
+        let hostname = this.state.currentScenarioHostname;
+
         return (
             <div>
                 <h1>{this.state.error}</h1>
                 <form onSubmit={this.handleSave}>
                     <label htmlFor="ID">ID</label>
-                    <input onChange={this.handleUpdate} name="ID" disabled value={this.state.scenario.ID || ""} />
+                    <input name="ID" disabled onChange={this.handleUpdate} value={this.state.scenario.ID || ""} />
                     <label htmlFor="Name">Name</label>
-                    <input onChange={this.handleUpdate} name="Name" value={this.state.scenario.Name || ""} />
+                    <input name="Name" onChange={this.handleUpdate} value={this.state.scenario.Name || ""} />
                     <label htmlFor="Description">Description</label>
-                    <textarea onChange={this.handleUpdate} name="Description" value={this.state.scenario.Description || ""} />
+                    <textarea name="Description" onChange={this.handleUpdate} value={this.state.scenario.Description || ""} />
                     <label htmlFor="Enabled">Enabled</label>
-                    <input onChange={this.handleUpdate} name="Enabled" type="checkbox" value={this.state.scenario.Enabled || false} />
+                    <input name="Enabled" type="checkbox" onChange={this.handleUpdate} value={this.state.scenario.Enabled || false} />
                     <button type="submit">Save</button>
                     <button type="button" disabled={!this.state.scenario.ID} onClick={this.handleDelete}>Delete</button>
                 </form>
                 <hr />
-                <p>Checks</p>
-                <ScenarioChecks scenarioID={this.state.scenario.ID} checkMap={this.state.checkMap} answerMap={this.state.answerMap} parentCallback={this.handleSaveChecks} />
+                <p>Hosts</p>
+                <input onChange={this.handleNewHostnameUpdate} value={this.state.newScenarioHostname} />
+                <button type="button" onClick={this.handleHostnameAdd}>Add Host</button>
+                <p />
+                <select onChange={this.handleHostnameSelect} value={hostname}>{hostOptions}</select>
+                <button type="button" disabled={!hostname} onClick={this.handleHostnameDelete}>Delete Host</button>
+                <p />
+                <ScenarioHost answers={answers} checks={checks} config={config} hostname={hostname} parentCallback={this.handleSaveHost}/>
             </div>
         );
     }

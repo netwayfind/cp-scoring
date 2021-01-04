@@ -121,13 +121,17 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answersMap, err := handler.BackingStore.scenarioAnswersSelectAll(auditCheckResults.ScenarioID)
+	if len(auditCheckResults.HostToken) == 0 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	hostname, err := handler.BackingStore.hostTokenSelectHostname(auditCheckResults.HostToken)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
 	}
-
-	if len(auditCheckResults.HostToken) == 0 {
+	if len(hostname) == 0 {
 		httpErrorBadRequest(w)
 		return
 	}
@@ -148,19 +152,9 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hostname, err := handler.BackingStore.hostTokenSelectHostname(auditCheckResults.HostToken)
+	answers, err := handler.BackingStore.scenarioHostsSelectAnswers(auditCheckResults.ScenarioID, hostname)
 	if err != nil {
 		httpErrorDatabase(w, err)
-		return
-	}
-	if len(hostname) == 0 {
-		httpErrorBadRequest(w)
-		return
-	}
-
-	answers := answersMap[hostname]
-	if answers == nil {
-		httpErrorNotFound(w)
 		return
 	}
 
@@ -369,69 +363,6 @@ func (handler APIHandler) updateScenario(w http.ResponseWriter, r *http.Request)
 	sendResponse(w, s)
 }
 
-func (handler APIHandler) readScenarioAnswers(w http.ResponseWriter, r *http.Request) {
-	log.Println("read scenario answers")
-
-	id, err := getRequestID(r)
-	if err != nil {
-		httpErrorInvalidID(w)
-		return
-	}
-	log.Println(id)
-
-	s, err := handler.BackingStore.scenarioAnswersSelectAll(id)
-	if err != nil {
-		httpErrorDatabase(w, err)
-		return
-	}
-
-	sendResponse(w, s)
-}
-
-func (handler APIHandler) deleteScenarioAnswers(w http.ResponseWriter, r *http.Request) {
-	log.Println("delete scenario answers")
-
-	id, err := getRequestID(r)
-	if err != nil {
-		httpErrorInvalidID(w)
-		return
-	}
-	log.Println(id)
-
-	err = handler.BackingStore.scenarioAnswersDelete(id)
-	if err != nil {
-		httpErrorDatabase(w, err)
-		return
-	}
-}
-
-func (handler APIHandler) updateScenarioAnswers(w http.ResponseWriter, r *http.Request) {
-	log.Println("update scenario answers")
-
-	id, err := getRequestID(r)
-	if err != nil {
-		httpErrorInvalidID(w)
-		return
-	}
-	log.Println(id)
-
-	var answerMap map[string][]model.Answer
-	err = readRequestBody(w, r, &answerMap)
-	if err != nil {
-		return
-	}
-
-	err = handler.BackingStore.scenarioAnswersUpdate(id, answerMap)
-	if err != nil {
-		if err.Error() == model.ErrorDBUpdateNoChange {
-			httpErrorNotFound(w)
-			return
-		}
-		httpErrorDatabase(w, err)
-		return
-	}
-}
-
 func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Request) {
 	log.Println("read scenario checks")
 
@@ -442,17 +373,28 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 	}
 	log.Println(id)
 
-	s, err := handler.BackingStore.scenarioChecksSelectAll(id)
+	hostnameParam, present := r.URL.Query()["hostname"]
+	if !present || len(hostnameParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+	hostname := hostnameParam[0]
+
+	s, err := handler.BackingStore.scenarioHostsSelectChecks(id, hostname)
 	if err != nil {
 		httpErrorDatabase(w, err)
+		return
+	}
+	if s == nil {
+		httpErrorNotFound(w)
 		return
 	}
 
 	sendResponse(w, s)
 }
 
-func (handler APIHandler) updateScenarioChecks(w http.ResponseWriter, r *http.Request) {
-	log.Println("update scenario checks")
+func (handler APIHandler) readScenarioHosts(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario hosts")
 
 	id, err := getRequestID(r)
 	if err != nil {
@@ -461,13 +403,32 @@ func (handler APIHandler) updateScenarioChecks(w http.ResponseWriter, r *http.Re
 	}
 	log.Println(id)
 
-	var hostnameChecks map[string][]model.Action
-	err = readRequestBody(w, r, &hostnameChecks)
+	s, err := handler.BackingStore.scenarioHostsSelectAll(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) updateScenarioHosts(w http.ResponseWriter, r *http.Request) {
+	log.Println("update scenario hosts")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	var hostMap map[string]model.ScenarioHost
+	err = readRequestBody(w, r, &hostMap)
 	if err != nil {
 		return
 	}
 
-	err = handler.BackingStore.scenarioChecksUpdate(id, hostnameChecks)
+	err = handler.BackingStore.scenarioHostsUpdate(id, hostMap)
 	if err != nil {
 		if err.Error() == model.ErrorDBUpdateNoChange {
 			httpErrorNotFound(w)
@@ -476,10 +437,6 @@ func (handler APIHandler) updateScenarioChecks(w http.ResponseWriter, r *http.Re
 		httpErrorDatabase(w, err)
 		return
 	}
-}
-
-func (handler APIHandler) readScenarioConfig(w http.ResponseWriter, r *http.Request) {
-	log.Println("read scenario config")
 }
 
 func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Request) {

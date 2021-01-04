@@ -20,8 +20,7 @@ func (db dbObj) dbInit() {
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
-	db.dbCreateTable("scenario_checks", "CREATE TABLE IF NOT EXISTS scenario_checks(scenario_id BIGSERIAL NOT NULL, checks JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
-	db.dbCreateTable("scenario_answers", "CREATE TABLE IF NOT EXISTS scenario_answers(scenario_id BIGSERIAL NOT NULL, answers JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
+	db.dbCreateTable("scenario_hosts", "CREATE TABLE IF NOT EXISTS scenario_hosts(scenario_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, checks JSONB NOT NULL, answers JSONB NOT NULL, config JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
 	db.dbCreateTable("scoreboard", "CREATE TABLE IF NOT EXISTS scoreboard(scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, score INTEGER NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id))")
 	db.dbCreateTable("audit_check_results", "CREATE TABLE IF NOT EXISTS audit_check_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp_reported INTEGER NOT NULL, timestamp_received INTEGER NOT NULL, check_results JSONB NOT NULL, source VARCHAR NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("audit_answer_results", "CREATE TABLE IF NOT EXISTS audit_answer_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, audit_check_results_id BIGSERIAL NOT NULL, score INTEGER NOT NULL, answer_results JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token), FOREIGN KEY(audit_check_results_id) REFERENCES audit_check_results(id))")
@@ -256,11 +255,7 @@ func (db dbObj) hostTokenSelectTeamID(hostToken string) (uint64, error) {
 
 func (db dbObj) scenarioDelete(id uint64) error {
 	// TODO: transaction
-	err := db.scenarioChecksDelete(id)
-	if err != nil {
-		return err
-	}
-	err = db.scenarioAnswersDelete(id)
+	err := db.scenarioHostsDelete(id)
 	if err != nil {
 		return err
 	}
@@ -333,105 +328,149 @@ func (db dbObj) scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenar
 	return db.scenarioSelect(id)
 }
 
-func (db dbObj) scenarioAnswersSelectAll(id uint64) (map[string][]model.Answer, error) {
-	rows, err := db.dbConn.Query("SELECT answers FROM scenario_answers WHERE scenario_id=$1", id)
+func (db dbObj) scenarioHostsSelectAll(scenarioID uint64) (map[string]model.ScenarioHost, error) {
+	rows, err := db.dbConn.Query("SELECT hostname, checks, answers, config FROM scenario_hosts WHERE scenario_id=$1", scenarioID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var answersMap map[string][]model.Answer
-	var answersMapBs []byte
-
+	hostMap := make(map[string]model.ScenarioHost)
 	for rows.Next() {
-		err = rows.Scan(&answersMapBs)
+		var hostname string
+		var checks []model.Action
+		var checksBs []byte
+		var answers []model.Answer
+		var answersBs []byte
+		var config []model.Action
+		var configBs []byte
+		err = rows.Scan(&hostname, &checksBs, &answersBs, &configBs)
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(answersMapBs, &answersMap)
+		err = json.Unmarshal(checksBs, &checks)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(answersBs, &answers)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(configBs, &config)
+		if err != nil {
+			return nil, err
+		}
+
+		hostMap[hostname] = model.ScenarioHost{
+			Checks:  checks,
+			Answers: answers,
+			Config:  config,
+		}
+	}
+
+	return hostMap, nil
+}
+
+func (db dbObj) scenarioHostsSelectAnswers(scenarioID uint64, hostname string) ([]model.Answer, error) {
+	rows, err := db.dbConn.Query("SELECT answers FROM scenario_hosts WHERE scenario_id=$1 AND hostname=$2", scenarioID, hostname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var answers []model.Answer
+	var answersBs []byte
+	for rows.Next() {
+		err = rows.Scan(&answersBs)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(answersBs, &answers)
 		if err != nil {
 			return nil, err
 		}
 		break
 	}
 
-	if answersMap == nil {
-		answersMap = make(map[string][]model.Answer)
-	}
-
-	return answersMap, nil
+	return answers, nil
 }
 
-func (db dbObj) scenarioAnswersDelete(id uint64) error {
-	return db.dbDelete("DELETE FROM scenario_answers WHERE scenario_id=$1", id)
-}
-
-func (db dbObj) scenarioAnswersUpdate(id uint64, answersMap map[string][]model.Answer) error {
-	// TODO: transaction
-	err := db.scenarioAnswersDelete(id)
-	if err != nil {
-		return err
-	}
-
-	b, err := json.Marshal(answersMap)
-	if err != nil {
-		return err
-	}
-	_, err = db.dbInsert("INSERT INTO scenario_answers(scenario_id, answers) VALUES ($1, $2)", id, b)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (db dbObj) scenarioChecksSelectAll(id uint64) (map[string][]model.Action, error) {
-	rows, err := db.dbConn.Query("SELECT checks FROM scenario_checks WHERE scenario_id=$1", id)
+func (db dbObj) scenarioHostsSelectChecks(scenarioID uint64, hostname string) ([]model.Action, error) {
+	rows, err := db.dbConn.Query("SELECT checks FROM scenario_hosts WHERE scenario_id=$1 AND hostname=$2", scenarioID, hostname)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var hostnameChecks map[string][]model.Action
-	var hostnameChecksBs []byte
-
+	var checks []model.Action
+	var checksBs []byte
 	for rows.Next() {
-		err = rows.Scan(&hostnameChecksBs)
+		err = rows.Scan(&checksBs)
 		if err != nil {
 			return nil, err
 		}
-		err = json.Unmarshal(hostnameChecksBs, &hostnameChecks)
+		err = json.Unmarshal(checksBs, &checks)
 		if err != nil {
 			return nil, err
 		}
 		break
 	}
 
-	if hostnameChecks == nil {
-		hostnameChecks = make(map[string][]model.Action)
+	return checks, nil
+}
+
+func (db dbObj) scenarioHostsSelectConfig(scenarioID uint64, hostname string) ([]model.Action, error) {
+	rows, err := db.dbConn.Query("SELECT config FROM scenario_hosts WHERE scenario_id=$1 AND hostname=$2", scenarioID, hostname)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var config []model.Action
+	var configBs []byte
+	for rows.Next() {
+		err = rows.Scan(&configBs)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(configBs, &config)
+		if err != nil {
+			return nil, err
+		}
+		break
 	}
 
-	return hostnameChecks, nil
+	return config, nil
 }
 
-func (db dbObj) scenarioChecksDelete(id uint64) error {
-	return db.dbDelete("DELETE FROM scenario_checks WHERE scenario_id=$1", id)
+func (db dbObj) scenarioHostsDelete(scenarioID uint64) error {
+	return db.dbDelete("DELETE FROM scenario_hosts WHERE scenario_id=$1", scenarioID)
 }
 
-func (db dbObj) scenarioChecksUpdate(id uint64, hostnameChecks map[string][]model.Action) error {
+func (db dbObj) scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]model.ScenarioHost) error {
 	// TODO: transaction
-	err := db.scenarioChecksDelete(id)
+	err := db.scenarioHostsDelete(scenarioID)
 	if err != nil {
 		return err
 	}
 
-	b, err := json.Marshal(hostnameChecks)
-	if err != nil {
-		return err
-	}
-	_, err = db.dbInsert("INSERT INTO scenario_checks(scenario_id, checks) VALUES ($1, $2)", id, b)
-	if err != nil {
-		return err
+	for hostname, scenarioHost := range scenarioHosts {
+		checksBs, err := json.Marshal(scenarioHost.Checks)
+		if err != nil {
+			return err
+		}
+		answersBs, err := json.Marshal(scenarioHost.Answers)
+		if err != nil {
+			return err
+		}
+		configBs, err := json.Marshal(scenarioHost.Config)
+		if err != nil {
+			return err
+		}
+		_, err = db.dbInsert("INSERT INTO scenario_hosts(scenario_id, hostname, checks, answers, config) VALUES ($1, $2, $3, $4, $5)", scenarioID, hostname, checksBs, answersBs, configBs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
