@@ -44,6 +44,11 @@ func httpErrorDatabase(w http.ResponseWriter, err error) {
 	http.Error(w, msg, http.StatusInternalServerError)
 }
 
+func httpErrorForbidden(w http.ResponseWriter) {
+	msg := "ERROR: forbidden;"
+	http.Error(w, msg, http.StatusForbidden)
+}
+
 func httpErrorInvalidID(w http.ResponseWriter) {
 	msg := "ERROR: cannot parse scenario id;"
 	log.Println(msg)
@@ -66,6 +71,11 @@ func httpErrorReadRequestBody(w http.ResponseWriter, err error) {
 	msg := "ERROR: cannot read request body;"
 	log.Println(msg, err)
 	http.Error(w, msg, http.StatusInternalServerError)
+}
+
+func httpErrorNotAuthenticated(w http.ResponseWriter) {
+	msg := "ERROR: not authenticated;"
+	http.Error(w, msg, http.StatusUnauthorized)
 }
 
 func httpErrorUnmarshall(w http.ResponseWriter, err error) {
@@ -257,6 +267,61 @@ func (handler APIHandler) registerHostToken(w http.ResponseWriter, r *http.Reque
 		httpErrorDatabase(w, err)
 		return
 	}
+}
+
+func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("login user")
+
+	r.ParseForm()
+	username := r.Form.Get("username")
+	log.Println("username: " + username)
+	password := r.Form.Get("password")
+
+	passwordHash, err := handler.BackingStore.userSelectPasswordByUsername(username)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if checkPasswordHash(password, passwordHash) {
+		log.Println("user authentication successful")
+
+		value := randHexStr(32)
+
+		cookie := &http.Cookie{
+			Name:     "session",
+			Value:    value,
+			Path:     "/",
+			HttpOnly: true,
+		}
+		http.SetCookie(w, cookie)
+		return
+	}
+	log.Println("user authentication failed")
+	httpErrorNotAuthenticated(w)
+}
+
+func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("login team")
+
+	r.ParseForm()
+	teamKey := r.Form.Get("team_key")
+	teamKey = strings.TrimSpace(teamKey)
+	if len(teamKey) == 0 {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if team.ID == 0 {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	log.Println(team.ID)
 }
 
 func (handler APIHandler) createScenario(w http.ResponseWriter, r *http.Request) {

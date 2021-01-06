@@ -39,6 +39,12 @@ type backingStore interface {
 	teamSelectAll() ([]model.TeamSummary, error)
 	teamUpdate(id uint64, team model.Team) (model.Team, error)
 	teamHostTokenInsert(teamID uint64, hostToken string, timestamp int64) error
+	userDelete(id uint64) error
+	userInsert(user model.User) (model.User, error)
+	userSelect(id uint64) (model.User, error)
+	userSelectPasswordByUsername(username string) (string, error)
+	userSelectAll() ([]model.UserSummary, error)
+	userUpdate(id uint64, user model.User) (model.User, error)
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {

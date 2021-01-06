@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/netwayfind/cp-scoring/test/model"
 )
 
 func main() {
@@ -27,6 +28,28 @@ func main() {
 		BackingStore: backingStore,
 	}
 
+	// generate default user if no users
+	users, err := apiHandler.BackingStore.userSelectAll()
+	if err != nil {
+		log.Fatal("Could not get users list;", err)
+	}
+	if len(users) == 0 {
+		log.Println("Creating default user")
+		if err != nil {
+			log.Fatal("ERROR: cannot generate password hash;", err)
+		}
+		user := model.User{
+			Username: "admin",
+			Password: "admin",
+			Enabled:  true,
+			Email:    "",
+		}
+		_, err := apiHandler.BackingStore.userInsert(user)
+		if err != nil {
+			log.Fatal("ERROR: cannot save default user;", err)
+		}
+	}
+
 	r := mux.NewRouter().StrictSlash(true)
 	r.PathPrefix("/ui").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, uiPath+"/index.html")
@@ -37,6 +60,9 @@ func main() {
 	hostTokenRouter := apiRouter.PathPrefix("/host-token").Subrouter()
 	hostTokenRouter.HandleFunc("/request", apiHandler.requestHostToken).Methods("POST")
 	hostTokenRouter.HandleFunc("/register", apiHandler.registerHostToken).Methods("POST")
+	loginRouter := apiRouter.PathPrefix("/login").Subrouter()
+	loginRouter.HandleFunc("/", apiHandler.loginUser).Methods("POST")
+	loginRouter.HandleFunc("/team", apiHandler.loginTeam).Methods("POST")
 	teamRouter := apiRouter.PathPrefix("/teams").Subrouter()
 	teamRouter.HandleFunc("/", apiHandler.readTeams).Methods("GET")
 	teamRouter.HandleFunc("/", apiHandler.createTeam).Methods("POST")

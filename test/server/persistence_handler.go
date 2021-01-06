@@ -15,7 +15,7 @@ type dbObj struct {
 }
 
 func (db dbObj) dbInit() {
-
+	db.dbCreateTable("users", "CREATE TABLE IF NOT EXISTS users(id BIGSERIAL PRIMARY KEY, username VARCHAR NOT NULL, password VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, email VARCHAR NOT NULL)")
 	db.dbCreateTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
@@ -648,4 +648,103 @@ func (db dbObj) teamUpdate(id uint64, team model.Team) (model.Team, error) {
 func (db dbObj) teamHostTokenInsert(teamID uint64, hostToken string, timestamp int64) error {
 	_, err := db.dbInsert("INSERT INTO team_host_tokens(team_id, host_token, timestamp) VALUES($1, $2, $3)", teamID, hostToken, timestamp)
 	return err
+}
+
+func (db dbObj) userDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM users WHERE id=$1", id)
+}
+
+func (db dbObj) userInsert(user model.User) (model.User, error) {
+	enabled := 1
+	if !user.Enabled {
+		enabled = 0
+	}
+	passwordHash, err := passwordHash(user.Password)
+	if err != nil {
+		return model.User{}, err
+	}
+	id, err := db.dbInsert("INSERT INTO users(username, password, enabled, email) VALUES($1, $2, $3, $4) RETURNING id", user.Username, passwordHash, enabled, user.Email)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return db.userSelect(id)
+}
+
+func (db dbObj) userSelect(id uint64) (model.User, error) {
+	var user model.User
+	rows, err := db.dbConn.Query("SELECT username, enabled, email FROM users WHERE id=$1", id)
+	if err != nil {
+		return user, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		user := model.User{}
+		err = rows.Scan(&user.Username, &user.Enabled, &user.Email)
+		if err != nil {
+			return user, err
+		}
+		break
+	}
+
+	return user, nil
+}
+
+func (db dbObj) userSelectPasswordByUsername(username string) (string, error) {
+	rows, err := db.dbConn.Query("SELECT password FROM users WHERE username=$1", username)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+
+	var passwordHash string
+	for rows.Next() {
+		err = rows.Scan(&passwordHash)
+		if err != nil {
+			return "", err
+		}
+		break
+	}
+
+	return passwordHash, nil
+}
+
+func (db dbObj) userSelectAll() ([]model.UserSummary, error) {
+	rows, err := db.dbConn.Query("SELECT id, username FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	summaries := make([]model.UserSummary, 0)
+	for rows.Next() {
+		summary := model.UserSummary{}
+		err = rows.Scan(&summary.ID, &summary.Username)
+		if err != nil {
+			return nil, err
+		}
+
+		summaries = append(summaries, summary)
+	}
+
+	return summaries, nil
+}
+
+func (db dbObj) userUpdate(id uint64, user model.User) (model.User, error) {
+	enabled := 1
+	if !user.Enabled {
+		enabled = 0
+	}
+
+	passwordHash, err := passwordHash(user.Password)
+	if err != nil {
+		return model.User{}, err
+	}
+	err = db.dbUpdate("UPDATE users SET username=$1, password=$2, enabled=$3, email=$4 WHERE id=$5", user.Username, passwordHash, enabled, user.Email, id)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return db.userSelect(id)
 }

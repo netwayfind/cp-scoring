@@ -109,3 +109,18 @@ type TeamSummary struct {
 	Name    string
 	Enabled bool
 }
+
+// User asdf
+type User struct {
+	ID       uint64
+	Username string
+	Password string
+	Enabled  bool
+	Email    string
+}
+
+// UserSummary asdf
+type UserSummary struct {
+	ID       uint64
+	Username string
+}
