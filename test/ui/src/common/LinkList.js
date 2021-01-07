@@ -7,7 +7,7 @@ class LinkList extends Component {
         let items = [];
         this.props.items.forEach((item, i) => {
             items.push(
-                <li key={i}><Link to={`${this.props.path}/${item.ID}`}>[{item.ID}] {item.Name}</Link></li>
+                <li key={i}><Link to={`${this.props.path}/${item.ID}`}>[{item.ID}] {item[this.props.label]}</Link></li>
             );
         });
 

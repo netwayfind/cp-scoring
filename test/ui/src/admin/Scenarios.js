@@ -41,7 +41,7 @@ class Scenarios extends Component {
             <div className="Scenarios">
                 <Link to={this.props.match.path}>Add Scenario</Link>
                 <p />
-                <LinkList items={this.state.scenarios} path={this.props.match.path} />
+                <LinkList items={this.state.scenarios} path={this.props.match.path} label="Name" />
                 <Switch>
                     <Route path={`${this.props.match.url}/:id`}>
                         <Scenario parentCallback={this.getData} parentPath={this.props.match.path} />

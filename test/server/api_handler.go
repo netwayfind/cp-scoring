@@ -769,3 +769,111 @@ func (handler APIHandler) updateTeam(w http.ResponseWriter, r *http.Request) {
 
 	sendResponse(w, s)
 }
+
+func (handler APIHandler) createUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("create user")
+
+	var user model.User
+	err := readRequestBody(w, r, &user)
+	if err != nil {
+		return
+	}
+
+	t, err := handler.BackingStore.userInsert(user)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, t)
+}
+
+func (handler APIHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("delete user")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	user, err := handler.BackingStore.userSelect(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if user.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	err = handler.BackingStore.userDelete(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+	}
+}
+
+func (handler APIHandler) readUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("read user")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	s, err := handler.BackingStore.userSelect(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if s.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) readUsers(w http.ResponseWriter, r *http.Request) {
+	log.Println("read users")
+
+	s, err := handler.BackingStore.userSelectAll()
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) updateUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("update user")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	var user model.User
+	err = readRequestBody(w, r, &user)
+	if err != nil {
+		return
+	}
+
+	s, err := handler.BackingStore.userUpdate(id, user)
+	if err != nil {
+		if err.Error() == model.ErrorDBUpdateNoChange {
+			httpErrorNotFound(w)
+			return
+		}
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}

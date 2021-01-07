@@ -16,7 +16,7 @@ func checkPasswordHash(cleartext string, hash string) bool {
 	return true
 }
 
-func passwordHash(cleartext string) (string, error) {
+func hashPassword(cleartext string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(cleartext), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err

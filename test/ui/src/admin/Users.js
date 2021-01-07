@@ -1,13 +1,13 @@
 import '../App.css';
 import LinkList from '../common/LinkList';
 import { apiGet } from '../common/utils';
-import Team from './Team';
+import User from './User';
 
 import { Component } from 'react';
 import { Link, Route, Switch } from 'react-router-dom';
 import { withRouter } from 'react-router-dom/cjs/react-router-dom.min';
 
-class Teams extends Component {
+class Users extends Component {
     constructor(props) {
         super(props);
         this.state = this.defaultState();
@@ -22,32 +22,32 @@ class Teams extends Component {
     defaultState() {
         return {
             error: null,
-            teams: []
+            users: []
         }
     }
 
     getData() {
-        apiGet("/api/teams/")
+        apiGet("/api/users/")
         .then(function(s) {
             this.setState({
                 error: s.error,
-                teams: s.data
+                users: s.data
             });
         }.bind(this));
     }
 
     render() {
         return (
-            <div className="Teams">
-                <Link to={this.props.match.path}>Add Team</Link>
+            <div className="Users">
+                <Link to={this.props.match.path}>Add User</Link>
                 <p />
-                <LinkList items={this.state.teams} path={this.props.match.path} label="Name" />
+                <LinkList items={this.state.users} path={this.props.match.path} label="Username" />
                 <Switch>
                     <Route path={`${this.props.match.url}/:id`}>
-                        <Team parentCallback={this.getData} parentPath={this.props.match.path} />
+                        <User parentCallback={this.getData} parentPath={this.props.match.path} />
                     </Route>
                     <Route>
-                        <Team parentCallback={this.getData} parentPath={this.props.match.path}/>
+                        <User parentCallback={this.getData} parentPath={this.props.match.path}/>
                     </Route>
                 </Switch>
             </div>
@@ -55,4 +55,4 @@ class Teams extends Component {
     }
 }
 
-export default withRouter(Teams);
+export default withRouter(Users);

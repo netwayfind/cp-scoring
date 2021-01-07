@@ -659,9 +659,14 @@ func (db dbObj) userInsert(user model.User) (model.User, error) {
 	if !user.Enabled {
 		enabled = 0
 	}
-	passwordHash, err := passwordHash(user.Password)
-	if err != nil {
-		return model.User{}, err
+
+	var passwordHash string
+	if len(user.Password) > 0 {
+		hash, err := hashPassword(user.Password)
+		if err != nil {
+			return model.User{}, err
+		}
+		passwordHash = hash
 	}
 	id, err := db.dbInsert("INSERT INTO users(username, password, enabled, email) VALUES($1, $2, $3, $4) RETURNING id", user.Username, passwordHash, enabled, user.Email)
 	if err != nil {
@@ -673,15 +678,15 @@ func (db dbObj) userInsert(user model.User) (model.User, error) {
 
 func (db dbObj) userSelect(id uint64) (model.User, error) {
 	var user model.User
-	rows, err := db.dbConn.Query("SELECT username, enabled, email FROM users WHERE id=$1", id)
+	rows, err := db.dbConn.Query("SELECT id, username, enabled, email FROM users WHERE id=$1", id)
 	if err != nil {
 		return user, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		user := model.User{}
-		err = rows.Scan(&user.Username, &user.Enabled, &user.Email)
+		user = model.User{}
+		err = rows.Scan(&user.ID, &user.Username, &user.Enabled, &user.Email)
 		if err != nil {
 			return user, err
 		}
@@ -737,11 +742,22 @@ func (db dbObj) userUpdate(id uint64, user model.User) (model.User, error) {
 		enabled = 0
 	}
 
-	passwordHash, err := passwordHash(user.Password)
-	if err != nil {
-		return model.User{}, err
+	var passwordHash string
+	if len(user.Password) == 0 {
+		// use previous password if not updating password
+		user, err := db.userSelect(id)
+		if err != nil {
+			return model.User{}, err
+		}
+		passwordHash = user.Password
+	} else {
+		hash, err := hashPassword(user.Password)
+		if err != nil {
+			return model.User{}, err
+		}
+		passwordHash = hash
 	}
-	err = db.dbUpdate("UPDATE users SET username=$1, password=$2, enabled=$3, email=$4 WHERE id=$5", user.Username, passwordHash, enabled, user.Email, id)
+	err := db.dbUpdate("UPDATE users SET username=$1, password=$2, enabled=$3, email=$4 WHERE id=$5", user.Username, passwordHash, enabled, user.Email, id)
 	if err != nil {
 		return model.User{}, err
 	}

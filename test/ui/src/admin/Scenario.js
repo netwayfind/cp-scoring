@@ -218,7 +218,6 @@ class Scenario extends Component {
             );
         };
 
-        console.log(this.state.currentScenarioHost);
         let answers = this.state.currentScenarioHost.Answers || [];
         let checks = this.state.currentScenarioHost.Checks || [];
         let config = this.state.currentScenarioHost.Config || [];
