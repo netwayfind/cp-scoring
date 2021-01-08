@@ -42,9 +42,12 @@ type backingStore interface {
 	userDelete(id uint64) error
 	userInsert(user model.User) (model.User, error)
 	userSelect(id uint64) (model.User, error)
-	userSelectPasswordByUsername(username string) (string, error)
+	userSelectByUsername(username string) (model.User, error)
 	userSelectAll() ([]model.UserSummary, error)
 	userUpdate(id uint64, user model.User) (model.User, error)
+	userRolesDelete(id uint64) error
+	userRolesSelect(id uint64) ([]model.Role, error)
+	userRolesUpdate(id uint64, roles []model.Role) error
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {

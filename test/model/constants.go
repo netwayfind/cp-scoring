@@ -20,6 +20,15 @@ const (
 	OperatorTypeNotEqual OperatorType = "NOT_EQUAL"
 )
 
+// Role asdf
+type Role string
+
+// asdf
+const (
+	RoleAdmin Role = "Admin"
+	RoleTeam  Role = "Team"
+)
+
 // asdf
 const (
 	KeyCharset string = "0123456789ABCDEF"

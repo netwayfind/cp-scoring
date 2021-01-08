@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/netwayfind/cp-scoring/test/model"
 )
@@ -16,6 +17,7 @@ import (
 // APIHandler asdf
 type APIHandler struct {
 	BackingStore backingStore
+	jwtSecret    []byte
 }
 
 func getRequestID(r *http.Request) (uint64, error) {
@@ -47,6 +49,12 @@ func httpErrorDatabase(w http.ResponseWriter, err error) {
 func httpErrorForbidden(w http.ResponseWriter) {
 	msg := "ERROR: forbidden;"
 	http.Error(w, msg, http.StatusForbidden)
+}
+
+func httpErrorInternal(w http.ResponseWriter, err error) {
+	msg := "ERROR: internal server error;"
+	log.Println(msg, err)
+	http.Error(w, msg, http.StatusInternalServerError)
 }
 
 func httpErrorInvalidID(w http.ResponseWriter) {
@@ -277,21 +285,40 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("username: " + username)
 	password := r.Form.Get("password")
 
-	passwordHash, err := handler.BackingStore.userSelectPasswordByUsername(username)
+	user, err := handler.BackingStore.userSelectByUsername(username)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
 	}
-	if checkPasswordHash(password, passwordHash) {
+
+	if checkPasswordHash(password, user.Password) {
 		log.Println("user authentication successful")
 
-		value := randHexStr(32)
+		roles, err := handler.BackingStore.userRolesSelect(user.ID)
+		if err != nil {
+			httpErrorDatabase(w, err)
+			return
+		}
+
+		claims := model.AuthClaims{
+			ID:    user.ID,
+			Roles: roles,
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signedToken, err := token.SignedString(handler.jwtSecret)
+		if err != nil {
+			httpErrorInternal(w, err)
+			return
+		}
 
 		cookie := &http.Cookie{
-			Name:     "session",
-			Value:    value,
+			Name:     "auth",
+			Value:    signedToken,
 			Path:     "/",
 			HttpOnly: true,
+			Expires:  time.Now().AddDate(0, 0, 1),
+			// TODO: Secure when enforcing HTTPS
 		}
 		http.SetCookie(w, cookie)
 		return
@@ -876,4 +903,50 @@ func (handler APIHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendResponse(w, s)
+}
+
+func (handler APIHandler) readUserRoles(w http.ResponseWriter, r *http.Request) {
+	log.Println("read user roles")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	s, err := handler.BackingStore.userRolesSelect(id)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) updateUserRoles(w http.ResponseWriter, r *http.Request) {
+	log.Println("update user roles")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+	log.Println(id)
+
+	var roles []model.Role
+	err = readRequestBody(w, r, &roles)
+	if err != nil {
+		return
+	}
+
+	err = handler.BackingStore.userRolesUpdate(id, roles)
+	if err != nil {
+		if err.Error() == model.ErrorDBUpdateNoChange {
+			httpErrorNotFound(w)
+			return
+		}
+		httpErrorDatabase(w, err)
+		return
+	}
 }

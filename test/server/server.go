@@ -17,6 +17,7 @@ func main() {
 	uiPath := "./ui/build"
 	backingStoreStr := "postgres"
 	dbURL := "postgres://postgres:password@localhost:5432?sslmode=disable"
+	jwtSecret := []byte("insecure")
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -26,6 +27,7 @@ func main() {
 	}
 	apiHandler := APIHandler{
 		BackingStore: backingStore,
+		jwtSecret:    jwtSecret,
 	}
 
 	// generate default user if no users
@@ -90,6 +92,8 @@ func main() {
 	userRouter.HandleFunc("/{id:[0-9]+}", apiHandler.deleteUser).Methods("DELETE")
 	userRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readUser).Methods("GET")
 	userRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateUser).Methods("PUT")
+	userRouter.HandleFunc("/{id:[0-9]+}/roles", apiHandler.readUserRoles).Methods("GET")
+	userRouter.HandleFunc("/{id:[0-9]+}/roles", apiHandler.updateUserRoles).Methods("PUT")
 
 	log.Println("Ready to serve requests")
 	addr := "0.0.0.0:" + port

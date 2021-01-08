@@ -16,6 +16,7 @@ type dbObj struct {
 
 func (db dbObj) dbInit() {
 	db.dbCreateTable("users", "CREATE TABLE IF NOT EXISTS users(id BIGSERIAL PRIMARY KEY, username VARCHAR NOT NULL, password VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, email VARCHAR NOT NULL)")
+	db.dbCreateTable("user_roles", "CREATE TABLE IF NOT EXISTS user_roles(user_id BIGSERIAL NOT NULL, role VARCHAR NOT NULL, FOREIGN KEY(user_id) REFERENCES users(id))")
 	db.dbCreateTable("host_tokens", "CREATE TABLE IF NOT EXISTS host_tokens(host_token VARCHAR NOT NULL PRIMARY KEY, timestamp INTEGER NOT NULL, hostname VARCHAR NOT NULL, source VARCHAR NOT NULL)")
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
@@ -651,6 +652,12 @@ func (db dbObj) teamHostTokenInsert(teamID uint64, hostToken string, timestamp i
 }
 
 func (db dbObj) userDelete(id uint64) error {
+	// TODO: transaction
+	err := db.userRolesDelete(id)
+	if err != nil {
+		return err
+	}
+
 	return db.dbDelete("DELETE FROM users WHERE id=$1", id)
 }
 
@@ -678,6 +685,7 @@ func (db dbObj) userInsert(user model.User) (model.User, error) {
 
 func (db dbObj) userSelect(id uint64) (model.User, error) {
 	var user model.User
+	// no password returned
 	rows, err := db.dbConn.Query("SELECT id, username, enabled, email FROM users WHERE id=$1", id)
 	if err != nil {
 		return user, err
@@ -696,23 +704,25 @@ func (db dbObj) userSelect(id uint64) (model.User, error) {
 	return user, nil
 }
 
-func (db dbObj) userSelectPasswordByUsername(username string) (string, error) {
-	rows, err := db.dbConn.Query("SELECT password FROM users WHERE username=$1", username)
+func (db dbObj) userSelectByUsername(username string) (model.User, error) {
+	var user model.User
+	// password returned
+	rows, err := db.dbConn.Query("SELECT id, username, password, enabled, email FROM users WHERE username=$1", username)
 	if err != nil {
-		return "", err
+		return user, err
 	}
 	defer rows.Close()
 
-	var passwordHash string
 	for rows.Next() {
-		err = rows.Scan(&passwordHash)
+		user = model.User{}
+		err = rows.Scan(&user.ID, &user.Username, &user.Password, &user.Enabled, &user.Email)
 		if err != nil {
-			return "", err
+			return user, err
 		}
 		break
 	}
 
-	return passwordHash, nil
+	return user, nil
 }
 
 func (db dbObj) userSelectAll() ([]model.UserSummary, error) {
@@ -763,4 +773,45 @@ func (db dbObj) userUpdate(id uint64, user model.User) (model.User, error) {
 	}
 
 	return db.userSelect(id)
+}
+
+func (db dbObj) userRolesDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM user_roles WHERE user_id=$1", id)
+}
+
+func (db dbObj) userRolesSelect(id uint64) ([]model.Role, error) {
+	rows, err := db.dbConn.Query("SELECT role FROM user_roles WHERE user_id=$1", id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	roles := make([]model.Role, 0)
+	for rows.Next() {
+		var role model.Role
+		err = rows.Scan(&role)
+		if err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	return roles, err
+}
+
+func (db dbObj) userRolesUpdate(id uint64, roles []model.Role) error {
+	// TODO: transaction
+	err := db.userRolesDelete(id)
+	if err != nil {
+		return err
+	}
+
+	for _, role := range roles {
+		_, err = db.dbInsert("INSERT INTO user_roles(user_id, role) VALUES($1, $2)", id, role)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

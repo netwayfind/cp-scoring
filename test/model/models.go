@@ -1,5 +1,7 @@
 package model
 
+import "github.com/dgrijalva/jwt-go"
+
 // Action asdf
 type Action struct {
 	Type    ActionType
@@ -38,6 +40,13 @@ type AuditCheckResults struct {
 	HostToken    string
 	Timestamp    int64
 	CheckResults []string
+}
+
+// AuthClaims asdf
+type AuthClaims struct {
+	jwt.StandardClaims
+	ID    uint64
+	Roles []Role
 }
 
 // HostTokenRequest asdf
