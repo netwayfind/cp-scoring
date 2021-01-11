@@ -1,20 +1,22 @@
-import { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Component } from "react";
+import { Link } from "react-router-dom";
 import { withRouter } from "react-router-dom/cjs/react-router-dom.min";
 
 class LinkList extends Component {
-    render() {
-        let items = [];
-        this.props.items.forEach((item, i) => {
-            items.push(
-                <li key={i}><Link to={`${this.props.path}/${item.ID}`}>[{item.ID}] {item[this.props.label]}</Link></li>
-            );
-        });
+  render() {
+    let items = [];
+    this.props.items.forEach((item, i) => {
+      items.push(
+        <li key={i}>
+          <Link to={`${this.props.path}/${item.ID}`}>
+            [{item.ID}] {item[this.props.label]}
+          </Link>
+        </li>
+      );
+    });
 
-        return (
-            <ul>{items}</ul>
-        );
-    }
+    return <ul>{items}</ul>;
+  }
 }
 
 export default withRouter(LinkList);
