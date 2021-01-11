@@ -31,5 +31,6 @@ const (
 
 // asdf
 const (
-	KeyCharset string = "0123456789ABCDEF"
+	AuthCookieName        = "auth"
+	KeyCharset     string = "0123456789ABCDEF"
 )

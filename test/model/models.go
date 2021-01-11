@@ -60,6 +60,12 @@ type HostTokenRegistration struct {
 	TeamKey   string
 }
 
+// LoginUser asdf
+type LoginUser struct {
+	Username string
+	Password string
+}
+
 // Report asdf
 type Report struct {
 	Timestamp     int64

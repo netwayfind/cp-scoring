@@ -35,12 +35,23 @@ export async function apiGet(url) {
         });
 }
 
+export async function apiLogin(username, password) {
+    return apiPost('/api/login/', {
+        username: username,
+        password: password
+    });
+}
+
+export async function apiLogout() {
+    return apiPost('/api/logout/');
+}
+
 export async function apiPost(url, body) {
     return fetch(url, {
             credentials: 'same-origin',
             method: 'POST',
             headers: {
-            'Content-Type': 'application/json'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         })

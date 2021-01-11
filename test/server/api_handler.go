@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -277,21 +279,49 @@ func (handler APIHandler) registerHostToken(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+func (handler APIHandler) checkLogin(w http.ResponseWriter, r *http.Request) {
+	log.Println("check login")
+
+	jwtCookie, err := r.Cookie(model.AuthCookieName)
+	if err != nil {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	if len(jwtCookie.Value) < 5 {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	token, err := jwt.Parse(jwtCookie.Value, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			errMsg := fmt.Sprintf("%s", token.Header["alg"])
+			return nil, errors.New(errMsg)
+		}
+		return []byte(handler.jwtSecret), nil
+	})
+
+	if !token.Valid {
+		httpErrorNotAuthenticated(w)
+	}
+}
+
 func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 	log.Println("login user")
 
-	r.ParseForm()
-	username := r.Form.Get("username")
-	log.Println("username: " + username)
-	password := r.Form.Get("password")
+	var loginUser model.LoginUser
+	err := readRequestBody(w, r, &loginUser)
+	if err != nil {
+		return
+	}
 
-	user, err := handler.BackingStore.userSelectByUsername(username)
+	user, err := handler.BackingStore.userSelectByUsername(loginUser.Username)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
 	}
 
-	if checkPasswordHash(password, user.Password) {
+	if checkPasswordHash(loginUser.Password, user.Password) {
 		log.Println("user authentication successful")
 
 		roles, err := handler.BackingStore.userRolesSelect(user.ID)
@@ -313,11 +343,12 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		cookie := &http.Cookie{
-			Name:     "auth",
+			Name:     model.AuthCookieName,
 			Value:    signedToken,
 			Path:     "/",
 			HttpOnly: true,
 			Expires:  time.Now().AddDate(0, 0, 1),
+			SameSite: http.SameSiteLaxMode,
 			// TODO: Secure when enforcing HTTPS
 		}
 		http.SetCookie(w, cookie)
@@ -349,6 +380,28 @@ func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println(team.ID)
+}
+
+func (handler APIHandler) logout(w http.ResponseWriter, r *http.Request) {
+	log.Println("logout")
+
+	_, err := r.Cookie(model.AuthCookieName)
+	if err != nil {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     model.AuthCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Unix(0, 0),
+		SameSite: http.SameSiteLaxMode,
+		// TODO: Secure when enforcing HTTPS
+	}
+	http.SetCookie(w, cookie)
+	return
 }
 
 func (handler APIHandler) createScenario(w http.ResponseWriter, r *http.Request) {
