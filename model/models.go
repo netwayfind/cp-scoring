@@ -60,6 +60,11 @@ type HostTokenRegistration struct {
 	TeamKey   string
 }
 
+// LoginTeam asdf
+type LoginTeam struct {
+	TeamKey string
+}
+
 // LoginUser asdf
 type LoginUser struct {
 	Username string

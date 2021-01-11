@@ -110,7 +110,7 @@ func (db dbObj) auditAnswerResultsInsert(results model.AuditAnswerResults) error
 }
 
 func (db dbObj) auditAnswerResultsSelectHostnames(scenarioID uint64, teamID uint64) ([]string, error) {
-	rows, err := db.dbConn.Query("SELECT h.hostname FROM audit_answer_results a JOIN host_tokens h ON a.host_token=h.host_token GROUP BY h.hostname ORDER BY h.hostname ASC")
+	rows, err := db.dbConn.Query("SELECT h.hostname FROM audit_answer_results a JOIN host_tokens h ON a.host_token=h.host_token JOIN team_host_tokens tht ON tht.host_token=h.host_token WHERE a.scenario_id=$1 AND tht.team_id=$2 GROUP BY h.hostname ORDER BY h.hostname ASC", scenarioID, teamID)
 	if err != nil {
 		return nil, err
 	}

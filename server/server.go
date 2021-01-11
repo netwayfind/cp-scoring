@@ -63,7 +63,7 @@ func main() {
 
 	// audit, no auth
 	auditRouter := apiRouter.PathPrefix("/audit").Subrouter()
-	auditRouter.HandleFunc("/audit", apiHandler.audit).Methods("POST")
+	auditRouter.HandleFunc("/", apiHandler.audit).Methods("POST")
 
 	// host-token, no auth
 	hostTokenRouter := apiRouter.PathPrefix("/host-token").Subrouter()

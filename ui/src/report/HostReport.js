@@ -18,20 +18,22 @@ class HostReport extends Component {
   }
 
   componentDidMount() {
+    let scenarioID = this.props.match.params.scenarioID;
     let hostname = this.props.match.params.hostname;
-    this.getData(hostname);
+    this.getData(scenarioID, hostname);
   }
 
   componentDidUpdate(prevProps) {
+    let scenarioID = this.props.match.params.scenarioID;
+    let prevScenarioID = prevProps.match.params.scenarioID;
     let hostname = this.props.match.params.hostname;
     let prevHostname = prevProps.match.params.hostname;
-    if (hostname !== prevHostname) {
-      this.getData(hostname);
+    if (scenarioID !== prevScenarioID || hostname !== prevHostname) {
+      this.getData(scenarioID, hostname);
     }
   }
 
-  getData(hostname) {
-    let scenarioID = this.props.scenarioID;
+  getData(scenarioID, hostname) {
     let teamKey = this.props.teamKey;
     Promise.all([
       apiGet(
@@ -111,6 +113,7 @@ class HostReport extends Component {
     let config = {
       staticPlot: true,
     };
+    let scenarioID = this.props.match.params.scenarioID;
     let hostname = this.props.match.params.hostname;
 
     return (
@@ -119,7 +122,7 @@ class HostReport extends Component {
         <p />
         <button
           type="button"
-          onClick={(event) => this.getData(hostname, event)}
+          onClick={(event) => this.getData(scenarioID, hostname, event)}
         >
           Refresh
         </button>

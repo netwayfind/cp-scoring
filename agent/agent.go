@@ -151,7 +151,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	x, err = http.Post("http://localhost:8000/audit", "application/json", bytes.NewBuffer(body))
+	x, err = http.Post("http://localhost:8000/api/audit/", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Fatal(err)
 	}

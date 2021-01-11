@@ -411,15 +411,13 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
 	log.Println("login team")
 
-	r.ParseForm()
-	teamKey := r.Form.Get("team_key")
-	teamKey = strings.TrimSpace(teamKey)
-	if len(teamKey) == 0 {
-		httpErrorNotAuthenticated(w)
+	var loginTeam model.LoginTeam
+	err := readRequestBody(w, r, &loginTeam)
+	if err != nil {
 		return
 	}
 
-	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	team, err := handler.BackingStore.teamSelectByKey(loginTeam.TeamKey)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
