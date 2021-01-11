@@ -1,7 +1,7 @@
 import "./App.css";
 import { apiGet } from "./common/utils";
 import LinkList from "./common/LinkList";
-import ScenarioScoreboard from "./scenario/ScenarioScoreboard";
+import ScenarioScoreboard from "./scoreboard/ScenarioScoreboard";
 
 import { Component } from "react";
 import { Route, Switch, withRouter } from "react-router-dom";
