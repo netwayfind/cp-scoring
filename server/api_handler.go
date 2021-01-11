@@ -13,7 +13,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
-	"github.com/netwayfind/cp-scoring/test/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 // APIHandler asdf

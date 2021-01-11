@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/netwayfind/cp-scoring/test/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 func main() {

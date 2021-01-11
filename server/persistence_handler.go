@@ -7,7 +7,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/netwayfind/cp-scoring/test/model"
+	"github.com/netwayfind/cp-scoring/model"
 )
 
 type dbObj struct {

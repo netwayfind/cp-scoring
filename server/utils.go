@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"strings"
 
-	"github.com/netwayfind/cp-scoring/test/model"
+	"github.com/netwayfind/cp-scoring/model"
 	"golang.org/x/crypto/bcrypt"
 )
 

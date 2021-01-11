@@ -1,73 +1,73 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
+	"log"
 
-	"github.com/netwayfind/cp-scoring/processing"
-
+	_ "github.com/lib/pq"
 	"github.com/netwayfind/cp-scoring/model"
 )
 
 type backingStore interface {
-	InsertState(timestamp int64, source string, hostToken string, state model.State) error
-	SelectState(id string) (model.State, error)
-	SelectStateTimestamps(hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
-	SelectStateDiffs(hostToken string, timeStart int64, timeEnd int64, out chan processing.DocumentDiff) error
-	SelectAdmins() ([]string, error)
-	IsAdmin(username string) (bool, error)
-	SelectAdminPasswordHash(username string) (string, error)
-	InsertAdmin(username string, passwordHash string) error
-	UpdateAdmin(username string, passwordHash string) error
-	DeleteAdmin(username string) error
-	SelectHosts() ([]model.Host, error)
-	SelectHost(hostID uint64) (model.Host, error)
-	SelectHostIDForHostname(hostname string) (uint64, error)
-	InsertHost(host model.Host) (uint64, error)
-	UpdateHost(hostID uint64, host model.Host) error
-	DeleteHost(hostID uint64) error
-	SelectTeams() ([]model.TeamSummary, error)
-	SelectTeam(teamID uint64) (model.Team, error)
-	SelectTeamIDFromHostToken(hostToken string) (uint64, error)
-	SelectTeamIDForKey(teamKey string) (uint64, error)
-	InsertTeam(team model.Team) (uint64, error)
-	UpdateTeam(teamID uint64, team model.Team) error
-	DeleteTeam(teamID uint64) error
-	SelectTemplates() ([]model.Template, error)
-	SelectTemplatesForHostname(scenarioID uint64, hostname string) ([]model.Template, error)
-	SelectTemplate(templateID uint64) (model.Template, error)
-	InsertTemplate(template model.Template) (uint64, error)
-	UpdateTemplate(templateID uint64, template model.Template) error
-	DeleteTemplate(templateID uint64) error
-	SelectScenarios(onlyEnabled bool) ([]model.ScenarioSummary, error)
-	SelectScenariosForHostname(hostname string) ([]uint64, error)
-	SelectScenario(scenarioID uint64) (model.Scenario, error)
-	InsertScenario(scenario model.Scenario) (uint64, error)
-	UpdateScenario(scenarioID uint64, scenario model.Scenario) error
-	DeleteScenario(scenarioID uint64) error
-	SelectLatestScenarioScores(scenarioID uint64) ([]model.TeamScore, error)
-	InsertScenarioReport(scenarioID uint64, hostToken string, timestamp int64, report model.Report) error
-	SelectScenarioReport(id string) (model.Report, error)
-	SelectScenarioReportTimestamps(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) ([]model.TimestampDocumentAndReceived, error)
-	SelectScenarioReportDiffs(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64, out chan processing.DocumentDiff) error
-	InsertScenarioScore(score model.ScenarioHostScore) error
-	SelectScenarioTimeline(scenarioID uint64, hostToken string, timeStart int64, timeEnd int64) (model.ScenarioTimeline, error)
-	SelectLatestScenarioReport(scenarioID uint64, hostToken string) (model.Report, error)
-	SelectTeamScenarioHosts(teamID uint64) ([]model.ScenarioHosts, error)
-	InsertHostToken(hostToken string, timestamp int64, hostname string, source string) error
-	InsertTeamHostToken(teamID uint64, hostToken string, timestamp int64) error
-	SelectHostTokens(teamID uint64, hostname string) ([]string, error)
+	auditAnswerResultsInsert(results model.AuditAnswerResults) error
+	auditAnswerResultsSelectHostnames(scenarioID uint64, teamID uint64) ([]string, error)
+	auditAnswerResultsReport(scenarioID uint64, teamID uint64, hostname string) (model.Report, error)
+	auditAnswerResultsReportTimeline(scenarioID uint64, teamID uint64, hostname string) ([]model.ReportTimeline, error)
+	auditCheckResultsInsert(results model.AuditCheckResults, teamID uint64, timestamp int64, source string) (uint64, error)
+	hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error
+	hostTokenSelectHostname(hostToken string) (string, error)
+	hostTokenSelectTeamID(hostToken string) (uint64, error)
+	scenarioDelete(id uint64) error
+	scenarioInsert(scenario model.Scenario) (model.Scenario, error)
+	scenarioSelect(id uint64) (model.Scenario, error)
+	scenarioSelectAll() ([]model.ScenarioSummary, error)
+	scenarioUpdate(id uint64, scenario model.Scenario) (model.Scenario, error)
+	scenarioHostsSelectAll(scenarioID uint64) (map[string]model.ScenarioHost, error)
+	scenarioHostsSelectAnswers(scenarioID uint64, hostname string) ([]model.Answer, error)
+	scenarioHostsSelectChecks(scenarioID uint64, hostname string) ([]model.Action, error)
+	scenarioHostsSelectConfig(scenarioID uint64, hostname string) ([]model.Action, error)
+	scenarioHostsDelete(scenarioID uint64) error
+	scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]model.ScenarioHost) error
+	scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error)
+	scoreboardSelectScenarios() ([]model.ScenarioSummary, error)
+	scoreboardUpdate(scenarioID uint64, teamID uint64, hostname string, score int, timestamp int64) error
+	teamDelete(id uint64) error
+	teamInsert(team model.Team) (model.Team, error)
+	teamSelect(id uint64) (model.Team, error)
+	teamSelectByKey(key string) (model.Team, error)
+	teamSelectAll() ([]model.TeamSummary, error)
+	teamUpdate(id uint64, team model.Team) (model.Team, error)
+	teamHostTokenInsert(teamID uint64, hostToken string, timestamp int64) error
+	userDelete(id uint64) error
+	userInsert(user model.User) (model.User, error)
+	userSelect(id uint64) (model.User, error)
+	userSelectByUsername(username string) (model.User, error)
+	userSelectAll() ([]model.UserSummary, error)
+	userUpdate(id uint64, user model.User) (model.User, error)
+	userRolesDelete(id uint64) error
+	userRolesSelect(id uint64) ([]model.Role, error)
+	userRolesUpdate(id uint64, roles []model.Role) error
 }
 
 func getBackingStore(store string, args ...string) (backingStore, error) {
 	if store == "postgres" {
-		db := dbObj{}
-		dbConn, err := newPostgresDBConn(args)
+		// must have first argument as URL
+		if len(args) < 1 {
+			return nil, errors.New("ERROR: URL required")
+		}
+		dbConn, err := sql.Open("postgres", args[0])
 		if err != nil {
 			return nil, err
 		}
-		db.dbConn = dbConn
+		log.Println("New connection to database")
+
+		db := dbObj{
+			dbConn: dbConn,
+		}
 		db.dbInit()
 		return db, nil
 	}
+
 	return nil, errors.New("Unsupported backing store " + store)
 }
