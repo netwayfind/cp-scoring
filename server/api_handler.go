@@ -22,6 +22,58 @@ type APIHandler struct {
 	jwtSecret    []byte
 }
 
+func (handler APIHandler) middlewareLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.Method + " " + r.URL.String())
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (handler APIHandler) middlewareAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, err := r.Cookie(model.AuthCookieName)
+		if err != nil {
+			httpErrorNotAuthenticated(w)
+			return
+		}
+
+		token, err := getJwtToken(handler.jwtSecret, jwtCookie.Value)
+		claims := token.Claims.(jwt.MapClaims)
+
+		// TODO: check roles
+		if len(claims) == 0 {
+			httpErrorNotAuthenticated(w)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getJwtToken(jwtSecret []byte, jwtStr string) (*jwt.Token, error) {
+	if len(jwtStr) < 5 {
+		return nil, errors.New("invalid jwt length")
+	}
+
+	token, err := jwt.Parse(jwtStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			errMsg := fmt.Sprintf("%s", token.Header["alg"])
+			return nil, errors.New(errMsg)
+		}
+		return []byte(jwtSecret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, errors.New("invalid jwt")
+	}
+
+	return token, nil
+}
+
 func getRequestID(r *http.Request) (uint64, error) {
 	vars := mux.Vars(r)
 
@@ -85,6 +137,7 @@ func httpErrorReadRequestBody(w http.ResponseWriter, err error) {
 
 func httpErrorNotAuthenticated(w http.ResponseWriter) {
 	msg := "ERROR: not authenticated;"
+	log.Println(msg)
 	http.Error(w, msg, http.StatusUnauthorized)
 }
 
@@ -293,14 +346,11 @@ func (handler APIHandler) checkLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.Parse(jwtCookie.Value, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			errMsg := fmt.Sprintf("%s", token.Header["alg"])
-			return nil, errors.New(errMsg)
-		}
-		return []byte(handler.jwtSecret), nil
-	})
-
+	token, err := getJwtToken(handler.jwtSecret, jwtCookie.Value)
+	if err != nil {
+		httpErrorNotAuthenticated(w)
+		return
+	}
 	if !token.Valid {
 		httpErrorNotAuthenticated(w)
 	}
@@ -322,7 +372,7 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if checkPasswordHash(loginUser.Password, user.Password) {
-		log.Println("user authentication successful")
+		log.Println("user authentication successful: " + loginUser.Username)
 
 		roles, err := handler.BackingStore.userRolesSelect(user.ID)
 		if err != nil {
@@ -379,17 +429,11 @@ func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(team.ID)
+	log.Printf("team authentication successful: %d", team.ID)
 }
 
 func (handler APIHandler) logout(w http.ResponseWriter, r *http.Request) {
 	log.Println("logout")
-
-	_, err := r.Cookie(model.AuthCookieName)
-	if err != nil {
-		httpErrorNotAuthenticated(w)
-		return
-	}
 
 	cookie := &http.Cookie{
 		Name:     model.AuthCookieName,
@@ -430,7 +474,6 @@ func (handler APIHandler) deleteScenario(w http.ResponseWriter, r *http.Request)
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	team, err := handler.BackingStore.scenarioSelect(id)
 	if err != nil {
@@ -456,7 +499,6 @@ func (handler APIHandler) readScenario(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	s, err := handler.BackingStore.scenarioSelect(id)
 	if err != nil {
@@ -491,7 +533,6 @@ func (handler APIHandler) updateScenario(w http.ResponseWriter, r *http.Request)
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	var scenario model.Scenario
 	err = readRequestBody(w, r, &scenario)
@@ -520,7 +561,6 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	hostnameParam, present := r.URL.Query()["hostname"]
 	if !present || len(hostnameParam) != 1 {
@@ -550,7 +590,6 @@ func (handler APIHandler) readScenarioHosts(w http.ResponseWriter, r *http.Reque
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	s, err := handler.BackingStore.scenarioHostsSelectAll(id)
 	if err != nil {
@@ -569,7 +608,6 @@ func (handler APIHandler) updateScenarioHosts(w http.ResponseWriter, r *http.Req
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	var hostMap map[string]model.ScenarioHost
 	err = readRequestBody(w, r, &hostMap)
@@ -596,7 +634,6 @@ func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Requ
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	teamKeyParam, present := r.URL.Query()["team_key"]
 	if !present || len(teamKeyParam) != 1 {
@@ -648,7 +685,6 @@ func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	teamKeyParam, present := r.URL.Query()["team_key"]
 	if !present || len(teamKeyParam) != 1 {
@@ -680,7 +716,6 @@ func (handler APIHandler) readScenarioReportTimeline(w http.ResponseWriter, r *h
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	teamKeyParam, present := r.URL.Query()["team_key"]
 	if !present || len(teamKeyParam) != 1 {
@@ -719,7 +754,6 @@ func (handler APIHandler) readScoreboardForScenario(w http.ResponseWriter, r *ht
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	s, err := handler.BackingStore.scoreboardSelectByScenarioID(id)
 	if err != nil {
@@ -768,7 +802,6 @@ func (handler APIHandler) deleteTeam(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	team, err := handler.BackingStore.teamSelect(id)
 	if err != nil {
@@ -794,7 +827,6 @@ func (handler APIHandler) readTeam(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	t, err := handler.BackingStore.teamSelect(id)
 	if err != nil {
@@ -829,7 +861,6 @@ func (handler APIHandler) updateTeam(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	var team model.Team
 	err = readRequestBody(w, r, &team)
@@ -876,7 +907,6 @@ func (handler APIHandler) deleteUser(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	user, err := handler.BackingStore.userSelect(id)
 	if err != nil {
@@ -902,7 +932,6 @@ func (handler APIHandler) readUser(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	s, err := handler.BackingStore.userSelect(id)
 	if err != nil {
@@ -937,7 +966,6 @@ func (handler APIHandler) updateUser(w http.ResponseWriter, r *http.Request) {
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	var user model.User
 	err = readRequestBody(w, r, &user)
@@ -966,7 +994,6 @@ func (handler APIHandler) readUserRoles(w http.ResponseWriter, r *http.Request) 
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	s, err := handler.BackingStore.userRolesSelect(id)
 	if err != nil {
@@ -985,7 +1012,6 @@ func (handler APIHandler) updateUserRoles(w http.ResponseWriter, r *http.Request
 		httpErrorInvalidID(w)
 		return
 	}
-	log.Println(id)
 
 	var roles []model.Role
 	err = readRequestBody(w, r, &roles)

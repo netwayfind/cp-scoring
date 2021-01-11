@@ -74,7 +74,8 @@ func main() {
 		log.Fatal("Could not register host token")
 	}
 
-	x, err := http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr)
+	log.Println("get scenario " + scenarioIDStr)
+	x, err := http.Get("http://localhost:8000/api/scenario-desc/" + scenarioIDStr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,7 +86,7 @@ func main() {
 	}
 	log.Println(y.Name)
 
-	x, err = http.Get("http://localhost:8000/api/scenarios/" + scenarioIDStr + "/checks?hostname=" + hostname)
+	x, err = http.Get("http://localhost:8000/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
 	if err != nil {
 		log.Fatal(err)
 	}

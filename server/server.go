@@ -57,39 +57,69 @@ func main() {
 		http.ServeFile(w, r, uiPath+"/index.html")
 	})
 	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(uiPath)))
+	r.Use(apiHandler.middlewareLog)
+
 	apiRouter := r.PathPrefix("/api").Subrouter()
-	r.HandleFunc("/audit", apiHandler.audit).Methods("POST")
+
+	// audit, no auth
+	auditRouter := apiRouter.PathPrefix("/audit").Subrouter()
+	auditRouter.HandleFunc("/audit", apiHandler.audit).Methods("POST")
+
+	// host-token, no auth
 	hostTokenRouter := apiRouter.PathPrefix("/host-token").Subrouter()
 	hostTokenRouter.HandleFunc("/request", apiHandler.requestHostToken).Methods("POST")
 	hostTokenRouter.HandleFunc("/register", apiHandler.registerHostToken).Methods("POST")
+
+	// login, no auth
 	loginRouter := apiRouter.PathPrefix("/login").Subrouter()
 	loginRouter.HandleFunc("/", apiHandler.checkLogin).Methods("GET")
 	loginRouter.HandleFunc("/", apiHandler.loginUser).Methods("POST")
 	loginRouter.HandleFunc("/team", apiHandler.loginTeam).Methods("POST")
+
+	// logout, auth required
 	logoutRouter := apiRouter.PathPrefix("/logout").Subrouter()
+	logoutRouter.Use(apiHandler.middlewareAuth)
 	logoutRouter.HandleFunc("/", apiHandler.logout).Methods("POST")
+
+	// scenarios, auth required
 	scenarioRouter := apiRouter.PathPrefix("/scenarios").Subrouter()
+	scenarioRouter.Use(apiHandler.middlewareAuth)
 	scenarioRouter.HandleFunc("/", apiHandler.readScenarios).Methods("GET")
 	scenarioRouter.HandleFunc("/", apiHandler.createScenario).Methods("POST")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.deleteScenario).Methods("DELETE")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenario).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateScenario).Methods("PUT")
-	scenarioRouter.HandleFunc("/{id:[0-9]+}/checks", apiHandler.readScenarioChecks).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.readScenarioHosts).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.updateScenarioHosts).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/report", apiHandler.readScenarioReport).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/report/hostnames", apiHandler.readScenarioReportHostnames).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/report/timeline", apiHandler.readScenarioReportTimeline).Methods("GET")
+
+	// scenario-desc, no auth
+	scenarioDescRouter := apiRouter.PathPrefix("/scenario-desc").Subrouter()
+	scenarioDescRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenario).Methods("GET")
+
+	// scenario-checks, no auth
+	scenarioChecksRouter := apiRouter.PathPrefix("/scenario-checks").Subrouter()
+	scenarioChecksRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenarioChecks).Methods("GET")
+
+	// scoreboard, no auth
 	scoreboardRouter := apiRouter.PathPrefix("/scoreboard").Subrouter()
 	scoreboardRouter.HandleFunc("/scenarios", apiHandler.readScoreboardScenarios).Methods("GET")
 	scoreboardRouter.HandleFunc("/scenarios/{id:[0-9]+}", apiHandler.readScoreboardForScenario).Methods("GET")
+
+	// teams, auth required
 	teamRouter := apiRouter.PathPrefix("/teams").Subrouter()
+	teamRouter.Use(apiHandler.middlewareAuth)
 	teamRouter.HandleFunc("/", apiHandler.readTeams).Methods("GET")
 	teamRouter.HandleFunc("/", apiHandler.createTeam).Methods("POST")
 	teamRouter.HandleFunc("/{id:[0-9]+}", apiHandler.deleteTeam).Methods("DELETE")
 	teamRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readTeam).Methods("GET")
 	teamRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateTeam).Methods("PUT")
+
+	// users, auth required
 	userRouter := apiRouter.PathPrefix("/users").Subrouter()
+	userRouter.Use(apiHandler.middlewareAuth)
 	userRouter.HandleFunc("/", apiHandler.readUsers).Methods("GET")
 	userRouter.HandleFunc("/", apiHandler.createUser).Methods("POST")
 	userRouter.HandleFunc("/{id:[0-9]+}", apiHandler.deleteUser).Methods("DELETE")

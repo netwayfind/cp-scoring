@@ -19,7 +19,7 @@ class ScenarioDesc extends Component {
   }
 
   getData(id) {
-    apiGet("/api/scenarios/" + id).then(
+    apiGet("/api/scenario-desc/" + id).then(
       function (s) {
         this.setState({
           error: s.error,
