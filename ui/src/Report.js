@@ -2,7 +2,7 @@ import "./App.css";
 import { apiGet, apiPost } from "./common/utils";
 import HostReport from "./report/HostReport";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { Link, Route, Switch, withRouter } from "react-router-dom";
 
 class Report extends Component {
@@ -53,7 +53,7 @@ class Report extends Component {
   handleChange(event) {
     let value = event.target.value;
     this.setState({
-      [event.target.name]: value
+      [event.target.name]: value,
     });
   }
 
@@ -62,7 +62,7 @@ class Report extends Component {
 
     this.getData(scenarioID, this.state.teamKey);
     this.setState({
-      scenarioID: scenarioID
+      scenarioID: scenarioID,
     });
   }
 
@@ -70,18 +70,19 @@ class Report extends Component {
     event.preventDefault();
 
     apiPost("/api/login/team", {
-      TeamKey: this.state.teamKey
-    })
-    .then(async function(s) {
-      let authenticated = false;
-      if (!s.error) {
-        authenticated = true;
-      }
-      this.setState({
-        authenticated: authenticated,
-        error: s.error
-      });
-    }.bind(this));
+      TeamKey: this.state.teamKey,
+    }).then(
+      async function (s) {
+        let authenticated = false;
+        if (!s.error) {
+          authenticated = true;
+        }
+        this.setState({
+          authenticated: authenticated,
+          error: s.error,
+        });
+      }.bind(this)
+    );
   }
 
   render() {
@@ -100,38 +101,57 @@ class Report extends Component {
 
     let scenarios = [];
     if (this.state.scenarios) {
-      this.state.scenarios.forEach(scenario => {
+      this.state.scenarios.forEach((scenario) => {
         scenarios.push(
-          <li key={scenario.ID}><button type="button" disabled={this.state.scenarioID === scenario.ID} onClick={(event) => this.handleScenarioUpdate(scenario.ID, event)}>{scenario.Name}</button></li>
+          <li key={scenario.ID}>
+            <button
+              type="button"
+              disabled={this.state.scenarioID === scenario.ID}
+              onClick={(event) => this.handleScenarioUpdate(scenario.ID, event)}
+            >
+              {scenario.Name}
+            </button>
+          </li>
         );
       });
     }
 
     let hostnames;
-    if (this.state.hostnames.length > 0)  {
+    if (this.state.hostnames.length > 0) {
       hostnames = [];
       this.state.hostnames.forEach((hostname) => {
         hostnames.push(
           <li key={hostname}>
-            <Link to={`${this.props.match.url}/${this.state.scenarioID}/${hostname}`}>{hostname}</Link>
+            <Link
+              to={`${this.props.match.url}/${this.state.scenarioID}/${hostname}`}
+            >
+              {hostname}
+            </Link>
           </li>
         );
       });
     }
-    
+
     return (
-      <div className="Report">
-        <p>Scenarios</p>
-        <ul>{scenarios}</ul>
-        <hr />
-        <ul>{hostnames}</ul>
-        <hr />
-        <Switch>
-          <Route path={`${this.props.match.url}/:scenarioID/:hostname`}>
-            <HostReport teamKey={this.state.teamKey} />
-          </Route>
-        </Switch>
-      </div>
+      <Fragment>
+        <div className="heading">
+          <h1>Report</h1>
+        </div>
+        <div className="toc">
+          <h4>Scenarios</h4>
+          <ul>{scenarios}</ul>
+          <hr />
+          <h4>Hosts</h4>
+          <ul>{hostnames}</ul>
+        </div>
+        <div className="content">
+          <Switch>
+            <Route path={`${this.props.match.url}/:scenarioID/:hostname`}>
+              <HostReport teamKey={this.state.teamKey} />
+            </Route>
+          </Switch>
+        </div>
+      </Fragment>
     );
   }
 }

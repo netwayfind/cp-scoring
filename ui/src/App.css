@@ -1,0 +1,35 @@
+.content {
+  height: 90vh;
+  margin-left: 25%;
+  overflow: auto;
+  position: sticky;
+}
+
+.heading {
+  height: 40px;
+  width: 100%;
+  float: top;
+  position: sticky;
+  border-bottom: 1px solid;
+}
+
+.nav-button {
+  margin: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+  text-decoration: none;
+}
+
+.navbar {
+  height: 30px;
+  border-bottom: 1px solid black;
+}
+
+.toc {
+  height: 90vh;
+  width: 20%;
+  float: left;
+  overflow: auto;
+  position: sticky;
+  border-right: 1px solid;
+}

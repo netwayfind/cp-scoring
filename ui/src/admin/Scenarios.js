@@ -3,7 +3,7 @@ import { apiGet } from "../common/utils";
 import LinkList from "../common/LinkList";
 import Scenario from "./Scenario";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { Link, Route, Switch } from "react-router-dom";
 import { withRouter } from "react-router-dom/cjs/react-router-dom.min";
 
@@ -39,29 +39,33 @@ class Scenarios extends Component {
 
   render() {
     return (
-      <div className="Scenarios">
-        <Link to={this.props.match.path}>Add Scenario</Link>
-        <p />
-        <LinkList
-          items={this.state.scenarios}
-          path={this.props.match.path}
-          label="Name"
-        />
-        <Switch>
-          <Route path={`${this.props.match.url}/:id`}>
-            <Scenario
-              parentCallback={this.getData}
-              parentPath={this.props.match.path}
-            />
-          </Route>
-          <Route>
-            <Scenario
-              parentCallback={this.getData}
-              parentPath={this.props.match.path}
-            />
-          </Route>
-        </Switch>
-      </div>
+      <Fragment>
+        <div className="toc">
+          <Link to={this.props.match.path}>Add Scenario</Link>
+          <p />
+          <LinkList
+            items={this.state.scenarios}
+            path={this.props.match.path}
+            label="Name"
+          />
+        </div>
+        <div className="content">
+          <Switch>
+            <Route path={`${this.props.match.url}/:id`}>
+              <Scenario
+                parentCallback={this.getData}
+                parentPath={this.props.match.path}
+              />
+            </Route>
+            <Route>
+              <Scenario
+                parentCallback={this.getData}
+                parentPath={this.props.match.path}
+              />
+            </Route>
+          </Switch>
+        </div>
+      </Fragment>
     );
   }
 }

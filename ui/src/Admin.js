@@ -4,42 +4,50 @@ import Scenarios from "./admin/Scenarios";
 import Teams from "./admin/Teams";
 import Users from "./admin/Users";
 
-import { Link, Route, Switch, useRouteMatch } from "react-router-dom";
+import { Component, Fragment } from "react";
+import { Link, Route, Switch } from "react-router-dom";
+import { withRouter } from "react-router-dom/cjs/react-router-dom.min";
 
-export default function Admin() {
-  let { path, url } = useRouteMatch();
+class Admin extends Component {
+  render() {
+    let url = this.props.match.url;
+    let path = this.props.match.path;
 
-  return (
-    <div className="Admin">
-      admin
-      <ul>
-        <li>
-          <Link to={`${url}/teams`}>Teams</Link>
-        </li>
-        <li>
-          <Link to={`${url}/scenarios`}>Scenarios</Link>
-        </li>
-        <li>
-          <Link to={`${url}/users`}>Users</Link>
-        </li>
-      </ul>
-      <Switch>
-        <Route exact path={path}>
-          ????
-        </Route>
-        <Route path={`${path}/teams`}>
-          <Teams />
-        </Route>
-        <Route path={`${path}/scenarios`}>
-          <Scenarios />
-        </Route>
-        <Route path={`${path}/users`}>
-          <Users />
-        </Route>
-        <Route>
-          <NotFound />
-        </Route>
-      </Switch>
-    </div>
-  );
+    return (
+      <Fragment>
+        <div className="heading">
+          <h1>cp-scoring admin</h1>
+        </div>
+        <div className="navbar">
+          <Link className="nav-button" to={`${url}/teams`}>
+            Teams
+          </Link>
+          <Link className="nav-button" to={`${url}/scenarios`}>
+            Scenarios
+          </Link>
+          <Link className="nav-button" to={`${url}/users`}>
+            Users
+          </Link>
+        </div>
+        <div>
+          <Switch>
+            <Route path={`${path}/teams`}>
+              <Teams />
+            </Route>
+            <Route path={`${path}/scenarios`}>
+              <Scenarios />
+            </Route>
+            <Route path={`${path}/users`}>
+              <Users />
+            </Route>
+            <Route>
+              <NotFound />
+            </Route>
+          </Switch>
+        </div>
+      </Fragment>
+    );
+  }
 }
+
+export default withRouter(Admin);

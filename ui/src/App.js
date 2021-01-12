@@ -3,7 +3,7 @@ import Admin from "./Admin";
 import LoginUser from "./common/LoginUser";
 import NotFound from "./common/NotFound";
 import Report from "./Report";
-import ScenarioDesc from "./ScenarioDesc";
+import Scenario from "./Scenario";
 import Scoreboard from "./Scoreboard";
 
 import { Component } from "react";
@@ -93,8 +93,8 @@ class App extends Component {
             <Route path="/scoreboard">
               <Scoreboard />
             </Route>
-            <Route path="/scenarioDesc">
-              <ScenarioDesc />
+            <Route path="/scenario">
+              <Scenario />
             </Route>
             <Route>
               <NotFound />
