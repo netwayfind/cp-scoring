@@ -21,6 +21,11 @@ class ScenarioHost extends Component {
     this.handleCheckArgDelete = this.handleCheckArgDelete.bind(this);
     this.handleCheckArgUpdate = this.handleCheckArgUpdate.bind(this);
     this.handleConfigAdd = this.handleConfigAdd.bind(this);
+    this.handleConfigDelete = this.handleConfigDelete.bind(this);
+    this.handleConfigUpdate = this.handleConfigUpdate.bind(this);
+    this.handleConfigArgAdd = this.handleConfigArgAdd.bind(this);
+    this.handleConfigArgDelete = this.handleConfigArgDelete.bind(this);
+    this.handleConfigArgUpdate = this.handleConfigArgUpdate.bind(this);
     this.handleSave = this.handleSave.bind(this);
   }
 
@@ -112,7 +117,60 @@ class ScenarioHost extends Component {
     });
   }
 
-  handleConfigAdd() {}
+  handleConfigAdd() {
+    let config = [...this.state.config];
+    config.push({
+      Type: "EXEC",
+      Command: "",
+      Args: [],
+    });
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigDelete(i) {
+    let config = [...this.state.config];
+    config.splice(i, 1);
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigUpdate(i, event) {
+    let name = event.target.name;
+    let value = event.target.value;
+    let config = [...this.state.config];
+    config[i][name] = value;
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigArgAdd(i) {
+    let config = [...this.state.config];
+    config[i]["Args"].push("");
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigArgDelete(i, j) {
+    let config = [...this.state.config];
+    config[i]["Args"].splice(j, 1);
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigArgUpdate(i, j, event) {
+    let value = event.target.value;
+    let config = [...this.state.config];
+    config[i]["Args"][j] = value;
+    this.setState({
+      config: config,
+    });
+  }
 
   handleSave(event) {
     if (event !== null) {
@@ -209,11 +267,13 @@ class ScenarioHost extends Component {
               onChange={(event) => this.handleAnswerUpdate(i, event)}
               value={answer.Value}
             />
+            <label htmlFor="Description">Description</label>
             <input
               name="Description"
               onChange={(event) => this.handleAnswerUpdate(i, event)}
               value={answer.Description}
             />
+            <label htmlFor="Points">Points</label>
             <input
               name="Points"
               onChange={(event) => this.handleAnswerUpdate(i, event)}
@@ -234,6 +294,63 @@ class ScenarioHost extends Component {
     );
 
     let configList = [];
+    let config = this.state.config;
+    config.forEach((conf, i) => {
+      let args = [];
+      if (conf.Args) {
+        conf.Args.forEach((arg, j) => {
+          args.push(
+            <li key={j}>
+              <input
+                onChange={(event) => this.handleConfigArgUpdate(i, j, event)}
+                value={arg}
+              ></input>
+              <button
+                type="button"
+                onClick={() => this.handleConfigArgDelete(i, j)}
+              >
+                -
+              </button>
+            </li>
+          );
+        });
+      }
+      args.push(
+        <li key="arg_add">
+          <button type="button" onClick={() => this.handleConfigArgAdd(i)}>
+            Add Arg
+          </button>
+        </li>
+      );
+      configList.push(
+        <li key={i}>
+          <details>
+            <summary>
+              Type: {conf.Type}, Command: {conf.Command}, Args: [
+              {conf.Args.join(" ") || ""}]
+            </summary>
+            <button type="button" onClick={() => this.handleConfigDelete(i)}>
+              Delete Config
+            </button>
+            <p />
+            <label htmlFor="Type">Type</label>
+            <select disabled name="Type" value="EXEC">
+              {actionOptions}
+            </select>
+            <br />
+            <label htmlFor="Command">Command</label>
+            <input
+              name="Command"
+              onChange={(event) => this.handleConfigUpdate(i, event)}
+              value={conf.Command}
+            />
+            <br />
+            <label htmlFor="Args">Args</label>
+            <ul>{args}</ul>
+          </details>
+        </li>
+      );
+    });
     configList.push(
       <li key="config_add">
         <button type="button" onClick={this.handleConfigAdd}>

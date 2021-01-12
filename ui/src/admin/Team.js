@@ -126,24 +126,28 @@ class Team extends Component {
             disabled
             value={this.state.team.ID || ""}
           />
+          <br />
           <label htmlFor="ID">Name</label>
           <input
             onChange={this.handleUpdate}
             name="Name"
             value={this.state.team.Name || ""}
           />
+          <br />
           <label htmlFor="ID">POC</label>
           <input
             onChange={this.handleUpdate}
             name="POC"
             value={this.state.team.POC || ""}
           />
+          <br />
           <label htmlFor="ID">Email</label>
           <input
             onChange={this.handleUpdate}
             name="Email"
             value={this.state.team.Email || ""}
           />
+          <br />
           <label htmlFor="ID">Enabled</label>
           <input
             onChange={this.handleUpdate}
@@ -151,12 +155,14 @@ class Team extends Component {
             type="checkbox"
             value={this.state.team.Enabled || false}
           />
+          <br />
           <label htmlFor="ID">Key</label>
           <input
             onChange={this.handleUpdate}
             name="Key"
             value={this.state.team.Key || ""}
           />
+          <br />
           <button type="submit">Save</button>
           <button
             type="button"

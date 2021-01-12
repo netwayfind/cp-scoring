@@ -237,18 +237,23 @@ class Scenario extends Component {
             onChange={this.handleUpdate}
             value={this.state.scenario.ID || ""}
           />
+          <br />
           <label htmlFor="Name">Name</label>
           <input
             name="Name"
             onChange={this.handleUpdate}
             value={this.state.scenario.Name || ""}
           />
+          <br />
           <label htmlFor="Description">Description</label>
           <textarea
+            cols="80"
             name="Description"
             onChange={this.handleUpdate}
+            rows="25"
             value={this.state.scenario.Description || ""}
           />
+          <br />
           <label htmlFor="Enabled">Enabled</label>
           <input
             name="Enabled"
@@ -256,6 +261,7 @@ class Scenario extends Component {
             onChange={this.handleUpdate}
             value={this.state.scenario.Enabled || false}
           />
+          <br />
           <button type="submit">Save</button>
           <button
             type="button"

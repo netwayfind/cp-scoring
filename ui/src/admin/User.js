@@ -214,12 +214,14 @@ class User extends Component {
             disabled
             value={this.state.user.ID || ""}
           />
+          <br />
           <label htmlFor="ID">Username</label>
           <input
             onChange={this.handleUpdate}
             name="Username"
             value={this.state.user.Username || ""}
           />
+          <br />
           <label htmlFor="ID">Password</label>
           <input
             type="password"
@@ -227,12 +229,14 @@ class User extends Component {
             name="Password"
             value={this.state.user.Password || ""}
           />
+          <br />
           <label htmlFor="ID">Email</label>
           <input
             onChange={this.handleUpdate}
             name="Email"
             value={this.state.user.Email || ""}
           />
+          <br />
           <label htmlFor="ID">Enabled</label>
           <input
             onChange={this.handleUpdate}
@@ -240,6 +244,7 @@ class User extends Component {
             type="checkbox"
             value={this.state.user.Enabled || false}
           />
+          <br />
           {rolesField}
           <button type="submit">Save</button>
           <button
