@@ -37,17 +37,17 @@ class HostReport extends Component {
     let teamKey = this.props.teamKey;
     Promise.all([
       apiGet(
-        "/api/scenarios/" +
+        "/api/report/" +
           scenarioID +
-          "/report?team_key=" +
+          "?team_key=" +
           teamKey +
           "&hostname=" +
           hostname
       ),
       apiGet(
-        "/api/scenarios/" +
+        "/api/report/" +
           scenarioID +
-          "/report/timeline?team_key=" +
+          "/timeline?team_key=" +
           teamKey +
           "&hostname=" +
           hostname

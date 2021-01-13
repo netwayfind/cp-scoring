@@ -74,25 +74,18 @@ func main() {
 		log.Fatal("Could not register host token")
 	}
 
-	log.Println("get scenario " + scenarioIDStr)
-	x, err := http.Get("http://localhost:8000/api/scenario-desc/" + scenarioIDStr)
+	log.Println("get scenario checks " + scenarioIDStr)
+	rrrr, err = http.Get("http://localhost:8000/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname + "&team_key=" + teamKey)
 	if err != nil {
 		log.Fatal(err)
 	}
-	y := model.Scenario{}
-	err = json.NewDecoder(x.Body).Decode(&y)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(y.Name)
-
-	x, err = http.Get("http://localhost:8000/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
-	if err != nil {
-		log.Fatal(err)
+	if rrrr.StatusCode != 200 {
+		log.Fatal("Could not get scenario checks")
 	}
 	var yy []model.Action
-	err = json.NewDecoder(x.Body).Decode(&yy)
+	err = json.NewDecoder(rrrr.Body).Decode(&yy)
 
+	log.Println("running scenario checks")
 	checkResults := []string{}
 	for _, v := range yy {
 		log.Println(v)
@@ -151,11 +144,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	x, err = http.Post("http://localhost:8000/api/audit/", "application/json", bytes.NewBuffer(body))
+	rrrr, err = http.Post("http://localhost:8000/api/audit/", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(x.Status)
+	log.Println(rrrr.Status)
 
 	log.Println("Done")
 

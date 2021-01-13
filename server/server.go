@@ -91,9 +91,12 @@ func main() {
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateScenario).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.readScenarioHosts).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.updateScenarioHosts).Methods("PUT")
-	scenarioRouter.HandleFunc("/{id:[0-9]+}/report", apiHandler.readScenarioReport).Methods("GET")
-	scenarioRouter.HandleFunc("/{id:[0-9]+}/report/hostnames", apiHandler.readScenarioReportHostnames).Methods("GET")
-	scenarioRouter.HandleFunc("/{id:[0-9]+}/report/timeline", apiHandler.readScenarioReportTimeline).Methods("GET")
+
+	// report, no auth
+	reportRouter := apiRouter.PathPrefix("/report").Subrouter()
+	reportRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenarioReport).Methods("GET")
+	reportRouter.HandleFunc("/{id:[0-9]+}/hostnames", apiHandler.readScenarioReportHostnames).Methods("GET")
+	reportRouter.HandleFunc("/{id:[0-9]+}/timeline", apiHandler.readScenarioReportTimeline).Methods("GET")
 
 	// scenario-desc, no auth
 	scenarioDescRouter := apiRouter.PathPrefix("/scenario-desc").Subrouter()

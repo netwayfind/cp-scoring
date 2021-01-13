@@ -473,12 +473,12 @@ func (handler APIHandler) deleteScenario(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	team, err := handler.BackingStore.scenarioSelect(id)
+	scenario, err := handler.BackingStore.scenarioSelect(id)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
 	}
-	if team.ID == 0 {
+	if scenario.ID == 0 {
 		httpErrorNotFound(w)
 		return
 	}
@@ -566,6 +566,23 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	hostname := hostnameParam[0]
+
+	teamKeyParam, present := r.URL.Query()["team_key"]
+	if !present || len(teamKeyParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+
+	teamKey := teamKeyParam[0]
+	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if team.ID == 0 {
+		httpErrorNotFound(w)
+		return
+	}
 
 	s, err := handler.BackingStore.scenarioHostsSelectChecks(id, hostname)
 	if err != nil {

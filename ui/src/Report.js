@@ -38,9 +38,7 @@ class Report extends Component {
   }
 
   getData(scenarioID, teamKey) {
-    apiGet(
-      "/api/scenarios/" + scenarioID + "/report/hostnames?team_key=" + teamKey
-    ).then(
+    apiGet("/api/report/" + scenarioID + "/hostnames?team_key=" + teamKey).then(
       async function (s) {
         this.setState({
           error: s.error,
