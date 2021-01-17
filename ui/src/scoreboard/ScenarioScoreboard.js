@@ -1,13 +1,15 @@
 import "../App.css";
 import { apiGet } from "../common/utils";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { withRouter } from "react-router-dom";
 
 class ScenarioScoreboard extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      error: null,
+      lastUpdated: new Date(),
       scoreboard: [],
     };
   }
@@ -30,6 +32,7 @@ class ScenarioScoreboard extends Component {
       function (s) {
         this.setState({
           error: s.error,
+          lastUpdated: new Date(),
           scoreboard: s.data,
         });
       }.bind(this)
@@ -37,19 +40,91 @@ class ScenarioScoreboard extends Component {
   }
 
   render() {
-    let entries = [];
+    let lastUpdatedStr = this.state.lastUpdated.toLocaleString();
+    let id = this.props.match.params.id;
+
+    let teamToDetails = {};
+    let teamScores = [];
+    let teamScoresIndex = 0;
+    let currentTeamID = -1;
+    let currentTeamScore = {};
     this.state.scoreboard.forEach((entry) => {
-      let timestampStr = new Date(entry.Timestamp * 1000).toLocaleString();
-      entries.push(
-        <p>
-          {entry.TeamName} - {entry.Hostname} - {entry.Score} - {timestampStr}
-        </p>
+      if (entry.TeamID !== currentTeamID) {
+        currentTeamScore = {
+          score: 0,
+          lastUpdated: 0,
+        };
+        currentTeamID = entry.TeamID;
+        teamScoresIndex = teamScores.length;
+      }
+
+      let teamHosts = teamToDetails[entry.TeamID];
+      if (!teamHosts) {
+        teamHosts = [];
+      }
+      teamHosts.push(
+        <li key={entry.Hostname}>
+          Host: {entry.Hostname}; Score: {entry.Score}; Last Updated:{" "}
+          {new Date(entry.Timestamp * 1000).toLocaleString()}
+        </li>
+      );
+      teamToDetails[entry.TeamID] = teamHosts;
+
+      let newScore = currentTeamScore.score + entry.Score;
+      let newLastUpdated = currentTeamScore.lastUpdated;
+      if (newLastUpdated < entry.Timestamp) {
+        newLastUpdated = entry.Timestamp;
+      }
+      currentTeamScore = {
+        teamID: entry.TeamID,
+        teamName: entry.TeamName,
+        score: newScore,
+        lastUpdated: newLastUpdated,
+      };
+      teamScores[teamScoresIndex] = currentTeamScore;
+    });
+
+    let tableBody = [];
+    teamScores.forEach((entry, i) => {
+      tableBody.push(
+        <tr key={i}>
+          <td className="table-cell">{entry.teamName}</td>
+          <td className="table-cell">{entry.score}</td>
+          <td className="table-cell">
+            {new Date(entry.lastUpdated * 1000).toLocaleString()}
+          </td>
+          <td>
+            <details>
+              <ul>{teamToDetails[entry.teamID]}</ul>
+            </details>
+          </td>
+        </tr>
       );
     });
+
+    let table = (
+      <table>
+        <thead>
+          <tr>
+            <th className="table-cell">Team Name</th>
+            <th className="table-cell">Score</th>
+            <th className="table-cell">Last Updated</th>
+          </tr>
+        </thead>
+        <tbody>{tableBody}</tbody>
+      </table>
+    );
+
     return (
-      <div class="ScenarioScoreboard">
-        <ul>{entries}</ul>
-      </div>
+      <Fragment>
+        Last updated: {lastUpdatedStr}
+        <br />
+        <button type="button" onClick={() => this.getData(id)}>
+          Refresh
+        </button>
+        <p />
+        {table}
+      </Fragment>
     );
   }
 }

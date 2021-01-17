@@ -31,6 +31,14 @@
   border-bottom: 1px solid black;
 }
 
+.table-cell {
+  text-align: left;
+  padding-left: 10px;
+  padding-right: 10px;
+  border-bottom: 1px solid lightgray;
+  vertical-align: top;
+}
+
 .toc {
   height: 90vh;
   width: 20%;

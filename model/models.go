@@ -100,6 +100,7 @@ type ScenarioHost struct {
 
 // ScenarioScore asdf
 type ScenarioScore struct {
+	TeamID    uint64
 	TeamName  string
 	Hostname  string
 	Score     int

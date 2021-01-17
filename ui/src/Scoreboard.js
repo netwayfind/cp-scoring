@@ -36,7 +36,16 @@ class Scoreboard extends Component {
   }
 
   render() {
+    let scenarioName = null;
     let scenarioID = this.getScenarioID(this.props);
+    if (this.state.scenarios.length > 0) {
+      this.state.scenarios.forEach((scenario) => {
+        if (scenario.ID === scenarioID) {
+          scenarioName = <h2>{scenario.Name}</h2>;
+        }
+      });
+    }
+
     return (
       <Fragment>
         <div className="heading">
@@ -54,6 +63,7 @@ class Scoreboard extends Component {
         <div className="content">
           <Switch>
             <Route path={`${this.props.match.url}/:id`}>
+              {scenarioName}
               <ScenarioScoreboard parentPath={this.props.match.path} />
             </Route>
           </Switch>

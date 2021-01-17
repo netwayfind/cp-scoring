@@ -478,7 +478,7 @@ func (db dbObj) scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]
 }
 
 func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error) {
-	rows, err := db.dbConn.Query("SELECT t.name, s.hostname, s.score, s.timestamp FROM scoreboard s JOIN teams t ON s.team_id=t.id WHERE s.scenario_id=$1", scenarioID)
+	rows, err := db.dbConn.Query("SELECT t.id, t.name, s.hostname, s.score, s.timestamp FROM scoreboard s JOIN teams t ON s.team_id=t.id WHERE s.scenario_id=$1", scenarioID)
 	if err != nil {
 		return nil, err
 	}
@@ -486,15 +486,17 @@ func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.Scenari
 
 	scoreboard := make([]model.ScenarioScore, 0)
 	for rows.Next() {
+		var teamID uint64
 		var teamName string
 		var hostname string
 		var score int
 		var timestamp int64
-		err = rows.Scan(&teamName, &hostname, &score, &timestamp)
+		err = rows.Scan(&teamID, &teamName, &hostname, &score, &timestamp)
 		if err != nil {
 			return nil, err
 		}
 		scenarioScore := model.ScenarioScore{
+			TeamID:    teamID,
 			TeamName:  teamName,
 			Hostname:  hostname,
 			Score:     score,
