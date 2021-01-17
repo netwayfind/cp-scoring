@@ -12,13 +12,13 @@ class ScenarioDesc extends Component {
   }
 
   componentDidMount() {
-    let id = this.props.match.params.id;
+    let id = this.props.match.params.scenarioID;
     this.getData(id);
   }
 
   componentDidUpdate(prevProps) {
-    let id = this.props.match.params.id;
-    let prevId = prevProps.match.params.id;
+    let id = this.props.match.params.scenarioID;
+    let prevId = prevProps.match.params.scenarioID;
     if (id !== prevId) {
       this.getData(id);
     }

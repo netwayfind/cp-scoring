@@ -1,14 +1,13 @@
 import "./App.css";
+import { apiGet, apiLogout } from "./common/utils";
 import Admin from "./Admin";
 import LoginUser from "./common/LoginUser";
 import NotFound from "./common/NotFound";
-import Report from "./Report";
-import Scenario from "./Scenario";
 import Scoreboard from "./Scoreboard";
+import TeamDashboard from "./TeamDashboard";
 
 import { Component } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
-import { apiGet, apiLogout } from "./common/utils";
 
 class App extends Component {
   constructor(props) {
@@ -87,14 +86,11 @@ class App extends Component {
               {logout}
               {destAdmin}
             </Route>
-            <Route path="/report">
-              <Report />
+            <Route path="/team-dashboard">
+              <TeamDashboard />
             </Route>
             <Route path="/scoreboard">
               <Scoreboard />
-            </Route>
-            <Route path="/scenario">
-              <Scenario />
             </Route>
             <Route>
               <NotFound />
