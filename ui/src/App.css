@@ -20,6 +20,12 @@
   text-decoration: none;
 }
 
+.nav-button-selected {
+  font-weight: bold;
+  text-decoration: underline;
+  pointer-events: none;
+}
+
 .navbar {
   height: 30px;
   border-bottom: 1px solid black;

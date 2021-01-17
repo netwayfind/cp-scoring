@@ -6,9 +6,16 @@ class LinkList extends Component {
   render() {
     let items = [];
     this.props.items.forEach((item, i) => {
+      let classes = ["nav-button"];
+      if (this.props.currentID === item.ID) {
+        classes.push("nav-button-selected");
+      }
       items.push(
         <li key={i}>
-          <Link to={`${this.props.path}/${item.ID}`}>
+          <Link
+            className={classes.join(" ")}
+            to={`${this.props.path}/${item.ID}`}
+          >
             [{item.ID}] {item[this.props.label]}
           </Link>
         </li>

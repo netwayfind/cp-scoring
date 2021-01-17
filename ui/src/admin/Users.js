@@ -26,6 +26,12 @@ class Users extends Component {
     };
   }
 
+  getUserID(props) {
+    return Number(
+      props.location.pathname.replace(props.match.url + "/", "").split("/")[0]
+    );
+  }
+
   getData() {
     apiGet("/api/users/").then(
       function (s) {
@@ -38,12 +44,23 @@ class Users extends Component {
   }
 
   render() {
+    let userID = this.getUserID(this.props);
+    let linkClassesAddUser = ["nav-button"];
+    if (this.props.location.pathname === this.props.match.path) {
+      linkClassesAddUser.push("nav-button-selected");
+    }
     return (
       <Fragment>
         <div className="toc">
-          <Link to={this.props.match.path}>Add User</Link>
+          <Link
+            className={linkClassesAddUser.join(" ")}
+            to={this.props.match.path}
+          >
+            Add User
+          </Link>
           <p />
           <LinkList
+            currentID={userID}
             items={this.state.users}
             path={this.props.match.path}
             label="Username"

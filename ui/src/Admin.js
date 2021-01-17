@@ -13,19 +13,35 @@ class Admin extends Component {
     let url = this.props.match.url;
     let path = this.props.match.path;
 
+    let linkClassesTeams = ["nav-button"];
+    if (this.props.location.pathname.startsWith(`${url}/teams`)) {
+      linkClassesTeams.push(["nav-button-selected"]);
+    }
+    let linkClassesScenarios = ["nav-button"];
+    if (this.props.location.pathname.startsWith(`${url}/scenarios`)) {
+      linkClassesScenarios.push(["nav-button-selected"]);
+    }
+    let linkClassesUsers = ["nav-button"];
+    if (this.props.location.pathname.startsWith(`${url}/users`)) {
+      linkClassesUsers.push(["nav-button-selected"]);
+    }
+
     return (
       <Fragment>
         <div className="heading">
           <h1>cp-scoring admin</h1>
         </div>
         <div className="navbar">
-          <Link className="nav-button" to={`${url}/teams`}>
+          <Link className={linkClassesTeams.join(" ")} to={`${url}/teams`}>
             Teams
           </Link>
-          <Link className="nav-button" to={`${url}/scenarios`}>
+          <Link
+            className={linkClassesScenarios.join(" ")}
+            to={`${url}/scenarios`}
+          >
             Scenarios
           </Link>
-          <Link className="nav-button" to={`${url}/users`}>
+          <Link className={linkClassesUsers.join(" ")} to={`${url}/users`}>
             Users
           </Link>
         </div>

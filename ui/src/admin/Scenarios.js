@@ -26,6 +26,12 @@ class Scenarios extends Component {
     };
   }
 
+  getScenarioID(props) {
+    return Number(
+      props.location.pathname.replace(props.match.url + "/", "").split("/")[0]
+    );
+  }
+
   getData() {
     apiGet("/api/scenarios/").then(
       function (s) {
@@ -38,12 +44,23 @@ class Scenarios extends Component {
   }
 
   render() {
+    let scenarioID = this.getScenarioID(this.props);
+    let linkClassesAddScenario = ["nav-button"];
+    if (this.props.location.pathname === this.props.match.path) {
+      linkClassesAddScenario.push("nav-button-selected");
+    }
     return (
       <Fragment>
         <div className="toc">
-          <Link to={this.props.match.path}>Add Scenario</Link>
+          <Link
+            className={linkClassesAddScenario.join(" ")}
+            to={this.props.match.path}
+          >
+            Add Scenario
+          </Link>
           <p />
           <LinkList
+            currentID={scenarioID}
             items={this.state.scenarios}
             path={this.props.match.path}
             label="Name"

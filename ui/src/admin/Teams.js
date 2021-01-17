@@ -26,6 +26,12 @@ class Teams extends Component {
     };
   }
 
+  getTeamID(props) {
+    return Number(
+      props.location.pathname.replace(props.match.url + "/", "").split("/")[0]
+    );
+  }
+
   getData() {
     apiGet("/api/teams/").then(
       function (s) {
@@ -38,12 +44,23 @@ class Teams extends Component {
   }
 
   render() {
+    let teamID = this.getTeamID(this.props);
+    let linkClassesAddTeam = ["nav-button"];
+    if (this.props.location.pathname === this.props.match.path) {
+      linkClassesAddTeam.push("nav-button-selected");
+    }
     return (
       <Fragment>
         <div className="toc">
-          <Link to={this.props.match.path}>Add Team</Link>
+          <Link
+            className={linkClassesAddTeam.join(" ")}
+            to={this.props.match.path}
+          >
+            Add Team
+          </Link>
           <p />
           <LinkList
+            currentID={teamID}
             items={this.state.teams}
             path={this.props.match.path}
             label="Name"

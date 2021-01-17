@@ -18,6 +18,12 @@ class Scoreboard extends Component {
     this.getData();
   }
 
+  getScenarioID(props) {
+    return Number(
+      props.location.pathname.replace(props.match.url + "/", "").split("/")[0]
+    );
+  }
+
   getData() {
     apiGet("/api/scoreboard/scenarios").then(
       function (s) {
@@ -30,6 +36,7 @@ class Scoreboard extends Component {
   }
 
   render() {
+    let scenarioID = this.getScenarioID(this.props);
     return (
       <Fragment>
         <div className="heading">
@@ -38,6 +45,7 @@ class Scoreboard extends Component {
         <div className="toc">
           <h4>Scenarios</h4>
           <LinkList
+            currentID={scenarioID}
             items={this.state.scenarios}
             path={this.props.match.path}
             label="Name"

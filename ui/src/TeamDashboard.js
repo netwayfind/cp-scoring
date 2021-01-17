@@ -26,13 +26,23 @@ class TeamDashboard extends Component {
     let prevScenarioID = this.getScenarioID(prevProps);
     if (scenarioID !== prevScenarioID) {
       this.setState({
-        scenarioID: scenarioID
+        scenarioID: scenarioID,
       });
     }
   }
 
+  getHostname(props) {
+    return props.location.pathname
+      .replace(props.match.url + "/scenario/", "")
+      .split("/")[1];
+  }
+
   getScenarioID(props) {
-    return Number(props.location.pathname.replace(props.match.url + "/scenario/", "").split("/")[0]);
+    return Number(
+      props.location.pathname
+        .replace(props.match.url + "/scenario/", "")
+        .split("/")[0]
+    );
   }
 
   getData() {
@@ -44,17 +54,20 @@ class TeamDashboard extends Component {
           scenarios: scenarios,
         });
         if (!s.error) {
-          scenarios.forEach(scenario => {
+          scenarios.forEach((scenario) => {
             apiGet(
-              "/api/report/" + scenario.ID + "/hostnames?team_key=" + this.state.teamKey
+              "/api/report/" +
+                scenario.ID +
+                "/hostnames?team_key=" +
+                this.state.teamKey
             ).then(
               async function (s) {
                 this.setState({
                   error: s.error,
                   scenarioHosts: {
                     ...this.state.scenarioHosts,
-                    [scenario.ID]: s.data
-                  }
+                    [scenario.ID]: s.data,
+                  },
                 });
               }.bind(this)
             );
@@ -105,22 +118,28 @@ class TeamDashboard extends Component {
       );
     }
 
+    let currentHostname = this.getHostname(this.props);
+    let currentScenarioID = this.getScenarioID(this.props);
     let currentScenarioName = null;
-    let scenarioID = this.getScenarioID(this.props);
     let scenarios = [];
     if (this.state.scenarios) {
       this.state.scenarios.forEach((scenario) => {
         let scenarioHosts = null;
-        if (scenario.ID === scenarioID) {
+        if (scenario.ID === currentScenarioID) {
           currentScenarioName = scenario.Name;
           let hostnames = [];
           let hosts = this.state.scenarioHosts[scenario.ID];
           if (hosts) {
             hosts.forEach((hostname) => {
+              let linkClassesHost = ["nav-button"];
+              if (hostname === currentHostname) {
+                linkClassesHost.push("nav-button-selected");
+              }
               hostnames.push(
                 <li key={hostname}>
                   <Link
-                    to={`${this.props.match.path}/scenario/${scenarioID}/${hostname}`}
+                    className={linkClassesHost.join(" ")}
+                    to={`${this.props.match.path}/scenario/${currentScenarioID}/${hostname}`}
                   >
                     {hostname}
                   </Link>
@@ -130,9 +149,21 @@ class TeamDashboard extends Component {
             scenarioHosts = <ul>{hostnames}</ul>;
           }
         }
+
+        let linkClassesScenario = ["nav-button"];
+        if (
+          this.props.location.pathname ===
+          this.props.match.path + "/scenario/" + scenario.ID
+        ) {
+          linkClassesScenario.push("nav-button-selected");
+        }
+
         let entry = (
           <li key={scenario.ID}>
-            <Link to={`${this.props.match.path}/scenario/${scenario.ID}`}>
+            <Link
+              className={linkClassesScenario.join(" ")}
+              to={`${this.props.match.path}/scenario/${scenario.ID}`}
+            >
               {scenario.Name}
             </Link>
             {scenarioHosts}
@@ -165,7 +196,10 @@ class TeamDashboard extends Component {
               exact
               path={`${this.props.match.url}/scenario/:scenarioID/:hostname`}
             >
-              <HostReport scenarioName={currentScenarioName} teamKey={this.state.teamKey} />
+              <HostReport
+                scenarioName={currentScenarioName}
+                teamKey={this.state.teamKey}
+              />
             </Route>
           </Switch>
         </div>
