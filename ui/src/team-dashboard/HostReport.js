@@ -118,18 +118,21 @@ class HostReport extends Component {
 
     return (
       <div className="HostReport">
-        <Plot data={plotlyData} layout={layout} config={config} />
+        Scenario: {this.props.scenarioName}
+        <br />
+        Hostname: {hostname}
         <p />
+        Last updated: {this.state.lastRefresh.toLocaleString()}
+        <br />
         <button
           type="button"
           onClick={(event) => this.getData(scenarioID, hostname, event)}
         >
           Refresh
         </button>
-        &nbsp; Last refresh: {this.state.lastRefresh.toLocaleString()}
         <p />
-        Hostname: {hostname}
-        <br />
+        <Plot data={plotlyData} layout={layout} config={config} />
+        <p />
         Report time: {timestampStr}
         <br />
         Score: {score}

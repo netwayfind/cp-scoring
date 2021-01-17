@@ -105,12 +105,14 @@ class TeamDashboard extends Component {
       );
     }
 
+    let currentScenarioName = null;
     let scenarioID = this.getScenarioID(this.props);
     let scenarios = [];
     if (this.state.scenarios) {
       this.state.scenarios.forEach((scenario) => {
         let scenarioHosts = null;
         if (scenario.ID === scenarioID) {
+          currentScenarioName = scenario.Name;
           let hostnames = [];
           let hosts = this.state.scenarioHosts[scenario.ID];
           if (hosts) {
@@ -163,7 +165,7 @@ class TeamDashboard extends Component {
               exact
               path={`${this.props.match.url}/scenario/:scenarioID/:hostname`}
             >
-              <HostReport teamKey={this.state.teamKey} />
+              <HostReport scenarioName={currentScenarioName} teamKey={this.state.teamKey} />
             </Route>
           </Switch>
         </div>
