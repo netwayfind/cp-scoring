@@ -133,6 +133,8 @@ class HostReport extends Component {
         <p />
         <Plot data={plotlyData} layout={layout} config={config} />
         <p />
+        Instances found: {plotlyData.length}
+        <p />
         Report time: {timestampStr}
         <br />
         Score: {score}
