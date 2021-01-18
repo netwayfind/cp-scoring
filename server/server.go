@@ -45,7 +45,6 @@ func main() {
 
 	dirConfig := path.Join(dirWork, "config")
 	// dirData := path.Join(dirWork, "data")
-	// dirPublic := path.Join(dirWork, "public")
 	dirUI := path.Join(dirWork, "ui")
 
 	// read config file
@@ -112,13 +111,16 @@ func main() {
 
 	// API routing
 	r := mux.NewRouter().StrictSlash(true)
+	r.Use(apiHandler.middlewareLog)
+	r.HandleFunc("/", apiHandler.redirectToUI).Methods("GET")
+	r.PathPrefix("/public").Handler(http.FileServer(http.Dir(dirWork)))
+	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(dirUI)))
 	r.PathPrefix("/ui").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, dirUI+"/index.html")
 	})
-	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(dirUI)))
-	r.Use(apiHandler.middlewareLog)
 
 	apiRouter := r.PathPrefix("/api").Subrouter()
+	apiRouter.HandleFunc("/", apiHandler.readAPIRoot).Methods("GET")
 
 	// audit, no auth
 	auditRouter := apiRouter.PathPrefix("/audit").Subrouter()

@@ -172,6 +172,16 @@ func sendResponse(w http.ResponseWriter, o interface{}) {
 	w.Write(b)
 }
 
+func (handler APIHandler) readAPIRoot(w http.ResponseWriter, r *http.Request) {
+	log.Println("API root")
+
+	sendResponse(w, "OK")
+}
+
+func (handler APIHandler) redirectToUI(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/ui", http.StatusPermanentRedirect)
+}
+
 func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 	log.Println("audit")
 
