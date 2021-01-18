@@ -9,9 +9,10 @@ VERSION=$(cat ${BASE_DIR}/VERSION)
 OUTPUT_DIR="${BASE_DIR}/target/${PROJ_NAME}-${VERSION}"
 
 rm -rf ${OUTPUT_DIR}
-mkdir -p ${BASE_DIR}
-mkdir -p ${BASE_DIR}/public
-mkdir -p ${BASE_DIR}/ui
+mkdir -p ${OUTPUT_DIR}
+mkdir -p ${OUTPUT_DIR}/config
+mkdir -p ${OUTPUT_DIR}/public
+mkdir -p ${OUTPUT_DIR}/ui
 
 echo "Version: ${VERSION}"
 echo "Base dir: ${BASE_DIR}"
@@ -24,8 +25,8 @@ go get github.com/dgrijalva/jwt-go
 # build server
 echo "Building server"
 cd ${BASE_DIR}/server
-go build -o ${OUTPUT_DIR}/${PROJ_NAME}-server-linux ${PKG_BASE}/server
-cp ${BASE_DIR}/server/server.conf.example ${OUTPUT_DIR}/
+go build -o ${OUTPUT_DIR}/${PROJ_NAME}-server-linux -ldflags "-X main.version=${VERSION}" ${PKG_BASE}/server
+cp ${BASE_DIR}/server/server.conf.example ${OUTPUT_DIR}/config/
 
 # build agents
 echo "Building linux agent"
@@ -38,6 +39,7 @@ echo "Bulding UI"
 cd ${BASE_DIR}/ui
 yarn install
 yarn build
-cp -r build/ ${OUTPUT_DIR}/ui
+cd ${BASE_DIR}/ui/build
+cp -r . ${OUTPUT_DIR}/ui/
 
 echo "Done"

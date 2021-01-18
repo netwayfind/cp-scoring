@@ -1,33 +1,91 @@
 package main
 
 import (
+	"flag"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/netwayfind/cp-scoring/model"
 )
 
-func main() {
-	log.Println("server")
-	port := "8000"
-	uiPath := "./ui"
-	backingStoreStr := "postgres"
-	dbURL := "postgres://postgres:password@localhost:5432?sslmode=disable"
-	jwtSecret := []byte("insecure")
+// to be set by build
+var version string
 
+func main() {
+	// set seed
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	backingStore, err := getBackingStore(backingStoreStr, dbURL)
+	// default path
+	ex, err := os.Executable()
+	if err != nil {
+		log.Fatal("ERROR: unable to get executable", err)
+	}
+	dirWork := filepath.Dir(ex)
+
+	// program arguments
+	var askVersion bool
+	flag.BoolVar(&askVersion, "version", false, "get version number")
+	flag.StringVar(&dirWork, "dir_work", dirWork, "working directory path")
+	flag.Parse()
+
+	// version
+	if askVersion {
+		log.Println("Version: " + version)
+		os.Exit(0)
+	}
+
+	dirConfig := path.Join(dirWork, "config")
+	// dirData := path.Join(dirWork, "data")
+	// dirPublic := path.Join(dirWork, "public")
+	dirUI := path.Join(dirWork, "ui")
+
+	// read config file
+	fileConfig := path.Join(dirConfig, "server.conf")
+	log.Printf("Reading config file %s\n", fileConfig)
+	bytesConfig, err := ioutil.ReadFile(fileConfig)
+	if err != nil {
+		log.Fatal("ERROR: unable to read config file;", err)
+	}
+	var port string
+	var dbURL string
+	var bytesJwtSecret []byte
+	for _, line := range strings.Split(string(bytesConfig), "\n") {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		tokens := strings.Split(line, " ")
+		if tokens[0] == "port" {
+			port = tokens[1]
+		} else if tokens[0] == "db_url" {
+			dbURL = tokens[1]
+		} else if tokens[0] == "jwt_secret" {
+			bytesJwtSecret = []byte(tokens[1])
+		} else {
+			log.Fatalf("ERROR: unknown config file setting %s\n", tokens[0])
+		}
+	}
+
+	backingStore, err := getBackingStore("postgres", dbURL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	apiHandler := APIHandler{
 		BackingStore: backingStore,
-		jwtSecret:    jwtSecret,
+		jwtSecret:    bytesJwtSecret,
 	}
 
 	// generate default user if no users
@@ -52,11 +110,12 @@ func main() {
 		}
 	}
 
+	// API routing
 	r := mux.NewRouter().StrictSlash(true)
 	r.PathPrefix("/ui").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, uiPath+"/index.html")
+		http.ServeFile(w, r, dirUI+"/index.html")
 	})
-	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(uiPath)))
+	r.PathPrefix("/static").Handler(http.FileServer(http.Dir(dirUI)))
 	r.Use(apiHandler.middlewareLog)
 
 	apiRouter := r.PathPrefix("/api").Subrouter()
