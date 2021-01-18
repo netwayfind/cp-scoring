@@ -14,7 +14,7 @@ import (
 func main() {
 	log.Println("server")
 	port := "8000"
-	uiPath := "./ui/build"
+	uiPath := "./ui"
 	backingStoreStr := "postgres"
 	dbURL := "postgres://postgres:password@localhost:5432?sslmode=disable"
 	jwtSecret := []byte("insecure")
