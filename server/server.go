@@ -33,8 +33,8 @@ func main() {
 
 	// program arguments
 	var askVersion bool
-	flag.BoolVar(&askVersion, "version", false, "get version number")
 	flag.StringVar(&dirWork, "dir_work", dirWork, "working directory path")
+	flag.BoolVar(&askVersion, "version", false, "get version number")
 	flag.Parse()
 
 	// version
@@ -121,6 +121,7 @@ func main() {
 
 	apiRouter := r.PathPrefix("/api").Subrouter()
 	apiRouter.HandleFunc("/", apiHandler.readAPIRoot).Methods("GET")
+	apiRouter.HandleFunc("/version", apiHandler.readAPIVersion).Methods("GET")
 
 	// audit, no auth
 	auditRouter := apiRouter.PathPrefix("/audit").Subrouter()
@@ -152,6 +153,7 @@ func main() {
 	scenarioRouter.HandleFunc("/{id:[0-9]+}", apiHandler.updateScenario).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.readScenarioHosts).Methods("GET")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.updateScenarioHosts).Methods("PUT")
+	scenarioRouter.HandleFunc("/{id:[0-9]+}/config", apiHandler.readScenarioConfig).Methods("GET")
 
 	// report, no auth
 	reportRouter := apiRouter.PathPrefix("/report").Subrouter()

@@ -173,9 +173,11 @@ func sendResponse(w http.ResponseWriter, o interface{}) {
 }
 
 func (handler APIHandler) readAPIRoot(w http.ResponseWriter, r *http.Request) {
-	log.Println("API root")
-
 	sendResponse(w, "OK")
+}
+
+func (handler APIHandler) readAPIVersion(w http.ResponseWriter, r *http.Request) {
+	sendResponse(w, version)
 }
 
 func (handler APIHandler) redirectToUI(w http.ResponseWriter, r *http.Request) {
@@ -577,24 +579,36 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 	}
 	hostname := hostnameParam[0]
 
-	teamKeyParam, present := r.URL.Query()["team_key"]
-	if !present || len(teamKeyParam) != 1 {
-		httpErrorBadRequest(w)
-		return
-	}
-
-	teamKey := teamKeyParam[0]
-	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	s, err := handler.BackingStore.scenarioHostsSelectChecks(id, hostname)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
 	}
-	if team.ID == 0 {
+	if s == nil {
 		httpErrorNotFound(w)
 		return
 	}
 
-	s, err := handler.BackingStore.scenarioHostsSelectChecks(id, hostname)
+	sendResponse(w, s)
+}
+
+func (handler APIHandler) readScenarioConfig(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario config")
+
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
+
+	hostnameParam, present := r.URL.Query()["hostname"]
+	if !present || len(hostnameParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+	hostname := hostnameParam[0]
+
+	s, err := handler.BackingStore.scenarioHostsSelectConfig(id, hostname)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
