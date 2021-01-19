@@ -187,7 +187,7 @@ class ScenarioHost extends Component {
     let actionOptions = [
       <option key="1">A</option>,
       <option key="2">EXEC</option>,
-      <option key="3">FILE_EXISTS</option>,
+      <option key="3">FILE_EXIST</option>,
     ];
     let operatorOptions = [
       <option key="1" value="" />,
