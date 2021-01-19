@@ -176,7 +176,7 @@ func executeConfig(config []model.Action) {
 	log.Println("Successfully applied config")
 }
 
-func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string) {
+func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string) {
 	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
 	log.Println("Read scenario checks")
 	resp, err := http.Get(serverURL + "/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
@@ -185,7 +185,7 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 		return
 	}
 	if resp.StatusCode != 200 {
-		log.Fatal("ERROR: could not get scenario checks")
+		log.Println("ERROR: could not get scenario checks")
 		return
 	}
 
@@ -198,11 +198,11 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 		var result string
 		if check.Type == model.ActionTypeExec {
 			if &check.Command == nil || len(check.Command) == 0 {
-				result = "nope"
+				result = "invalid command"
 			} else {
 				out, err := exec.Command(check.Command, check.Args...).Output()
 				if err != nil {
-					log.Fatal(err)
+					result = "could not execute file"
 				}
 				result = strings.TrimSpace(string(out))
 			}
@@ -218,23 +218,25 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 			rgx := regexp.MustCompile(check.Args[1])
 			contents, err := ioutil.ReadFile(fp)
 			if err != nil {
-				log.Fatal(err)
-			}
-			b := rgx.Match(contents)
-			if b {
-				result = "true"
+				result = "could not read file"
 			} else {
-				result = "false"
+				b := rgx.Match(contents)
+				if b {
+					result = "true"
+				} else {
+					result = "false"
+				}
 			}
 		} else if check.Type == model.ActionTypeFileValue {
 			fp := check.Args[0]
 			rgx := regexp.MustCompile(check.Args[1])
 			contents, err := ioutil.ReadFile(fp)
 			if err != nil {
-				log.Fatal(err)
+				result = "could not read file"
+			} else {
+				rrs := rgx.FindAllString(string(contents), -1)
+				result = strconv.Itoa(len(rrs))
 			}
-			rrs := rgx.FindAllString(string(contents), -1)
-			result = strconv.Itoa(len(rrs))
 		}
 		checkResults = append(checkResults, result)
 	}
@@ -244,16 +246,45 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 	auditCheckResults.Timestamp = time.Now().Unix()
 	auditCheckResults.CheckResults = checkResults
 
+	// save results
+	bs, err := json.Marshal(auditCheckResults)
+	if err != nil {
+		log.Println("ERROR: could not prepare saving results to file;", err)
+	} else {
+		fileName := strconv.FormatInt(auditCheckResults.Timestamp, 10)
+		saveFile(outputDir, fileName, string(bs))
+	}
+}
+
+func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
+	files, err := ioutil.ReadDir(outputDir)
+	if err != nil {
+		log.Println("ERROR: cannot read results directory;", err)
+		return
+	}
+	if len(files) == 0 {
+		return
+	}
+
 	log.Println("Sending results to server")
-	body, err := json.Marshal(auditCheckResults)
-	if err != nil {
-		log.Fatal(err)
+
+	for _, resultFile := range files {
+		filePath := path.Join(outputDir, resultFile.Name())
+		bs, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			log.Println("ERROR: unable to read results file;", err)
+			continue
+		}
+
+		resp, err := http.Post(serverURL+"/api/audit/", "application/json", bytes.NewBuffer(bs))
+		if err != nil {
+			log.Fatal(err)
+		}
+		if resp.StatusCode == http.StatusOK {
+			log.Println("DELETING ", filePath)
+			os.Remove(filePath)
+		}
 	}
-	resp, err = http.Post(serverURL+"/api/audit/", "application/json", bytes.NewBuffer(body))
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println(resp.Status)
 }
 
 func install() {
@@ -430,9 +461,11 @@ func main() {
 
 	dirConfig := path.Join(dirWork, "config")
 	dirData := path.Join(dirWork, "data")
+	dirResults := path.Join(dirData, "results")
 
 	createDir(dirConfig)
 	createDir(dirData)
+	createDir(dirResults)
 
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -490,7 +523,7 @@ func main() {
 				}
 			}
 			if len(hostToken) > 0 {
-				executeScenarioChecks(serverURL, scenarioID, hostname, hostToken)
+				executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults)
 			}
 			nextTime = nextTime.Add(time.Minute)
 			wait := time.Since(nextTime) * -1
@@ -498,25 +531,17 @@ func main() {
 		}
 	}()
 
-	// log.Println("host token: " + hostToken)
-	// log.Println("team key: " + teamKey)
-
-	// rtk := model.HostTokenRegistration{
-	// 	HostToken: hostToken,
-	// 	TeamKey:   teamKey,
-	// }
-	// rtkBs, err := json.Marshal(rtk)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// rrrr, err := http.Post(serverURL+"/api/host-token/register", applicationJSON, bytes.NewBuffer(rtkBs))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// if rrrr.StatusCode != 200 {
-	// 	log.Fatal("Could not register host token")
-	// }
+	// flush scenario check results
+	wg.Add(1)
+	go func() {
+		nextTime := time.Now()
+		for {
+			executeSubmitScenarioCheckResults(serverURL, dirResults)
+			nextTime = nextTime.Add(15 * time.Second)
+			wait := time.Since(nextTime) * -1
+			time.Sleep(wait)
+		}
+	}()
 
 	wg.Wait()
 }
