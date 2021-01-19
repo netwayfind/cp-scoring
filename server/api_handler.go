@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -20,6 +22,7 @@ import (
 type APIHandler struct {
 	BackingStore backingStore
 	jwtSecret    []byte
+	dirResults   string
 }
 
 func (handler APIHandler) middlewareLog(next http.Handler) http.Handler {
@@ -190,62 +193,84 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 	source := getSourceIP(r)
 	timestamp := time.Now().Unix()
 
-	var auditCheckResults model.AuditCheckResults
-	err := readRequestBody(w, r, &auditCheckResults)
+	fileName := strconv.FormatInt(timestamp, 10) + "_" + source + "_" + randHexStr(16)
+	file := path.Join(handler.dirResults, fileName)
+	content, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return
+		httpErrorInternal(w, errors.New("ERROR: unable to read request body"))
+	}
+	err = ioutil.WriteFile(file, []byte(content), 0400)
+	if err != nil {
+		httpErrorInternal(w, errors.New("ERROR: Unable to save result file"))
+	}
+}
+
+func (handler APIHandler) auditResult(filePath string) error {
+	log.Println("audit results")
+
+	fileName := filepath.Base(filePath)
+	fileNameTokens := strings.Split(fileName, "_")
+	if len(fileNameTokens) != 3 {
+		return errors.New("ERROR: unexpected filename")
+	}
+	timestamp, err := strconv.ParseInt(fileNameTokens[0], 10, 64)
+	if err != nil {
+		log.Println("ERROR: unexpected timestamp value;", err)
+	}
+	source := fileNameTokens[1]
+
+	bs, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	var auditCheckResults model.AuditCheckResults
+	err = json.Unmarshal(bs, &auditCheckResults)
+	if err != nil {
+		return err
 	}
 
 	scenario, err := handler.BackingStore.scenarioSelect(auditCheckResults.ScenarioID)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		log.Println("ERROR: unable to read scenario;", err)
+		return err
 	}
 	if scenario.ID == 0 {
-		httpErrorNotFound(w)
-		return
+		return errors.New("ERROR: scenario not found;")
 	}
 
 	if len(auditCheckResults.HostToken) == 0 {
-		httpErrorBadRequest(w)
-		return
+		return err
 	}
 
 	hostname, err := handler.BackingStore.hostTokenSelectHostname(auditCheckResults.HostToken)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		log.Println("ERROR: unable to read hostname from host token;", err)
+		return err
 	}
 	if len(hostname) == 0 {
-		httpErrorBadRequest(w)
-		return
+		return errors.New("ERROR: hostname not found;")
 	}
 
 	teamID, err := handler.BackingStore.hostTokenSelectTeamID(auditCheckResults.HostToken)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		return err
 	}
 	if teamID == 0 {
-		httpErrorNotFound(w)
-		return
+		return errors.New("ERROR: team not found;")
 	}
 
 	checkResultsID, err := handler.BackingStore.auditCheckResultsInsert(auditCheckResults, teamID, timestamp, source)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		return err
 	}
 
 	answers, err := handler.BackingStore.scenarioHostsSelectAnswers(auditCheckResults.ScenarioID, hostname)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		return err
 	}
 
 	if len(answers) != len(auditCheckResults.CheckResults) {
-		httpErrorBadRequest(w)
-		return
+		return errors.New("ERROR: result count, answer count mismatch;")
 	}
 
 	answerResults := make([]model.AnswerResult, len(answers))
@@ -282,15 +307,15 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 
 	err = handler.BackingStore.auditAnswerResultsInsert(auditAnswerResults)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		return err
 	}
 
 	err = handler.BackingStore.scoreboardUpdate(scenario.ID, teamID, hostname, score, auditCheckResults.Timestamp)
 	if err != nil {
-		httpErrorDatabase(w, err)
-		return
+		return err
 	}
+
+	return nil
 }
 
 func (handler APIHandler) requestHostToken(w http.ResponseWriter, r *http.Request) {

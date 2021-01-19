@@ -44,7 +44,8 @@ func main() {
 	}
 
 	dirConfig := path.Join(dirWork, "config")
-	// dirData := path.Join(dirWork, "data")
+	dirData := path.Join(dirWork, "data")
+	dirResults := path.Join(dirData, "results")
 	dirUI := path.Join(dirWork, "ui")
 
 	// read config file
@@ -85,6 +86,7 @@ func main() {
 	apiHandler := APIHandler{
 		BackingStore: backingStore,
 		jwtSecret:    bytesJwtSecret,
+		dirResults:   dirResults,
 	}
 
 	// generate default user if no users
@@ -108,6 +110,36 @@ func main() {
 			log.Fatal("ERROR: cannot save default user;", err)
 		}
 	}
+
+	log.Println("Creating results directory")
+	err = os.MkdirAll(dirResults, 0700)
+	if err != nil {
+		log.Fatalln("Unable to set up directory "+dirResults+";", err)
+	}
+
+	// async audit
+	go func() {
+		for {
+			files, err := ioutil.ReadDir(dirResults)
+			if err != nil {
+				log.Println("ERROR: cannot read results directory;", err)
+			}
+			if len(files) > 0 {
+				log.Println("Processing results")
+				for _, file := range files {
+					filePath := path.Join(dirResults, file.Name())
+					log.Println("Auditing file " + filePath)
+					err := apiHandler.auditResult(filePath)
+					if err != nil {
+						log.Println("ERROR: unable to audit file;", err)
+					}
+					log.Println("DELETING " + filePath)
+					os.Remove(filePath)
+				}
+			}
+			time.Sleep(10 * time.Second)
+		}
+	}()
 
 	// API routing
 	r := mux.NewRouter().StrictSlash(true)
