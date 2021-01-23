@@ -259,7 +259,7 @@ class Scenario extends Component {
             name="Enabled"
             type="checkbox"
             onChange={this.handleUpdate}
-            value={this.state.scenario.Enabled || false}
+            checked={this.state.scenario.Enabled || false}
           />
           <br />
           <button type="submit">Save</button>

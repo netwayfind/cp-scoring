@@ -153,7 +153,7 @@ class Team extends Component {
             onChange={this.handleUpdate}
             name="Enabled"
             type="checkbox"
-            value={this.state.team.Enabled || false}
+            checked={this.state.team.Enabled || false}
           />
           <br />
           <label htmlFor="ID">Key</label>

@@ -242,7 +242,7 @@ class User extends Component {
             onChange={this.handleUpdate}
             name="Enabled"
             type="checkbox"
-            value={this.state.user.Enabled || false}
+            checked={this.state.user.Enabled || false}
           />
           <br />
           {rolesField}
