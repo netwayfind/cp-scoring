@@ -478,7 +478,7 @@ func (db dbObj) scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]
 }
 
 func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error) {
-	rows, err := db.dbConn.Query("SELECT t.id, t.name, s.hostname, s.score, s.timestamp FROM scoreboard s JOIN teams t ON s.team_id=t.id WHERE s.scenario_id=$1", scenarioID)
+	rows, err := db.dbConn.Query("SELECT t.id, t.name, s.hostname, s.score, s.timestamp FROM scoreboard s JOIN teams t ON s.team_id=t.id WHERE s.scenario_id=$1 ORDER BY t.id ASC, s.hostname ASC", scenarioID)
 	if err != nil {
 		return nil, err
 	}
