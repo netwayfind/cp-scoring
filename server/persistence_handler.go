@@ -728,7 +728,7 @@ func (db dbObj) userSelectByUsername(username string) (model.User, error) {
 }
 
 func (db dbObj) userSelectAll() ([]model.UserSummary, error) {
-	rows, err := db.dbConn.Query("SELECT id, username FROM users")
+	rows, err := db.dbConn.Query("SELECT id, username FROM users ORDER BY id ASC")
 	if err != nil {
 		return nil, err
 	}
