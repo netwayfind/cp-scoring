@@ -439,6 +439,16 @@ func (handler APIHandler) checkLoginTeam(w http.ResponseWriter, r *http.Request)
 	if !token.Valid {
 		httpErrorNotAuthenticated(w)
 	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	teamID := uint64(claims["TeamID"].(float64))
+	team, err := handler.BackingStore.teamSelect(teamID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, team.Name)
 }
 
 func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
@@ -537,6 +547,8 @@ func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
 		// TODO: Secure when enforcing HTTPS
 	}
 	http.SetCookie(w, cookie)
+
+	sendResponse(w, team.Name)
 }
 
 func (handler APIHandler) logoutUser(w http.ResponseWriter, r *http.Request) {

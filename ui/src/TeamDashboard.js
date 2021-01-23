@@ -15,6 +15,7 @@ class TeamDashboard extends Component {
       scenarios: [],
       scenarioHosts: {},
       teamKey: "",
+      teamName: "",
     };
 
     this.handleChange = this.handleChange.bind(this);
@@ -28,6 +29,7 @@ class TeamDashboard extends Component {
           this.getData();
           this.setState({
             authenticated: true,
+            teamName: s.data,
           });
         }
       }.bind(this)
@@ -111,6 +113,7 @@ class TeamDashboard extends Component {
         this.setState({
           authenticated: authenticated,
           error: s.error,
+          teamName: s.data,
         });
       }.bind(this)
     );
@@ -193,7 +196,7 @@ class TeamDashboard extends Component {
           </Link>
         </div>
         <div className="heading">
-          <h1>Team Dashboard</h1>
+          <h1>Team Dashboard - {this.state.teamName}</h1>
         </div>
         <div className="toc">
           <h4>Scenarios</h4>
