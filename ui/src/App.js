@@ -6,7 +6,7 @@ import NotFound from "./common/NotFound";
 import Scoreboard from "./Scoreboard";
 import TeamDashboard from "./TeamDashboard";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
 
 class App extends Component {
@@ -14,6 +14,7 @@ class App extends Component {
     super(props);
     this.state = {
       authenticated: false,
+      username: "",
     };
 
     this.handleLoginSuccess = this.handleLoginSuccess.bind(this);
@@ -26,15 +27,17 @@ class App extends Component {
         if (!s.error) {
           this.setState({
             authenticated: true,
+            username: s.data,
           });
         }
       }.bind(this)
     );
   }
 
-  handleLoginSuccess() {
+  handleLoginSuccess(username) {
     this.setState({
       authenticated: true,
+      username: username,
     });
   }
 
@@ -59,9 +62,12 @@ class App extends Component {
       destLogin = <Redirect to="/admin" />;
       destAdmin = <Admin />;
       logout = (
-        <button type="button" onClick={this.handleLogout}>
-          Log out
-        </button>
+        <Fragment>
+          {this.state.username} -
+          <button type="button" onClick={this.handleLogout}>
+            Log out
+          </button>
+        </Fragment>
       );
     } else {
       // not authenticated

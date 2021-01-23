@@ -415,6 +415,16 @@ func (handler APIHandler) checkLoginUser(w http.ResponseWriter, r *http.Request)
 	if !token.Valid {
 		httpErrorNotAuthenticated(w)
 	}
+
+	claims := token.Claims.(jwt.MapClaims)
+	userID := uint64(claims["UserID"].(float64))
+	user, err := handler.BackingStore.userSelect(userID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	sendResponse(w, user.Username)
 }
 
 func (handler APIHandler) checkLoginTeam(w http.ResponseWriter, r *http.Request) {
@@ -502,6 +512,8 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 		// TODO: Secure when enforcing HTTPS
 	}
 	http.SetCookie(w, cookie)
+
+	sendResponse(w, user.Username)
 }
 
 func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
