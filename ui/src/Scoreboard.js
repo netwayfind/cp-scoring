@@ -58,6 +58,7 @@ class Scoreboard extends Component {
             items={this.state.scenarios}
             path={this.props.match.path}
             label="Name"
+            showIDs={false}
           />
         </div>
         <div className="content">

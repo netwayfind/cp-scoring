@@ -10,13 +10,17 @@ class LinkList extends Component {
       if (this.props.currentID === item.ID) {
         classes.push("nav-button-selected");
       }
+      let idText = null;
+      if (this.props.showIDs) {
+        idText = (`[${item.ID}] `);
+      }
       items.push(
         <li key={i}>
           <Link
             className={classes.join(" ")}
             to={`${this.props.path}/${item.ID}`}
           >
-            [{item.ID}] {item[this.props.label]}
+            {idText}{item[this.props.label]}
           </Link>
         </li>
       );
@@ -25,5 +29,9 @@ class LinkList extends Component {
     return <ul>{items}</ul>;
   }
 }
+
+LinkList.defaultProps = {
+  showIDs: true
+};
 
 export default withRouter(LinkList);
