@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -51,6 +52,29 @@ func (handler APIHandler) middlewareAuth(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (handler APIHandler) middlewareTeam(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		jwtCookie, err := r.Cookie(model.TeamCookieName)
+		if err != nil {
+			httpErrorNotAuthenticated(w)
+			return
+		}
+
+		token, err := getJwtToken(handler.jwtSecret, jwtCookie.Value)
+		claims := token.Claims.(jwt.MapClaims)
+
+		// TODO: check roles
+		if len(claims) == 0 {
+			httpErrorNotAuthenticated(w)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), model.TeamCookieName, uint64(claims["TeamID"].(float64)))
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -369,10 +393,34 @@ func (handler APIHandler) registerHostToken(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func (handler APIHandler) checkLogin(w http.ResponseWriter, r *http.Request) {
-	log.Println("check login")
+func (handler APIHandler) checkLoginUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("check login user")
 
 	jwtCookie, err := r.Cookie(model.AuthCookieName)
+	if err != nil {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	if len(jwtCookie.Value) < 5 {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+
+	token, err := getJwtToken(handler.jwtSecret, jwtCookie.Value)
+	if err != nil {
+		httpErrorNotAuthenticated(w)
+		return
+	}
+	if !token.Valid {
+		httpErrorNotAuthenticated(w)
+	}
+}
+
+func (handler APIHandler) checkLoginTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("check login team")
+
+	jwtCookie, err := r.Cookie(model.TeamCookieName)
 	if err != nil {
 		httpErrorNotAuthenticated(w)
 		return
@@ -408,41 +456,42 @@ func (handler APIHandler) loginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if checkPasswordHash(loginUser.Password, user.Password) {
-		log.Println("user authentication successful: " + loginUser.Username)
-
-		roles, err := handler.BackingStore.userRolesSelect(user.ID)
-		if err != nil {
-			httpErrorDatabase(w, err)
-			return
-		}
-
-		claims := model.AuthClaims{
-			ID:    user.ID,
-			Roles: roles,
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signedToken, err := token.SignedString(handler.jwtSecret)
-		if err != nil {
-			httpErrorInternal(w, err)
-			return
-		}
-
-		cookie := &http.Cookie{
-			Name:     model.AuthCookieName,
-			Value:    signedToken,
-			Path:     "/",
-			HttpOnly: true,
-			Expires:  time.Now().AddDate(0, 0, 1),
-			SameSite: http.SameSiteLaxMode,
-			// TODO: Secure when enforcing HTTPS
-		}
-		http.SetCookie(w, cookie)
+	if !checkPasswordHash(loginUser.Password, user.Password) {
+		log.Println("user authentication failed: " + loginUser.Username)
+		httpErrorNotAuthenticated(w)
 		return
 	}
-	log.Println("user authentication failed")
-	httpErrorNotAuthenticated(w)
+
+	log.Println("user authentication successful: " + loginUser.Username)
+
+	roles, err := handler.BackingStore.userRolesSelect(user.ID)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+
+	claims := model.ClaimsAuth{
+		UserID: user.ID,
+		Roles:  roles,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString(handler.jwtSecret)
+	if err != nil {
+		httpErrorInternal(w, err)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     model.AuthCookieName,
+		Value:    signedToken,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Now().AddDate(0, 0, 1),
+		SameSite: http.SameSiteLaxMode,
+		// TODO: Secure when enforcing HTTPS
+	}
+	http.SetCookie(w, cookie)
 }
 
 func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
@@ -460,18 +509,57 @@ func (handler APIHandler) loginTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if team.ID == 0 {
+		log.Printf("team authentication failed " + loginTeam.TeamKey)
 		httpErrorNotAuthenticated(w)
 		return
 	}
 
 	log.Printf("team authentication successful: %d", team.ID)
+
+	claims := model.ClaimsTeam{
+		TeamID: team.ID,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signedToken, err := token.SignedString(handler.jwtSecret)
+	if err != nil {
+		httpErrorInternal(w, err)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     model.TeamCookieName,
+		Value:    signedToken,
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Now().AddDate(0, 0, 1),
+		SameSite: http.SameSiteLaxMode,
+		// TODO: Secure when enforcing HTTPS
+	}
+	http.SetCookie(w, cookie)
 }
 
-func (handler APIHandler) logout(w http.ResponseWriter, r *http.Request) {
-	log.Println("logout")
+func (handler APIHandler) logoutUser(w http.ResponseWriter, r *http.Request) {
+	log.Println("logout user")
 
 	cookie := &http.Cookie{
 		Name:     model.AuthCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Expires:  time.Unix(0, 0),
+		SameSite: http.SameSiteLaxMode,
+		// TODO: Secure when enforcing HTTPS
+	}
+	http.SetCookie(w, cookie)
+	return
+}
+
+func (handler APIHandler) logoutTeam(w http.ResponseWriter, r *http.Request) {
+	log.Println("logout team")
+
+	cookie := &http.Cookie{
+		Name:     model.TeamCookieName,
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
@@ -699,14 +787,14 @@ func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	teamKeyParam, present := r.URL.Query()["team_key"]
-	if !present || len(teamKeyParam) != 1 {
-		httpErrorBadRequest(w)
+	teamIDValue := r.Context().Value(model.TeamCookieName)
+	if teamIDValue == nil {
+		httpErrorNotAuthenticated(w)
 		return
 	}
+	teamID := teamIDValue.(uint64)
 
-	teamKey := teamKeyParam[0]
-	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	team, err := handler.BackingStore.teamSelect(teamID)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
@@ -750,14 +838,14 @@ func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *
 		return
 	}
 
-	teamKeyParam, present := r.URL.Query()["team_key"]
-	if !present || len(teamKeyParam) != 1 {
-		httpErrorBadRequest(w)
+	teamIDValue := r.Context().Value(model.TeamCookieName)
+	if teamIDValue == nil {
+		httpErrorNotAuthenticated(w)
 		return
 	}
+	teamID := teamIDValue.(uint64)
 
-	teamKey := teamKeyParam[0]
-	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	team, err := handler.BackingStore.teamSelect(teamID)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return
@@ -781,14 +869,14 @@ func (handler APIHandler) readScenarioReportTimeline(w http.ResponseWriter, r *h
 		return
 	}
 
-	teamKeyParam, present := r.URL.Query()["team_key"]
-	if !present || len(teamKeyParam) != 1 {
-		httpErrorBadRequest(w)
+	teamIDValue := r.Context().Value(model.TeamCookieName)
+	if teamIDValue == nil {
+		httpErrorNotAuthenticated(w)
 		return
 	}
+	teamID := teamIDValue.(uint64)
 
-	teamKey := teamKeyParam[0]
-	team, err := handler.BackingStore.teamSelectByKey(teamKey)
+	team, err := handler.BackingStore.teamSelect(teamID)
 	if err != nil {
 		httpErrorDatabase(w, err)
 		return

@@ -21,6 +21,19 @@ class TeamDashboard extends Component {
     this.handleSubmit = this.handleSubmit.bind(this);
   }
 
+  componentDidMount() {
+    apiGet("/api/login-team/").then(
+      async function (s) {
+        if (!s.error) {
+          this.getData();
+          this.setState({
+            authenticated: true,
+          });
+        }
+      }.bind(this)
+    );
+  }
+
   componentDidUpdate(prevProps) {
     let scenarioID = this.getScenarioID(this.props);
     let prevScenarioID = this.getScenarioID(prevProps);
@@ -54,27 +67,26 @@ class TeamDashboard extends Component {
           scenarios: scenarios,
         });
         if (!s.error) {
-          scenarios.forEach((scenario) => {
-            apiGet(
-              "/api/report/" +
-                scenario.ID +
-                "/hostnames?team_key=" +
-                this.state.teamKey
-            ).then(
-              async function (s) {
-                this.setState({
-                  error: s.error,
-                  scenarioHosts: {
-                    ...this.state.scenarioHosts,
-                    [scenario.ID]: s.data,
-                  },
-                });
-              }.bind(this)
-            );
-          });
+          this.getScenarioHosts(scenarios);
         }
       }.bind(this)
     );
+  }
+
+  getScenarioHosts(scenarios) {
+    scenarios.forEach((scenario) => {
+      apiGet("/api/report/" + scenario.ID + "/hostnames").then(
+        async function (s) {
+          this.setState({
+            error: s.error,
+            scenarioHosts: {
+              ...this.state.scenarioHosts,
+              [scenario.ID]: s.data,
+            },
+          });
+        }.bind(this)
+      );
+    });
   }
 
   handleChange(event) {
@@ -87,19 +99,19 @@ class TeamDashboard extends Component {
   handleSubmit(event) {
     event.preventDefault();
 
-    apiPost("/api/login/team", {
+    apiPost("/api/login-team/", {
       TeamKey: this.state.teamKey,
     }).then(
       async function (s) {
         let authenticated = false;
         if (!s.error) {
+          this.getData();
           authenticated = true;
         }
         this.setState({
           authenticated: authenticated,
           error: s.error,
         });
-        this.getData();
       }.bind(this)
     );
   }
@@ -190,16 +202,13 @@ class TeamDashboard extends Component {
         <div className="content">
           <Switch>
             <Route exact path={`${this.props.match.url}/scenario/:scenarioID`}>
-              <ScenarioDesc teamKey={this.state.teamKey} />
+              <ScenarioDesc />
             </Route>
             <Route
               exact
               path={`${this.props.match.url}/scenario/:scenarioID/:hostname`}
             >
-              <HostReport
-                scenarioName={currentScenarioName}
-                teamKey={this.state.teamKey}
-              />
+              <HostReport scenarioName={currentScenarioName} />
             </Route>
           </Switch>
         </div>

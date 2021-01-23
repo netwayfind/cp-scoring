@@ -34,24 +34,9 @@ class HostReport extends Component {
   }
 
   getData(scenarioID, hostname) {
-    let teamKey = this.props.teamKey;
     Promise.all([
-      apiGet(
-        "/api/report/" +
-          scenarioID +
-          "?team_key=" +
-          teamKey +
-          "&hostname=" +
-          hostname
-      ),
-      apiGet(
-        "/api/report/" +
-          scenarioID +
-          "/timeline?team_key=" +
-          teamKey +
-          "&hostname=" +
-          hostname
-      ),
+      apiGet("/api/report/" + scenarioID + "?hostname=" + hostname),
+      apiGet("/api/report/" + scenarioID + "/timeline?hostname=" + hostname),
     ]).then(
       async function (responses) {
         let s1 = responses[0];

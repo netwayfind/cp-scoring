@@ -166,14 +166,23 @@ func main() {
 
 	// login, no auth
 	loginRouter := apiRouter.PathPrefix("/login").Subrouter()
-	loginRouter.HandleFunc("/", apiHandler.checkLogin).Methods("GET")
+	loginRouter.HandleFunc("/", apiHandler.checkLoginUser).Methods("GET")
 	loginRouter.HandleFunc("/", apiHandler.loginUser).Methods("POST")
-	loginRouter.HandleFunc("/team", apiHandler.loginTeam).Methods("POST")
+
+	// login-team, no auth
+	loginTeamRouter := apiRouter.PathPrefix("/login-team").Subrouter()
+	loginTeamRouter.HandleFunc("/", apiHandler.checkLoginTeam).Methods("GET")
+	loginTeamRouter.HandleFunc("/", apiHandler.loginTeam).Methods("POST")
 
 	// logout, auth required
 	logoutRouter := apiRouter.PathPrefix("/logout").Subrouter()
 	logoutRouter.Use(apiHandler.middlewareAuth)
-	logoutRouter.HandleFunc("/", apiHandler.logout).Methods("POST")
+	logoutRouter.HandleFunc("/", apiHandler.logoutUser).Methods("POST")
+
+	// logout-team, auth required
+	logoutTeamRouter := apiRouter.PathPrefix("/logout-team").Subrouter()
+	logoutTeamRouter.Use(apiHandler.middlewareTeam)
+	logoutTeamRouter.HandleFunc("/", apiHandler.logoutTeam).Methods("POST")
 
 	// scenarios, auth required
 	scenarioRouter := apiRouter.PathPrefix("/scenarios").Subrouter()
@@ -187,8 +196,9 @@ func main() {
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/hosts", apiHandler.updateScenarioHosts).Methods("PUT")
 	scenarioRouter.HandleFunc("/{id:[0-9]+}/config", apiHandler.readScenarioConfig).Methods("GET")
 
-	// report, no auth
+	// report, team required
 	reportRouter := apiRouter.PathPrefix("/report").Subrouter()
+	reportRouter.Use(apiHandler.middlewareTeam)
 	reportRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenarioReport).Methods("GET")
 	reportRouter.HandleFunc("/{id:[0-9]+}/hostnames", apiHandler.readScenarioReportHostnames).Methods("GET")
 	reportRouter.HandleFunc("/{id:[0-9]+}/timeline", apiHandler.readScenarioReportTimeline).Methods("GET")

@@ -33,4 +33,5 @@ const (
 const (
 	AuthCookieName        = "auth"
 	KeyCharset     string = "0123456789ABCDEF"
+	TeamCookieName        = "team"
 )

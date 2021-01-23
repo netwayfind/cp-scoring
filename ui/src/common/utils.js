@@ -20,7 +20,10 @@ export async function apiGet(url) {
     let error = null;
     let data = null;
     if (response.status === 200) {
-      if (response.headers.get("Content-Length") > 0 || response.headers.get("Transfer-Encoding") === "chunked") {
+      if (
+        response.headers.get("Content-Length") > 0 ||
+        response.headers.get("Transfer-Encoding") === "chunked"
+      ) {
         data = await response.json();
       }
     } else {
@@ -56,7 +59,10 @@ export async function apiPost(url, body) {
     let error = null;
     let data = null;
     if (response.status === 200) {
-      if (response.headers.get("Content-Length") > 0 || response.headers.get("Transfer-Encoding") === "chunked") {
+      if (
+        response.headers.get("Content-Length") > 0 ||
+        response.headers.get("Transfer-Encoding") === "chunked"
+      ) {
         data = await response.json();
       }
     } else {
@@ -81,7 +87,10 @@ export async function apiPut(url, body) {
     let error = null;
     let data = null;
     if (response.status === 200) {
-      if (response.headers.get("Content-Length") > 0 || response.headers.get("Transfer-Encoding") === "chunked") {
+      if (
+        response.headers.get("Content-Length") > 0 ||
+        response.headers.get("Transfer-Encoding") === "chunked"
+      ) {
         data = await response.json();
       }
     } else {

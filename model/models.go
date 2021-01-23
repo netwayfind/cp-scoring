@@ -42,11 +42,17 @@ type AuditCheckResults struct {
 	CheckResults []string
 }
 
-// AuthClaims asdf
-type AuthClaims struct {
+// ClaimsAuth asdf
+type ClaimsAuth struct {
 	jwt.StandardClaims
-	ID    uint64
-	Roles []Role
+	UserID uint64
+	Roles  []Role
+}
+
+// ClaimsTeam asdf
+type ClaimsTeam struct {
+	jwt.StandardClaims
+	TeamID uint64
 }
 
 // HostTokenRequest asdf
