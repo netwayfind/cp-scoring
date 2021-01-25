@@ -36,7 +36,7 @@ const fileNameTeamKey string = "team_key"
 // to be set by build
 var version string
 
-func config(dirConfig string, hostname string) {
+func config(dirWork string, dirConfig string, hostname string) {
 	log.Println("Running agent config")
 
 	// don't override existing files
@@ -146,13 +146,18 @@ func config(dirConfig string, hostname string) {
 	if err != nil {
 		log.Fatalln("ERROR: unable to save scenario;", err)
 	}
+
+	writeReadmeHTML(dirWork, serverURL)
 }
 
-func createDir(dir string) {
-	// data directory
-	err := os.MkdirAll(dir, 0700)
+func copyTeamFiles(dirWork string) {
+	host, err := getCurrentHost()
 	if err != nil {
-		log.Fatalln("Unable to set up directory "+dir+";", err)
+		log.Fatalln("ERROR: could not get current host;", err)
+	}
+	err = host.copyTeamFiles()
+	if err != nil {
+		log.Fatalln("ERROR: could not copy team files;", err)
 	}
 }
 
@@ -278,7 +283,7 @@ func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
 
 		resp, err := http.Post(serverURL+"/api/audit/", "application/json", bytes.NewBuffer(bs))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		if resp.StatusCode == http.StatusOK {
 			log.Println("DELETING ", filePath)
@@ -289,6 +294,15 @@ func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
 
 func install() {
 	log.Println("Installing agent")
+
+	host, err := getCurrentHost()
+	if err != nil {
+		log.Fatalln("ERROR: could not get current host;", err)
+	}
+	err = host.install()
+	if err != nil {
+		log.Fatalln("ERROR: could not install;", err)
+	}
 }
 
 func pressEnterBeforeExit(code int) {
@@ -437,17 +451,19 @@ func main() {
 	// default path
 	ex, err := os.Executable()
 	if err != nil {
-		log.Fatal("ERROR: unable to get executable", err)
+		log.Fatalln("ERROR: unable to get executable", err)
 	}
 	dirWork := filepath.Dir(ex)
 
 	// program arguments
 	var askConfig bool
+	var askCopyFiles bool
 	var askInstall bool
 	var askTeamSetup bool
 	var askVersion bool
 	flag.StringVar(&dirWork, "dir_work", dirWork, "working directory path")
 	flag.BoolVar(&askConfig, "config", false, "run config")
+	flag.BoolVar(&askCopyFiles, "copy_files", false, "copy team files to current directory")
 	flag.BoolVar(&askInstall, "install", false, "run install")
 	flag.BoolVar(&askTeamSetup, "team_setup", false, "team setup")
 	flag.BoolVar(&askVersion, "version", false, "get version number")
@@ -480,7 +496,13 @@ func main() {
 
 	// config
 	if askConfig {
-		config(dirConfig, hostname)
+		config(dirWork, dirConfig, hostname)
+		os.Exit(exitCodeSuccess)
+	}
+
+	// copy files
+	if askCopyFiles {
+		copyTeamFiles(dirWork)
 		os.Exit(exitCodeSuccess)
 	}
 
@@ -498,7 +520,7 @@ func main() {
 
 	scenarioID, err := readScenarioID(dirConfig)
 	if err != nil {
-		log.Fatal("ERROR: unable to read scenario file;", err)
+		log.Fatalln("ERROR: unable to read scenario file;", err)
 	}
 	log.Println("scenario: ", scenarioID)
 
