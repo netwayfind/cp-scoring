@@ -232,6 +232,7 @@ class Scenario extends Component {
         <form onSubmit={this.handleSave}>
           <label htmlFor="ID">ID</label>
           <input
+            className="input-5"
             name="ID"
             disabled
             onChange={this.handleUpdate}
@@ -240,6 +241,7 @@ class Scenario extends Component {
           <br />
           <label htmlFor="Name">Name</label>
           <input
+            className="input-50"
             name="Name"
             onChange={this.handleUpdate}
             value={this.state.scenario.Name || ""}

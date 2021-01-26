@@ -121,6 +121,7 @@ class Team extends Component {
         <form onSubmit={this.handleSave}>
           <label htmlFor="ID">ID</label>
           <input
+            className="input-5"
             onChange={this.handleUpdate}
             name="ID"
             disabled

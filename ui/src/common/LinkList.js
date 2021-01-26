@@ -12,7 +12,7 @@ class LinkList extends Component {
       }
       let idText = null;
       if (this.props.showIDs) {
-        idText = (`[${item.ID}] `);
+        idText = `[${item.ID}] `;
       }
       items.push(
         <li key={i}>
@@ -20,7 +20,8 @@ class LinkList extends Component {
             className={classes.join(" ")}
             to={`${this.props.path}/${item.ID}`}
           >
-            {idText}{item[this.props.label]}
+            {idText}
+            {item[this.props.label]}
           </Link>
         </li>
       );
@@ -31,7 +32,7 @@ class LinkList extends Component {
 }
 
 LinkList.defaultProps = {
-  showIDs: true
+  showIDs: true,
 };
 
 export default withRouter(LinkList);

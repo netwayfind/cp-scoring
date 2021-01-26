@@ -185,9 +185,8 @@ class ScenarioHost extends Component {
 
   render() {
     let actionOptions = [
-      <option key="1">A</option>,
-      <option key="2">EXEC</option>,
-      <option key="3">FILE_EXIST</option>,
+      <option key="1">EXEC</option>,
+      <option key="2">FILE_EXIST</option>,
     ];
     let operatorOptions = [
       <option key="1" value="" />,
@@ -204,6 +203,7 @@ class ScenarioHost extends Component {
           args.push(
             <li key={j}>
               <input
+                className="input-50"
                 onChange={(event) => this.handleCheckArgUpdate(i, j, event)}
                 value={arg}
               ></input>
@@ -228,14 +228,19 @@ class ScenarioHost extends Component {
       checkList.push(
         <li key={i}>
           <details>
-            <summary>
-              Type: {check.Type}, Command: {check.Command}, Args: [
-              {check.Args.join(" ") || ""}]
-            </summary>
+            <summary>{answer.Description}</summary>
             <button type="button" onClick={() => this.handleCheckDelete(i)}>
               Delete Check
             </button>
             <p />
+            <label htmlFor="Description">Description</label>
+            <input
+              className="input-20"
+              name="Description"
+              onChange={(event) => this.handleAnswerUpdate(i, event)}
+              value={answer.Description}
+            />
+            <br />
             <label htmlFor="Type">Type</label>
             <select
               name="Type"
@@ -247,6 +252,7 @@ class ScenarioHost extends Component {
             <br />
             <label htmlFor="Command">Command</label>
             <input
+              className="input-50"
               name="Command"
               onChange={(event) => this.handleCheckUpdate(i, event)}
               value={check.Command}
@@ -263,18 +269,15 @@ class ScenarioHost extends Component {
               {operatorOptions}
             </select>
             <input
+              className="input-50"
               name="Value"
               onChange={(event) => this.handleAnswerUpdate(i, event)}
               value={answer.Value}
             />
-            <label htmlFor="Description">Description</label>
-            <input
-              name="Description"
-              onChange={(event) => this.handleAnswerUpdate(i, event)}
-              value={answer.Description}
-            />
+            <br />
             <label htmlFor="Points">Points</label>
             <input
+              className="input-5"
               name="Points"
               onChange={(event) => this.handleAnswerUpdate(i, event)}
               value={answer.Points}
@@ -302,6 +305,7 @@ class ScenarioHost extends Component {
           args.push(
             <li key={j}>
               <input
+                className="input-50"
                 onChange={(event) => this.handleConfigArgUpdate(i, j, event)}
                 value={arg}
               ></input>
@@ -326,8 +330,7 @@ class ScenarioHost extends Component {
         <li key={i}>
           <details>
             <summary>
-              Type: {conf.Type}, Command: {conf.Command}, Args: [
-              {conf.Args.join(" ") || ""}]
+              Command: {conf.Command}, Args: [{conf.Args.join(" ") || ""}]
             </summary>
             <button type="button" onClick={() => this.handleConfigDelete(i)}>
               Delete Config
@@ -340,6 +343,7 @@ class ScenarioHost extends Component {
             <br />
             <label htmlFor="Command">Command</label>
             <input
+              className="input-50"
               name="Command"
               onChange={(event) => this.handleConfigUpdate(i, event)}
               value={conf.Command}
