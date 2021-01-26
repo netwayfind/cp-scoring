@@ -566,7 +566,7 @@ func main() {
 		nextTime := time.Now()
 		for {
 			executeSubmitScenarioCheckResults(serverURL, dirResults)
-			nextTime = nextTime.Add(15 * time.Second)
+			nextTime = nextTime.Add(10 * time.Second)
 			wait := time.Since(nextTime) * -1
 			time.Sleep(wait)
 		}
