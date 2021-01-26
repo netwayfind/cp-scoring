@@ -442,6 +442,9 @@ func teamSetup(dirData string, serverURL string) {
 		log.Println("ERROR: cannot save team key;", err)
 		pressEnterBeforeExit(exitCodeFail)
 	}
+
+	log.Println("Team setup complete")
+	pressEnterBeforeExit(exitCodeSuccess)
 }
 
 func main() {
@@ -475,6 +478,18 @@ func main() {
 		os.Exit(exitCodeSuccess)
 	}
 
+	// install
+	if askInstall {
+		install()
+		os.Exit(exitCodeSuccess)
+	}
+
+	// copy files
+	if askCopyFiles {
+		copyTeamFiles(dirWork)
+		os.Exit(exitCodeSuccess)
+	}
+
 	dirConfig := path.Join(dirWork, "config")
 	dirData := path.Join(dirWork, "data")
 	dirResults := path.Join(dirData, "results")
@@ -488,21 +503,9 @@ func main() {
 		log.Fatalln("ERROR: could not get hostname", err)
 	}
 
-	// install
-	if askInstall {
-		install()
-		os.Exit(exitCodeSuccess)
-	}
-
 	// config
 	if askConfig {
 		config(dirWork, dirConfig, hostname)
-		os.Exit(exitCodeSuccess)
-	}
-
-	// copy files
-	if askCopyFiles {
-		copyTeamFiles(dirWork)
 		os.Exit(exitCodeSuccess)
 	}
 

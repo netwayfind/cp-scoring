@@ -37,7 +37,7 @@ func (h hostLinux) install() error {
 	installPath := InstallPathLinux
 
 	// create installation folder
-	err := os.MkdirAll(installPath, os.ModeDir)
+	err := os.MkdirAll(installPath, 0755)
 	if err != nil {
 		log.Println("ERROR: unable to create installation folder " + installPath)
 		return err
