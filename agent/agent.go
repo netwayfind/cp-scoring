@@ -214,35 +214,41 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 				result = strings.TrimSpace(string(out))
 			}
 		} else if check.Type == model.ActionTypeFileExist {
-			if _, err := os.Stat(check.Args[0]); err == nil {
-				result = "true"
-
-			} else {
-				result = "false"
-			}
-		} else if check.Type == model.ActionTypeFileRegex {
-			fp := check.Args[0]
-			rgx := regexp.MustCompile(check.Args[1])
-			contents, err := ioutil.ReadFile(fp)
-			if err != nil {
-				result = "could not read file"
-			} else {
-				b := rgx.Match(contents)
-				if b {
+			if len(check.Args) == 1 {
+				if _, err := os.Stat(check.Args[0]); err == nil {
 					result = "true"
+
 				} else {
 					result = "false"
 				}
 			}
+		} else if check.Type == model.ActionTypeFileRegex {
+			if len(check.Args) == 2 {
+				fp := check.Args[0]
+				rgx := regexp.MustCompile(check.Args[1])
+				contents, err := ioutil.ReadFile(fp)
+				if err != nil {
+					result = "could not read file"
+				} else {
+					b := rgx.MatchString(string(contents))
+					if b {
+						result = "true"
+					} else {
+						result = "false"
+					}
+				}
+			}
 		} else if check.Type == model.ActionTypeFileValue {
-			fp := check.Args[0]
-			rgx := regexp.MustCompile(check.Args[1])
-			contents, err := ioutil.ReadFile(fp)
-			if err != nil {
-				result = "could not read file"
-			} else {
-				rrs := rgx.FindAllString(string(contents), -1)
-				result = strconv.Itoa(len(rrs))
+			if len(check.Args) == 2 {
+				fp := check.Args[0]
+				rgx := regexp.MustCompile(check.Args[1])
+				contents, err := ioutil.ReadFile(fp)
+				if err != nil {
+					result = "could not read file"
+				} else {
+					rrs := rgx.FindAllString(string(contents), -1)
+					result = strconv.Itoa(len(rrs))
+				}
 			}
 		}
 		checkResults = append(checkResults, result)

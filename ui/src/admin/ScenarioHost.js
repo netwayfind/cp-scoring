@@ -1,6 +1,6 @@
 import "../App.css";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { withRouter } from "react-router-dom";
 
 class ScenarioHost extends Component {
@@ -187,6 +187,8 @@ class ScenarioHost extends Component {
     let actionOptions = [
       <option key="1">EXEC</option>,
       <option key="2">FILE_EXIST</option>,
+      <option key="2">FILE_REGEX</option>,
+      <option key="2">FILE_VALUE</option>,
     ];
     let operatorOptions = [
       <option key="1" value="" />,
@@ -250,14 +252,21 @@ class ScenarioHost extends Component {
               {actionOptions}
             </select>
             <br />
-            <label htmlFor="Command">Command</label>
-            <input
-              className="input-50"
-              name="Command"
-              onChange={(event) => this.handleCheckUpdate(i, event)}
-              value={check.Command}
-            />
-            <br />
+            {check.Type === "EXEC" ?
+              (
+                <Fragment>
+                  <label htmlFor="Command">Command</label>
+                  <input
+                    className="input-50"
+                    name="Command"
+                    onChange={(event) => this.handleCheckUpdate(i, event)}
+                    value={check.Command}
+                  />
+                  <br />
+                </Fragment>
+              )
+              : null
+            }
             <label htmlFor="Args">Args</label>
             <ul>{args}</ul>
             <label htmlFor="Answer">Answer</label>
