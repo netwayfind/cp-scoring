@@ -181,7 +181,7 @@ func executeConfig(config []model.Action) {
 	log.Println("Successfully applied config")
 }
 
-func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string) {
+func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string, tempDir string) {
 	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
 	log.Println("Read scenario checks")
 	resp, err := http.Get(serverURL + "/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
@@ -205,7 +205,9 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 			if &check.Command == nil || len(check.Command) == 0 {
 				result = "invalid command"
 			} else {
-				out, err := exec.Command(check.Command, check.Args...).Output()
+				cmd := exec.Command(check.Command, check.Args...)
+				cmd.Dir = tempDir
+				out, err := cmd.Output()
 				if err != nil {
 					result = "could not execute file"
 				}
@@ -492,10 +494,12 @@ func main() {
 
 	dirConfig := path.Join(dirWork, "config")
 	dirData := path.Join(dirWork, "data")
+	dirTemp := path.Join(dirData, "temp")
 	dirResults := path.Join(dirData, "results")
 
 	createDir(dirConfig)
 	createDir(dirData)
+	createDir(dirTemp)
 	createDir(dirResults)
 
 	hostname, err := os.Hostname()
@@ -548,7 +552,7 @@ func main() {
 				}
 			}
 			if len(hostToken) > 0 {
-				executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults)
+				executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp)
 			}
 			nextTime = nextTime.Add(time.Minute)
 			wait := time.Since(nextTime) * -1
