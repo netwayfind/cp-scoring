@@ -7,6 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -172,13 +173,31 @@ func executeConfig(config []model.Action) {
 		if &action.Command == nil || len(action.Command) == 0 {
 			continue
 		}
-		_, err := exec.Command(action.Command, action.Args...).Output()
+		cmd := exec.Command(action.Command, action.Args...)
+		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			log.Fatalln("ERROR: unable to execute config;", err)
+			log.Println("ERROR: unable to get stdout;", err)
+		}
+		stderr, err := cmd.StderrPipe()
+		if err != nil {
+			log.Println("ERROR: unable to get stderr;", err)
+		}
+		go func() {
+			multiReader := io.MultiReader(stdout, stderr)
+			scanner := bufio.NewScanner(multiReader)
+			for scanner.Scan() {
+				line := scanner.Text()
+				log.Println(line)
+			}
+		}()
+
+		err = cmd.Run()
+		if err != nil {
+			log.Println("Unable to execute config action;", err)
 		}
 	}
 
-	log.Println("Successfully applied config")
+	log.Println("Applied config. Check log output.")
 }
 
 func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string, tempDir string) {
