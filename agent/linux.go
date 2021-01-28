@@ -25,6 +25,11 @@ func (h hostLinux) copyTeamFiles() error {
 	copyFile(filepath.Join(installPath, fileName), filepath.Join(currentDir, fileName))
 
 	// team setup shortcut
+	fileName = "team_setup.sh"
+	copyFile(filepath.Join(installPath, fileName), filepath.Join(currentDir, fileName))
+	os.Chmod(filepath.Join(currentDir, fileName), 0755)
+
+	// team setup shortcut
 	fileName = "team_setup.desktop"
 	copyFile(filepath.Join(installPath, fileName), filepath.Join(currentDir, fileName))
 	os.Chmod(filepath.Join(currentDir, fileName), 0755)
