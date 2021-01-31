@@ -122,7 +122,7 @@ func main() {
 					log.Println("ERROR: unable to audit entries;", err)
 				}
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 	}()
 
