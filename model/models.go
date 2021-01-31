@@ -65,7 +65,8 @@ type ClaimsTeam struct {
 
 // HostTokenRequest asdf
 type HostTokenRequest struct {
-	Hostname string
+	ScenarioID uint64
+	Hostname   string
 }
 
 // HostTokenRegistration asdf

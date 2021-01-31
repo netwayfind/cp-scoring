@@ -384,10 +384,11 @@ func readTeamKey(dirData string) (string, error) {
 	return string(bs), nil
 }
 
-func requestHostToken(dirData string, serverURL string, hostname string) (string, error) {
+func requestHostToken(dirData string, serverURL string, scenarioID uint64, hostname string) (string, error) {
 	log.Println("Requesting host token")
 	hostTokenRequest := model.HostTokenRequest{
-		Hostname: hostname,
+		ScenarioID: scenarioID,
+		Hostname:   hostname,
 	}
 	hostTokenRequestBs, err := json.Marshal(hostTokenRequest)
 	if err != nil {
@@ -565,7 +566,7 @@ func main() {
 		hostToken, _ := readHostToken(dirData)
 		for {
 			if len(hostToken) == 0 {
-				hostToken, err = requestHostToken(dirData, serverURL, hostname)
+				hostToken, err = requestHostToken(dirData, serverURL, scenarioID, hostname)
 				if err != nil {
 					log.Println("ERROR: could not get host token;", err)
 				} else {

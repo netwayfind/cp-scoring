@@ -359,8 +359,21 @@ func (handler APIHandler) requestHostToken(w http.ResponseWriter, r *http.Reques
 
 	hostToken := randHexStr(16)
 	hostname := hostTokenRequest.Hostname
+	scenarioID := hostTokenRequest.ScenarioID
 	timestamp := time.Now().Unix()
 	sourceIP := getSourceIP(r)
+
+	// make sure scenario + hostname exists
+	s, err := handler.BackingStore.scenarioHostsSelectChecks(scenarioID, hostname)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if s == nil {
+		httpErrorNotFound(w)
+		return
+	}
+
 	err = handler.BackingStore.hostTokenInsert(hostToken, hostname, timestamp, sourceIP)
 	if err != nil {
 		httpErrorDatabase(w, err)
