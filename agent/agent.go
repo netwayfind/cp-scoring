@@ -564,6 +564,7 @@ func main() {
 	go func() {
 		nextTime := time.Now()
 		hostToken, _ := readHostToken(dirData)
+		teamKey := ""
 		for {
 			if len(hostToken) == 0 {
 				hostToken, err = requestHostToken(dirData, serverURL, scenarioID, hostname)
@@ -578,7 +579,13 @@ func main() {
 				}
 			}
 			if len(hostToken) > 0 {
-				executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp)
+				// make sure team key registered before doing scenario checks
+				if len(teamKey) == 0 {
+					teamKey, _ = readTeamKey(dirData)
+				}
+				if len(teamKey) > 0 {
+					executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp)
+				}
 			}
 			nextTime = nextTime.Add(time.Minute)
 			wait := time.Since(nextTime) * -1
