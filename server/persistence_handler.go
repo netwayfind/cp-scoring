@@ -25,6 +25,7 @@ func (db dbObj) dbInit() {
 	db.dbCreateTable("scoreboard", "CREATE TABLE IF NOT EXISTS scoreboard(scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, score INTEGER NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id))")
 	db.dbCreateTable("audit_check_results", "CREATE TABLE IF NOT EXISTS audit_check_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp_reported INTEGER NOT NULL, timestamp_received INTEGER NOT NULL, check_results JSONB NOT NULL, source VARCHAR NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("audit_answer_results", "CREATE TABLE IF NOT EXISTS audit_answer_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, audit_check_results_id BIGSERIAL NOT NULL, score INTEGER NOT NULL, answer_results JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token), FOREIGN KEY(audit_check_results_id) REFERENCES audit_check_results(id))")
+	db.dbCreateTable("audit_queue", "CREATE TABLE IF NOT EXISTS audit_queue(id BIGSERIAL PRIMARY KEY, timestamp INTEGER NOT NULL, source VARCHAR NOT NULL, body JSONB NOT NULL, status VARCHAR NOT NULL)")
 
 	log.Println("Finished setting up database")
 }
@@ -205,6 +206,51 @@ func (db dbObj) auditCheckResultsInsert(results model.AuditCheckResults, teamID 
 	}
 	return db.dbInsert("INSERT INTO audit_check_results(scenario_id, team_id, host_token, timestamp_reported, timestamp_received, check_results, source) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 		results.ScenarioID, teamID, results.HostToken, results.Timestamp, timestampProcessed, b, source)
+}
+
+func (db dbObj) auditQueueDelete(id uint64) error {
+	return db.dbDelete("DELETE FROM audit_queue WHERE id=$1", id)
+}
+
+func (db dbObj) auditQueueInsert(entry model.AuditQueueEntry) error {
+	bs, err := json.Marshal(entry.Body)
+	if err != nil {
+		return err
+	}
+	_, err = db.dbInsert("INSERT INTO audit_queue(timestamp, source, body, status) VALUES ($1, $2, $3, $4)", entry.Timestamp, entry.Source, bs, model.AuditQueueStatusReceived)
+	return err
+}
+
+func (db dbObj) auditQueueSelectStatusReceived() ([]model.AuditQueueEntry, error) {
+	entries := make([]model.AuditQueueEntry, 0)
+
+	rows, err := db.dbConn.Query("SELECT id, timestamp, source, body FROM audit_queue WHERE status=$1 ORDER BY timestamp ASC", model.AuditQueueStatusReceived)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		entry := model.AuditQueueEntry{}
+		var bs []byte
+		err = rows.Scan(&entry.ID, &entry.Timestamp, &entry.Source, &bs)
+		if err != nil {
+			return nil, err
+		}
+		var body model.AuditCheckResults
+		err = json.Unmarshal(bs, &body)
+		if err != nil {
+			return nil, err
+		}
+		entry.Body = body
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+func (db dbObj) auditQueueUpdateStatusFailed(id uint64) error {
+	return db.dbDelete("UPDATE audit_queue SET status=$1 WHERE id=$2", model.AuditQueueStatusFailed, id)
 }
 
 func (db dbObj) hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error {

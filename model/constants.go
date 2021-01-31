@@ -11,6 +11,15 @@ const (
 	ActionTypeFileValue ActionType = "FILE_VALUE"
 )
 
+// AuditQueueStatus asdf
+type AuditQueueStatus string
+
+// asdf
+const (
+	AuditQueueStatusReceived AuditQueueStatus = "RECV"
+	AuditQueueStatusFailed   AuditQueueStatus = "FAIL"
+)
+
 // OperatorType asdf
 type OperatorType string
 

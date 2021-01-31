@@ -8,8 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -216,42 +214,50 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 
 	source := getSourceIP(r)
 	timestamp := time.Now().Unix()
-
-	fileName := strconv.FormatInt(timestamp, 10) + "_" + source + "_" + randHexStr(16)
-	file := path.Join(handler.dirResults, fileName)
-	content, err := ioutil.ReadAll(r.Body)
+	var result model.AuditCheckResults
+	err := readRequestBody(w, r, &result)
 	if err != nil {
 		httpErrorInternal(w, errors.New("ERROR: unable to read request body"))
 	}
-	err = ioutil.WriteFile(file, []byte(content), 0400)
+	entry := model.AuditQueueEntry{
+		Timestamp: timestamp,
+		Source:    source,
+		Body:      result,
+	}
+	err = handler.BackingStore.auditQueueInsert(entry)
 	if err != nil {
-		httpErrorInternal(w, errors.New("ERROR: Unable to save result file"))
+		httpErrorInternal(w, errors.New("ERROR: Unable to save to audit queue"))
 	}
 }
 
-func (handler APIHandler) auditResult(filePath string) error {
-	log.Println("audit results")
+func (handler APIHandler) auditEntries(entries []model.AuditQueueEntry) error {
+	log.Println("audit entries")
 
-	fileName := filepath.Base(filePath)
-	fileNameTokens := strings.Split(fileName, "_")
-	if len(fileNameTokens) != 3 {
-		return errors.New("ERROR: unexpected filename")
+	for _, entry := range entries {
+		err := handler.auditEntry(entry)
+		if err != nil {
+			log.Println("ERROR: unable to audit entry;", err)
+			err2 := handler.BackingStore.auditQueueUpdateStatusFailed(entry.ID)
+			if err2 != nil {
+				return err2
+			}
+			return err
+		}
+		err = handler.BackingStore.auditQueueDelete(entry.ID)
+		if err != nil {
+			return err
+		}
 	}
-	timestamp, err := strconv.ParseInt(fileNameTokens[0], 10, 64)
-	if err != nil {
-		log.Println("ERROR: unexpected timestamp value;", err)
-	}
-	source := fileNameTokens[1]
 
-	bs, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	var auditCheckResults model.AuditCheckResults
-	err = json.Unmarshal(bs, &auditCheckResults)
-	if err != nil {
-		return err
-	}
+	return nil
+}
+
+func (handler APIHandler) auditEntry(entry model.AuditQueueEntry) error {
+	log.Printf("audit entry %d", entry.ID)
+
+	auditCheckResults := entry.Body
+	timestamp := entry.Timestamp
+	source := entry.Source
 
 	scenario, err := handler.BackingStore.scenarioSelect(auditCheckResults.ScenarioID)
 	if err != nil {

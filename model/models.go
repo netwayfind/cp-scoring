@@ -42,6 +42,14 @@ type AuditCheckResults struct {
 	CheckResults []string
 }
 
+// AuditQueueEntry asdf
+type AuditQueueEntry struct {
+	ID        uint64
+	Body      AuditCheckResults
+	Timestamp int64
+	Source    string
+}
+
 // ClaimsAuth asdf
 type ClaimsAuth struct {
 	jwt.StandardClaims

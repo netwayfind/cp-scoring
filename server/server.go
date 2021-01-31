@@ -44,8 +44,6 @@ func main() {
 	}
 
 	dirConfig := path.Join(dirWork, "config")
-	dirData := path.Join(dirWork, "data")
-	dirResults := path.Join(dirData, "results")
 	dirUI := path.Join(dirWork, "ui")
 
 	// read config file
@@ -86,7 +84,6 @@ func main() {
 	apiHandler := APIHandler{
 		BackingStore: backingStore,
 		jwtSecret:    bytesJwtSecret,
-		dirResults:   dirResults,
 	}
 
 	// generate default user if no users
@@ -111,30 +108,18 @@ func main() {
 		}
 	}
 
-	log.Println("Creating results directory")
-	err = os.MkdirAll(dirResults, 0700)
-	if err != nil {
-		log.Fatalln("Unable to set up directory "+dirResults+";", err)
-	}
-
 	// async audit
 	go func() {
 		for {
-			files, err := ioutil.ReadDir(dirResults)
+			entries, err := apiHandler.BackingStore.auditQueueSelectStatusReceived()
 			if err != nil {
-				log.Println("ERROR: cannot read results directory;", err)
+				log.Println("ERROR: cannot read audit queue;", err)
 			}
-			if len(files) > 0 {
-				log.Println("Processing results")
-				for _, file := range files {
-					filePath := path.Join(dirResults, file.Name())
-					log.Println("Auditing file " + filePath)
-					err := apiHandler.auditResult(filePath)
-					if err != nil {
-						log.Println("ERROR: unable to audit file;", err)
-					}
-					log.Println("DELETING " + filePath)
-					os.Remove(filePath)
+			if len(entries) > 0 {
+				log.Printf("Auditing %d entries", len(entries))
+				err := apiHandler.auditEntries(entries)
+				if err != nil {
+					log.Println("ERROR: unable to audit entries;", err)
 				}
 			}
 			time.Sleep(10 * time.Second)

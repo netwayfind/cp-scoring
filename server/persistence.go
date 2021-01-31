@@ -14,6 +14,10 @@ type backingStore interface {
 	auditAnswerResultsSelectHostnames(scenarioID uint64, teamID uint64) ([]string, error)
 	auditAnswerResultsReport(scenarioID uint64, teamID uint64, hostname string) (model.Report, error)
 	auditAnswerResultsReportTimeline(scenarioID uint64, teamID uint64, hostname string) ([]model.ReportTimeline, error)
+	auditQueueDelete(ids uint64) error
+	auditQueueInsert(entry model.AuditQueueEntry) error
+	auditQueueSelectStatusReceived() ([]model.AuditQueueEntry, error)
+	auditQueueUpdateStatusFailed(id uint64) error
 	auditCheckResultsInsert(results model.AuditCheckResults, teamID uint64, timestamp int64, source string) (uint64, error)
 	hostTokenInsert(hostToken string, hostname string, timestamp int64, source string) error
 	hostTokenSelectHostname(hostToken string) (string, error)
