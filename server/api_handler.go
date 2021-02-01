@@ -15,6 +15,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"github.com/netwayfind/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/processing"
+	"golang.org/x/crypto/openpgp"
 )
 
 // APIHandler asdf
@@ -22,6 +24,7 @@ type APIHandler struct {
 	BackingStore backingStore
 	jwtSecret    []byte
 	dirResults   string
+	entities     openpgp.EntityList
 }
 
 func (handler APIHandler) middlewareLog(next http.Handler) http.Handler {
@@ -214,10 +217,16 @@ func (handler APIHandler) audit(w http.ResponseWriter, r *http.Request) {
 
 	source := getSourceIP(r)
 	timestamp := time.Now().Unix()
-	var result model.AuditCheckResults
-	err := readRequestBody(w, r, &result)
+	var bs []byte
+	bs, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		httpErrorInternal(w, errors.New("ERROR: unable to read request body"))
+		return
+	}
+	result, err := processing.FromBytes(bs, handler.entities)
+	if err != nil {
+		httpErrorBadRequest(w)
+		return
 	}
 	entry := model.AuditQueueEntry{
 		Timestamp: timestamp,

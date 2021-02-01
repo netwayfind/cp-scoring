@@ -15,6 +15,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/netwayfind/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/processing"
+	"golang.org/x/crypto/openpgp"
 )
 
 // to be set by build
@@ -45,6 +47,7 @@ func main() {
 
 	dirConfig := path.Join(dirWork, "config")
 	dirUI := path.Join(dirWork, "ui")
+	dirPublic := path.Join(dirWork, "public")
 
 	// read config file
 	fileConfig := path.Join(dirConfig, "server.conf")
@@ -107,6 +110,40 @@ func main() {
 			log.Fatal("ERROR: cannot save default user;", err)
 		}
 	}
+
+	fileServerPubKey := path.Join(dirPublic, "server.pub")
+	fileServerPrivKey := path.Join(dirConfig, "server.priv")
+	if _, err := os.Stat(fileServerPrivKey); os.IsNotExist(err) {
+		log.Println("Creating server public, private keys")
+		pubKey, privKey, err := processing.NewPubPrivKeys()
+		if err != nil {
+			log.Fatalln("ERROR: cannot get openpgp entity;", err)
+		}
+
+		log.Println("Writing server public key")
+		err = ioutil.WriteFile(fileServerPubKey, pubKey, 0600)
+		if err != nil {
+			log.Fatalln("ERROR: cannot write server public key file;", err)
+		}
+
+		log.Println("Writing server private key")
+		err = ioutil.WriteFile(fileServerPrivKey, privKey, 0600)
+		if err != nil {
+			log.Fatalln("ERROR: cannot write server private key file;", err)
+		}
+	}
+
+	log.Println("Reading server private key file")
+	privKeyFile, err := os.Open(fileServerPrivKey)
+	if err != nil {
+		log.Println("ERROR: cannot read server openpgp private key file;", err)
+		return
+	}
+	entities, err := openpgp.ReadArmoredKeyRing(privKeyFile)
+	if err != nil {
+		log.Fatalln("ERROR: cannot read entity;", err)
+	}
+	apiHandler.entities = entities
 
 	// async audit
 	go func() {

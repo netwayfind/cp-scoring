@@ -1,0 +1,158 @@
+package processing
+
+import (
+	"bytes"
+	"compress/gzip"
+	"encoding/json"
+	"errors"
+	"io"
+	"io/ioutil"
+
+	"github.com/netwayfind/cp-scoring/model"
+	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+)
+
+// ToBytes asdf
+func ToBytes(results model.AuditCheckResults, entities []*openpgp.Entity) ([]byte, error) {
+	// results to JSON bytes
+	bs, err := resultsToJSON(results)
+	if err != nil {
+		return nil, err
+	}
+	// compress bytes
+	bs, err = bytesCompress(bs)
+	if err != nil {
+		return nil, err
+	}
+	// encrypt bytes
+	bs, err = bytesEncrypt(bs, entities)
+	if err != nil {
+		return nil, err
+	}
+
+	return bs, nil
+}
+
+// FromBytes asdf
+func FromBytes(bs []byte, entities openpgp.EntityList) (model.AuditCheckResults, error) {
+	var results model.AuditCheckResults
+
+	if len(bs) == 0 {
+		return results, errors.New("Empty bytes given")
+	}
+
+	// decrypt bytes
+	bs, err := bytesDecrypt(bs, entities)
+	if err != nil {
+		return results, err
+	}
+
+	// decompress bytes
+	bs, err = bytesDecompress(bs)
+	if err != nil {
+		return results, err
+	}
+	// JSON bytes to results
+	results, err = resultsFromJSON(bs)
+	if err != nil {
+		return results, err
+	}
+
+	return results, nil
+}
+
+func resultsToJSON(results model.AuditCheckResults) ([]byte, error) {
+	bs, err := json.Marshal(results)
+	if err != nil {
+		return nil, err
+	}
+
+	return bs, nil
+}
+
+func resultsFromJSON(bs []byte) (model.AuditCheckResults, error) {
+	var results model.AuditCheckResults
+	err := json.Unmarshal(bs, &results)
+	if err != nil {
+		return results, err
+	}
+
+	return results, nil
+}
+
+func bytesCompress(bs []byte) ([]byte, error) {
+	if bs == nil {
+		return nil, errors.New("Cannot compress nil bytes")
+	}
+	if len(bs) == 0 {
+		return nil, errors.New("Cannot compress 0 bytes")
+	}
+
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+	_, err := w.Write(bs)
+	if err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func bytesDecompress(bs []byte) ([]byte, error) {
+	buf := bytes.NewBuffer(bs)
+	r, err := gzip.NewReader(buf)
+	if err != nil {
+		return nil, err
+	}
+	outBuf := bytes.NewBuffer(nil)
+	_, err = io.Copy(outBuf, r)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.Close(); err != nil {
+		return nil, err
+	}
+
+	return outBuf.Bytes(), nil
+}
+
+func bytesEncrypt(bs []byte, entities []*openpgp.Entity) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	w, err := armor.Encode(buf, openpgp.PublicKeyType, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	plaintext, err := openpgp.Encrypt(w, entities, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	plaintext.Write(bs)
+	plaintext.Close()
+	w.Close()
+
+	return buf.Bytes(), nil
+}
+
+func bytesDecrypt(bs []byte, entities openpgp.EntityList) ([]byte, error) {
+	buf := bytes.NewBuffer(bs)
+	result, err := armor.Decode(buf)
+	if err != nil {
+		return nil, err
+	}
+	message, err := openpgp.ReadMessage(result.Body, entities, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	bs, err = ioutil.ReadAll(message.UnverifiedBody)
+	if err != nil {
+		return nil, err
+	}
+
+	return bs, nil
+}

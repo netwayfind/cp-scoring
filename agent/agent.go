@@ -24,6 +24,10 @@ import (
 	"time"
 
 	"github.com/netwayfind/cp-scoring/model"
+	"github.com/netwayfind/cp-scoring/processing"
+	"golang.org/x/crypto/openpgp"
+
+	_ "golang.org/x/crypto/ripemd160"
 )
 
 const applicationJSON string = "application/json"
@@ -32,6 +36,7 @@ const exitCodeSuccess int = 0
 const fileNameHostToken string = "host_token"
 const fileNameScenario string = "scenario"
 const fileNameServer string = "server"
+const fileNameServerPubKey string = "server.pub"
 const fileNameTeamKey string = "team_key"
 
 // to be set by build
@@ -113,6 +118,27 @@ func config(dirWork string, dirConfig string, hostname string) {
 		log.Fatalln("ERROR: authentication failure")
 	}
 	log.Println("User authenticated")
+
+	// get server public key
+	serverPubKey, _ := readServerPubKey(dirConfig)
+	if serverPubKey == nil {
+		log.Println("Downloading server public key")
+		resp, err = c.Get(serverURL + "/public/" + fileNameServerPubKey)
+		if err != nil {
+			log.Fatalln("ERROR: unable to retrieve server public key;", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			log.Fatalf("ERROR: could not download server public key: %d", resp.StatusCode)
+		}
+		pubKeyBs, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalln("ERROR: unable to download server public key;", err)
+		}
+		err = saveFile(dirConfig, fileNameServerPubKey, string(pubKeyBs))
+		if err != nil {
+			log.Fatalln("ERROR: unable to save server public key;", err)
+		}
+	}
 
 	var scenarioID string
 	// ask for scenario
@@ -200,7 +226,7 @@ func executeConfig(config []model.Action) {
 	log.Println("Applied config. Check log output.")
 }
 
-func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string, tempDir string) {
+func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string, tempDir string, entities []*openpgp.Entity) {
 	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
 	log.Println("Read scenario checks")
 	resp, err := http.Get(serverURL + "/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
@@ -279,7 +305,7 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 	auditCheckResults.CheckResults = checkResults
 
 	// save results
-	bs, err := json.Marshal(auditCheckResults)
+	bs, err := processing.ToBytes(auditCheckResults, entities)
 	if err != nil {
 		log.Println("ERROR: could not prepare saving results to file;", err)
 	} else {
@@ -308,9 +334,10 @@ func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
 			continue
 		}
 
-		resp, err := http.Post(serverURL+"/api/audit/", "application/json", bytes.NewBuffer(bs))
+		resp, err := http.Post(serverURL+"/api/audit/", "application/octet-stream", bytes.NewBuffer(bs))
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("ERROR: unable to send results file;", err)
+			break
 		}
 		if resp.StatusCode == http.StatusOK {
 			log.Println("DELETING ", filePath)
@@ -364,6 +391,19 @@ func readScenarioID(dirConfig string) (uint64, error) {
 		return 0, err
 	}
 	return strconv.ParseUint(string(bs), 10, 64)
+}
+
+func readServerPubKey(dirConfig string) (openpgp.EntityList, error) {
+	pubKeyFile, err := os.Open(path.Join(dirConfig, fileNameServerPubKey))
+	if err != nil {
+		return nil, err
+	}
+	defer pubKeyFile.Close()
+	entities, err := openpgp.ReadArmoredKeyRing(pubKeyFile)
+	if err != nil {
+		return nil, err
+	}
+	return entities, nil
 }
 
 func readServerURL(dirConfig string) (string, error) {
@@ -557,6 +597,12 @@ func main() {
 	}
 	log.Println("scenario: ", scenarioID)
 
+	// get server public key
+	entities, err := readServerPubKey(dirConfig)
+	if err != nil {
+		log.Fatalln("ERROR: could not read server public key; ", err)
+	}
+
 	var wg sync.WaitGroup
 
 	// run scenario checks
@@ -584,7 +630,7 @@ func main() {
 					teamKey, _ = readTeamKey(dirData)
 				}
 				if len(teamKey) > 0 {
-					executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp)
+					executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp, entities)
 				}
 			}
 			nextTime = nextTime.Add(time.Minute)
