@@ -18,6 +18,7 @@ class TeamDashboard extends Component {
       teamName: "",
     };
 
+    this.getData = this.getData.bind(this);
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
   }
@@ -140,29 +141,27 @@ class TeamDashboard extends Component {
     if (this.state.scenarios) {
       this.state.scenarios.forEach((scenario) => {
         let scenarioHosts = null;
-        if (scenario.ID === currentScenarioID) {
-          currentScenarioName = scenario.Name;
-          let hostnames = [];
-          let hosts = this.state.scenarioHosts[scenario.ID];
-          if (hosts) {
-            hosts.forEach((hostname) => {
-              let linkClassesHost = ["nav-button"];
-              if (hostname === currentHostname) {
-                linkClassesHost.push("nav-button-selected");
-              }
-              hostnames.push(
-                <li key={hostname}>
-                  <Link
-                    className={linkClassesHost.join(" ")}
-                    to={`${this.props.match.path}/scenario/${currentScenarioID}/${hostname}`}
-                  >
-                    {hostname}
-                  </Link>
-                </li>
-              );
-            });
-            scenarioHosts = <ul>{hostnames}</ul>;
-          }
+        currentScenarioName = scenario.Name;
+        let hostnames = [];
+        let hosts = this.state.scenarioHosts[scenario.ID];
+        if (hosts) {
+          hosts.forEach((hostname) => {
+            let linkClassesHost = ["nav-button"];
+            if (scenario.ID === currentScenarioID && hostname === currentHostname) {
+              linkClassesHost.push("nav-button-selected");
+            }
+            hostnames.push(
+              <li key={hostname}>
+                <Link
+                  className={linkClassesHost.join(" ")}
+                  to={`${this.props.match.path}/scenario/${scenario.ID}/${hostname}`}
+                >
+                  {hostname}
+                </Link>
+              </li>
+            );
+          });
+          scenarioHosts = <ul>{hostnames}</ul>;
         }
 
         let linkClassesScenario = ["nav-button"];
@@ -200,6 +199,12 @@ class TeamDashboard extends Component {
         </div>
         <div className="toc">
           <h4>Scenarios</h4>
+          <button
+            type="button"
+            onClick={this.getData}
+          >
+            Refresh
+          </button>
           <ul>{scenarios}</ul>
         </div>
         <div className="content">

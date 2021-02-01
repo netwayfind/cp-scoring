@@ -555,7 +555,7 @@ func (db dbObj) scoreboardSelectByScenarioID(scenarioID uint64) ([]model.Scenari
 }
 
 func (db dbObj) scoreboardSelectScenarios() ([]model.ScenarioSummary, error) {
-	rows, err := db.dbConn.Query("SELECT id, name FROM scenarios WHERE enabled=true")
+	rows, err := db.dbConn.Query("SELECT id, name FROM scenarios WHERE enabled=true ORDER BY id ASC")
 	if err != nil {
 		return nil, err
 	}
