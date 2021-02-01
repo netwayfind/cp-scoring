@@ -252,21 +252,18 @@ class ScenarioHost extends Component {
               {actionOptions}
             </select>
             <br />
-            {check.Type === "EXEC" ?
-              (
-                <Fragment>
-                  <label htmlFor="Command">Command</label>
-                  <input
-                    className="input-50"
-                    name="Command"
-                    onChange={(event) => this.handleCheckUpdate(i, event)}
-                    value={check.Command}
-                  />
-                  <br />
-                </Fragment>
-              )
-              : null
-            }
+            {check.Type === "EXEC" ? (
+              <Fragment>
+                <label htmlFor="Command">Command</label>
+                <input
+                  className="input-50"
+                  name="Command"
+                  onChange={(event) => this.handleCheckUpdate(i, event)}
+                  value={check.Command}
+                />
+                <br />
+              </Fragment>
+            ) : null}
             <label htmlFor="Args">Args</label>
             <ul>{args}</ul>
             <label htmlFor="Answer">Answer</label>

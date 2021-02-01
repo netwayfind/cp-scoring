@@ -147,7 +147,10 @@ class TeamDashboard extends Component {
         if (hosts) {
           hosts.forEach((hostname) => {
             let linkClassesHost = ["nav-button"];
-            if (scenario.ID === currentScenarioID && hostname === currentHostname) {
+            if (
+              scenario.ID === currentScenarioID &&
+              hostname === currentHostname
+            ) {
               linkClassesHost.push("nav-button-selected");
             }
             hostnames.push(
@@ -199,10 +202,7 @@ class TeamDashboard extends Component {
         </div>
         <div className="toc">
           <h4>Scenarios</h4>
-          <button
-            type="button"
-            onClick={this.getData}
-          >
+          <button type="button" onClick={this.getData}>
             Refresh
           </button>
           <ul>{scenarios}</ul>
