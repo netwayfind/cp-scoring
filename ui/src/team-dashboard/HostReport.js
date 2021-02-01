@@ -66,10 +66,18 @@ class HostReport extends Component {
       score += result.Points;
     });
     let plotlyData = [];
+    let timestampFirst = null;
+    let timestampLast = null;
     this.state.timeline.forEach((timeline) => {
       let timestamps = [];
       timeline.Timestamps.forEach((timestamp) => {
         timestamps.push(new Date(timestamp * 1000));
+        if (timestampFirst == null || timestamp < timestampFirst) {
+          timestampFirst = timestamp;
+        }
+        if (timestampLast == null || timestamp > timestampLast) {
+          timestampLast = timestamp;
+        }
       });
       plotlyData.push({
         x: timestamps,
@@ -100,6 +108,23 @@ class HostReport extends Component {
     };
     let scenarioID = this.props.match.params.scenarioID;
     let hostname = this.props.match.params.hostname;
+    let elapsedTimeStr = "";
+    if (timestampFirst !== null && timestampLast !== null) {
+      let d1 = new Date(timestampFirst * 1000);
+      let d2 = new Date(timestampLast * 1000);
+      let elapsedTime = (d2 - d1) / 1000;
+      let days = Math.floor(elapsedTime / (3600 * 24));
+      let hours = Math.floor((elapsedTime % (3600 * 24)) / 3600);
+      let minutes = Math.floor((elapsedTime % 3600) / 60);
+      let seconds = Math.floor(elapsedTime % 60);
+
+      if (days > 0) {
+        elapsedTimeStr = days + " days, ";
+      }
+      elapsedTimeStr += hours + " hours, ";
+      elapsedTimeStr += minutes + " minutes, ";
+      elapsedTimeStr += seconds + " seconds";
+    }
 
     return (
       <div className="HostReport">
@@ -119,6 +144,8 @@ class HostReport extends Component {
         <Plot data={plotlyData} layout={layout} config={config} />
         <p />
         Instances found: {plotlyData.length}
+        <br />
+        Elapsed time: {elapsedTimeStr}
         <p />
         Report time: {timestampStr}
         <br />
