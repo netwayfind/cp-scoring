@@ -63,10 +63,11 @@ class ScenarioScoreboard extends Component {
         teamHosts = [];
       }
       teamHosts.push(
-        <li key={entry.Hostname}>
-          Host: {entry.Hostname}; Score: {entry.Score}; Last Updated:{" "}
-          {new Date(entry.Timestamp * 1000).toLocaleString()}
-        </li>
+        <tr key={entry.Hostname}>
+          <td>{entry.Hostname}</td>
+          <td>{entry.Score}</td>
+          <td>{new Date(entry.Timestamp * 1000).toLocaleString()}</td>
+        </tr>
       );
       teamToDetails[entry.TeamID] = teamHosts;
 
@@ -95,7 +96,14 @@ class ScenarioScoreboard extends Component {
           </td>
           <td>
             <details>
-              <ul>{teamToDetails[entry.teamID]}</ul>
+              <table>
+                <tr>
+                  <th>Host</th>
+                  <th>Score</th>
+                  <th>Last Updated</th>
+                </tr>
+                {teamToDetails[entry.teamID]}
+              </table>
             </details>
           </td>
         </tr>
