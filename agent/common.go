@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"runtime"
 )
 
@@ -45,7 +46,7 @@ func getCurrentHost() (currentHost, error) {
 }
 
 func writeReadmeHTML(dir string, serverURL string) error {
-	outFile := "README.html"
+	outFile := path.Join(dir, "README.html")
 	log.Println("Creating " + outFile)
 	url := serverURL + "/ui/team-dashboard"
 	s := "<html><head><meta http-equiv=\"refresh\" content=\"0; url=" + url + "\"></head><body><a href=\"" + url + "\">Team Dashboard</a></body></html>"

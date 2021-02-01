@@ -339,10 +339,11 @@ func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
 			log.Println("ERROR: unable to send results file;", err)
 			break
 		}
-		if resp.StatusCode == http.StatusOK {
-			log.Println("DELETING ", filePath)
-			os.Remove(filePath)
+		if resp.StatusCode == http.StatusBadRequest {
+			log.Println("SERVER REJECTED")
 		}
+		log.Println("DELETING", filePath)
+		os.Remove(filePath)
 	}
 }
 
