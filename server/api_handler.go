@@ -175,6 +175,10 @@ func httpErrorUnmarshall(w http.ResponseWriter, err error) {
 	http.Error(w, msg, http.StatusBadRequest)
 }
 
+func httpNotModified(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotModified)
+}
+
 func readRequestBody(w http.ResponseWriter, r *http.Request, o interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -288,6 +292,12 @@ func (handler APIHandler) auditEntry(entry model.AuditQueueEntry) error {
 	}
 	if len(hostname) == 0 {
 		return errors.New("ERROR: hostname not found;")
+	}
+
+	lastModified, err := handler.BackingStore.scenarioHostsSelectLastModified(scenario.ID, hostname)
+	lastModifiedStr := time.Unix(lastModified, 0).Format(model.JavascriptDateFormat)
+	if auditCheckResults.ChecksLastModified != lastModifiedStr {
+		return fmt.Errorf("ERROR: expected last modified %s, received %s", lastModifiedStr, auditCheckResults.ChecksLastModified)
 	}
 
 	teamID, err := handler.BackingStore.hostTokenSelectTeamID(auditCheckResults.HostToken)
@@ -744,6 +754,26 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 	}
 	hostname := hostnameParam[0]
 
+	modifiedSince := r.Header.Get("If-Modified-Since")
+	if len(modifiedSince) == 0 {
+		modifiedSince = "Thu, 01 Jan 1970 00:00:00 GMT"
+	}
+	t, err := time.Parse(model.JavascriptDateFormat, modifiedSince)
+	if err != nil {
+		log.Println(err)
+		httpErrorBadRequest(w)
+		return
+	}
+	lastModified, err := handler.BackingStore.scenarioHostsSelectLastModified(id, hostname)
+	if err != nil {
+		httpErrorDatabase(w, err)
+		return
+	}
+	if lastModified <= t.Unix() {
+		httpNotModified(w)
+		return
+	}
+
 	s, err := handler.BackingStore.scenarioHostsSelectChecks(id, hostname)
 	if err != nil {
 		httpErrorDatabase(w, err)
@@ -754,6 +784,7 @@ func (handler APIHandler) readScenarioChecks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	w.Header().Set("Last-Modified", time.Unix(lastModified, 0).Format(model.JavascriptDateFormat))
 	sendResponse(w, s)
 }
 

@@ -226,22 +226,40 @@ func executeConfig(config []model.Action) {
 	log.Println("Applied config. Check log output.")
 }
 
-func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string, hostToken string, outputDir string, tempDir string, entities []*openpgp.Entity) {
-	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
+func getScenarioChecks(serverURL string, scenarioID uint64, hostname string, lastModified string) ([]model.Action, string, error) {
 	log.Println("Read scenario checks")
-	resp, err := http.Get(serverURL + "/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname)
+
+	scenarioIDStr := strconv.FormatUint(scenarioID, 10)
+	url := serverURL + "/api/scenario-checks/" + scenarioIDStr + "?hostname=" + hostname
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Set("If-Modified-Since", lastModified)
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("ERROR: could not access server;", err)
-		return
-	}
-	if resp.StatusCode != 200 {
-		log.Println("ERROR: could not get scenario checks")
-		return
+		return nil, "", err
 	}
 
 	var checks []model.Action
-	err = json.NewDecoder(resp.Body).Decode(&checks)
 
+	if resp.StatusCode == 200 {
+		log.Println("Scenario host checks updated")
+		lastModified = resp.Header.Get("Last-Modified")
+		err = json.NewDecoder(resp.Body).Decode(&checks)
+		if err != nil {
+			log.Println("ERROR: could not read scenario checks")
+			return nil, "", err
+		}
+	} else if resp.StatusCode == 304 {
+		// scenario checks not modified
+	} else {
+		return nil, "", fmt.Errorf("ERROR: could not get scenario checks: %d", resp.StatusCode)
+	}
+
+	return checks, lastModified, nil
+}
+
+func executeScenarioChecks(scenarioID uint64, hostToken string, checks []model.Action, lastModified string, outputDir string, tempDir string, entities []*openpgp.Entity) {
 	log.Println("Executing scenario checks")
 	checkResults := []string{}
 	for _, check := range checks {
@@ -303,6 +321,7 @@ func executeScenarioChecks(serverURL string, scenarioID uint64, hostname string,
 	auditCheckResults.HostToken = hostToken
 	auditCheckResults.Timestamp = time.Now().Unix()
 	auditCheckResults.CheckResults = checkResults
+	auditCheckResults.ChecksLastModified = lastModified
 
 	// save results
 	bs, err := processing.ToBytes(auditCheckResults, entities)
@@ -612,6 +631,8 @@ func main() {
 		nextTime := time.Now()
 		hostToken, _ := readHostToken(dirData)
 		teamKey := ""
+		lastModified := "Thu, 01 Jan 1970 00:00:00 GMT"
+		var checks []model.Action
 		for {
 			if len(hostToken) == 0 {
 				hostToken, err = requestHostToken(dirData, serverURL, scenarioID, hostname)
@@ -631,7 +652,15 @@ func main() {
 					teamKey, _ = readTeamKey(dirData)
 				}
 				if len(teamKey) > 0 {
-					executeScenarioChecks(serverURL, scenarioID, hostname, hostToken, dirResults, dirTemp, entities)
+					checks2, lastModified2, err := getScenarioChecks(serverURL, scenarioID, hostname, lastModified)
+					if err != nil {
+						log.Println("ERROR: unable to get checks;", err)
+					}
+					if lastModified != lastModified2 {
+						lastModified = lastModified2
+						checks = checks2
+					}
+					executeScenarioChecks(scenarioID, hostToken, checks, lastModified, dirResults, dirTemp, entities)
 				}
 			}
 			nextTime = nextTime.Add(time.Minute)

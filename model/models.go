@@ -36,10 +36,11 @@ type AuditAnswerResults struct {
 
 // AuditCheckResults asdf
 type AuditCheckResults struct {
-	ScenarioID   uint64
-	HostToken    string
-	Timestamp    int64
-	CheckResults []string
+	ScenarioID         uint64
+	HostToken          string
+	Timestamp          int64
+	CheckResults       []string
+	ChecksLastModified string
 }
 
 // AuditQueueEntry asdf

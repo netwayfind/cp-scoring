@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/netwayfind/cp-scoring/model"
 )
@@ -21,7 +22,7 @@ func (db dbObj) dbInit() {
 	db.dbCreateTable("teams", "CREATE TABLE IF NOT EXISTS teams(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, poc VARCHAR NOT NULL, email VARCHAR NOT NULL, enabled BOOLEAN NOT NULL, key VARCHAR NOT NULL)")
 	db.dbCreateTable("team_host_tokens", "CREATE TABLE IF NOT EXISTS team_host_tokens(team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("scenarios", "CREATE TABLE IF NOT EXISTS scenarios(id BIGSERIAL PRIMARY KEY, name VARCHAR UNIQUE NOT NULL, description VARCHAR NOT NULL, enabled BOOLEAN NOT NULL)")
-	db.dbCreateTable("scenario_hosts", "CREATE TABLE IF NOT EXISTS scenario_hosts(scenario_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, checks JSONB NOT NULL, answers JSONB NOT NULL, config JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
+	db.dbCreateTable("scenario_hosts", "CREATE TABLE IF NOT EXISTS scenario_hosts(scenario_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, checks JSONB NOT NULL, answers JSONB NOT NULL, config JSONB NOT NULL, last_modified INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id))")
 	db.dbCreateTable("scoreboard", "CREATE TABLE IF NOT EXISTS scoreboard(scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, hostname VARCHAR NOT NULL, score INTEGER NOT NULL, timestamp INTEGER NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id))")
 	db.dbCreateTable("audit_check_results", "CREATE TABLE IF NOT EXISTS audit_check_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp_reported INTEGER NOT NULL, timestamp_received INTEGER NOT NULL, check_results JSONB NOT NULL, source VARCHAR NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token))")
 	db.dbCreateTable("audit_answer_results", "CREATE TABLE IF NOT EXISTS audit_answer_results(id BIGSERIAL NOT NULL PRIMARY KEY, scenario_id BIGSERIAL NOT NULL, team_id BIGSERIAL NOT NULL, host_token VARCHAR NOT NULL, timestamp INTEGER NOT NULL, audit_check_results_id BIGSERIAL NOT NULL, score INTEGER NOT NULL, answer_results JSONB NOT NULL, FOREIGN KEY(scenario_id) REFERENCES scenarios(id), FOREIGN KEY(team_id) REFERENCES teams(id), FOREIGN KEY(host_token) REFERENCES host_tokens(host_token), FOREIGN KEY(audit_check_results_id) REFERENCES audit_check_results(id))")
@@ -490,6 +491,25 @@ func (db dbObj) scenarioHostsSelectConfig(scenarioID uint64, hostname string) ([
 	return config, nil
 }
 
+func (db dbObj) scenarioHostsSelectLastModified(scenarioID uint64, hostname string) (int64, error) {
+	rows, err := db.dbConn.Query("SELECT last_modified FROM scenario_hosts WHERE scenario_id=$1 AND hostname=$2", scenarioID, hostname)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var lastModified int64
+	for rows.Next() {
+		err = rows.Scan(&lastModified)
+		if err != nil {
+			return 0, err
+		}
+		break
+	}
+
+	return lastModified, nil
+}
+
 func (db dbObj) scenarioHostsDelete(scenarioID uint64) error {
 	return db.dbDelete("DELETE FROM scenario_hosts WHERE scenario_id=$1", scenarioID)
 }
@@ -514,7 +534,7 @@ func (db dbObj) scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]
 		if err != nil {
 			return err
 		}
-		_, err = db.dbInsert("INSERT INTO scenario_hosts(scenario_id, hostname, checks, answers, config) VALUES ($1, $2, $3, $4, $5)", scenarioID, hostname, checksBs, answersBs, configBs)
+		_, err = db.dbInsert("INSERT INTO scenario_hosts(scenario_id, hostname, checks, answers, config, last_modified) VALUES ($1, $2, $3, $4, $5, $6)", scenarioID, hostname, checksBs, answersBs, configBs, time.Now().Unix())
 		if err != nil {
 			return err
 		}

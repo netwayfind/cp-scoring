@@ -40,7 +40,8 @@ const (
 
 // asdf
 const (
-	AuthCookieName        = "auth"
-	KeyCharset     string = "0123456789ABCDEF"
-	TeamCookieName        = "team"
+	AuthCookieName       = "auth"
+	JavascriptDateFormat = "Mon, 02 Jan 2006 15:04:05 MST"
+	KeyCharset           = "0123456789ABCDEF"
+	TeamCookieName       = "team"
 )

@@ -31,6 +31,7 @@ type backingStore interface {
 	scenarioHostsSelectAnswers(scenarioID uint64, hostname string) ([]model.Answer, error)
 	scenarioHostsSelectChecks(scenarioID uint64, hostname string) ([]model.Action, error)
 	scenarioHostsSelectConfig(scenarioID uint64, hostname string) ([]model.Action, error)
+	scenarioHostsSelectLastModified(scenarioID uint64, hostname string) (int64, error)
 	scenarioHostsDelete(scenarioID uint64) error
 	scenarioHostsUpdate(scenarioID uint64, scenarioHosts map[string]model.ScenarioHost) error
 	scoreboardSelectByScenarioID(scenarioID uint64) ([]model.ScenarioScore, error)
