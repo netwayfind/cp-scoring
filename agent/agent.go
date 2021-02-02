@@ -31,6 +31,7 @@ import (
 )
 
 const applicationJSON string = "application/json"
+const applicationOctetStream string = "application/octet-stream"
 const exitCodeFail int = 1
 const exitCodeSuccess int = 0
 const fileNameHostToken string = "host_token"
@@ -353,7 +354,7 @@ func executeSubmitScenarioCheckResults(serverURL string, outputDir string) {
 			continue
 		}
 
-		resp, err := http.Post(serverURL+"/api/audit/", "application/octet-stream", bytes.NewBuffer(bs))
+		resp, err := http.Post(serverURL+"/api/audit/", applicationOctetStream, bytes.NewBuffer(bs))
 		if err != nil {
 			log.Println("ERROR: unable to send results file;", err)
 			break
@@ -656,11 +657,13 @@ func main() {
 					if err != nil {
 						log.Println("ERROR: unable to get checks;", err)
 					}
-					if lastModified != lastModified2 {
-						lastModified = lastModified2
+					if checks2 != nil {
 						checks = checks2
+						lastModified = lastModified2
 					}
-					executeScenarioChecks(scenarioID, hostToken, checks, lastModified, dirResults, dirTemp, entities)
+					if checks != nil {
+						executeScenarioChecks(scenarioID, hostToken, checks, lastModified, dirResults, dirTemp, entities)
+					}
 				}
 			}
 			nextTime = nextTime.Add(time.Minute)
