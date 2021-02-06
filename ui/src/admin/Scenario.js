@@ -2,7 +2,7 @@ import "../App.css";
 import { apiDelete, apiGet, apiPost, apiPut } from "../common/utils";
 import ScenarioHost from "./ScenarioHost";
 
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import { withRouter } from "react-router-dom/cjs/react-router-dom.min";
 
 class Scenario extends Component {
@@ -15,9 +15,10 @@ class Scenario extends Component {
     this.handleUpdate = this.handleUpdate.bind(this);
     this.handleSave = this.handleSave.bind(this);
     this.handleSaveHost = this.handleSaveHost.bind(this);
-    this.handleHostnameAdd = this.handleHostnameAdd.bind(this);
     this.handleHostnameDelete = this.handleHostnameDelete.bind(this);
+    this.handleHostnameRename = this.handleHostnameRename.bind(this);
     this.handleHostnameSelect = this.handleHostnameSelect.bind(this);
+    this.handleNewHostnameAdd = this.handleNewHostnameAdd.bind(this);
     this.handleNewHostnameUpdate = this.handleNewHostnameUpdate.bind(this);
   }
 
@@ -161,7 +162,49 @@ class Scenario extends Component {
     });
   }
 
-  handleHostnameAdd() {
+  handleHostnameDelete() {
+    let hostname = this.state.currentScenarioHostname;
+    if (!hostname) {
+      return;
+    }
+    let scenarioHosts = {
+      ...this.state.scenarioHosts,
+    };
+    delete scenarioHosts[hostname];
+    this.setState({
+      currentScenarioHostname: "",
+      currentScenarioHost: {},
+      scenarioHosts: scenarioHosts,
+    });
+  }
+
+  handleHostnameRename(event) {
+    let hostname = event.target.value;
+    if (!hostname) {
+      return;
+    }
+    let oldHostname = this.state.currentScenarioHostname;
+    let scenarioHost = this.state.currentScenarioHost;
+    let scenarioHosts = {
+      ...this.state.scenarioHosts,
+      [hostname]: scenarioHost,
+    };
+    delete scenarioHosts[oldHostname];
+    this.setState({
+      currentScenarioHostname: hostname,
+      scenarioHosts: scenarioHosts,
+    });
+  }
+
+  handleHostnameSelect(event) {
+    let hostname = event.target.value;
+    this.setState({
+      currentScenarioHostname: hostname,
+      currentScenarioHost: this.state.scenarioHosts[hostname] || {},
+    });
+  }
+
+  handleNewHostnameAdd() {
     let hostname = this.state.newScenarioHostname;
     if (!hostname) {
       return;
@@ -183,30 +226,6 @@ class Scenario extends Component {
     });
   }
 
-  handleHostnameDelete() {
-    let hostname = this.state.currentScenarioHostname;
-    if (!hostname) {
-      return;
-    }
-    let scenarioHosts = {
-      ...this.state.scenarioHosts,
-    };
-    delete scenarioHosts[hostname];
-    this.setState({
-      currentScenarioHostname: "",
-      currentScenarioHost: {},
-      scenarioHosts: scenarioHosts,
-    });
-  }
-
-  handleHostnameSelect(event) {
-    let hostname = event.target.value;
-    this.setState({
-      currentScenarioHostname: hostname,
-      currentScenarioHost: this.state.scenarioHosts[hostname] || {},
-    });
-  }
-
   handleNewHostnameUpdate(event) {
     let hostname = event.target.value;
     this.setState({
@@ -225,6 +244,48 @@ class Scenario extends Component {
     let checks = this.state.currentScenarioHost.Checks || [];
     let config = this.state.currentScenarioHost.Config || [];
     let hostname = this.state.currentScenarioHostname;
+
+    let scenarioHosts = null;
+    if (this.state.scenario.ID) {
+      let scenarioHost = null;
+      if (hostname) {
+        scenarioHost = (
+          <Fragment>
+            <label>Hostname</label>
+            <input onChange={this.handleHostnameRename} value={hostname} />
+            <br />
+            <button type="button" onClick={this.handleHostnameDelete}>
+              Delete Host
+            </button>
+            <ScenarioHost
+              answers={answers}
+              checks={checks}
+              config={config}
+              hostname={hostname}
+              parentCallback={this.handleSaveHost}
+            />
+          </Fragment>
+        );
+      }
+      scenarioHosts = (
+        <Fragment>
+          <p>Hosts</p>
+          <select onChange={this.handleHostnameSelect} value={hostname}>
+            {hostOptions}
+          </select>
+          <br />
+          <input
+            onChange={this.handleNewHostnameUpdate}
+            value={this.state.newScenarioHostname}
+          />
+          <button type="button" onClick={this.handleNewHostnameAdd}>
+            +
+          </button>
+          <p />
+          {scenarioHost}
+        </Fragment>
+      );
+    }
 
     return (
       <div>
@@ -274,33 +335,7 @@ class Scenario extends Component {
           </button>
         </form>
         <hr />
-        <p>Hosts</p>
-        <input
-          onChange={this.handleNewHostnameUpdate}
-          value={this.state.newScenarioHostname}
-        />
-        <button type="button" onClick={this.handleHostnameAdd}>
-          Add Host
-        </button>
-        <p />
-        <select onChange={this.handleHostnameSelect} value={hostname}>
-          {hostOptions}
-        </select>
-        <button
-          type="button"
-          disabled={!hostname}
-          onClick={this.handleHostnameDelete}
-        >
-          Delete Host
-        </button>
-        <p />
-        <ScenarioHost
-          answers={answers}
-          checks={checks}
-          config={config}
-          hostname={hostname}
-          parentCallback={this.handleSaveHost}
-        />
+        {scenarioHosts}
       </div>
     );
   }
