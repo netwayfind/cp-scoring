@@ -16,6 +16,7 @@ class ScenarioHost extends Component {
     this.handleAnswerUpdate = this.handleAnswerUpdate.bind(this);
     this.handleCheckAdd = this.handleCheckAdd.bind(this);
     this.handleCheckDelete = this.handleCheckDelete.bind(this);
+    this.handleCheckReorder = this.handleCheckReorder.bind(this);
     this.handleCheckUpdate = this.handleCheckUpdate.bind(this);
     this.handleCheckArgAdd = this.handleCheckArgAdd.bind(this);
     this.handleCheckArgDelete = this.handleCheckArgDelete.bind(this);
@@ -23,6 +24,7 @@ class ScenarioHost extends Component {
     this.handleConfigAdd = this.handleConfigAdd.bind(this);
     this.handleConfigDelete = this.handleConfigDelete.bind(this);
     this.handleConfigUpdate = this.handleConfigUpdate.bind(this);
+    this.handleConfigReorder = this.handleConfigReorder.bind(this);
     this.handleConfigArgAdd = this.handleConfigArgAdd.bind(this);
     this.handleConfigArgDelete = this.handleConfigArgDelete.bind(this);
     this.handleConfigArgUpdate = this.handleConfigArgUpdate.bind(this);
@@ -82,6 +84,18 @@ class ScenarioHost extends Component {
     });
   }
 
+  handleCheckReorder(event, currentIndex) {
+    let newIndex = event.target.value;
+    let answers = [...this.state.answers];
+    let checks = [...this.state.checks];
+    answers.splice(newIndex, 0, answers.splice(currentIndex, 1)[0]);
+    checks.splice(newIndex, 0, checks.splice(currentIndex, 1)[0]);
+    this.setState({
+      answers: answers,
+      checks: checks,
+    });
+  }
+
   handleCheckUpdate(i, event) {
     let name = event.target.name;
     let value = event.target.value;
@@ -132,6 +146,15 @@ class ScenarioHost extends Component {
   handleConfigDelete(i) {
     let config = [...this.state.config];
     config.splice(i, 1);
+    this.setState({
+      config: config,
+    });
+  }
+
+  handleConfigReorder(event, currentIndex) {
+    let newIndex = event.target.value;
+    let config = [...this.state.config];
+    config.splice(newIndex, 0, config.splice(currentIndex, 1)[0]);
     this.setState({
       config: config,
     });
@@ -198,6 +221,14 @@ class ScenarioHost extends Component {
 
     let checkList = [];
     let checks = this.state.checks;
+    let checksPositionOptions = [];
+    for (let i in checks) {
+      checksPositionOptions.push(
+        <option key={i} value={i}>
+          {Number(i) + 1}
+        </option>
+      );
+    }
     checks.forEach((check, i) => {
       let args = [];
       if (check.Args) {
@@ -229,6 +260,12 @@ class ScenarioHost extends Component {
       let answer = this.state.answers[i];
       checkList.push(
         <li key={i}>
+          <select
+            onChange={(event) => this.handleCheckReorder(event, i)}
+            value={i}
+          >
+            {checksPositionOptions}
+          </select>
           <details>
             <summary>{answer.Description}</summary>
             <button type="button" onClick={() => this.handleCheckDelete(i)}>
@@ -304,6 +341,14 @@ class ScenarioHost extends Component {
 
     let configList = [];
     let config = this.state.config;
+    let configPositionOptions = [];
+    for (let i in config) {
+      configPositionOptions.push(
+        <option key={i} value={i}>
+          {Number(i) + 1}
+        </option>
+      );
+    }
     config.forEach((conf, i) => {
       let args = [];
       if (conf.Args) {
@@ -334,6 +379,12 @@ class ScenarioHost extends Component {
       );
       configList.push(
         <li key={i}>
+          <select
+            onChange={(event) => this.handleConfigReorder(event, i)}
+            value={i}
+          >
+            {configPositionOptions}
+          </select>
           <details>
             <summary>
               Command: {conf.Command}, Args: [{conf.Args.join(" ") || ""}]
@@ -372,9 +423,9 @@ class ScenarioHost extends Component {
     return (
       <form onSubmit={this.handleSave}>
         <p>Checks</p>
-        <ul>{checkList}</ul>
+        <ol>{checkList}</ol>
         <p>Config</p>
-        <ul>{configList}</ul>
+        <ol>{configList}</ol>
         <button type="submit">Save Host</button>
       </form>
     );
