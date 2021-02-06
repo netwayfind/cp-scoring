@@ -267,7 +267,7 @@ class ScenarioHost extends Component {
             {checksPositionOptions}
           </select>
           <details>
-            <summary>{answer.Description}</summary>
+            <summary>{check.Description}</summary>
             <button type="button" onClick={() => this.handleCheckDelete(i)}>
               Delete Check
             </button>
@@ -276,8 +276,8 @@ class ScenarioHost extends Component {
             <input
               className="input-20"
               name="Description"
-              onChange={(event) => this.handleAnswerUpdate(i, event)}
-              value={answer.Description}
+              onChange={(event) => this.handleCheckUpdate(i, event)}
+              value={check.Description}
             />
             <br />
             <label htmlFor="Type">Type</label>
@@ -386,13 +386,19 @@ class ScenarioHost extends Component {
             {configPositionOptions}
           </select>
           <details>
-            <summary>
-              Command: {conf.Command}, Args: [{conf.Args.join(" ") || ""}]
-            </summary>
+            <summary>{conf.Description}</summary>
             <button type="button" onClick={() => this.handleConfigDelete(i)}>
               Delete Config
             </button>
             <p />
+            <label htmlFor="Description">Description</label>
+            <input
+              className="input-20"
+              name="Description"
+              onChange={(event) => this.handleConfigUpdate(i, event)}
+              value={conf.Description}
+            />
+            <br />
             <label htmlFor="Type">Type</label>
             <select disabled name="Type" value="EXEC">
               {actionOptions}

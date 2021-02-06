@@ -4,17 +4,17 @@ import "github.com/dgrijalva/jwt-go"
 
 // Action asdf
 type Action struct {
-	Type    ActionType
-	Command string
-	Args    []string
+	Type        ActionType
+	Description string
+	Command     string
+	Args        []string
 }
 
 // Answer asdf
 type Answer struct {
-	Operator    OperatorType
-	Value       interface{}
-	Description string
-	Points      int
+	Operator OperatorType
+	Value    interface{}
+	Points   int
 }
 
 // AnswerResult asdf

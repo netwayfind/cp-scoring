@@ -318,6 +318,11 @@ func (handler APIHandler) auditEntry(entry model.AuditQueueEntry) error {
 		return err
 	}
 
+	checks, err := handler.BackingStore.scenarioHostsSelectChecks(auditCheckResults.ScenarioID, hostname)
+	if err != nil {
+		return err
+	}
+
 	if len(answers) != len(auditCheckResults.CheckResults) {
 		return errors.New("ERROR: result count, answer count mismatch;")
 	}
@@ -339,7 +344,7 @@ func (handler APIHandler) auditEntry(entry model.AuditQueueEntry) error {
 			}
 		}
 		answerResults[i] = model.AnswerResult{
-			Description: answer.Description,
+			Description: checks[i].Description,
 			Points:      points,
 		}
 	}
