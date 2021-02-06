@@ -11,6 +11,7 @@ class Scenario extends Component {
     this.state = this.defaultState();
 
     this.getData = this.getData.bind(this);
+    this.handleCopy = this.handleCopy.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
     this.handleUpdate = this.handleUpdate.bind(this);
     this.handleSave = this.handleSave.bind(this);
@@ -67,6 +68,44 @@ class Scenario extends Component {
           scenario: s1.data,
           scenarioHosts: s2.data,
         });
+      }.bind(this)
+    );
+  }
+
+  handleCopy(event) {
+    if (event !== null) {
+      event.preventDefault();
+    }
+    let scenario = this.state.scenario;
+    scenario.ID = null;
+    scenario.Name += " (copy " + new Date().toLocaleString() + ")";
+    apiPost("/api/scenarios/", this.state.scenario).then(
+      async function (s) {
+        if (s.error) {
+          this.setState({
+            error: s.error,
+          });
+        } else {
+          // need to also copy scenario hosts
+          let newId = s.data.ID;
+          apiPut(
+            "/api/scenarios/" + newId + "/hosts",
+            this.state.scenarioHosts
+          ).then(
+            async function (s2) {
+              if (s2.error) {
+                this.setState({
+                  error: s2.error,
+                });
+              } else {
+                this.props.parentCallback();
+                this.props.history.push(
+                  this.props.match.path.replace(":id", newId)
+                );
+              }
+            }.bind(this)
+          );
+        }
       }.bind(this)
     );
   }
@@ -347,6 +386,13 @@ class Scenario extends Component {
           />
           <br />
           <button type="submit">Save</button>
+          <button
+            type="button"
+            disabled={!this.state.scenario.ID}
+            onClick={this.handleCopy}
+          >
+            Copy
+          </button>
           <button
             type="button"
             disabled={!this.state.scenario.ID}
