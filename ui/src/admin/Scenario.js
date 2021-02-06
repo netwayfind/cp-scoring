@@ -15,6 +15,7 @@ class Scenario extends Component {
     this.handleUpdate = this.handleUpdate.bind(this);
     this.handleSave = this.handleSave.bind(this);
     this.handleSaveHost = this.handleSaveHost.bind(this);
+    this.handleHostnameCopy = this.handleHostnameCopy.bind(this);
     this.handleHostnameDelete = this.handleHostnameDelete.bind(this);
     this.handleHostnameRename = this.handleHostnameRename.bind(this);
     this.handleHostnameSelect = this.handleHostnameSelect.bind(this);
@@ -162,6 +163,23 @@ class Scenario extends Component {
     });
   }
 
+  handleHostnameCopy() {
+    let hostname = this.state.currentScenarioHostname;
+    if (!hostname) {
+      return;
+    }
+    hostname += " (copy " + new Date().toLocaleString() + ")";
+    let scenarioHost = this.state.currentScenarioHost;
+    let scenarioHosts = {
+      ...this.state.scenarioHosts,
+      [hostname]: scenarioHost,
+    };
+    this.setState({
+      currentScenarioHostname: hostname,
+      scenarioHosts: scenarioHosts,
+    });
+  }
+
   handleHostnameDelete() {
     let hostname = this.state.currentScenarioHostname;
     if (!hostname) {
@@ -254,6 +272,9 @@ class Scenario extends Component {
             <label>Hostname</label>
             <input onChange={this.handleHostnameRename} value={hostname} />
             <br />
+            <button type="button" onClick={this.handleHostnameCopy}>
+              Copy Host
+            </button>
             <button type="button" onClick={this.handleHostnameDelete}>
               Delete Host
             </button>
