@@ -56,13 +56,21 @@ class HostReport extends Component {
       this.state.report.Timestamp * 1000
     ).toLocaleString();
     let score = 0;
+    let penaltyCount = 0;
     let results = [];
+    let penalities = [];
     this.state.report.AnswerResults.forEach((result, i) => {
-      results.push(
+      let entry = (
         <li key={i}>
           <strong>{result.Points}</strong> - {result.Description}
         </li>
       );
+      if (result.Points < 0) {
+        penaltyCount += 1;
+        penalities.push(entry);
+      } else {
+        results.push(entry);
+      }
       score += result.Points;
     });
     let plotlyData = [];
@@ -150,7 +158,13 @@ class HostReport extends Component {
         Report time: {timestampStr}
         <br />
         Score: {score}
+        <br />
+        Penalties: {penaltyCount}
         <p />
+        <ul>{penalities}</ul>
+        <p />
+        Results:
+        <br />
         <ul>{results}</ul>
       </div>
     );
