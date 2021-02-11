@@ -85,6 +85,11 @@ class ScenarioScoreboard extends Component {
       teamScores[teamScoresIndex] = currentTeamScore;
     });
 
+    // sort table by scores desc
+    teamScores.sort(function(a, b) {
+      return b.score - a.score;
+    });
+
     let tableBody = [];
     teamScores.forEach((entry, i) => {
       tableBody.push(
