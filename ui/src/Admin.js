@@ -28,6 +28,11 @@ class Admin extends Component {
 
     return (
       <Fragment>
+        <div className="navbar">
+          <Link className="nav-button" target="_blank" to="/insight">
+            Insight
+          </Link>
+        </div>
         <div className="heading">
           <h1>cp-scoring admin</h1>
         </div>

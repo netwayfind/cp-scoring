@@ -31,7 +31,6 @@ class LoginUser extends Component {
         });
         if (!s.error) {
           this.props.callback(s.data);
-          this.props.history.push(this.props.location);
         }
       }.bind(this)
     );

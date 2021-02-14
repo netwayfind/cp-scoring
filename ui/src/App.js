@@ -3,11 +3,14 @@ import { apiGet, apiLogout } from "./common/utils";
 import Admin from "./Admin";
 import LoginUser from "./common/LoginUser";
 import NotFound from "./common/NotFound";
+import Insight from "./Insight";
 import Scoreboard from "./Scoreboard";
 import TeamDashboard from "./TeamDashboard";
 
 import { Component, Fragment } from "react";
 import { BrowserRouter, Redirect, Route, Switch } from "react-router-dom";
+
+const basePath = "/ui";
 
 class App extends Component {
   constructor(props) {
@@ -22,6 +25,10 @@ class App extends Component {
   }
 
   componentDidMount() {
+    let path = this.getPath();
+    if (path !== "/login") {
+      return;
+    }
     apiGet("/api/login/").then(
       async function (s) {
         if (!s.error) {
@@ -32,6 +39,15 @@ class App extends Component {
         }
       }.bind(this)
     );
+  }
+
+  getPath() {
+    return window.location.pathname.replace(basePath, "");
+  }
+
+  getRedirectTo() {
+    let params = new URLSearchParams(window.location.search);
+    return params.get("redirectTo");
   }
 
   handleLoginSuccess(username) {
@@ -54,13 +70,12 @@ class App extends Component {
   }
 
   render() {
-    let destLogin;
     let destAdmin;
+    let destInsight;
+    let destLogin;
     let logout;
     if (this.state.authenticated) {
       // authenticated
-      destLogin = <Redirect to="/admin" />;
-      destAdmin = <Admin />;
       logout = (
         <Fragment>
           {this.state.username} -
@@ -69,18 +84,29 @@ class App extends Component {
           </button>
         </Fragment>
       );
+      destAdmin = (
+        <Fragment>
+          {logout}
+          <Admin />
+        </Fragment>
+      );
+      destInsight = (
+        <Fragment>
+          {logout}
+          <Insight />
+        </Fragment>
+      );
+      destLogin = <Redirect to={this.getRedirectTo() || "/admin"} />;
     } else {
       // not authenticated
-      destLogin = (
-        <LoginUser callback={this.handleLoginSuccess} location="/admin" />
-      );
-      destAdmin = <Redirect to="/login" />;
-      logout = null;
+      destAdmin = <Redirect to="/login?redirectTo=/admin" />;
+      destInsight = <Redirect to="/login?redirectTo=/insight" />;
+      destLogin = <LoginUser callback={this.handleLoginSuccess} />;
     }
 
     return (
       <div className="App">
-        <BrowserRouter basename="/ui">
+        <BrowserRouter basename={basePath}>
           <Switch>
             <Route exact path="/">
               <Redirect to="/scoreboard" />
@@ -88,13 +114,11 @@ class App extends Component {
             <Route exact path="/login">
               {destLogin}
             </Route>
-            <Route path="/admin">
-              {logout}
-              {destAdmin}
-            </Route>
+            <Route path="/admin">{destAdmin}</Route>
             <Route path="/team-dashboard">
               <TeamDashboard />
             </Route>
+            <Route path="/insight">{destInsight}</Route>
             <Route path="/scoreboard">
               <Scoreboard />
             </Route>

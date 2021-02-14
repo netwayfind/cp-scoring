@@ -86,7 +86,7 @@ class ScenarioScoreboard extends Component {
     });
 
     // sort table by scores desc
-    teamScores.sort(function(a, b) {
+    teamScores.sort(function (a, b) {
       return b.score - a.score;
     });
 
