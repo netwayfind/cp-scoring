@@ -31,7 +31,9 @@ class Team extends Component {
   defaultState() {
     return {
       error: null,
-      team: {},
+      team: {
+        Enabled: true,
+      },
     };
   }
 
@@ -94,7 +96,7 @@ class Team extends Component {
             });
           } else {
             this.props.parentCallback();
-            this.props.history.push(this.props.match.url + "/" + s.data.ID);
+            this.props.history.push(this.props.parentPath + "/" + s.data.ID);
           }
         }.bind(this)
       );

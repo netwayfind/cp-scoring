@@ -36,7 +36,9 @@ class User extends Component {
       error: null,
       selectedRole: "",
       roles: [],
-      user: {},
+      user: {
+        Enabled: true,
+      },
     };
   }
 
@@ -111,7 +113,7 @@ class User extends Component {
             });
           } else {
             this.props.parentCallback();
-            this.props.history.push(this.props.match.url + "/" + s.data.ID);
+            this.props.history.push(this.props.parentPath + "/" + s.data.ID);
           }
         }.bind(this)
       );

@@ -44,18 +44,16 @@ class Teams extends Component {
   }
 
   render() {
+    let pathNewTeam = this.props.match.path + "/new";
     let teamID = this.getTeamID(this.props);
     let linkClassesAddTeam = ["nav-button"];
-    if (this.props.location.pathname === this.props.match.path) {
+    if (this.props.location.pathname === pathNewTeam) {
       linkClassesAddTeam.push("nav-button-selected");
     }
     return (
       <Fragment>
         <div className="toc">
-          <Link
-            className={linkClassesAddTeam.join(" ")}
-            to={this.props.match.path}
-          >
+          <Link className={linkClassesAddTeam.join(" ")} to={pathNewTeam}>
             Add Team
           </Link>
           <p />
@@ -68,13 +66,13 @@ class Teams extends Component {
         </div>
         <div className="content">
           <Switch>
-            <Route path={`${this.props.match.url}/:id`}>
+            <Route path={pathNewTeam}>
               <Team
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}
               />
             </Route>
-            <Route>
+            <Route path={`${this.props.match.url}/:id`}>
               <Team
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}

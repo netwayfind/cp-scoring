@@ -44,18 +44,16 @@ class Users extends Component {
   }
 
   render() {
+    let pathNewUser = this.props.match.path + "/new";
     let userID = this.getUserID(this.props);
     let linkClassesAddUser = ["nav-button"];
-    if (this.props.location.pathname === this.props.match.path) {
+    if (this.props.location.pathname === pathNewUser) {
       linkClassesAddUser.push("nav-button-selected");
     }
     return (
       <Fragment>
         <div className="toc">
-          <Link
-            className={linkClassesAddUser.join(" ")}
-            to={this.props.match.path}
-          >
+          <Link className={linkClassesAddUser.join(" ")} to={pathNewUser}>
             Add User
           </Link>
           <p />
@@ -68,13 +66,13 @@ class Users extends Component {
         </div>
         <div className="content">
           <Switch>
-            <Route path={`${this.props.match.url}/:id`}>
+            <Route path={pathNewUser}>
               <User
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}
               />
             </Route>
-            <Route>
+            <Route path={`${this.props.match.url}/:id`}>
               <User
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}

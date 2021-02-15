@@ -43,7 +43,9 @@ class Scenario extends Component {
       currentScenarioHostname: "",
       currentScenarioHost: {},
       newScenarioHostname: "",
-      scenario: {},
+      scenario: {
+        Enabled: true,
+      },
       scenarioHosts: {},
     };
   }
@@ -154,7 +156,7 @@ class Scenario extends Component {
             });
           } else {
             this.props.parentCallback();
-            this.props.history.push(this.props.match.url + "/" + s.data.ID);
+            this.props.history.push(this.props.parentPath + "/" + s.data.ID);
           }
         }.bind(this)
       );

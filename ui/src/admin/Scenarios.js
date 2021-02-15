@@ -44,9 +44,10 @@ class Scenarios extends Component {
   }
 
   render() {
+    let pathNewScenario = this.props.match.path + "/new";
     let scenarioID = this.getScenarioID(this.props);
     let linkClassesAddScenario = ["nav-button"];
-    if (this.props.location.pathname === this.props.match.path) {
+    if (this.props.location.pathname === pathNewScenario) {
       linkClassesAddScenario.push("nav-button-selected");
     }
     return (
@@ -54,7 +55,7 @@ class Scenarios extends Component {
         <div className="toc">
           <Link
             className={linkClassesAddScenario.join(" ")}
-            to={this.props.match.path}
+            to={pathNewScenario}
           >
             Add Scenario
           </Link>
@@ -68,13 +69,13 @@ class Scenarios extends Component {
         </div>
         <div className="content">
           <Switch>
-            <Route path={`${this.props.match.url}/:id`}>
+            <Route path={pathNewScenario}>
               <Scenario
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}
               />
             </Route>
-            <Route>
+            <Route path={`${this.props.match.url}/:id`}>
               <Scenario
                 parentCallback={this.getData}
                 parentPath={this.props.match.path}
