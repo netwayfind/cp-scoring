@@ -27,6 +27,24 @@ class Insight extends Component {
     this.getData();
   }
 
+  clearContentData() {
+    this.setState({
+      hostname: "",
+      report: {},
+    });
+  }
+
+  getContentData() {
+    this.clearContentData();
+    if (!this.state.scenarioID || !this.state.teamID) {
+      this.setState({
+        hostnames: [],
+      });
+      return;
+    }
+    this.getScenarioHostnames();
+  }
+
   getData() {
     apiGet("/api/scenarios").then(
       function (s) {
@@ -65,12 +83,6 @@ class Insight extends Component {
   }
 
   getScenarioHostnames() {
-    if (!this.state.scenarioID || !this.state.teamID) {
-      this.setState({
-        hostnames: [],
-      });
-      return;
-    }
     apiGet(
       "/api/insight/" +
         this.state.scenarioID +
@@ -101,12 +113,15 @@ class Insight extends Component {
       id = Number(id);
       scenario = this.state.scenarios.find((s) => s.ID === id);
     }
-    this.setState({
-      hostname: "",
-      scenarioID: id,
-      scenario: scenario,
-    });
-    this.getScenarioHostnames();
+    this.setState(
+      {
+        scenarioID: id,
+        scenario: scenario,
+      },
+      () => {
+        this.getContentData();
+      }
+    );
   }
 
   handleUpdateTeam(event) {
@@ -116,25 +131,43 @@ class Insight extends Component {
       id = Number(id);
       team = this.state.teams.find((s) => s.ID === id);
     }
-    this.setState({
-      hostname: "",
-      teamID: id,
-      team: team,
-    });
-    this.getScenarioHostnames();
+    this.setState(
+      {
+        teamID: id,
+        team: team,
+      },
+      () => {
+        this.getContentData();
+      }
+    );
   }
 
   render() {
-    let hostnameOptions = [];
-    hostnameOptions.push(<option key=""></option>);
-    for (let i in this.state.hostnames) {
-      let hostname = this.state.hostnames[i];
-      hostnameOptions.push(
-        <option key={hostname} value={hostname}>
-          {hostname}
-        </option>
+    let hostSelect = "No hosts found";
+    if (this.state.hostnames.length > 0) {
+      let hostnameOptions = [];
+      hostnameOptions.push(<option key=""></option>);
+      for (let i in this.state.hostnames) {
+        let hostname = this.state.hostnames[i];
+        hostnameOptions.push(
+          <option key={hostname} value={hostname}>
+            {hostname}
+          </option>
+        );
+      }
+      hostSelect = (
+        <Fragment>
+          Host:
+          <select
+            onChange={this.handleUpdateHostname}
+            value={this.state.hostname}
+          >
+            {hostnameOptions}
+          </select>
+        </Fragment>
       );
     }
+
     let scenarioOptions = [];
     scenarioOptions.push(<option key=""></option>);
     for (let i in this.state.scenarios) {
@@ -166,7 +199,10 @@ class Insight extends Component {
     }
 
     let report = "No report found";
-    if (this.state.report) {
+    if (
+      this.state.report !== null &&
+      this.state.report.Timestamp !== undefined
+    ) {
       let reportTime = null;
       if (this.state.report.Timestamp) {
         reportTime = new Date(
@@ -221,13 +257,7 @@ class Insight extends Component {
           <br />
           Team: {teamName}
           <p />
-          Host:{" "}
-          <select
-            onChange={this.handleUpdateHostname}
-            value={this.state.hostname}
-          >
-            {hostnameOptions}
-          </select>
+          {hostSelect}
           <p />
           {report}
         </div>
