@@ -869,18 +869,22 @@ func (handler APIHandler) updateScenarioHosts(w http.ResponseWriter, r *http.Req
 func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Request) {
 	log.Println("read scenario report")
 
-	id, err := getRequestID(r)
-	if err != nil {
-		httpErrorInvalidID(w)
-		return
-	}
-
 	teamIDValue := r.Context().Value(model.TeamCookieName)
 	if teamIDValue == nil {
 		httpErrorNotAuthenticated(w)
 		return
 	}
 	teamID := teamIDValue.(uint64)
+
+	handler.readScenarioReportCommon(w, r, teamID, false)
+}
+
+func (handler APIHandler) readScenarioReportCommon(w http.ResponseWriter, r *http.Request, teamID uint64, fullReport bool) {
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
 
 	team, err := handler.BackingStore.teamSelect(teamID)
 	if err != nil {
@@ -905,26 +909,39 @@ func (handler APIHandler) readScenarioReport(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// filter out 0 points to not hint on answers
-	filtered := make([]model.AnswerResult, 0)
-	for _, answerResult := range s.AnswerResults {
-		if answerResult.Points != 0 {
-			filtered = append(filtered, answerResult)
+	if !fullReport {
+		// filter out 0 points to not hint on answers
+		filtered := make([]model.AnswerResult, 0)
+		for _, answerResult := range s.AnswerResults {
+			if answerResult.Points != 0 {
+				filtered = append(filtered, answerResult)
+			}
 		}
+		s.AnswerResults = filtered
 	}
-	s.AnswerResults = filtered
 
 	sendResponse(w, s)
 }
 
-func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *http.Request) {
-	log.Println("read scenario report hostnames")
+func (handler APIHandler) readScenarioReportInsight(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report (insight)")
 
-	id, err := getRequestID(r)
-	if err != nil {
-		httpErrorInvalidID(w)
+	teamIDParam, present := r.URL.Query()["team_id"]
+	if !present || len(teamIDParam) != 1 {
+		httpErrorBadRequest(w)
 		return
 	}
+	teamIDStr := teamIDParam[0]
+	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
+	if err != nil {
+		httpErrorBadRequest((w))
+	}
+
+	handler.readScenarioReportCommon(w, r, teamID, true)
+}
+
+func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report hostnames")
 
 	teamIDValue := r.Context().Value(model.TeamCookieName)
 	if teamIDValue == nil {
@@ -932,6 +949,16 @@ func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *
 		return
 	}
 	teamID := teamIDValue.(uint64)
+
+	handler.readScenarioReportHostnamesCommon(w, r, teamID)
+}
+
+func (handler APIHandler) readScenarioReportHostnamesCommon(w http.ResponseWriter, r *http.Request, teamID uint64) {
+	id, err := getRequestID(r)
+	if err != nil {
+		httpErrorInvalidID(w)
+		return
+	}
 
 	team, err := handler.BackingStore.teamSelect(teamID)
 	if err != nil {
@@ -946,6 +973,23 @@ func (handler APIHandler) readScenarioReportHostnames(w http.ResponseWriter, r *
 	}
 
 	sendResponse(w, s)
+}
+
+func (handler APIHandler) readScenarioReportHostnamesInsight(w http.ResponseWriter, r *http.Request) {
+	log.Println("read scenario report hostnames (insight)")
+
+	teamIDParam, present := r.URL.Query()["team_id"]
+	if !present || len(teamIDParam) != 1 {
+		httpErrorBadRequest(w)
+		return
+	}
+	teamIDStr := teamIDParam[0]
+	teamID, err := strconv.ParseUint(teamIDStr, 10, 64)
+	if err != nil {
+		httpErrorBadRequest((w))
+	}
+
+	handler.readScenarioReportHostnamesCommon(w, r, teamID)
 }
 
 func (handler APIHandler) readScenarioReportTimeline(w http.ResponseWriter, r *http.Request) {

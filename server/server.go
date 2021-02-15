@@ -186,6 +186,12 @@ func main() {
 	hostTokenRouter.HandleFunc("/request", apiHandler.requestHostToken).Methods("POST")
 	hostTokenRouter.HandleFunc("/register", apiHandler.registerHostToken).Methods("POST")
 
+	// insight, auth required
+	insightRouter := apiRouter.PathPrefix("/insight").Subrouter()
+	insightRouter.Use(apiHandler.middlewareAuth)
+	insightRouter.HandleFunc("/{id:[0-9]+}", apiHandler.readScenarioReportInsight).Methods("GET")
+	insightRouter.HandleFunc("/{id:[0-9]+}/hostnames", apiHandler.readScenarioReportHostnamesInsight).Methods("GET")
+
 	// login, no auth
 	loginRouter := apiRouter.PathPrefix("/login").Subrouter()
 	loginRouter.HandleFunc("/", apiHandler.checkLoginUser).Methods("GET")
