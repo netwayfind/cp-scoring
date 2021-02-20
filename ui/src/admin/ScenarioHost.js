@@ -3,6 +3,47 @@ import "../App.css";
 import { Component, Fragment } from "react";
 import { withRouter } from "react-router-dom";
 
+const ACTION_PRESET = Object.freeze({
+  EXEC: "EXEC",
+  SH: "sh",
+  POWERSHELL: "powershell",
+});
+
+const ACTION_PRESET_CHECK = Object.freeze({});
+
+const ACTION_PRESET_CONFIG = Object.freeze({
+  FIREWALL_OFF_WINDOWS: "firewall off (windows)",
+  INSTALL_CHOCO: "install chocolatey",
+  INSTALL_PACKAGES_LINUX: "install packages (linux)",
+  INSTALL_SOFTWARE_CHOCO: "install software (choco)",
+  NET_SHARE_ADD: "net share add",
+  NEW_DIR_LINUX: "new directory (linux)",
+  NEW_DIR_WINDOWS: "new directory (windows)",
+  USER_ADD_LINUX: "user add (linux)",
+  USER_ADD_LINUX_SYSTEM: "user add (linux - system)",
+  USER_ADD_WINDOWS: "user add (windows)",
+});
+
+const CHECK_TYPE = Object.freeze({
+  EXEC: "EXEC",
+  FILE_EXIST: "FILE_EXIST",
+  FILE_REGEX: "FILE_REGEX",
+  FILE_VALUE: "FILE_VALUE",
+});
+
+const COMMAND = Object.freeze({
+  CHOCO: "C:\\ProgramData\\chocolatey\\bin\\choco.exe",
+  CMD: "C:\\Windows\\System32\\cmd.exe",
+  NET: "C:\\Windows\\System32\\net.exe",
+  POWERSHELL: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  SH: "/bin/sh",
+});
+
+const OPERATOR = Object.freeze({
+  EQUAL: "EQUAL",
+  NOT_EQUAL: "NOT_EQUAL",
+});
+
 class ScenarioHost extends Component {
   constructor(props) {
     super(props);
@@ -11,6 +52,8 @@ class ScenarioHost extends Component {
       checks: props.checks,
       config: props.config,
       hostname: props.hostname,
+      presetAddCheck: ACTION_PRESET.EXEC,
+      presetAddConfig: ACTION_PRESET.EXEC,
     };
 
     this.handleAnswerUpdate = this.handleAnswerUpdate.bind(this);
@@ -29,6 +72,12 @@ class ScenarioHost extends Component {
     this.handleConfigArgDelete = this.handleConfigArgDelete.bind(this);
     this.handleConfigArgUpdate = this.handleConfigArgUpdate.bind(this);
     this.handleSave = this.handleSave.bind(this);
+    this.handleUpdatePresetAddCheck = this.handleUpdatePresetAddCheck.bind(
+      this
+    );
+    this.handleUpdatePresetAddConfig = this.handleUpdatePresetAddConfig.bind(
+      this
+    );
   }
 
   componentDidUpdate(prevProps) {
@@ -62,14 +111,11 @@ class ScenarioHost extends Component {
       Type: "",
       Value: "",
     });
-    checks.push({
-      Type: "EXEC",
-      Command: "",
-      Args: [],
-    });
+    checks.push(this.preset(this.state.presetAddCheck));
     this.setState({
       answers: answers,
       checks: checks,
+      presetAddCheck: ACTION_PRESET.EXEC,
     });
   }
 
@@ -133,13 +179,10 @@ class ScenarioHost extends Component {
 
   handleConfigAdd() {
     let config = [...this.state.config];
-    config.push({
-      Type: "EXEC",
-      Command: "",
-      Args: [],
-    });
+    config.push(this.preset(this.state.presetAddConfig));
     this.setState({
       config: config,
+      presetAddConfig: ACTION_PRESET.EXEC,
     });
   }
 
@@ -206,18 +249,114 @@ class ScenarioHost extends Component {
     );
   }
 
+  handleUpdatePresetAddCheck(event) {
+    let value = event.target.value;
+    this.setState({
+      presetAddCheck: value,
+    });
+  }
+
+  handleUpdatePresetAddConfig(event) {
+    let value = event.target.value;
+    this.setState({
+      presetAddConfig: value,
+    });
+  }
+
+  preset(p) {
+    let description = p;
+    let type = CHECK_TYPE.EXEC;
+    let command = "";
+    let args = [];
+    if (p === ACTION_PRESET.EXEC) {
+      // default
+    } else if (p === ACTION_PRESET.SH) {
+      command = COMMAND.SH;
+      args = ["-c", ""];
+    } else if (p === ACTION_PRESET.POWERSHELL) {
+      command = COMMAND.POWERSHELL;
+      args = ["-command", ""];
+    } else if (p === ACTION_PRESET_CONFIG.FIREWALL_OFF_WINDOWS) {
+      command = COMMAND.CMD;
+      args = ["/C", "netsh advfirewall set allprofiles state off"];
+    } else if (p === ACTION_PRESET_CONFIG.INSTALL_CHOCO) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))",
+      ];
+    } else if (p === ACTION_PRESET_CONFIG.INSTALL_PACKAGES_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "apt-get update && apt-get -q install -y packages"];
+    } else if (p === ACTION_PRESET_CONFIG.INSTALL_SOFTWARE_CHOCO) {
+      command = COMMAND.CHOCO;
+      args = ["install", "software"];
+    } else if (p === ACTION_PRESET_CONFIG.NET_SHARE_ADD) {
+      command = COMMAND.NET;
+      args = ["share", "share=path"];
+    } else if (p === ACTION_PRESET_CONFIG.NEW_DIR_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "mkdir directory"];
+    } else if (p === ACTION_PRESET_CONFIG.NEW_DIR_WINDOWS) {
+      command = COMMAND.CMD;
+      args = ["/C", "mkdir directory"];
+    } else if (p === ACTION_PRESET_CONFIG.USER_ADD_LINUX) {
+      command = COMMAND.SH;
+      args = [
+        "-c",
+        "useradd -m -s /bin/bash username && echo username:password | chpasswd",
+      ];
+    } else if (p === ACTION_PRESET_CONFIG.USER_ADD_LINUX_SYSTEM) {
+      command = COMMAND.SH;
+      args = [
+        "-c",
+        "useradd -r -s /bin/bash username && echo username:password | chpasswd",
+      ];
+    } else if (p === ACTION_PRESET_CONFIG.USER_ADD_WINDOWS) {
+      command = COMMAND.NET;
+      args = ["user", "username", "password", "/add"];
+    } else {
+      description = "unsupported preset";
+    }
+    return {
+      Description: description,
+      Type: type,
+      Command: command,
+      Args: args,
+    };
+  }
+
   render() {
-    let actionOptions = [
-      <option key="1">EXEC</option>,
-      <option key="2">FILE_EXIST</option>,
-      <option key="2">FILE_REGEX</option>,
-      <option key="2">FILE_VALUE</option>,
-    ];
-    let operatorOptions = [
-      <option key="1" value="" />,
-      <option key="2">EQUAL</option>,
-      <option key="3">NOT_EQUAL</option>,
-    ];
+    let actionOptions = [];
+    for (let type in CHECK_TYPE) {
+      let value = CHECK_TYPE[type];
+      actionOptions.push(<option key={type}>{value}</option>);
+    }
+    let operatorOptions = [];
+    for (let operator in OPERATOR) {
+      let value = OPERATOR[operator];
+      operatorOptions.push(<option key={operator}>{value}</option>);
+    }
+
+    let presetAddCheckOptions = [];
+    for (let preset in ACTION_PRESET) {
+      let value = ACTION_PRESET[preset];
+      presetAddCheckOptions.push(<option key={preset}>{value}</option>);
+    }
+    for (let preset in ACTION_PRESET_CHECK) {
+      let value = ACTION_PRESET_CHECK[preset];
+      presetAddCheckOptions.push(<option key={preset}>{value}</option>);
+    }
+
+    let presetAddConfigOptions = [];
+    for (let preset in ACTION_PRESET) {
+      let value = ACTION_PRESET[preset];
+      presetAddConfigOptions.push(<option key={preset}>{value}</option>);
+    }
+    for (let preset in ACTION_PRESET_CONFIG) {
+      let value = ACTION_PRESET_CONFIG[preset];
+      presetAddConfigOptions.push(<option key={preset}>{value}</option>);
+    }
 
     let checkList = [];
     let checks = this.state.checks;
@@ -289,7 +428,7 @@ class ScenarioHost extends Component {
               {actionOptions}
             </select>
             <br />
-            {check.Type === "EXEC" ? (
+            {check.Type === CHECK_TYPE.EXEC ? (
               <Fragment>
                 <label htmlFor="Command">Command</label>
                 <input
@@ -333,6 +472,12 @@ class ScenarioHost extends Component {
     });
     checkList.push(
       <li key="check_add">
+        <select
+          onChange={this.handleUpdatePresetAddCheck}
+          value={this.state.presetAddCheck}
+        >
+          {presetAddCheckOptions}
+        </select>
         <button type="button" onClick={this.handleCheckAdd}>
           Add Check
         </button>
@@ -400,7 +545,7 @@ class ScenarioHost extends Component {
             />
             <br />
             <label htmlFor="Type">Type</label>
-            <select disabled name="Type" value="EXEC">
+            <select disabled name="Type" value={CHECK_TYPE.EXEC}>
               {actionOptions}
             </select>
             <br />
@@ -420,6 +565,12 @@ class ScenarioHost extends Component {
     });
     configList.push(
       <li key="config_add">
+        <select
+          onChange={this.handleUpdatePresetAddConfig}
+          value={this.state.presetAddConfig}
+        >
+          {presetAddConfigOptions}
+        </select>
         <button type="button" onClick={this.handleConfigAdd}>
           Add Config
         </button>
