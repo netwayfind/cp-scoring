@@ -9,7 +9,28 @@ const ACTION_PRESET = Object.freeze({
   POWERSHELL: "powershell",
 });
 
-const ACTION_PRESET_CHECK = Object.freeze({});
+const ACTION_PRESET_CHECK = Object.freeze({
+  FILE_PERMISSIONS_LINUX: "file permissions (linux)",
+  FIREWALL_INBOUND_ALLOW_IPTABLES: "firewall inbound allow (iptables)",
+  FIREWALL_INBOUND_ALLOW_UFW: "firewall inbound allow (ufw)",
+  FIREWALL_INBOUND_DEFAULT_DROP_LINUX: "firewall inbound default drop (linux)",
+  FIREWALL_FORWARD_DEFAULT_DROP_LINUX: "firewall forward default drop (linux)",
+  NETWORK_SERVICE_NOT_AVAILABLE_LINUX: "network service not available (linux)",
+  SOFTWARE_INSTALLED_LINUX: "software installed (linux)",
+  SOFTWARE_PACKAGES_UPDATED_LINUX: "software packages updated (linux)",
+  SOFTWARE_REMOVED_LINUX: "software removed (linux)",
+  TMP_APT_PACKAGE_LIST: "TEMP: apt package list",
+  TMP_APT_PACKAGE_LIST_REMOVE: "TEMP: apt package list remove",
+  USER_ADDED_LINUX: "user added (linux)",
+  USER_ADDED_WINDOWS: "user added (windows)",
+  USER_ADDED_TO_GROUP_LINUX: "user added to group (linux)",
+  USER_ADDED_TO_GROUP_WINDOWS: "user added to group (windows)",
+  USER_PASSWORD_CHANGED_LINUX: "user password changed (linux)",
+  USER_REMOVED_LINUX: "user removed (linux)",
+  USER_REMOVED_WINDOWS: "user removed (windows)",
+  USER_REMOVED_FROM_GROUP_LINUX: "user removed from group (linux)",
+  USER_REMOVED_FROM_GROUP_WINDOWS: "user removed from group (windows)",
+});
 
 const ACTION_PRESET_CONFIG = Object.freeze({
   FIREWALL_OFF_WINDOWS: "firewall off (windows)",
@@ -276,6 +297,87 @@ class ScenarioHost extends Component {
     } else if (p === ACTION_PRESET.POWERSHELL) {
       command = COMMAND.POWERSHELL;
       args = ["-command", ""];
+    } else if (p === ACTION_PRESET_CHECK.FILE_PERMISSIONS_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "stat -c %a file"];
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_DEFAULT_DROP_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "iptables -nvL INPUT | grep -q 'policy DROP' ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_FORWARD_DEFAULT_DROP_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "iptables -nvL FORWARD | grep -q 'policy DROP' ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_ALLOW_IPTABLES) {
+      command = COMMAND.SH;
+      args = [
+        "-c",
+        "iptables -nvL INPUT | grep 'protocol dpt:port' | grep -q ACCEPT ; echo $?",
+      ];
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_ALLOW_UFW) {
+      command = COMMAND.SH;
+      args = [
+        "-c",
+        "iptables -nvL ufw-user-input | grep 'protocol dpt:port' | grep -q ACCEPT ; echo $?",
+      ];
+    } else if (p === ACTION_PRESET_CHECK.NETWORK_SERVICE_NOT_AVAILABLE_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "ss -ntlp | grep ':port ' | grep -q service ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.SOFTWARE_INSTALLED_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^software/' apt ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.SOFTWARE_PACKAGES_UPDATED_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "apt list --upgradable | wc -l"];
+    } else if (p === ACTION_PRESET_CHECK.SOFTWARE_REMOVED_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^software/' apt ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.TMP_APT_PACKAGE_LIST) {
+      command = COMMAND.SH;
+      args = ["-c", "apt list --installed > apt"];
+    } else if (p === ACTION_PRESET_CHECK.TMP_APT_PACKAGE_LIST_REMOVE) {
+      command = COMMAND.SH;
+      args = ["-c", "rm apt"];
+    } else if (p === ACTION_PRESET_CHECK.USER_ADDED_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^user:' /etc/password ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.USER_ADDED_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {$_.Name -eq "user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+    } else if (p === ACTION_PRESET_CHECK.USER_ADDED_TO_GROUP_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^group:' /etc/group | grep -q user ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.USER_ADDED_TO_GROUP_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalGroupMember -Name group | Where-Object {$_.Name -eq "hostname\\user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+    } else if (p === ACTION_PRESET_CHECK.USER_PASSWORD_CHANGED_LINUX) {
+      command = COMMAND.SH;
+      args = [
+        "-c",
+        "grep '^user' /etc/shadow | grep -q 'passwordHash' ; echo $?",
+      ];
+    } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^user:' /etc/password ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {$_.Name -eq "user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+    } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_FROM_GROUP_LINUX) {
+      command = COMMAND.SH;
+      args = ["-c", "grep '^group:' /etc/group | grep -q user ; echo $?"];
+    } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_FROM_GROUP_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalGroupMember -Name group | Where-Object {$_.Name -eq "hostname\\user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
     } else if (p === ACTION_PRESET_CONFIG.FIREWALL_OFF_WINDOWS) {
       command = COMMAND.CMD;
       args = ["/C", "netsh advfirewall set allprofiles state off"];
@@ -333,6 +435,7 @@ class ScenarioHost extends Component {
       actionOptions.push(<option key={type}>{value}</option>);
     }
     let operatorOptions = [];
+    operatorOptions.push(<option key="" />);
     for (let operator in OPERATOR) {
       let value = OPERATOR[operator];
       operatorOptions.push(<option key={operator}>{value}</option>);
