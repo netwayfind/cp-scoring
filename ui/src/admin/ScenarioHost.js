@@ -128,11 +128,18 @@ class ScenarioHost extends Component {
   handleCheckAdd() {
     let answers = [...this.state.answers];
     let checks = [...this.state.checks];
+    let preset = this.preset(this.state.presetAddCheck);
     answers.push({
-      Type: "",
-      Value: "",
+      Operator: preset.Operator,
+      Value: preset.Value,
+      Points: preset.Points,
     });
-    checks.push(this.preset(this.state.presetAddCheck));
+    checks.push({
+      Description: preset.Description,
+      Type: preset.Type,
+      Command: preset.Command,
+      Args: preset.Args,
+    });
     this.setState({
       answers: answers,
       checks: checks,
@@ -200,7 +207,13 @@ class ScenarioHost extends Component {
 
   handleConfigAdd() {
     let config = [...this.state.config];
-    config.push(this.preset(this.state.presetAddConfig));
+    let preset = this.preset(this.state.presetAddConfig);
+    config.push({
+      Description: preset.Description,
+      Type: preset.Type,
+      Command: preset.Command,
+      Args: preset.Args,
+    });
     this.setState({
       config: config,
       presetAddConfig: ACTION_PRESET.EXEC,
@@ -289,6 +302,9 @@ class ScenarioHost extends Component {
     let type = CHECK_TYPE.EXEC;
     let command = "";
     let args = [];
+    let operator = "";
+    let value = "";
+    let points = 0;
     if (p === ACTION_PRESET.EXEC) {
       // default
     } else if (p === ACTION_PRESET.SH) {
@@ -300,36 +316,61 @@ class ScenarioHost extends Component {
     } else if (p === ACTION_PRESET_CHECK.FILE_PERMISSIONS_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "stat -c %a file"];
+      operator = OPERATOR.EQUAL;
+      value = "###";
     } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_DEFAULT_DROP_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "iptables -nvL INPUT | grep -q 'policy DROP' ; echo $?"];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.FIREWALL_FORWARD_DEFAULT_DROP_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "iptables -nvL FORWARD | grep -q 'policy DROP' ; echo $?"];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_ALLOW_IPTABLES) {
       command = COMMAND.SH;
       args = [
         "-c",
         "iptables -nvL INPUT | grep 'protocol dpt:port' | grep -q ACCEPT ; echo $?",
       ];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.FIREWALL_INBOUND_ALLOW_UFW) {
       command = COMMAND.SH;
       args = [
         "-c",
         "iptables -nvL ufw-user-input | grep 'protocol dpt:port' | grep -q ACCEPT ; echo $?",
       ];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.NETWORK_SERVICE_NOT_AVAILABLE_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "ss -ntlp | grep ':port ' | grep -q service ; echo $?"];
+      operator = OPERATOR.NOT_EQUAL;
+      value = "0";
+      points = -1;
     } else if (p === ACTION_PRESET_CHECK.SOFTWARE_INSTALLED_LINUX) {
       command = COMMAND.SH;
-      args = ["-c", "grep '^software/' apt ; echo $?"];
+      args = ["-c", "grep -q '^software/' apt; echo $?"];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.SOFTWARE_PACKAGES_UPDATED_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "apt list --upgradable | wc -l"];
+      operator = OPERATOR.EQUAL;
+      value = "1";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.SOFTWARE_REMOVED_LINUX) {
       command = COMMAND.SH;
-      args = ["-c", "grep '^software/' apt ; echo $?"];
+      args = ["-c", "grep -q '^software/' apt; echo $?"];
+      operator = OPERATOR.NOT_EQUAL;
+      value = "0";
     } else if (p === ACTION_PRESET_CHECK.TMP_APT_PACKAGE_LIST) {
       command = COMMAND.SH;
       args = ["-c", "apt list --installed > apt"];
@@ -338,46 +379,69 @@ class ScenarioHost extends Component {
       args = ["-c", "rm apt"];
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_LINUX) {
       command = COMMAND.SH;
-      args = ["-c", "grep '^user:' /etc/password ; echo $?"];
+      args = ["-c", "grep -q '^user:' /etc/passwd; echo $?"];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_WINDOWS) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
         'Get-LocalUser | Where-Object {$_.Name -eq "user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
       ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_TO_GROUP_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "grep '^group:' /etc/group | grep -q user ; echo $?"];
+      operator = OPERATOR.EQUAL;
+      value = "0";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_TO_GROUP_WINDOWS) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
         'Get-LocalGroupMember -Name group | Where-Object {$_.Name -eq "hostname\\user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
       ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_PASSWORD_CHANGED_LINUX) {
       command = COMMAND.SH;
       args = [
         "-c",
         "grep '^user' /etc/shadow | grep -q 'passwordHash' ; echo $?",
       ];
+      operator = OPERATOR.EQUAL;
+      value = "1";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_LINUX) {
       command = COMMAND.SH;
-      args = ["-c", "grep '^user:' /etc/password ; echo $?"];
+      args = ["-c", "grep -q '^user:' /etc/passwd; echo $?"];
+      operator = OPERATOR.NOT_EQUAL;
+      value = "0";
     } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_WINDOWS) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
         'Get-LocalUser | Where-Object {$_.Name -eq "user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
       ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":0}';
     } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_FROM_GROUP_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "grep '^group:' /etc/group | grep -q user ; echo $?"];
+      operator = OPERATOR.NOT_EQUAL;
+      value = "0";
     } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_FROM_GROUP_WINDOWS) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
         'Get-LocalGroupMember -Name group | Where-Object {$_.Name -eq "hostname\\user"} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
       ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":0}';
     } else if (p === ACTION_PRESET_CONFIG.FIREWALL_OFF_WINDOWS) {
       command = COMMAND.CMD;
       args = ["/C", "netsh advfirewall set allprofiles state off"];
@@ -425,6 +489,9 @@ class ScenarioHost extends Component {
       Type: type,
       Command: command,
       Args: args,
+      Operator: operator,
+      Value: value,
+      Points: points,
     };
   }
 
