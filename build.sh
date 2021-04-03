@@ -2,57 +2,44 @@
 
 set -e
 
-PKG_BASE="github.com/netwayfind/cp-scoring"
-BASEDIR="target"
-SCRIPTDIR="$(dirname $(readlink -f $0))"
+PROJ_NAME="cp-scoring"
+PKG_BASE="github.com/netwayfind/${PROJ_NAME}"
+BASE_DIR="$(dirname $(readlink -f ${0}))"
+VERSION=$(cat ${BASE_DIR}/VERSION)
+OUTPUT_DIR="${BASE_DIR}/target/${PROJ_NAME}-${VERSION}"
 
-echo "Using directory $(readlink -f $BASEDIR)"
-mkdir -p $BASEDIR
+rm -rf ${OUTPUT_DIR}
+mkdir -p ${OUTPUT_DIR}
+mkdir -p ${OUTPUT_DIR}/config
+mkdir -p ${OUTPUT_DIR}/public
+mkdir -p ${OUTPUT_DIR}/ui
 
-echo "Fetching dependencies, this may take a while."
-go get github.com/lib/pq
-go get golang.org/x/crypto/openpgp
-go get golang.org/x/crypto/openpgp/armor
-go get golang.org/x/crypto/ripemd160
-go get github.com/cnf/structhash
-go get github.com/gorilla/mux
-go get github.com/gorilla/securecookie
-go get gopkg.in/ini.v1
+echo "Version: ${VERSION}"
+echo "Base dir: ${BASE_DIR}"
+echo "Output dir: ${OUTPUT_DIR}"
 
-VERSION=$(cat $SCRIPTDIR/VERSION)
-echo "Setting to version $VERSION"
+# server dependencies
+echo "Fetching server dependencies. This may take a while."
+go get github.com/dgrijalva/jwt-go
 
-echo "Building linux server"
-GOOS=linux GOARCH=amd64 go build -o $BASEDIR/cp-scoring-server-linux -ldflags "-X main.version=$VERSION" $PKG_BASE/server
-echo "Building server UI files"
-npx babel --out-dir $(dirname $0)/server/ui/js $(dirname $0)/server/ui/jsx
-echo "Copying server UI files"
-rm -rf $BASEDIR/ui
-mkdir -p $BASEDIR/ui/js
-mkdir -p $BASEDIR/ui/admin
-mkdir -p $BASEDIR/ui/scoreboard
-mkdir -p $BASEDIR/ui/report
-mkdir -p $BASEDIR/ui/insight
-mkdir -p $BASEDIR/ui/scenarioDesc
-cp $(dirname $0)/server/ui/js/* $BASEDIR/ui/js/
-cp $(dirname $0)/server/ui/index.html $BASEDIR/ui
-cp $(dirname $0)/server/ui/style.css $BASEDIR/ui
-cp $(dirname $0)/server/ui/admin/index.html $BASEDIR/ui/admin
-cp $(dirname $0)/server/ui/scoreboard/index.html $BASEDIR/ui/scoreboard
-cp $(dirname $0)/server/ui/report/index.html $BASEDIR/ui/report
-cp $(dirname $0)/server/ui/insight/index.html $BASEDIR/ui/insight
-cp $(dirname $0)/server/ui/scenarioDesc/index.html $BASEDIR/ui/scenarioDesc
+# build server
+echo "Building server"
+cd ${BASE_DIR}/server
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${OUTPUT_DIR}/${PROJ_NAME}-server-linux -ldflags "-X main.version=${VERSION}" ${PKG_BASE}/server
+cp ${BASE_DIR}/server/server.conf.example ${OUTPUT_DIR}/config/
+
+# build agents
 echo "Building linux agent"
-GOOS=linux GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-linux -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ${OUTPUT_DIR}/public/${PROJ_NAME}-agent-linux -ldflags "-X main.version=${VERSION}" $PKG_BASE/agent
 echo "Building windows agent"
-GOOS=windows GOARCH=amd64 go build -o $BASEDIR/public/cp-scoring-agent-windows.exe -ldflags "-X main.version=$VERSION" $PKG_BASE/agent/main
+GOOS=windows GOARCH=amd64 go build -o ${OUTPUT_DIR}/public/${PROJ_NAME}-agent-windows.exe -ldflags "-X main.version=${VERSION}" $PKG_BASE/agent
 
-echo "Running unit tests"
-go test github.com/netwayfind/cp-scoring/agent
-go test github.com/netwayfind/cp-scoring/agent/main
-go test github.com/netwayfind/cp-scoring/auditor
-go test github.com/netwayfind/cp-scoring/model
-go test github.com/netwayfind/cp-scoring/processing
-go test github.com/netwayfind/cp-scoring/server
+# build UI
+echo "Bulding UI"
+cd ${BASE_DIR}/ui
+yarn install
+yarn build
+cd ${BASE_DIR}/ui/build
+cp -r . ${OUTPUT_DIR}/ui/
 
 echo "Done"

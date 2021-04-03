@@ -13,10 +13,9 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 )
 
-// ToBytes asdf
-func ToBytes(results model.AuditCheckResults, entities []*openpgp.Entity) ([]byte, error) {
-	// results to JSON bytes
-	bs, err := resultsToJSON(results)
+func ToBytes(state model.State, entities []*openpgp.Entity) ([]byte, error) {
+	// state to JSON bytes
+	bs, err := stateToJSON(state)
 	if err != nil {
 		return nil, err
 	}
@@ -34,36 +33,35 @@ func ToBytes(results model.AuditCheckResults, entities []*openpgp.Entity) ([]byt
 	return bs, nil
 }
 
-// FromBytes asdf
-func FromBytes(bs []byte, entities openpgp.EntityList) (model.AuditCheckResults, error) {
-	var results model.AuditCheckResults
+func FromBytes(bs []byte, entities openpgp.EntityList) (model.State, error) {
+	var state model.State
 
 	if len(bs) == 0 {
-		return results, errors.New("Empty bytes given")
+		return state, errors.New("Empty bytes given")
 	}
 
 	// decrypt bytes
 	bs, err := bytesDecrypt(bs, entities)
 	if err != nil {
-		return results, err
+		return state, err
 	}
 
 	// decompress bytes
 	bs, err = bytesDecompress(bs)
 	if err != nil {
-		return results, err
+		return state, err
 	}
-	// JSON bytes to results
-	results, err = resultsFromJSON(bs)
+	// JSON bytes to state
+	state, err = stateFromJSON(bs)
 	if err != nil {
-		return results, err
+		return state, err
 	}
 
-	return results, nil
+	return state, nil
 }
 
-func resultsToJSON(results model.AuditCheckResults) ([]byte, error) {
-	bs, err := json.Marshal(results)
+func stateToJSON(state model.State) ([]byte, error) {
+	bs, err := json.Marshal(state)
 	if err != nil {
 		return nil, err
 	}
@@ -71,14 +69,14 @@ func resultsToJSON(results model.AuditCheckResults) ([]byte, error) {
 	return bs, nil
 }
 
-func resultsFromJSON(bs []byte) (model.AuditCheckResults, error) {
-	var results model.AuditCheckResults
-	err := json.Unmarshal(bs, &results)
+func stateFromJSON(bs []byte) (model.State, error) {
+	var state model.State
+	err := json.Unmarshal(bs, &state)
 	if err != nil {
-		return results, err
+		return state, err
 	}
 
-	return results, nil
+	return state, nil
 }
 
 func bytesCompress(bs []byte) ([]byte, error) {

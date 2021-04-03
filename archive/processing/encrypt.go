@@ -21,7 +21,6 @@ func newEntity() (*openpgp.Entity, error) {
 	return entity, nil
 }
 
-// NewPubPrivKeys asdf
 func NewPubPrivKeys() ([]byte, []byte, error) {
 	entity, err := newEntity()
 	if err != nil {
@@ -39,7 +38,6 @@ func NewPubPrivKeys() ([]byte, []byte, error) {
 	return pubKey, privKey, err
 }
 
-// GetPubKey asdf
 func GetPubKey(entity *openpgp.Entity) ([]byte, error) {
 	bufPub := bytes.NewBuffer(nil)
 	writerPub, err := armor.Encode(bufPub, openpgp.PublicKeyType, nil)
@@ -56,7 +54,6 @@ func GetPubKey(entity *openpgp.Entity) ([]byte, error) {
 	return bufPub.Bytes(), nil
 }
 
-// GetPrivKey asdf
 func GetPrivKey(entity *openpgp.Entity) ([]byte, error) {
 	bufPriv := bytes.NewBuffer(nil)
 	writerPriv, err := armor.Encode(bufPriv, openpgp.PrivateKeyType, nil)
