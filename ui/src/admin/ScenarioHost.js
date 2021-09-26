@@ -15,6 +15,9 @@ const ACTION_PRESET_CHECK = Object.freeze({
   FIREWALL_INBOUND_ALLOW_UFW: "firewall inbound allow (ufw)",
   FIREWALL_INBOUND_DEFAULT_DROP_LINUX: "firewall inbound default drop (linux)",
   FIREWALL_FORWARD_DEFAULT_DROP_LINUX: "firewall forward default drop (linux)",
+  FIREWALL_DOMAIN_WINDOWS: "Firewall (Domain) set",
+  FIREWALL_PRIVATE_WINDOWS: "Firewall (Private) set",
+  FIREWALL_PUBLIC_WINDOWS: "Firewall (Public) set",
   NETWORK_SERVICE_NOT_AVAILABLE_LINUX: "network service not available (linux)",
   SOFTWARE_INSTALLED_LINUX: "software installed (linux)",
   SOFTWARE_PACKAGES_UPDATED_LINUX: "software packages updated (linux)",
@@ -35,6 +38,7 @@ const ACTION_PRESET_CHECK = Object.freeze({
 const ACTION_PRESET_CONFIG = Object.freeze({
   FIREWALL_OFF_WINDOWS: "firewall off (windows)",
   INSTALL_CHOCO: "install chocolatey",
+  INSTALL_CHOCO_POST: "install chocolatey (post)",
   INSTALL_PACKAGES_LINUX: "install packages (linux)",
   INSTALL_SOFTWARE_CHOCO: "install software (choco)",
   NET_SHARE_ADD: "net share add",
@@ -348,6 +352,33 @@ class ScenarioHost extends Component {
       operator = OPERATOR.EQUAL;
       value = "0";
       points = 1;
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_DOMAIN_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        "Get-NetFirewallProfile -Name Domain | Select-Object Enabled | ConvertTo-Json -Compress",
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "{\"Enabled\":1}";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_PUBLIC_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        "Get-NetFirewallProfile -Name Public | Select-Object Enabled | ConvertTo-Json -Compress",
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "{\"Enabled\":1}";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_PRIVATE_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        "Get-NetFirewallProfile -Name Private | Select-Object Enabled | ConvertTo-Json -Compress",
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "{\"Enabled\":1}";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.NETWORK_SERVICE_NOT_AVAILABLE_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "ss -ntlp | grep ':port ' | grep -q service ; echo $?"];
@@ -451,7 +482,15 @@ class ScenarioHost extends Component {
         "-command",
         "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))",
       ];
-    } else if (p === ACTION_PRESET_CONFIG.INSTALL_PACKAGES_LINUX) {
+    } else if (p === ACTION_PRESET_CONFIG.INSTALL_CHOCO_POST) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "feature",
+        "enable",
+        "--name",
+        "allowGlobalConfirmation",
+      ];
+    }else if (p === ACTION_PRESET_CONFIG.INSTALL_PACKAGES_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "apt-get update && apt-get -q install -y packages"];
     } else if (p === ACTION_PRESET_CONFIG.INSTALL_SOFTWARE_CHOCO) {
