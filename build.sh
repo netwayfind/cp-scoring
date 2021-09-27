@@ -21,6 +21,14 @@ echo "Output dir: ${OUTPUT_DIR}"
 # server dependencies
 echo "Fetching server dependencies. This may take a while."
 go get github.com/dgrijalva/jwt-go
+go get github.com/lib/pq
+go get golang.org/x/crypto/openpgp
+go get golang.org/x/crypto/openpgp/armor
+go get golang.org/x/crypto/ripemd160
+go get github.com/cnf/structhash
+go get github.com/gorilla/mux
+go get github.com/gorilla/securecookie
+go get gopkg.in/ini.v1
 
 # build server
 echo "Building server"
