@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - scenario config choco post-install
-- scenario check Windows Firewall
-- scenario check FILE_CONTAINS
+- scenario check presets for Windows Firewall
+- scenario check type FILE_CONTAINS
+- scenario check answer CONTAINS 
 
 ## [0.8.0] - 2021-04-02
 
