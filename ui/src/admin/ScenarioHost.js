@@ -68,6 +68,7 @@ const COMMAND = Object.freeze({
 const OPERATOR = Object.freeze({
   CONTAINS: "CONTAINS",
   EQUAL: "EQUAL",
+  NOT_CONTAINS: "NOT_CONTAINS",
   NOT_EQUAL: "NOT_EQUAL",
 });
 

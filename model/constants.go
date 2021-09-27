@@ -26,9 +26,10 @@ type OperatorType string
 
 // asdf
 const (
-	OperatorTypeContains OperatorType = "CONTAINS"
-	OperatorTypeEqual    OperatorType = "EQUAL"
-	OperatorTypeNotEqual OperatorType = "NOT_EQUAL"
+	OperatorTypeContains    OperatorType = "CONTAINS"
+	OperatorTypeEqual       OperatorType = "EQUAL"
+	OperatorTypeNotContains OperatorType = "NOT_CONTAINS"
+	OperatorTypeNotEqual    OperatorType = "NOT_EQUAL"
 )
 
 // Role asdf

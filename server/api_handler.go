@@ -348,6 +348,12 @@ func (handler APIHandler) auditEntry(entry model.AuditQueueEntry) error {
 				points = answer.Points
 				score += points
 			}
+		} else if answer.Operator == model.OperatorTypeNotContains {
+			value := fmt.Sprint(answer.Value)
+			if !strings.Contains(checkResult, value) {
+				points = answer.Points
+				score += points
+			}
 		}
 		answerResults[i] = model.AnswerResult{
 			Description: checks[i].Description,
