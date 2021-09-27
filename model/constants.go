@@ -5,10 +5,11 @@ type ActionType string
 
 // asdf
 const (
-	ActionTypeExec      ActionType = "EXEC"
-	ActionTypeFileExist ActionType = "FILE_EXIST"
-	ActionTypeFileRegex ActionType = "FILE_REGEX"
-	ActionTypeFileValue ActionType = "FILE_VALUE"
+	ActionTypeExec         ActionType = "EXEC"
+	ActionTypeFileContains ActionType = "FILE_CONTAINS"
+	ActionTypeFileExist    ActionType = "FILE_EXIST"
+	ActionTypeFileRegex    ActionType = "FILE_REGEX"
+	ActionTypeFileValue    ActionType = "FILE_VALUE"
 )
 
 // AuditQueueStatus asdf

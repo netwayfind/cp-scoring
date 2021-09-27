@@ -273,9 +273,24 @@ func executeScenarioChecks(scenarioID uint64, hostToken string, checks []model.A
 				cmd.Dir = tempDir
 				out, err := cmd.Output()
 				if err != nil {
-					result = "could not execute file"
+					result = "could not execute command"
 				}
 				result = strings.TrimSpace(string(out))
+			}
+		} else if check.Type == model.ActionTypeFileContains {
+			if len(check.Args) == 2 {
+				fp := check.Args[0]
+				contents, err := ioutil.ReadFile(fp)
+				if err != nil {
+					result = "could not read file"
+				} else {
+					b := strings.Contains(string(contents), check.Args[1])
+					if b {
+						result = "true"
+					} else {
+						result = "false"
+					}
+				}
 			}
 		} else if check.Type == model.ActionTypeFileExist {
 			if len(check.Args) == 1 {
