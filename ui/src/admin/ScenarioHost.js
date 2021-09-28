@@ -15,9 +15,9 @@ const ACTION_PRESET_CHECK = Object.freeze({
   FIREWALL_INBOUND_ALLOW_UFW: "firewall inbound allow (ufw)",
   FIREWALL_INBOUND_DEFAULT_DROP_LINUX: "firewall inbound default drop (linux)",
   FIREWALL_FORWARD_DEFAULT_DROP_LINUX: "firewall forward default drop (linux)",
-  FIREWALL_DOMAIN_WINDOWS: "Firewall (Domain) set",
-  FIREWALL_PRIVATE_WINDOWS: "Firewall (Private) set",
-  FIREWALL_PUBLIC_WINDOWS: "Firewall (Public) set",
+  FIREWALL_WINDOWS_DOMAIN: "Firewall (Windows - Domain) set",
+  FIREWALL_WINDOWS_PRIVATE: "Firewall (Windows - Private) set",
+  FIREWALL_WINDOWS_PUBLIC: "Firewall (Windows - Public) set",
   NETWORK_SERVICE_NOT_AVAILABLE_LINUX: "network service not available (linux)",
   SOFTWARE_INSTALLED_LINUX: "software installed (linux)",
   SOFTWARE_PACKAGES_UPDATED_LINUX: "software packages updated (linux)",
@@ -355,7 +355,7 @@ class ScenarioHost extends Component {
       operator = OPERATOR.EQUAL;
       value = "0";
       points = 1;
-    } else if (p === ACTION_PRESET_CHECK.FIREWALL_DOMAIN_WINDOWS) {
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_WINDOWS_DOMAIN) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
@@ -364,7 +364,7 @@ class ScenarioHost extends Component {
       operator = OPERATOR.EQUAL;
       value = "{\"Enabled\":1}";
       points = 1;
-    } else if (p === ACTION_PRESET_CHECK.FIREWALL_PUBLIC_WINDOWS) {
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_WINDOWS_PUBLIC) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
@@ -373,7 +373,7 @@ class ScenarioHost extends Component {
       operator = OPERATOR.EQUAL;
       value = "{\"Enabled\":1}";
       points = 1;
-    } else if (p === ACTION_PRESET_CHECK.FIREWALL_PRIVATE_WINDOWS) {
+    } else if (p === ACTION_PRESET_CHECK.FIREWALL_WINDOWS_PRIVATE) {
       command = COMMAND.POWERSHELL;
       args = [
         "-command",
