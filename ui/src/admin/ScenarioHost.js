@@ -24,6 +24,8 @@ const ACTION_PRESET_CHECK = Object.freeze({
   SOFTWARE_REMOVED_LINUX: "software removed (linux)",
   TMP_APT_PACKAGE_LIST: "TEMP: apt package list",
   TMP_APT_PACKAGE_LIST_REMOVE: "TEMP: apt package list remove",
+  TMP_WINDOWS_SETTINGS_EXPORT: "TEMP: Windows settings export",
+  TMP_WINDOWS_SETTINGS_EXPORT_REMOVE: "TEMP: Windows settings export remove",
   USER_ADDED_LINUX: "user added (linux)",
   USER_ADDED_WINDOWS: "user added (windows)",
   USER_ADDED_TO_GROUP_LINUX: "user added to group (linux)",
@@ -417,6 +419,22 @@ class ScenarioHost extends Component {
     } else if (p === ACTION_PRESET_CHECK.TMP_APT_PACKAGE_LIST_REMOVE) {
       command = COMMAND.SH;
       args = ["-c", "rm apt"];
+    } else if (p === ACTION_PRESET_CHECK.TMP_WINDOWS_SETTINGS_EXPORT) {
+      command = COMMAND.CMD;
+      args = [
+        "/C",
+        'C:\\Windows\\System32\\SecEdit.exe", "/export", "/cfg", output.txt',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":0}';
+    } else if (p === ACTION_PRESET_CHECK.TMP_WINDOWS_SETTINGS_EXPORT_REMOVE) {
+      command = COMMAND.CMD;
+      args = [
+        "/C",
+        'del output.txt',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":0}';
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "grep -q '^user:' /etc/passwd; echo $?"];
@@ -553,7 +571,7 @@ class ScenarioHost extends Component {
         "--name",
         "allowGlobalConfirmation",
       ];
-    }else if (p === ACTION_PRESET_CONFIG.INSTALL_PACKAGES_LINUX) {
+    } else if (p === ACTION_PRESET_CONFIG.INSTALL_PACKAGES_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "apt-get update && apt-get -q install -y packages"];
     } else if (p === ACTION_PRESET_CONFIG.INSTALL_SOFTWARE_CHOCO) {
