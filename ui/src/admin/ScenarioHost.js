@@ -29,6 +29,7 @@ const ACTION_PRESET_CHECK = Object.freeze({
   USER_ADDED_TO_GROUP_LINUX: "user added to group (linux)",
   USER_ADDED_TO_GROUP_WINDOWS: "user added to group (windows)",
   USER_PASSWORD_CHANGED_LINUX: "user password changed (linux)",
+  USER_PASSWORD_CHANGED_WINDOWS: "user password changed (windows)",
   USER_REMOVED_LINUX: "user removed (linux)",
   USER_REMOVED_WINDOWS: "user removed (windows)",
   USER_REMOVED_FROM_GROUP_LINUX: "user removed from group (linux)",
@@ -449,6 +450,15 @@ class ScenarioHost extends Component {
       ];
       operator = OPERATOR.EQUAL;
       value = "1";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_PASSWORD_CHANGED_WINDOWS) {
+      command = COMMAND.CMD;
+      args = [
+        "/C",
+        "net user user",
+      ];
+      operator = OPERATOR.NOT_CONTAINS;
+      value = "Password last set            1/11/2021 12:00:00 PM";
       points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_REMOVED_LINUX) {
       command = COMMAND.SH;
