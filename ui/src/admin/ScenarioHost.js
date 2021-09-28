@@ -499,7 +499,7 @@ class ScenarioHost extends Component {
         'Get-LocalUser | Where-Object {($_.SID -like "*-500") -and ($_.Name -eq "Administrator")} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
       ];
       operator = OPERATOR.EQUAL;
-      value = '{"Count":1}';
+      value = '{"Count":0}';
       points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_RENAMED_GUEST_WINDOWS) {
       command = COMMAND.POWERSHELL;
