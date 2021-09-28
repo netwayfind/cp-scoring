@@ -28,6 +28,11 @@ const ACTION_PRESET_CHECK = Object.freeze({
   USER_ADDED_WINDOWS: "user added (windows)",
   USER_ADDED_TO_GROUP_LINUX: "user added to group (linux)",
   USER_ADDED_TO_GROUP_WINDOWS: "user added to group (windows)",
+  USER_DISABLED_WINDOWS: "user disabled (windows)",
+  USER_DISABLED_ADMINISTRATOR_WINDOWS: "user Administrator disabled (windows)",
+  USER_DISABLED_GUEST_WINDOWS: "user Guest disabled (windows)",
+  USER_RENAMED_ADMINISTRATOR_WINDOWS: "user Administrator renamed (windows)",
+  USER_RENAMED_GUEST_WINDOWS: "user Guest renamed (windows)",
   USER_PASSWORD_CHANGED_LINUX: "user password changed (linux)",
   USER_PASSWORD_CHANGED_WINDOWS: "user password changed (windows)",
   USER_REMOVED_LINUX: "user removed (linux)",
@@ -441,6 +446,51 @@ class ScenarioHost extends Component {
       ];
       operator = OPERATOR.EQUAL;
       value = '{"Count":1}';
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_DISABLED_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {($_.Name -eq "user") -and ($_.Enabled -eq $false)} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_DISABLED_ADMINISTRATOR_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {($_.SID -like "*-500") -and ($_.Enabled -eq $false)} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_DISABLED_GUEST_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {($_.SID -like "*-501") -and ($_.Enabled -eq $false)} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_RENAMED_ADMINISTRATOR_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {($_.SID -like "*-500") -and ($_.Name -eq "Administrator")} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":1}';
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.USER_RENAMED_GUEST_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-command",
+        'Get-LocalUser | Where-Object {($_.SID -like "*-501") -and ($_.Name -eq "Guest")} | Measure-Object | Select-Object Count | ConvertTo-Json -Compress',
+      ];
+      operator = OPERATOR.EQUAL;
+      value = '{"Count":0}';
       points = 1;
     } else if (p === ACTION_PRESET_CHECK.USER_PASSWORD_CHANGED_LINUX) {
       command = COMMAND.SH;
