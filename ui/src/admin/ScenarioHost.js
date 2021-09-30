@@ -423,18 +423,14 @@ class ScenarioHost extends Component {
       command = COMMAND.CMD;
       args = [
         "/C",
-        'C:\\Windows\\System32\\SecEdit.exe", "/export", "/cfg", output.txt',
+        'C:\\Windows\\System32\\SecEdit.exe /export /cfg output.txt',
       ];
-      operator = OPERATOR.EQUAL;
-      value = '{"Count":0}';
     } else if (p === ACTION_PRESET_CHECK.TMP_WINDOWS_SETTINGS_EXPORT_REMOVE) {
       command = COMMAND.CMD;
       args = [
         "/C",
         'del output.txt',
       ];
-      operator = OPERATOR.EQUAL;
-      value = '{"Count":0}';
     } else if (p === ACTION_PRESET_CHECK.USER_ADDED_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "grep -q '^user:' /etc/passwd; echo $?"];
