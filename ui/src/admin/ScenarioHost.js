@@ -19,6 +19,25 @@ const ACTION_PRESET_CHECK = Object.freeze({
   FIREWALL_WINDOWS_PRIVATE: "Firewall (Windows - Private) set",
   FIREWALL_WINDOWS_PUBLIC: "Firewall (Windows - Public) set",
   NETWORK_SERVICE_NOT_AVAILABLE_LINUX: "network service not available (linux)",
+  SETTING_WINDOWS: "Setting (windows)",
+  SETTING_WINDOWS_ACCOUNT_LOCKOUT_DURATION: "Setting: Account lockout duration",
+  SETTING_WINDOWS_ACCOUNT_LOCKOUT_THRESHOLD: "Setting: Account lockout threshold",
+  SETTING_WINDOWS_ACCOUNT_LOCKOUT_RESET_AFTER: "Setting: Reset account lockout counter after",
+  SETTING_WINDOWS_AUDIT_ACCOUNT_LOGON_EVENTS: "Setting: Audit account logon events",
+  SETTING_WINDOWS_AUDIT_ACCOUNT_MANAGEMENT: "Setting: Audit account management",
+  SETTING_WINDOWS_AUDIT_DIRECTORY_SERVICE_ACCESS: "Setting: Audit directory service access",
+  SETTING_WINDOWS_AUDIT_LOGON_EVENTS: "Setting: Audit logon events",
+  SETTING_WINDOWS_AUDIT_OBJECT_ACCESS: "Setting: Audit object access",
+  SETTING_WINDOWS_AUDIT_POLICY_CHANGE: "Setting: Audit policy change",
+  SETTING_WINDOWS_AUDIT_PRIVILEGE_USE: "Setting: Audit privilege use",
+  SETTING_WINDOWS_AUDIT_PROCESS_TRACKING: "Setting: Audit process tracking",
+  SETTING_WINDOWS_AUDIT_SYSTEM_EVENTS: "Setting: Audit system events",
+  SETTING_WINDOWS_MAXIMUM_PASSWORD_AGE: "Setting: Maximum password age",
+  SETTING_WINDOWS_MINIMUM_PASSWORD_AGE: "Setting: Minimum password age",
+  SETTING_WINDOWS_MINIMUM_PASSWORD_LENGTH: "Setting: Minimum password length",
+  SETTING_WINDOWS_PASSWORD_COMPLEXITY: "Setting: Password must meet complexity requirements",
+  SETTING_WINDOWS_PASSWORD_HISTORY_SIZE: "Setting: Enforce password history",
+  SETTING_WINDOWS_PASSWORD_REVERSIBLE_ENCRYPTION: "Setting: Store passwords using reversible encryption",
   SOFTWARE_INSTALLED_LINUX: "software installed (linux)",
   SOFTWARE_PACKAGES_UPDATED_LINUX: "software packages updated (linux)",
   SOFTWARE_REMOVED_LINUX: "software removed (linux)",
@@ -396,6 +415,177 @@ class ScenarioHost extends Component {
       operator = OPERATOR.NOT_EQUAL;
       value = "0";
       points = -1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"Setting = value\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_ACCOUNT_LOCKOUT_DURATION) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"LockoutDuration = 30\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_ACCOUNT_LOCKOUT_RESET_AFTER) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"ResetLockoutCount = 30\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_ACCOUNT_LOCKOUT_THRESHOLD) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"LockoutBadCount = 5\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_ACCOUNT_LOGON_EVENTS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditAccountLogon = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_ACCOUNT_MANAGEMENT) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditAccountManage = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_DIRECTORY_SERVICE_ACCESS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditDSAccess = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_LOGON_EVENTS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditLogonEvents = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_OBJECT_ACCESS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditObjectAccess = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_POLICY_CHANGE) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditPolicyChange = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_PRIVILEGE_USE) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditPrivilegeUse = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_PROCESS_TRACKING) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditProcessTracking = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_AUDIT_SYSTEM_EVENTS) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"AuditSystemEvents = 3\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_MAXIMUM_PASSWORD_AGE) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"MaximumPasswordAge = 30\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_MINIMUM_PASSWORD_LENGTH) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"MinimumPasswordLength = 10\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_MINIMUM_PASSWORD_AGE) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"MinimumPasswordAge = 10\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_PASSWORD_COMPLEXITY) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"PasswordComplexity = 1\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_PASSWORD_HISTORY_SIZE) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"PasswordHistorySize = 5\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
+    } else if (p === ACTION_PRESET_CHECK.SETTING_WINDOWS_PASSWORD_REVERSIBLE_ENCRYPTION) {
+      command = COMMAND.POWERSHELL;
+      args = [
+        "-c",
+        "Select-String -Path output.txt -Pattern \"ClearTextPassword = 0\" -Quiet | ConvertTo-Json -Compress"
+      ];
+      operator = OPERATOR.EQUAL;
+      value = "true";
+      points = 1;
     } else if (p === ACTION_PRESET_CHECK.SOFTWARE_INSTALLED_LINUX) {
       command = COMMAND.SH;
       args = ["-c", "grep -q '^software/' apt; echo $?"];
