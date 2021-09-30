@@ -279,17 +279,23 @@ func executeScenarioChecks(scenarioID uint64, hostToken string, checks []model.A
 			}
 		} else if check.Type == model.ActionTypeFileContains {
 			if len(check.Args) == 2 {
-				fp := check.Args[0]
-				contents, err := ioutil.ReadFile(fp)
+				f, err := os.Open(check.Args[0])
 				if err != nil {
 					result = "could not read file"
 				} else {
-					b := strings.Contains(string(contents), check.Args[1])
-					if b {
-						result = "true"
-					} else {
-						result = "false"
+					scanner := bufio.NewScanner(f)
+					bs := []byte(check.Args[1])
+					log.Println(bs)
+					result = "false"
+					for scanner.Scan() {
+						lineBs := scanner.Bytes()
+						log.Println(lineBs)
+						if bytes.Contains(lineBs, bs) {
+							result = "true"
+							break
+						}
 					}
+					log.Println(result)
 				}
 			}
 		} else if check.Type == model.ActionTypeFileExist {
